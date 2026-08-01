@@ -1,0 +1,22 @@
+# Java / Maven
+backend/target/
+backend/.mvn/
+backend/*.iml
+backend/.idea/
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.env.local
+
+# Datasets grandes (manter apenas amostras versionadas)
+data/*.csv
+data/*.zip
+!data/.gitkeep
+
+# IDE / OS
+.vscode/
+.DS_Store
+Thumbs.db
