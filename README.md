@@ -1,5 +1,8 @@
 # Plataforma Inteligente de PCP e Produção
 
+[![CI](https://github.com/Krsoliveira/pcp-inteligente-producao/actions/workflows/ci.yml/badge.svg)](https://github.com/Krsoliveira/pcp-inteligente-producao/actions/workflows/ci.yml)
+<!-- Badge assume que o repo no GitHub se chamará "pcp-inteligente-producao"; ajuste a URL se o nome final for outro. -->
+
 Projeto "estrela" do portfólio. Dashboard de planejamento e controle de produção com IA, unindo os diferenciais raros do autor: Engenharia Civil, PCP, Auditoria, TI e interesse em SAP.
 
 ## Problema
@@ -51,6 +54,15 @@ Integrações simuladas com SAP, Power BI e APIs externas.
 - Frontend: Vercel
 - Backend: Railway / Render / Azure
 - Banco: PostgreSQL Cloud
+
+## DevSecOps
+
+Pipeline de CI em `.github/workflows/ci.yml`, ativado automaticamente ao dar push para o GitHub:
+
+- **SAST** — Semgrep (backend + frontend) e CodeQL (Java, JavaScript)
+- **Dependency scanning** — OWASP Dependency-Check (Maven) + `npm audit`, com Dependabot atualizando as duas árvores de dependências semanalmente
+- **Secret scanning** — Gitleaks em todo o histórico
+- **Container scanning** — Trivy (filesystem scan)
 
 ## Estrutura
 
