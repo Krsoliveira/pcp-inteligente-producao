@@ -26,7 +26,7 @@ jobs:
       - name: OWASP Dependency-Check
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
-        run: mvn -B org.owasp:dependency-check-maven:check
+        run: mvn -B org.owasp:dependency-check-maven:check -DnvdApiKey=${{ secrets.NVD_API_KEY }}
 
   frontend:
     name: Frontend (React)
