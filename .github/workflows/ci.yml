@@ -23,10 +23,16 @@ jobs:
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
         run: mvn -B verify
+      - name: Cache OWASP NVD database
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: owasp-nvd-${{ github.run_id }}
+          restore-keys: owasp-nvd-
       - name: OWASP Dependency-Check
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
-        run: mvn -B org.owasp:dependency-check-maven:check
+        run: mvn -B org.owasp:dependency-check-maven:check -DnvdApiKey=${{ secrets.NVD_API_KEY }}
 
   frontend:
     name: Frontend (React)
@@ -71,10 +77,22 @@ jobs:
         language: ['java', 'javascript']
     steps:
       - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        if: matrix.language == 'java'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+      - name: Build Java (manual)
+        if: matrix.language == 'java'
+        working-directory: backend
+        run: mvn -B compile -DskipTests
       - uses: github/codeql-action/autobuild@v3
+        if: matrix.language != 'java'
       - uses: github/codeql-action/analyze@v3
 
   secret-scan:
@@ -98,3 +116,4 @@ jobs:
           scan-type: fs
           scan-ref: .
           severity: HIGH,CRITICAL
+          skip-dirs: backend,frontend/node_modules
