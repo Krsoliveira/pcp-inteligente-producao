@@ -71,6 +71,13 @@ jobs:
         language: ['java', 'javascript']
     steps:
       - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        if: matrix.language == 'java'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
