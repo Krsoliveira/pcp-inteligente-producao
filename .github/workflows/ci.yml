@@ -23,6 +23,12 @@ jobs:
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
         run: mvn -B verify
+      - name: Cache OWASP NVD database
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: owasp-nvd-${{ github.run_id }}
+          restore-keys: owasp-nvd-
       - name: OWASP Dependency-Check
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
