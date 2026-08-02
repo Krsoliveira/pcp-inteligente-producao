@@ -11,6 +11,9 @@ frontend/build/
 frontend/.env
 frontend/.env.local
 
+# Segredos locais (docker-compose, chaves de API)
+.env
+
 # Datasets grandes (manter apenas amostras versionadas)
 data/*.csv
 data/*.zip
@@ -20,3 +23,6 @@ data/*.zip
 .vscode/
 .DS_Store
 Thumbs.db
+
+# IntelliJ IDEA
+.idea/

@@ -18,7 +18,7 @@ Dashboard para planejamento da produção com apoio de IA: previsão de demanda,
 - Swagger/OpenAPI
 - JPA/Hibernate + PostgreSQL
 - Redis (cache)
-- Mensageria: RabbitMQ ou Kafka
+- Mensageria: RabbitMQ ([ADR-0002](docs/adr/0002-rabbitmq-mensageria.md))
 
 ### Frontend (`frontend/`)
 - React + TypeScript
@@ -28,7 +28,7 @@ Dashboard para planejamento da produção com apoio de IA: previsão de demanda,
 - ECharts
 
 ### IA
-- OpenAI ou Ollama
+- OpenAI, atrás de camada de abstração ([ADR-0003](docs/adr/0003-openai-provedor-ia.md))
 - Previsão de demanda
 - Análise de atrasos
 - Geração de recomendações
@@ -52,7 +52,7 @@ Integrações simuladas com SAP, Power BI e APIs externas.
 ## Deploy
 
 - Frontend: Vercel
-- Backend: Railway / Render / Azure
+- Backend: Render ([ADR-0004](docs/adr/0004-render-hospedagem-backend.md))
 - Banco: PostgreSQL Cloud
 
 ## DevSecOps
@@ -68,8 +68,35 @@ Pipeline de CI em `.github/workflows/ci.yml`, ativado automaticamente ao dar pus
 
 ```
 01-pcp-inteligente-producao/
-├── backend/        # Java + Spring Boot
-├── frontend/        # React + TypeScript
-├── docs/            # Documentação, decisões de arquitetura
-└── data/            # Datasets e scripts de carga
+├── backend/             # Java + Spring Boot (Clean Architecture)
+├── frontend/            # React + TypeScript
+├── docs/                # Documentação: visão, arquitetura, glossário e ADRs
+├── data/                # Datasets e scripts de carga
+├── docker-compose.yml   # Infra local: PostgreSQL, Redis, RabbitMQ
+└── .env.example         # Modelo de variáveis de ambiente (copiar para .env)
+```
+
+## Documentação
+
+Toda a documentação vive em [`docs/`](docs/README.md):
+
+- [Visão geral](docs/visao-geral.md) — problema, escopo e roteiro de fases
+- [Arquitetura](docs/arquitetura.md) — camadas, diagramas e convenções
+- [Glossário](docs/glossario.md) — termos de PCP e termos técnicos
+- [ADRs](docs/README.md#índice-de-adrs) — registro das decisões de arquitetura
+
+## Como rodar localmente
+
+```bash
+# 1. Suba a infraestrutura (PostgreSQL, Redis, RabbitMQ)
+cp .env.example .env   # ajuste as senhas
+docker compose up -d
+
+# 2. Backend (requer JDK 21 e Maven; Docker ligado para os testes de integração)
+cd backend
+mvn verify              # compila e roda todos os testes
+mvn spring-boot:run     # sobe a API em http://localhost:8080
+# Swagger UI: http://localhost:8080/swagger-ui.html
+
+# 3. Frontend: instruções serão adicionadas na Fase 3
 ```
