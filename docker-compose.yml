@@ -1,0 +1,52 @@
+# Infraestrutura local de desenvolvimento.
+# Uso: copie .env.example para .env e rode `docker compose up -d`.
+# Detalhes em docs/arquitetura.md (seção "Infraestrutura local").
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pcp-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pcp}
+      POSTGRES_USER: ${POSTGRES_USER:-pcp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pcp_dev}
+    ports:
+      # Host 5433 -> container 5432: a máquina de desenvolvimento tem um
+      # PostgreSQL nativo ocupando a 5432; usamos 5433 para evitar conflito.
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pcp} -d ${POSTGRES_DB:-pcp}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: pcp-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: pcp-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-pcp}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-pcp_dev}
+    ports:
+      - "5672:5672"    # protocolo AMQP (usado pela aplicação)
+      - "15672:15672"  # interface web de administração (http://localhost:15672)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
