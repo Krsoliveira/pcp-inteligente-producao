@@ -74,7 +74,12 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+      - name: Build Java (manual)
+        if: matrix.language == 'java'
+        working-directory: backend
+        run: mvn -B compile -DskipTests
       - uses: github/codeql-action/autobuild@v3
+        if: matrix.language != 'java'
       - uses: github/codeql-action/analyze@v3
 
   secret-scan:
