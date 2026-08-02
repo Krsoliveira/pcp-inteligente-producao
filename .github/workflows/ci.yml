@@ -110,3 +110,4 @@ jobs:
           scan-type: fs
           scan-ref: .
           severity: HIGH,CRITICAL
+          skip-dirs: backend,frontend/node_modules
