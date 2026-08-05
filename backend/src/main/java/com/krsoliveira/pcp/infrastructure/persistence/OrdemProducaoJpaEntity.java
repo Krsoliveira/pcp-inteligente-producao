@@ -33,6 +33,9 @@ public class OrdemProducaoJpaEntity {
     @Column(nullable = false, length = 120)
     private String produto;
 
+    @Column(name = "centro_de_trabalho", nullable = false, length = 60)
+    private String centroDeTrabalho;
+
     @Column(nullable = false)
     private int quantidade;
 
@@ -61,6 +64,7 @@ public class OrdemProducaoJpaEntity {
         entity.id = ordem.getId();
         entity.codigo = ordem.getCodigo();
         entity.produto = ordem.getProduto();
+        entity.centroDeTrabalho = ordem.getCentroDeTrabalho();
         entity.quantidade = ordem.getQuantidade();
         entity.inicioPlanejado = ordem.getInicioPlanejado();
         entity.fimPlanejado = ordem.getFimPlanejado();
@@ -71,7 +75,7 @@ public class OrdemProducaoJpaEntity {
     }
 
     public OrdemProducao paraDominio() {
-        return OrdemProducao.reconstituir(id, codigo, produto, quantidade,
+        return OrdemProducao.reconstituir(id, codigo, produto, centroDeTrabalho, quantidade,
                 inicioPlanejado, fimPlanejado, status, criadaEm, atualizadaEm);
     }
 }

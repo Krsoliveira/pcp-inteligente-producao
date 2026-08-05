@@ -25,6 +25,10 @@ public record CriarOrdemProducaoRequest(
         @Size(max = 120, message = "produto deve ter no máximo 120 caracteres")
         String produto,
 
+        @NotBlank(message = "centroDeTrabalho é obrigatório")
+        @Size(max = 60, message = "centroDeTrabalho deve ter no máximo 60 caracteres")
+        String centroDeTrabalho,
+
         @NotNull(message = "quantidade é obrigatória")
         @Positive(message = "quantidade deve ser maior que zero")
         Integer quantidade,
@@ -36,6 +40,7 @@ public record CriarOrdemProducaoRequest(
         LocalDate fimPlanejado) {
 
     public CriarOrdemProducao.Comando paraComando() {
-        return new CriarOrdemProducao.Comando(codigo, produto, quantidade, inicioPlanejado, fimPlanejado);
+        return new CriarOrdemProducao.Comando(codigo, produto, centroDeTrabalho, quantidade,
+                inicioPlanejado, fimPlanejado);
     }
 }
