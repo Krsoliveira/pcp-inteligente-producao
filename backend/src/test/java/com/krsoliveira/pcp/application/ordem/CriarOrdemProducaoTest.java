@@ -19,7 +19,7 @@ class CriarOrdemProducaoTest {
     private final CriarOrdemProducao casoDeUso = new CriarOrdemProducao(repositorio);
 
     private CriarOrdemProducao.Comando comandoValido(String codigo) {
-        return new CriarOrdemProducao.Comando(codigo, "Viga metálica 6m", 50,
+        return new CriarOrdemProducao.Comando(codigo, "Viga metálica 6m", "Usinagem CNC", 50,
                 LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20));
     }
 
@@ -29,6 +29,7 @@ class CriarOrdemProducaoTest {
         OrdemProducao ordem = casoDeUso.executar(comandoValido("OP-0001"));
 
         assertThat(ordem.getStatus()).isEqualTo(StatusOrdemProducao.PLANEJADA);
+        assertThat(ordem.getCentroDeTrabalho()).isEqualTo("Usinagem CNC");
         assertThat(repositorio.buscarPorId(ordem.getId())).isPresent();
     }
 
