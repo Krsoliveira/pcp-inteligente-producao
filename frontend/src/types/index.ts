@@ -11,6 +11,7 @@ export interface OrdemProducao {
   id: string
   codigo: string
   produto: string
+  centroDeTrabalho: string
   quantidade: number
   inicioPlanejado: string  // "YYYY-MM-DD"
   fimPlanejado: string     // "YYYY-MM-DD"
@@ -23,6 +24,7 @@ export interface OrdemProducao {
 export interface CriarOrdemRequest {
   codigo: string
   produto: string
+  centroDeTrabalho: string
   quantidade: number
   inicioPlanejado: string  // "YYYY-MM-DD"
   fimPlanejado: string     // "YYYY-MM-DD"

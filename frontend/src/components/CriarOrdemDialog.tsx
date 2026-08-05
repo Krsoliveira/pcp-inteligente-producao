@@ -5,6 +5,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
+import MenuItem from '@mui/material/MenuItem'
 import Grid from '@mui/material/Grid2'
 import Alert from '@mui/material/Alert'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -17,9 +18,21 @@ interface CriarOrdemDialogProps {
   onFechar: () => void
 }
 
+const CENTROS_DE_TRABALHO = [
+  'Usinagem CNC',
+  'Montagem',
+  'Soldagem MIG/TIG',
+  'Pintura Industrial',
+  'Inspeção de Qualidade',
+  'Fundição Sob Pressão',
+  'Estamparia',
+  'Tratamento Térmico',
+]
+
 const VAZIO: CriarOrdemRequest = {
   codigo: '',
   produto: '',
+  centroDeTrabalho: '',
   quantidade: 1,
   inicioPlanejado: '',
   fimPlanejado: '',
@@ -59,7 +72,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     }
 
   const handleSubmit = () => {
-    if (!form.codigo || !form.produto || !form.inicioPlanejado || !form.fimPlanejado) {
+    if (!form.codigo || !form.produto || !form.centroDeTrabalho || !form.inicioPlanejado || !form.fimPlanejado) {
       setErro('Preencha todos os campos obrigatórios.')
       return
     }
@@ -111,6 +124,21 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
               inputProps={{ maxLength: 120 }}
               placeholder="Descrição do produto a fabricar"
             />
+          </Grid>
+          <Grid size={12}>
+            <TextField
+              select
+              label="Centro de Trabalho *"
+              value={form.centroDeTrabalho}
+              onChange={handleChange('centroDeTrabalho')}
+              fullWidth
+            >
+              {CENTROS_DE_TRABALHO.map((centro) => (
+                <MenuItem key={centro} value={centro}>
+                  {centro}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
