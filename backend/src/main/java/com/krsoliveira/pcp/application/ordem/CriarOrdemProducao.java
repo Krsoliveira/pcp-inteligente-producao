@@ -28,6 +28,7 @@ public class CriarOrdemProducao {
         OrdemProducao ordem = OrdemProducao.criar(
                 comando.codigo(),
                 comando.produto(),
+                comando.centroDeTrabalho(),
                 comando.quantidade(),
                 comando.inicioPlanejado(),
                 comando.fimPlanejado());
@@ -39,6 +40,7 @@ public class CriarOrdemProducao {
      */
     public record Comando(String codigo,
                           String produto,
+                          String centroDeTrabalho,
                           int quantidade,
                           LocalDate inicioPlanejado,
                           LocalDate fimPlanejado) {

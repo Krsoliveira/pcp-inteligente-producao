@@ -52,6 +52,7 @@ export function OrdemTable({ ordens, onAtualizarStatus }: OrdemTableProps) {
           <TableRow sx={{ '& th': { fontWeight: 600, bgcolor: 'grey.50' } }}>
             <TableCell>Código</TableCell>
             <TableCell>Produto</TableCell>
+            <TableCell>Centro de Trabalho</TableCell>
             <TableCell align="right">Qtd</TableCell>
             <TableCell>Início Planejado</TableCell>
             <TableCell>Fim Planejado</TableCell>
@@ -73,6 +74,7 @@ export function OrdemTable({ ordens, onAtualizarStatus }: OrdemTableProps) {
                 </Typography>
               </TableCell>
               <TableCell>{ordem.produto}</TableCell>
+              <TableCell>{ordem.centroDeTrabalho}</TableCell>
               <TableCell align="right">{ordem.quantidade.toLocaleString('pt-BR')}</TableCell>
               <TableCell>{formatarData(ordem.inicioPlanejado)}</TableCell>
               <TableCell>{formatarData(ordem.fimPlanejado)}</TableCell>

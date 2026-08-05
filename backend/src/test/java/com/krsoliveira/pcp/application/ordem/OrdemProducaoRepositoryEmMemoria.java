@@ -15,7 +15,7 @@ import java.util.UUID;
  * do PostgreSQL. É a recompensa prática da Clean Architecture — testar a
  * orquestração sem subir banco nem Spring.
  */
-class OrdemProducaoRepositoryEmMemoria implements OrdemProducaoRepository {
+public class OrdemProducaoRepositoryEmMemoria implements OrdemProducaoRepository {
 
     private final Map<UUID, OrdemProducao> dados = new HashMap<>();
 
@@ -38,5 +38,10 @@ class OrdemProducaoRepositoryEmMemoria implements OrdemProducaoRepository {
     @Override
     public boolean existePorCodigo(String codigo) {
         return dados.values().stream().anyMatch(o -> o.getCodigo().equals(codigo));
+    }
+
+    @Override
+    public long contarTodas() {
+        return dados.size();
     }
 }

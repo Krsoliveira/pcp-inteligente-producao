@@ -91,6 +91,7 @@ class OrdemProducaoApiTest {
         return Map.of(
                 "codigo", codigo,
                 "produto", "Viga metálica 6m",
+                "centroDeTrabalho", "Usinagem CNC",
                 "quantidade", 100,
                 "inicioPlanejado", "2026-08-10",
                 "fimPlanejado", "2026-08-20");

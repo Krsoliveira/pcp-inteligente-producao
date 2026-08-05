@@ -42,4 +42,9 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
     public boolean existePorCodigo(String codigo) {
         return springData.existsByCodigo(codigo);
     }
+
+    @Override
+    public long contarTodas() {
+        return springData.count();
+    }
 }

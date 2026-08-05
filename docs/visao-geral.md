@@ -53,7 +53,7 @@ Artificial)** como copiloto do planejador:
 | 1 | Backend núcleo: API de ordens de produção ponta a ponta | Concluída |
 | 2 | Autenticação e perfis (JWT) | Concluída |
 | 3 | Frontend: dashboard inicial | Concluída |
-| 4 | Carga de dados reais (Kaggle) | Pendente |
+| 4 | Carga de dados reais (Kaggle) | Concluída |
 | 5 | Módulo de IA | Pendente |
 | 6 | Integrações simuladas e deploy | Pendente |
 
