@@ -87,16 +87,67 @@ Toda a documentação vive em [`docs/`](docs/README.md):
 
 ## Como rodar localmente
 
+### Pré-requisitos
+
+| Ferramenta | Versão mínima | Observação |
+|---|---|---|
+| Docker Desktop | 24+ | Necessário para a infraestrutura e para os testes de integração (Testcontainers) |
+| JDK | 21 | Recomendado via [SDKMAN](https://sdkman.io/) |
+| Node.js | 20 LTS | Recomendado via [nvm](https://github.com/nvm-sh/nvm) |
+
+### 1. Variáveis de ambiente
+
 ```bash
-# 1. Suba a infraestrutura (PostgreSQL, Redis, RabbitMQ)
-cp .env.example .env   # ajuste as senhas
-docker compose up -d
-
-# 2. Backend (requer JDK 21 e Maven; Docker ligado para os testes de integração)
-cd backend
-mvn verify              # compila e roda todos os testes
-mvn spring-boot:run     # sobe a API em http://localhost:8080
-# Swagger UI: http://localhost:8080/swagger-ui.html
-
-# 3. Frontend: instruções serão adicionadas na Fase 3
+cp .env.example .env
+# Edite .env se quiser trocar senhas ou portas.
+# O arquivo .env não é commitado (.gitignore).
 ```
+
+### 2. Infraestrutura (PostgreSQL · Redis · RabbitMQ)
+
+```bash
+docker compose up -d
+```
+
+Aguarde todos os serviços ficarem saudáveis (healthcheck automático):
+
+```bash
+docker compose ps   # todos devem exibir "healthy"
+```
+
+| Serviço | Endereço local |
+|---|---|
+| PostgreSQL | `localhost:5433` (host 5433 → container 5432) |
+| Redis | `localhost:6379` |
+| RabbitMQ | `localhost:5672` · painel: <http://localhost:15672> (pcp / pcp_dev) |
+
+### 3. Backend
+
+```bash
+cd backend
+
+# Compilar e rodar todos os testes (unitários + integração via Testcontainers)
+./mvnw verify
+
+# Subir a API
+./mvnw spring-boot:run
+```
+
+| Recurso | URL |
+|---|---|
+| API REST | <http://localhost:8080/api> |
+| Swagger UI | <http://localhost:8080/swagger-ui.html> |
+| Actuator (health) | <http://localhost:8080/actuator/health> |
+
+### 4. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Acesse em <http://localhost:5173>.
+
+A variável `VITE_API_BASE_URL` em `frontend/.env.example` pode ser deixada vazia em
+desenvolvimento — o Vite usa proxy automático para `localhost:8080`.
