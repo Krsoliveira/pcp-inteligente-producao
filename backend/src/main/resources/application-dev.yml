@@ -1,0 +1,11 @@
+# Perfil de desenvolvimento local.
+# Para carregar o dataset inicial, adicione o perfil "seed":
+#   java -jar app.jar --spring.profiles.active=dev,seed
+# Ou via IDE: adicione "seed" aos Active Profiles.
+#
+# O DataLoader é idempotente: executa apenas se o banco estiver vazio.
+
+spring:
+  jpa:
+    # Em dev, exibe as queries geradas pelo Hibernate para facilitar depuração.
+    show-sql: false

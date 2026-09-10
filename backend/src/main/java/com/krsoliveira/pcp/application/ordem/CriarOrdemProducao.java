@@ -4,6 +4,7 @@ import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 /**
  * Caso de uso: criar uma nova ordem de produção.
@@ -27,7 +28,9 @@ public class CriarOrdemProducao {
         }
         OrdemProducao ordem = OrdemProducao.criar(
                 comando.codigo(),
-                comando.produto(),
+                comando.materialId(),
+                comando.listaTecnicaId(),
+                comando.centroDeTrabalho(),
                 comando.quantidade(),
                 comando.inicioPlanejado(),
                 comando.fimPlanejado());
@@ -38,9 +41,10 @@ public class CriarOrdemProducao {
      * Dados de entrada do caso de uso, desacoplados do formato HTTP.
      */
     public record Comando(String codigo,
-                          String produto,
+                          UUID materialId,
+                          UUID listaTecnicaId,
+                          String centroDeTrabalho,
                           int quantidade,
                           LocalDate inicioPlanejado,
-                          LocalDate fimPlanejado) {
-    }
+                          LocalDate fimPlanejado) {}
 }

@@ -19,4 +19,6 @@ public interface OrdemProducaoRepository {
     List<OrdemProducao> listarTodas();
 
     boolean existePorCodigo(String codigo);
+
+    long contarTodas();
 }

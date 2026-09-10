@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,9 +19,11 @@ class OrdemProducaoTest {
 
     private static final LocalDate INICIO = LocalDate.of(2026, 8, 10);
     private static final LocalDate FIM = LocalDate.of(2026, 8, 20);
+    private static final UUID MATERIAL_ID = UUID.randomUUID();
+    private static final UUID LISTA_ID = UUID.randomUUID();
 
     private OrdemProducao ordemValida() {
-        return OrdemProducao.criar("OP-0001", "Viga metálica 6m", 100, INICIO, FIM);
+        return OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, "Usinagem CNC", 100, INICIO, FIM);
     }
 
     @Nested
@@ -35,13 +38,17 @@ class OrdemProducaoTest {
             assertThat(ordem.getId()).isNotNull();
             assertThat(ordem.getStatus()).isEqualTo(StatusOrdemProducao.PLANEJADA);
             assertThat(ordem.getCodigo()).isEqualTo("OP-0001");
+            assertThat(ordem.getMaterialId()).isEqualTo(MATERIAL_ID);
+            assertThat(ordem.getListaTecnicaId()).isEqualTo(LISTA_ID);
+            assertThat(ordem.getCentroDeTrabalho()).isEqualTo("Usinagem CNC");
             assertThat(ordem.getCriadaEm()).isNotNull();
         }
 
         @Test
         @DisplayName("rejeita quantidade zero ou negativa")
         void rejeitaQuantidadeInvalida() {
-            assertThatThrownBy(() -> OrdemProducao.criar("OP-0001", "Viga", 0, INICIO, FIM))
+            assertThatThrownBy(() ->
+                    OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, "Montagem", 0, INICIO, FIM))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("quantidade");
         }
@@ -49,7 +56,8 @@ class OrdemProducaoTest {
         @Test
         @DisplayName("rejeita fim planejado anterior ao início")
         void rejeitaPeriodoInvalido() {
-            assertThatThrownBy(() -> OrdemProducao.criar("OP-0001", "Viga", 10, FIM, INICIO))
+            assertThatThrownBy(() ->
+                    OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, "Montagem", 10, FIM, INICIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("anterior");
         }
@@ -57,9 +65,37 @@ class OrdemProducaoTest {
         @Test
         @DisplayName("rejeita código em branco")
         void rejeitaCodigoEmBranco() {
-            assertThatThrownBy(() -> OrdemProducao.criar("  ", "Viga", 10, INICIO, FIM))
+            assertThatThrownBy(() ->
+                    OrdemProducao.criar("  ", MATERIAL_ID, LISTA_ID, "Montagem", 10, INICIO, FIM))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("código");
+        }
+
+        @Test
+        @DisplayName("rejeita centro de trabalho em branco")
+        void rejeitaCentroDeTrabalhoEmBranco() {
+            assertThatThrownBy(() ->
+                    OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, "  ", 10, INICIO, FIM))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("centro de trabalho");
+        }
+
+        @Test
+        @DisplayName("rejeita material nulo")
+        void rejeitaMaterialNulo() {
+            assertThatThrownBy(() ->
+                    OrdemProducao.criar("OP-0001", null, LISTA_ID, "Montagem", 10, INICIO, FIM))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("material");
+        }
+
+        @Test
+        @DisplayName("rejeita lista técnica nula")
+        void rejeitaListaTecnicaNula() {
+            assertThatThrownBy(() ->
+                    OrdemProducao.criar("OP-0001", MATERIAL_ID, null, "Montagem", 10, INICIO, FIM))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("lista técnica");
         }
     }
 
