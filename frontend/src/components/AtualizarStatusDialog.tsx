@@ -84,7 +84,7 @@ export function AtualizarStatusDialog({ ordem, onFechar }: AtualizarStatusDialog
           <Typography variant="caption" color="text.secondary">
             Ordem
           </Typography>
-          <Typography fontWeight={600}>{ordem?.codigo} — {ordem?.produto}</Typography>
+          <Typography fontWeight={600}>{ordem?.codigo}</Typography>
         </Box>
         <Box sx={{ mb: 2 }}>
           <Typography variant="caption" color="text.secondary">

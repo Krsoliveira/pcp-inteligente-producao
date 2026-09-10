@@ -10,7 +10,8 @@ export type StatusOrdem =
 export interface OrdemProducao {
   id: string
   codigo: string
-  produto: string
+  materialId: string
+  listaTecnicaId: string
   centroDeTrabalho: string
   quantidade: number
   inicioPlanejado: string  // "YYYY-MM-DD"
@@ -23,11 +24,47 @@ export interface OrdemProducao {
 
 export interface CriarOrdemRequest {
   codigo: string
-  produto: string
+  materialId: string
+  listaTecnicaId: string
   centroDeTrabalho: string
   quantidade: number
   inicioPlanejado: string  // "YYYY-MM-DD"
   fimPlanejado: string     // "YYYY-MM-DD"
+}
+
+// ---- Material ----
+
+export type TipoMaterial = 'PRODUTO_ACABADO' | 'SEMIACABADO' | 'MATERIA_PRIMA'
+
+export interface Material {
+  id: string
+  codigo: string
+  descricao: string
+  tipo: TipoMaterial
+  unidadeDeMedida: string
+  criadoEm: string
+  atualizadoEm: string
+}
+
+// ---- Lista Técnica ----
+
+export type StatusListaTecnica = 'EM_REVISAO' | 'ATIVA' | 'OBSOLETA'
+
+export interface ItemListaTecnica {
+  id: string
+  materialComponenteId: string
+  quantidadePlanejada: number
+  unidadeDeMedida: string
+}
+
+export interface ListaTecnica {
+  id: string
+  materialId: string
+  versao: string
+  status: StatusListaTecnica
+  itens: ItemListaTecnica[]
+  criadaEm: string
+  atualizadaEm: string
 }
 
 // ---- Autenticação ----

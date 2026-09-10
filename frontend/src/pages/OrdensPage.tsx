@@ -41,8 +41,7 @@ export function OrdensPage() {
   const ordensFiltradas = ordens.filter((o) => {
     const buscaMatch =
       busca === '' ||
-      o.codigo.toLowerCase().includes(busca.toLowerCase()) ||
-      o.produto.toLowerCase().includes(busca.toLowerCase())
+      o.codigo.toLowerCase().includes(busca.toLowerCase())
 
     const statusMatch = filtroStatus === 'TODAS' || o.status === filtroStatus
 
