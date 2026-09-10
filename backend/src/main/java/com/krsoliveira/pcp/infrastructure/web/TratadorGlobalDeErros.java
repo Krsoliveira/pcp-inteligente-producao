@@ -1,6 +1,10 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.auth.EmailJaUtilizadoException;
+import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
+import com.krsoliveira.pcp.application.lista.VersaoListaTecnicaJaExisteException;
+import com.krsoliveira.pcp.application.material.CodigoMaterialJaUtilizadoException;
+import com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.ordem.CodigoJaUtilizadoException;
 import com.krsoliveira.pcp.application.ordem.OrdemProducaoNaoEncontradaException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
@@ -53,6 +57,38 @@ public class TratadorGlobalDeErros {
 
     @ExceptionHandler(EmailJaUtilizadoException.class)
     public ProblemDetail emailDuplicado(EmailJaUtilizadoException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problema.setTitle("Conflito");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(MaterialNaoEncontradoException.class)
+    public ProblemDetail materialNaoEncontrado(MaterialNaoEncontradoException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problema.setTitle("Recurso não encontrado");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(ListaTecnicaNaoEncontradaException.class)
+    public ProblemDetail listaTecnicaNaoEncontrada(ListaTecnicaNaoEncontradaException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problema.setTitle("Recurso não encontrado");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(CodigoMaterialJaUtilizadoException.class)
+    public ProblemDetail codigoMaterialDuplicado(CodigoMaterialJaUtilizadoException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problema.setTitle("Conflito");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(VersaoListaTecnicaJaExisteException.class)
+    public ProblemDetail versaoListaDuplicada(VersaoListaTecnicaJaExisteException ex) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problema.setTitle("Conflito");
         problema.setDetail(ex.getMessage());

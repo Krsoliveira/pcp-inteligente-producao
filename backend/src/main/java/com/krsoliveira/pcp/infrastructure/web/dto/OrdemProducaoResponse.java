@@ -12,10 +12,13 @@ import java.util.UUID;
  *
  * O campo {@code atrasada} é CALCULADO no momento da resposta (regra do domínio
  * aplicada à data de hoje) — não existe coluna "atrasada" no banco.
+ *
+ * Fase 5a (ADR-0007): produto (String) substituído por materialId + listaTecnicaId (UUIDs).
  */
 public record OrdemProducaoResponse(UUID id,
                                     String codigo,
-                                    String produto,
+                                    UUID materialId,
+                                    UUID listaTecnicaId,
                                     String centroDeTrabalho,
                                     int quantidade,
                                     LocalDate inicioPlanejado,
@@ -29,7 +32,8 @@ public record OrdemProducaoResponse(UUID id,
         return new OrdemProducaoResponse(
                 ordem.getId(),
                 ordem.getCodigo(),
-                ordem.getProduto(),
+                ordem.getMaterialId(),
+                ordem.getListaTecnicaId(),
                 ordem.getCentroDeTrabalho(),
                 ordem.getQuantidade(),
                 ordem.getInicioPlanejado(),

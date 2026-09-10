@@ -8,7 +8,11 @@ import java.util.UUID;
 
 /**
  * Entidade central do domínio: a autorização para fabricar uma quantidade
- * de um produto dentro de um período planejado, num centro de trabalho específico.
+ * de um material, segundo uma lista técnica específica, dentro de um período
+ * planejado, num centro de trabalho.
+ *
+ * Campos substituídos na Fase 5a (ADR-0007):
+ *   - {@code produto} (VARCHAR) → {@code materialId} + {@code listaTecnicaId} (FKs)
  *
  * Classe de domínio PURA: sem anotações de framework (Spring, JPA).
  * Toda mudança de estado passa por métodos que validam as regras de negócio —
@@ -18,7 +22,8 @@ public class OrdemProducao {
 
     private final UUID id;
     private final String codigo;
-    private final String produto;
+    private final UUID materialId;
+    private final UUID listaTecnicaId;
     private final String centroDeTrabalho;
     private final int quantidade;
     private final LocalDate inicioPlanejado;
@@ -27,12 +32,14 @@ public class OrdemProducao {
     private final Instant criadaEm;
     private Instant atualizadaEm;
 
-    private OrdemProducao(UUID id, String codigo, String produto, String centroDeTrabalho,
-                          int quantidade, LocalDate inicioPlanejado, LocalDate fimPlanejado,
+    private OrdemProducao(UUID id, String codigo, UUID materialId, UUID listaTecnicaId,
+                          String centroDeTrabalho, int quantidade,
+                          LocalDate inicioPlanejado, LocalDate fimPlanejado,
                           StatusOrdemProducao status, Instant criadaEm, Instant atualizadaEm) {
         this.id = id;
         this.codigo = codigo;
-        this.produto = produto;
+        this.materialId = materialId;
+        this.listaTecnicaId = listaTecnicaId;
         this.centroDeTrabalho = centroDeTrabalho;
         this.quantidade = quantidade;
         this.inicioPlanejado = inicioPlanejado;
@@ -46,13 +53,17 @@ public class OrdemProducao {
      * Fábrica para uma ordem NOVA. Valida todas as invariantes antes de criar —
      * se retornar, a ordem é garantidamente válida e nasce PLANEJADA.
      */
-    public static OrdemProducao criar(String codigo, String produto, String centroDeTrabalho,
-                                      int quantidade, LocalDate inicioPlanejado, LocalDate fimPlanejado) {
+    public static OrdemProducao criar(String codigo, UUID materialId, UUID listaTecnicaId,
+                                      String centroDeTrabalho, int quantidade,
+                                      LocalDate inicioPlanejado, LocalDate fimPlanejado) {
         if (codigo == null || codigo.isBlank()) {
             throw new RegraDeNegocioException("O código da ordem é obrigatório.");
         }
-        if (produto == null || produto.isBlank()) {
-            throw new RegraDeNegocioException("O produto da ordem é obrigatório.");
+        if (materialId == null) {
+            throw new RegraDeNegocioException("O material da ordem é obrigatório.");
+        }
+        if (listaTecnicaId == null) {
+            throw new RegraDeNegocioException("A lista técnica da ordem é obrigatória.");
         }
         if (centroDeTrabalho == null || centroDeTrabalho.isBlank()) {
             throw new RegraDeNegocioException("O centro de trabalho é obrigatório.");
@@ -68,23 +79,22 @@ public class OrdemProducao {
                     "A data de fim planejada não pode ser anterior à de início.");
         }
         Instant agora = Instant.now();
-        return new OrdemProducao(UUID.randomUUID(), codigo.trim(), produto.trim(),
+        return new OrdemProducao(UUID.randomUUID(), codigo.trim(), materialId, listaTecnicaId,
                 centroDeTrabalho.trim(), quantidade, inicioPlanejado, fimPlanejado,
                 StatusOrdemProducao.PLANEJADA, agora, agora);
     }
 
     /**
      * Reconstrói uma ordem EXISTENTE a partir do banco de dados ou de carga inicial.
-     * Não revalida invariantes: os dados persistidos já passaram por {@link #criar},
-     * ou são dados históricos carregados com status arbitrário (seed/import).
+     * Não revalida invariantes: os dados persistidos já passaram por {@link #criar}.
      */
-    public static OrdemProducao reconstituir(UUID id, String codigo, String produto,
-                                             String centroDeTrabalho, int quantidade,
-                                             LocalDate inicioPlanejado, LocalDate fimPlanejado,
-                                             StatusOrdemProducao status,
+    public static OrdemProducao reconstituir(UUID id, String codigo, UUID materialId,
+                                             UUID listaTecnicaId, String centroDeTrabalho,
+                                             int quantidade, LocalDate inicioPlanejado,
+                                             LocalDate fimPlanejado, StatusOrdemProducao status,
                                              Instant criadaEm, Instant atualizadaEm) {
-        return new OrdemProducao(id, codigo, produto, centroDeTrabalho, quantidade,
-                inicioPlanejado, fimPlanejado, status, criadaEm, atualizadaEm);
+        return new OrdemProducao(id, codigo, materialId, listaTecnicaId, centroDeTrabalho,
+                quantidade, inicioPlanejado, fimPlanejado, status, criadaEm, atualizadaEm);
     }
 
     /**
@@ -109,43 +119,15 @@ public class OrdemProducao {
         return status.estaAberta() && dataDeReferencia.isAfter(fimPlanejado);
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public String getProduto() {
-        return produto;
-    }
-
-    public String getCentroDeTrabalho() {
-        return centroDeTrabalho;
-    }
-
-    public int getQuantidade() {
-        return quantidade;
-    }
-
-    public LocalDate getInicioPlanejado() {
-        return inicioPlanejado;
-    }
-
-    public LocalDate getFimPlanejado() {
-        return fimPlanejado;
-    }
-
-    public StatusOrdemProducao getStatus() {
-        return status;
-    }
-
-    public Instant getCriadaEm() {
-        return criadaEm;
-    }
-
-    public Instant getAtualizadaEm() {
-        return atualizadaEm;
-    }
+    public UUID getId() { return id; }
+    public String getCodigo() { return codigo; }
+    public UUID getMaterialId() { return materialId; }
+    public UUID getListaTecnicaId() { return listaTecnicaId; }
+    public String getCentroDeTrabalho() { return centroDeTrabalho; }
+    public int getQuantidade() { return quantidade; }
+    public LocalDate getInicioPlanejado() { return inicioPlanejado; }
+    public LocalDate getFimPlanejado() { return fimPlanejado; }
+    public StatusOrdemProducao getStatus() { return status; }
+    public Instant getCriadaEm() { return criadaEm; }
+    public Instant getAtualizadaEm() { return atualizadaEm; }
 }

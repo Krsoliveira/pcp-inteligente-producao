@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 /**
  * Corpo da requisição de criação de ordem.
@@ -14,6 +15,8 @@ import java.time.LocalDate;
  * As anotações de Bean Validation barram requisições malformadas ANTES de
  * chegar ao caso de uso (HTTP 400). As regras de NEGÓCIO continuam no domínio —
  * esta camada valida apenas formato/presença.
+ *
+ * Fase 5a (ADR-0007): produto (String) substituído por materialId + listaTecnicaId (UUIDs).
  */
 public record CriarOrdemProducaoRequest(
 
@@ -21,9 +24,11 @@ public record CriarOrdemProducaoRequest(
         @Size(max = 30, message = "codigo deve ter no máximo 30 caracteres")
         String codigo,
 
-        @NotBlank(message = "produto é obrigatório")
-        @Size(max = 120, message = "produto deve ter no máximo 120 caracteres")
-        String produto,
+        @NotNull(message = "materialId é obrigatório")
+        UUID materialId,
+
+        @NotNull(message = "listaTecnicaId é obrigatório")
+        UUID listaTecnicaId,
 
         @NotBlank(message = "centroDeTrabalho é obrigatório")
         @Size(max = 60, message = "centroDeTrabalho deve ter no máximo 60 caracteres")
@@ -40,7 +45,8 @@ public record CriarOrdemProducaoRequest(
         LocalDate fimPlanejado) {
 
     public CriarOrdemProducao.Comando paraComando() {
-        return new CriarOrdemProducao.Comando(codigo, produto, centroDeTrabalho, quantidade,
-                inicioPlanejado, fimPlanejado);
+        return new CriarOrdemProducao.Comando(
+                codigo, materialId, listaTecnicaId, centroDeTrabalho,
+                quantidade, inicioPlanejado, fimPlanejado);
     }
 }

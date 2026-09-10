@@ -19,6 +19,9 @@ import java.util.UUID;
  * É uma classe DIFERENTE da entidade de domínio de propósito: aqui vivem as
  * anotações de persistência; lá vivem as regras de negócio. A conversão entre
  * as duas acontece em {@link #deDominio} e {@link #paraDominio}.
+ *
+ * Fase 5a (ADR-0007): campo {@code produto} removido; {@code materialId} e
+ * {@code listaTecnicaId} adicionados como FKs.
  */
 @Entity
 @Table(name = "ordem_producao")
@@ -30,8 +33,11 @@ public class OrdemProducaoJpaEntity {
     @Column(nullable = false, unique = true, length = 30)
     private String codigo;
 
-    @Column(nullable = false, length = 120)
-    private String produto;
+    @Column(name = "material_id", nullable = false)
+    private UUID materialId;
+
+    @Column(name = "lista_tecnica_id", nullable = false)
+    private UUID listaTecnicaId;
 
     @Column(name = "centro_de_trabalho", nullable = false, length = 60)
     private String centroDeTrabalho;
@@ -56,14 +62,14 @@ public class OrdemProducaoJpaEntity {
     private Instant atualizadaEm;
 
     /** Exigido pelo JPA; não usar diretamente. */
-    protected OrdemProducaoJpaEntity() {
-    }
+    protected OrdemProducaoJpaEntity() {}
 
     public static OrdemProducaoJpaEntity deDominio(OrdemProducao ordem) {
         OrdemProducaoJpaEntity entity = new OrdemProducaoJpaEntity();
         entity.id = ordem.getId();
         entity.codigo = ordem.getCodigo();
-        entity.produto = ordem.getProduto();
+        entity.materialId = ordem.getMaterialId();
+        entity.listaTecnicaId = ordem.getListaTecnicaId();
         entity.centroDeTrabalho = ordem.getCentroDeTrabalho();
         entity.quantidade = ordem.getQuantidade();
         entity.inicioPlanejado = ordem.getInicioPlanejado();
@@ -75,7 +81,8 @@ public class OrdemProducaoJpaEntity {
     }
 
     public OrdemProducao paraDominio() {
-        return OrdemProducao.reconstituir(id, codigo, produto, centroDeTrabalho, quantidade,
-                inicioPlanejado, fimPlanejado, status, criadaEm, atualizadaEm);
+        return OrdemProducao.reconstituir(id, codigo, materialId, listaTecnicaId,
+                centroDeTrabalho, quantidade, inicioPlanejado, fimPlanejado,
+                status, criadaEm, atualizadaEm);
     }
 }
