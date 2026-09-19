@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -39,11 +40,17 @@ public class OrdemProducaoJpaEntity {
     @Column(name = "lista_tecnica_id", nullable = false)
     private UUID listaTecnicaId;
 
+    @Column(name = "tipo_ordem_id")
+    private UUID tipoOrdemId;
+
     @Column(name = "centro_de_trabalho", nullable = false, length = 60)
     private String centroDeTrabalho;
 
     @Column(nullable = false)
     private int quantidade;
+
+    @Column(name = "quantidade_produzida")
+    private BigDecimal quantidadeProduzida;
 
     @Column(name = "inicio_planejado", nullable = false)
     private LocalDate inicioPlanejado;
@@ -70,8 +77,10 @@ public class OrdemProducaoJpaEntity {
         entity.codigo = ordem.getCodigo();
         entity.materialId = ordem.getMaterialId();
         entity.listaTecnicaId = ordem.getListaTecnicaId();
+        entity.tipoOrdemId = ordem.getTipoOrdemId();
         entity.centroDeTrabalho = ordem.getCentroDeTrabalho();
         entity.quantidade = ordem.getQuantidade();
+        entity.quantidadeProduzida = ordem.getQuantidadeProduzida();
         entity.inicioPlanejado = ordem.getInicioPlanejado();
         entity.fimPlanejado = ordem.getFimPlanejado();
         entity.status = ordem.getStatus();
@@ -82,7 +91,7 @@ public class OrdemProducaoJpaEntity {
 
     public OrdemProducao paraDominio() {
         return OrdemProducao.reconstituir(id, codigo, materialId, listaTecnicaId,
-                centroDeTrabalho, quantidade, inicioPlanejado, fimPlanejado,
-                status, criadaEm, atualizadaEm);
+                tipoOrdemId, centroDeTrabalho, quantidade, quantidadeProduzida,
+                inicioPlanejado, fimPlanejado, status, criadaEm, atualizadaEm);
     }
 }

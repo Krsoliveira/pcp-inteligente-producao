@@ -30,6 +30,8 @@ public record CriarOrdemProducaoRequest(
         @NotNull(message = "listaTecnicaId é obrigatório")
         UUID listaTecnicaId,
 
+        UUID tipoOrdemId,
+
         @NotBlank(message = "centroDeTrabalho é obrigatório")
         @Size(max = 60, message = "centroDeTrabalho deve ter no máximo 60 caracteres")
         String centroDeTrabalho,
@@ -46,7 +48,7 @@ public record CriarOrdemProducaoRequest(
 
     public CriarOrdemProducao.Comando paraComando() {
         return new CriarOrdemProducao.Comando(
-                codigo, materialId, listaTecnicaId, centroDeTrabalho,
-                quantidade, inicioPlanejado, fimPlanejado);
+                codigo, materialId, listaTecnicaId, tipoOrdemId,
+                centroDeTrabalho, quantidade, inicioPlanejado, fimPlanejado);
     }
 }

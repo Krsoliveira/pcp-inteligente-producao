@@ -1,12 +1,16 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.auth.EmailJaUtilizadoException;
+import com.krsoliveira.pcp.application.consumo.ConsumoMaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
 import com.krsoliveira.pcp.application.lista.VersaoListaTecnicaJaExisteException;
+import com.krsoliveira.pcp.application.lote.LoteNaoEncontradoException;
 import com.krsoliveira.pcp.application.material.CodigoMaterialJaUtilizadoException;
 import com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.ordem.CodigoJaUtilizadoException;
+import com.krsoliveira.pcp.application.ordem.NomeTipoOrdemJaUtilizadoException;
 import com.krsoliveira.pcp.application.ordem.OrdemProducaoNaoEncontradaException;
+import com.krsoliveira.pcp.application.ordem.TipoOrdemNaoEncontradoException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -89,6 +93,38 @@ public class TratadorGlobalDeErros {
 
     @ExceptionHandler(VersaoListaTecnicaJaExisteException.class)
     public ProblemDetail versaoListaDuplicada(VersaoListaTecnicaJaExisteException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problema.setTitle("Conflito");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(ConsumoMaterialNaoEncontradoException.class)
+    public ProblemDetail consumoNaoEncontrado(ConsumoMaterialNaoEncontradoException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problema.setTitle("Recurso não encontrado");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(LoteNaoEncontradoException.class)
+    public ProblemDetail loteNaoEncontrado(LoteNaoEncontradoException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problema.setTitle("Recurso não encontrado");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(TipoOrdemNaoEncontradoException.class)
+    public ProblemDetail tipoOrdemNaoEncontrado(TipoOrdemNaoEncontradoException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problema.setTitle("Recurso não encontrado");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(NomeTipoOrdemJaUtilizadoException.class)
+    public ProblemDetail nomeTipoOrdemDuplicado(NomeTipoOrdemJaUtilizadoException ex) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problema.setTitle("Conflito");
         problema.setDetail(ex.getMessage());
