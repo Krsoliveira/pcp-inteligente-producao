@@ -3,6 +3,7 @@ package com.krsoliveira.pcp.infrastructure.web.dto;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -19,8 +20,10 @@ public record OrdemProducaoResponse(UUID id,
                                     String codigo,
                                     UUID materialId,
                                     UUID listaTecnicaId,
+                                    UUID tipoOrdemId,
                                     String centroDeTrabalho,
                                     int quantidade,
+                                    BigDecimal quantidadeProduzida,
                                     LocalDate inicioPlanejado,
                                     LocalDate fimPlanejado,
                                     StatusOrdemProducao status,
@@ -34,8 +37,10 @@ public record OrdemProducaoResponse(UUID id,
                 ordem.getCodigo(),
                 ordem.getMaterialId(),
                 ordem.getListaTecnicaId(),
+                ordem.getTipoOrdemId(),
                 ordem.getCentroDeTrabalho(),
                 ordem.getQuantidade(),
+                ordem.getQuantidadeProduzida(),
                 ordem.getInicioPlanejado(),
                 ordem.getFimPlanejado(),
                 ordem.getStatus(),

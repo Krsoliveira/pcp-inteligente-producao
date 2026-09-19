@@ -1,47 +1,38 @@
+import { useNavigate } from 'react-router-dom'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
-import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import EditIcon from '@mui/icons-material/Edit'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import type { OrdemProducao, StatusOrdem } from '../types'
-
-const STATUS_COR: Record<StatusOrdem, 'default' | 'info' | 'warning' | 'secondary' | 'success' | 'error'> = {
-  PLANEJADA: 'info',
-  LIBERADA: 'warning',
-  EM_PRODUCAO: 'secondary',
-  CONCLUIDA: 'success',
-  CANCELADA: 'error',
-}
-
-const STATUS_LABEL: Record<StatusOrdem, string> = {
-  PLANEJADA: 'Planejada',
-  LIBERADA: 'Liberada',
-  EM_PRODUCAO: 'Em Produção',
-  CONCLUIDA: 'Concluída',
-  CANCELADA: 'Cancelada',
-}
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import ListAltIcon from '@mui/icons-material/ListAlt'
+import { StatusOrdemBadge } from './StatusBadge'
+import { EmptyState } from './EmptyState'
+import type { OrdemProducao } from '../types'
 
 interface OrdemTableProps {
   ordens: OrdemProducao[]
   onAtualizarStatus: (ordem: OrdemProducao) => void
+  mostrarAcoes?: boolean
 }
 
-export function OrdemTable({ ordens, onAtualizarStatus }: OrdemTableProps) {
+export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: OrdemTableProps) {
+  const navigate = useNavigate()
+
   if (ordens.length === 0) {
     return (
-      <Box sx={{ py: 8, textAlign: 'center' }}>
-        <Typography color="text.secondary">
-          Nenhuma ordem encontrada. Crie a primeira usando o botão acima.
-        </Typography>
-      </Box>
+      <EmptyState
+        Icone={ListAltIcon}
+        titulo="Nenhuma ordem encontrada"
+        descricao="Crie uma nova ordem de produção usando o botão acima."
+      />
     )
   }
 
@@ -49,16 +40,15 @@ export function OrdemTable({ ordens, onAtualizarStatus }: OrdemTableProps) {
     <TableContainer>
       <Table size="small">
         <TableHead>
-          <TableRow sx={{ '& th': { fontWeight: 600, bgcolor: 'grey.50' } }}>
+          <TableRow>
             <TableCell>Código</TableCell>
-            <TableCell>Material</TableCell>
             <TableCell>Centro de Trabalho</TableCell>
             <TableCell align="right">Qtd</TableCell>
-            <TableCell>Início Planejado</TableCell>
-            <TableCell>Fim Planejado</TableCell>
+            <TableCell>Início</TableCell>
+            <TableCell>Fim</TableCell>
             <TableCell>Status</TableCell>
-            <TableCell align="center">Atraso</TableCell>
-            <TableCell align="center">Ações</TableCell>
+            <TableCell align="center" sx={{ width: 40 }}></TableCell>
+            <TableCell align="center" sx={{ width: 80 }}>Ações</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -66,47 +56,63 @@ export function OrdemTable({ ordens, onAtualizarStatus }: OrdemTableProps) {
             <TableRow
               key={ordem.id}
               hover
-              sx={{ '&:last-child td': { border: 0 } }}
+              onClick={() => navigate(`/ordens/${ordem.id}`)}
+              sx={{ cursor: 'pointer' }}
             >
               <TableCell>
-                <Typography variant="body2" fontWeight={500}>
+                <Typography variant="body2" fontWeight={600} color="primary">
                   {ordem.codigo}
                 </Typography>
               </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary' }}>
-                {ordem.materialId.substring(0, 8)}…
-              </TableCell>
-              <TableCell>{ordem.centroDeTrabalho}</TableCell>
-              <TableCell align="right">{ordem.quantidade.toLocaleString('pt-BR')}</TableCell>
-              <TableCell>{formatarData(ordem.inicioPlanejado)}</TableCell>
-              <TableCell>{formatarData(ordem.fimPlanejado)}</TableCell>
               <TableCell>
-                <Chip
-                  label={STATUS_LABEL[ordem.status]}
-                  color={STATUS_COR[ordem.status]}
-                  size="small"
-                  variant="outlined"
-                />
+                <Typography variant="body2">{ordem.centroDeTrabalho}</Typography>
+              </TableCell>
+              <TableCell align="right">
+                <Typography variant="body2">{ordem.quantidade.toLocaleString('pt-BR')}</Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="body2" color="text.secondary">
+                  {formatarData(ordem.inicioPlanejado)}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="body2" color="text.secondary">
+                  {formatarData(ordem.fimPlanejado)}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <StatusOrdemBadge status={ordem.status} />
               </TableCell>
               <TableCell align="center">
                 {ordem.atrasada && (
                   <Tooltip title="Ordem atrasada">
-                    <WarningAmberIcon color="error" fontSize="small" />
+                    <WarningAmberIcon color="error" sx={{ fontSize: 16 }} />
                   </Tooltip>
                 )}
               </TableCell>
-              <TableCell align="center">
-                {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && (
-                  <Tooltip title="Atualizar status">
+              <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                  {mostrarAcoes && !['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && (
+                    <Tooltip title="Atualizar status">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); onAtualizarStatus(ordem) }}
+                        color="primary"
+                      >
+                        <EditIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  <Tooltip title="Ver detalhes">
                     <IconButton
                       size="small"
-                      onClick={() => onAtualizarStatus(ordem)}
-                      color="primary"
+                      onClick={() => navigate(`/ordens/${ordem.id}`)}
+                      color="default"
                     >
-                      <EditIcon fontSize="small" />
+                      <OpenInNewIcon sx={{ fontSize: 16 }} />
                     </IconButton>
                   </Tooltip>
-                )}
+                </Box>
               </TableCell>
             </TableRow>
           ))}
@@ -117,7 +123,6 @@ export function OrdemTable({ ordens, onAtualizarStatus }: OrdemTableProps) {
 }
 
 function formatarData(data: string): string {
-  // "2026-08-10" → "10/08/2026"
   const [ano, mes, dia] = data.split('-')
   return `${dia}/${mes}/${ano}`
 }

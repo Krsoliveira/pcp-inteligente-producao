@@ -2,6 +2,7 @@ package com.krsoliveira.pcp.domain.ordem;
 
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -14,6 +15,10 @@ import java.util.UUID;
  * Campos substituídos na Fase 5a (ADR-0007):
  *   - {@code produto} (VARCHAR) → {@code materialId} + {@code listaTecnicaId} (FKs)
  *
+ * Campos adicionados na Fase 5b:
+ *   - {@code quantidadeProduzida} — preenchido ao concluir a ordem
+ *   - {@code tipoOrdemId} — categorização opcional definida pelo usuário
+ *
  * Classe de domínio PURA: sem anotações de framework (Spring, JPA).
  * Toda mudança de estado passa por métodos que validam as regras de negócio —
  * é impossível construir ou levar uma ordem a um estado inválido.
@@ -24,8 +29,10 @@ public class OrdemProducao {
     private final String codigo;
     private final UUID materialId;
     private final UUID listaTecnicaId;
+    private final UUID tipoOrdemId;
     private final String centroDeTrabalho;
     private final int quantidade;
+    private BigDecimal quantidadeProduzida;
     private final LocalDate inicioPlanejado;
     private final LocalDate fimPlanejado;
     private StatusOrdemProducao status;
@@ -33,15 +40,18 @@ public class OrdemProducao {
     private Instant atualizadaEm;
 
     private OrdemProducao(UUID id, String codigo, UUID materialId, UUID listaTecnicaId,
-                          String centroDeTrabalho, int quantidade,
+                          UUID tipoOrdemId, String centroDeTrabalho, int quantidade,
+                          BigDecimal quantidadeProduzida,
                           LocalDate inicioPlanejado, LocalDate fimPlanejado,
                           StatusOrdemProducao status, Instant criadaEm, Instant atualizadaEm) {
         this.id = id;
         this.codigo = codigo;
         this.materialId = materialId;
         this.listaTecnicaId = listaTecnicaId;
+        this.tipoOrdemId = tipoOrdemId;
         this.centroDeTrabalho = centroDeTrabalho;
         this.quantidade = quantidade;
+        this.quantidadeProduzida = quantidadeProduzida;
         this.inicioPlanejado = inicioPlanejado;
         this.fimPlanejado = fimPlanejado;
         this.status = status;
@@ -52,9 +62,11 @@ public class OrdemProducao {
     /**
      * Fábrica para uma ordem NOVA. Valida todas as invariantes antes de criar —
      * se retornar, a ordem é garantidamente válida e nasce PLANEJADA.
+     *
+     * @param tipoOrdemId categorização da ordem (opcional — pode ser {@code null})
      */
     public static OrdemProducao criar(String codigo, UUID materialId, UUID listaTecnicaId,
-                                      String centroDeTrabalho, int quantidade,
+                                      UUID tipoOrdemId, String centroDeTrabalho, int quantidade,
                                       LocalDate inicioPlanejado, LocalDate fimPlanejado) {
         if (codigo == null || codigo.isBlank()) {
             throw new RegraDeNegocioException("O código da ordem é obrigatório.");
@@ -80,8 +92,8 @@ public class OrdemProducao {
         }
         Instant agora = Instant.now();
         return new OrdemProducao(UUID.randomUUID(), codigo.trim(), materialId, listaTecnicaId,
-                centroDeTrabalho.trim(), quantidade, inicioPlanejado, fimPlanejado,
-                StatusOrdemProducao.PLANEJADA, agora, agora);
+                tipoOrdemId, centroDeTrabalho.trim(), quantidade, null,
+                inicioPlanejado, fimPlanejado, StatusOrdemProducao.PLANEJADA, agora, agora);
     }
 
     /**
@@ -89,12 +101,15 @@ public class OrdemProducao {
      * Não revalida invariantes: os dados persistidos já passaram por {@link #criar}.
      */
     public static OrdemProducao reconstituir(UUID id, String codigo, UUID materialId,
-                                             UUID listaTecnicaId, String centroDeTrabalho,
-                                             int quantidade, LocalDate inicioPlanejado,
-                                             LocalDate fimPlanejado, StatusOrdemProducao status,
+                                             UUID listaTecnicaId, UUID tipoOrdemId,
+                                             String centroDeTrabalho, int quantidade,
+                                             BigDecimal quantidadeProduzida,
+                                             LocalDate inicioPlanejado, LocalDate fimPlanejado,
+                                             StatusOrdemProducao status,
                                              Instant criadaEm, Instant atualizadaEm) {
-        return new OrdemProducao(id, codigo, materialId, listaTecnicaId, centroDeTrabalho,
-                quantidade, inicioPlanejado, fimPlanejado, status, criadaEm, atualizadaEm);
+        return new OrdemProducao(id, codigo, materialId, listaTecnicaId, tipoOrdemId,
+                centroDeTrabalho, quantidade, quantidadeProduzida,
+                inicioPlanejado, fimPlanejado, status, criadaEm, atualizadaEm);
     }
 
     /**
@@ -111,6 +126,24 @@ public class OrdemProducao {
     }
 
     /**
+     * Conclui a ordem de produção com a quantidade efetivamente produzida.
+     * Só é possível a partir do status EM_PRODUCAO. A validação de consumos
+     * e geração de lote é responsabilidade do caso de uso {@code ConcluirOrdemProducao}.
+     */
+    public void concluir(BigDecimal quantidadeProduzida) {
+        if (!status.podeSerConcluida()) {
+            throw new RegraDeNegocioException(
+                    "Apenas ordens EM_PRODUCAO podem ser concluídas. Status atual: %s.".formatted(status));
+        }
+        if (quantidadeProduzida == null || quantidadeProduzida.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RegraDeNegocioException("A quantidade produzida deve ser maior que zero.");
+        }
+        this.quantidadeProduzida = quantidadeProduzida;
+        this.status = StatusOrdemProducao.CONCLUIDA;
+        this.atualizadaEm = Instant.now();
+    }
+
+    /**
      * Uma ordem está atrasada se continua aberta depois da data de fim planejada.
      * A data de referência é parâmetro (e não {@code LocalDate.now()}) para o
      * método ser determinístico e testável.
@@ -123,8 +156,10 @@ public class OrdemProducao {
     public String getCodigo() { return codigo; }
     public UUID getMaterialId() { return materialId; }
     public UUID getListaTecnicaId() { return listaTecnicaId; }
+    public UUID getTipoOrdemId() { return tipoOrdemId; }
     public String getCentroDeTrabalho() { return centroDeTrabalho; }
     public int getQuantidade() { return quantidade; }
+    public BigDecimal getQuantidadeProduzida() { return quantidadeProduzida; }
     public LocalDate getInicioPlanejado() { return inicioPlanejado; }
     public LocalDate getFimPlanejado() { return fimPlanejado; }
     public StatusOrdemProducao getStatus() { return status; }
