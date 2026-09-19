@@ -12,7 +12,7 @@ import java.util.UUID;
  * Implementação em memória do repositório de materiais — usada nos testes de use case
  * para evitar dependência de Spring ou banco de dados.
  */
-class MaterialRepositoryEmMemoria implements MaterialRepository {
+public class MaterialRepositoryEmMemoria implements MaterialRepository {
 
     private final List<Material> materiais = new ArrayList<>();
 
