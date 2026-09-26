@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginPage } from './pages/LoginPage'
+import { CadastroPage } from './pages/CadastroPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { OrdensPage } from './pages/OrdensPage'
 import { OrdemDetalhePage } from './pages/OrdemDetalhePage'
@@ -14,6 +15,10 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/cadastro',
+    element: <CadastroPage />,
   },
   {
     element: <ProtectedRoute />,

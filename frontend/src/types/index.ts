@@ -164,10 +164,19 @@ export interface TokenResponse {
   token: string
 }
 
+/** Autocadastro: o backend sempre cria o usuário com perfil PLANEJADOR. */
+export interface RegistrarRequest {
+  nome: string
+  email: string
+  senha: string
+}
+
 // ---- Erros da API (Problem Details RFC 9457) ----
 
 export interface ApiError {
   title: string
   status: number
   detail: string
+  /** Erros de validação por campo (400). */
+  erros?: Record<string, string>
 }
