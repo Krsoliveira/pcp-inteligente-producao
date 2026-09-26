@@ -34,7 +34,7 @@ import { buscarOrdemPorId, concluirOrdem } from '../api/ordens'
 import { listarConsumosPorOrdem, registrarConsumo } from '../api/consumos'
 import { listarLotesPorOrdem } from '../api/lotes'
 import { buscarListaTecnicaPorId } from '../api/listasTecnicas'
-import { buscarMaterialPorId } from '../api/materiais'
+import { buscarMaterialPorId, listarMateriais } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { StatusOrdemBadge, StatusLoteBadge } from '../components/StatusBadge'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
@@ -70,6 +70,18 @@ export function OrdemDetalhePage() {
     queryFn: () => buscarListaTecnicaPorId(ordemQuery.data!.listaTecnicaId),
     enabled: !!ordemQuery.data?.listaTecnicaId,
   })
+
+  // Catálogo de materiais (compartilhado em cache) para exibir código em vez de ID.
+  const materiaisQuery = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
+  const materialPorId = new Map((materiaisQuery.data ?? []).map((m) => [m.id, m]))
+  const rotuloMaterial = (id: string) => {
+    const m = materialPorId.get(id)
+    return (
+      <Tooltip title={m?.descricao ?? ''}>
+        <Typography variant="body2" fontWeight={500}>{m?.codigo ?? '…'}</Typography>
+      </Tooltip>
+    )
+  }
 
   const materialQuery = useQuery({
     queryKey: ['material', ordemQuery.data?.materialId],
@@ -190,9 +202,7 @@ export function OrdemDetalhePage() {
                       {listaTecnica.itens.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell>
-                            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                              {item.materialComponenteId.substring(0, 8)}…
-                            </Typography>
+                            {rotuloMaterial(item.materialComponenteId)}
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant="body2">{Number(item.quantidadePlanejada).toLocaleString('pt-BR')}</Typography>
@@ -258,9 +268,7 @@ export function OrdemDetalhePage() {
                         return (
                           <TableRow key={c.id}>
                             <TableCell>
-                              <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                                {c.materialId.substring(0, 8)}…
-                              </Typography>
+                              {rotuloMaterial(c.materialId)}
                             </TableCell>
                             <TableCell align="right"><Typography variant="body2">{c.quantidadePlanejada.toLocaleString('pt-BR')}</Typography></TableCell>
                             <TableCell align="right">
