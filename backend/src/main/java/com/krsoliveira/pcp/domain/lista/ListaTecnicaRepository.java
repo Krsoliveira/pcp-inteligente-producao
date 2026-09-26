@@ -14,6 +14,8 @@ public interface ListaTecnicaRepository {
 
     Optional<ListaTecnica> buscarPorId(UUID id);
 
+    List<ListaTecnica> listarTodas();
+
     List<ListaTecnica> listarPorMaterial(UUID materialId);
 
     Optional<ListaTecnica> buscarAtivaParaMaterial(UUID materialId);

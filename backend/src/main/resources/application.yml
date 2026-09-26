@@ -29,3 +29,9 @@ app:
     secret: ${JWT_SECRET:minha-chave-secreta-de-dev-com-mais-de-32-chars-nao-use-em-producao}
     # 8 horas em milissegundos (padrão). Sobrescreva com JWT_EXPIRACAO_MS.
     expiracao-ms: ${JWT_EXPIRACAO_MS:28800000}
+  # Administrador inicial (perfil GERENTE), criado na inicialização se ADMIN_EMAIL
+  # estiver definido. As credenciais vêm SOMENTE do ambiente — nunca do Git.
+  admin:
+    nome: ${ADMIN_NOME:}
+    email: ${ADMIN_EMAIL:}
+    senha: ${ADMIN_SENHA:}

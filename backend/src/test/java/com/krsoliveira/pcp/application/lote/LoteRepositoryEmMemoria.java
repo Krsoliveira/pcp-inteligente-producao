@@ -45,6 +45,12 @@ public class LoteRepositoryEmMemoria implements LoteRepository {
     }
 
     @Override
+    public boolean existeEntrada(UUID materialId, String fornecedor, String notaFiscal) {
+        return dados.values().stream().anyMatch(l -> materialId.equals(l.getMaterialId())
+                && fornecedor.equals(l.getFornecedor()) && notaFiscal.equals(l.getNotaFiscal()));
+    }
+
+    @Override
     public int proximoSequencial(UUID materialId, String prefixo) {
         long count = dados.values().stream()
                 .filter(l -> l.getNumeroLote().startsWith(prefixo))

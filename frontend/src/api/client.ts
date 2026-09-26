@@ -7,6 +7,8 @@ import { useAuthStore } from '../store/authStore'
  *   ou pelo reverse proxy em produção.
  * - Interceptor de request: injeta o token JWT em cada chamada autenticada.
  * - Interceptor de response: em caso de 401, desloga e redireciona para /login.
+ *   Rotas de autenticação ficam de fora: um 401 no login significa credenciais
+ *   inválidas e deve ser mostrado na própria tela, sem recarregar a página.
  */
 export const apiClient = axios.create({
   baseURL: '/api',
@@ -24,7 +26,8 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
+    const rotaDeAutenticacao = axios.isAxiosError(error) && error.config?.url?.startsWith('/v1/auth/')
+    if (axios.isAxiosError(error) && error.response?.status === 401 && !rotaDeAutenticacao) {
       useAuthStore.getState().logout()
       window.location.href = '/login'
     }

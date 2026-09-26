@@ -41,6 +41,12 @@ public class LoteRepositoryAdapter implements LoteRepository {
     }
 
     @Override
+    public boolean existeEntrada(UUID materialId, String fornecedor, String notaFiscal) {
+        return springData.existsByMaterialIdAndFornecedorAndNotaFiscal(
+                materialId, fornecedor, notaFiscal);
+    }
+
+    @Override
     public List<Lote> listarPorOrdemProducao(UUID ordemProducaoId) {
         return springData.findByOrdemProducaoId(ordemProducaoId).stream()
                 .map(LoteJpaEntity::paraDominio)

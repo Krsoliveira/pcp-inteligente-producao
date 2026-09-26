@@ -22,6 +22,10 @@ public class ConsultarListaTecnica {
                 .orElseThrow(() -> new ListaTecnicaNaoEncontradaException(id));
     }
 
+    public List<ListaTecnica> listarTodas() {
+        return listaTecnicaRepository.listarTodas();
+    }
+
     public List<ListaTecnica> listarPorMaterial(UUID materialId) {
         return listaTecnicaRepository.listarPorMaterial(materialId);
     }

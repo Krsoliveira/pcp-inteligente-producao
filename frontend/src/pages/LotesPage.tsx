@@ -13,29 +13,43 @@ import Typography from '@mui/material/Typography'
 import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
 import Tooltip from '@mui/material/Tooltip'
+import Button from '@mui/material/Button'
+import Snackbar from '@mui/material/Snackbar'
+import AddIcon from '@mui/icons-material/Add'
 import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import { useQuery } from '@tanstack/react-query'
 import { listarLotes } from '../api/lotes'
+import { listarMateriais } from '../api/materiais'
+import { EntradaMaterialDialog } from '../components/lotes/EntradaMaterialDialog'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { StatusLoteBadge } from '../components/StatusBadge'
-import type { StatusLote } from '../types'
+import type { Lote, StatusLote } from '../types'
 
 export function LotesPage() {
   const [filtroStatus, setFiltroStatus] = useState<StatusLote | 'TODOS'>('TODOS')
   const [busca, setBusca] = useState('')
+  const [dialogAberto, setDialogAberto] = useState(false)
+  const [loteRegistrado, setLoteRegistrado] = useState<Lote | null>(null)
 
   const { data: lotes = [], isLoading, isError } = useQuery({
     queryKey: ['lotes'],
     queryFn: listarLotes,
   })
 
+  const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
+  const materialPorId = new Map(materiais.map((m) => [m.id, m]))
+
   const hoje = new Date()
 
   const filtrados = lotes.filter((l) => {
     const statusOk = filtroStatus === 'TODOS' || l.status === filtroStatus
-    const buscaOk = busca === '' || l.numeroLote.toLowerCase().includes(busca.toLowerCase())
+    const termo = busca.toLowerCase()
+    const buscaOk = busca === ''
+      || l.numeroLote.toLowerCase().includes(termo)
+      || (l.notaFiscal ?? '').toLowerCase().includes(termo)
+      || (l.fornecedor ?? '').toLowerCase().includes(termo)
     return statusOk && buscaOk
   })
 
@@ -49,9 +63,14 @@ export function LotesPage() {
   return (
     <Box>
       <PageHeader
-        titulo="Lotes de Produção"
-        subtitulo={isLoading ? '…' : `${lotes.length} lotes gerados`}
+        titulo="Lotes"
+        subtitulo={isLoading ? '…' : `${lotes.length} lotes de produção e de compra`}
         breadcrumbs={[{ label: 'Produção' }, { label: 'Lotes' }]}
+        action={
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
+            Entrada de Material
+          </Button>
+        }
       />
 
       {vencendoEm30 > 0 && (
@@ -65,7 +84,7 @@ export function LotesPage() {
       <Card>
         <Box sx={{ p: 2, display: 'flex', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid', borderColor: 'divider' }}>
           <TextField
-            placeholder="Buscar por número do lote…"
+            placeholder="Buscar por lote, nota fiscal ou fornecedor…"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             sx={{ flex: 1, minWidth: 220 }}
@@ -91,7 +110,9 @@ export function LotesPage() {
           <EmptyState
             Icone={AllInboxIcon}
             titulo="Nenhum lote encontrado"
-            descricao="Os lotes são gerados automaticamente ao concluir ordens de produção."
+            descricao="Lotes nascem ao concluir ordens de produção ou ao registrar a entrada de matéria-prima."
+            acaoLabel="Entrada de Material"
+            onAcao={() => setDialogAberto(true)}
           />
         ) : (
           <TableContainer>
@@ -99,6 +120,8 @@ export function LotesPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>Número do Lote</TableCell>
+                  <TableCell>Material</TableCell>
+                  <TableCell>Origem</TableCell>
                   <TableCell align="right">Quantidade</TableCell>
                   <TableCell>Fabricação</TableCell>
                   <TableCell>Validade</TableCell>
@@ -117,6 +140,18 @@ export function LotesPage() {
                         <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
                           {lote.numeroLote}
                         </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{materialPorId.get(lote.materialId)?.codigo ?? '—'}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        {lote.origem === 'COMPRA' ? (
+                          <Tooltip title={`Fornecedor: ${lote.fornecedor}`}>
+                            <Typography variant="body2">Compra · NF {lote.notaFiscal}</Typography>
+                          </Tooltip>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">Produção</Typography>
+                        )}
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="body2">{lote.quantidade.toLocaleString('pt-BR')} {lote.unidadeDeMedida}</Typography>
@@ -145,6 +180,22 @@ export function LotesPage() {
           </TableContainer>
         )}
       </Card>
+
+      <EntradaMaterialDialog
+        aberto={dialogAberto}
+        onFechar={() => setDialogAberto(false)}
+        onRegistrado={setLoteRegistrado}
+      />
+      <Snackbar
+        open={!!loteRegistrado}
+        autoHideDuration={6000}
+        onClose={() => setLoteRegistrado(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" onClose={() => setLoteRegistrado(null)}>
+          Entrada registrada. Lote {loteRegistrado?.numeroLote} disponível.
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

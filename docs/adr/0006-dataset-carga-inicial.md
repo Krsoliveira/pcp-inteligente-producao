@@ -1,6 +1,6 @@
 # ADR-0006 — Dataset e estratégia de carga inicial de ordens de produção
 
-**Status:** Aceito  
+**Status:** Aceito — seção "Fonte dos dados" substituída pelo ADR-0009  
 **Data:** 2026-08-05  
 **Fase:** 4 — Carga de dados reais
 

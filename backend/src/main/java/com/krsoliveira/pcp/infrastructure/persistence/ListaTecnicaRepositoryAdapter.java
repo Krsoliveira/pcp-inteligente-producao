@@ -32,6 +32,13 @@ public class ListaTecnicaRepositoryAdapter implements ListaTecnicaRepository {
     }
 
     @Override
+    public List<ListaTecnica> listarTodas() {
+        return springDataRepository.findAll().stream()
+                .map(ListaTecnicaJpaEntity::paraDominio)
+                .toList();
+    }
+
+    @Override
     public List<ListaTecnica> listarPorMaterial(UUID materialId) {
         return springDataRepository.findByMaterialId(materialId).stream()
                 .map(ListaTecnicaJpaEntity::paraDominio)

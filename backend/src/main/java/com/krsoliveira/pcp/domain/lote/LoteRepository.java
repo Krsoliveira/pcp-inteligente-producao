@@ -21,6 +21,12 @@ public interface LoteRepository {
     Optional<Lote> buscarPorNumeroLote(String numeroLote);
 
     /**
+     * Já existe entrada deste material com a mesma nota fiscal do mesmo fornecedor?
+     * Evita registrar o mesmo recebimento duas vezes.
+     */
+    boolean existeEntrada(UUID materialId, String fornecedor, String notaFiscal);
+
+    /**
      * Retorna o próximo número sequencial para geração do número do lote.
      * Conta quantos lotes já existem para o mesmo material no mesmo ano-mês
      * e retorna o próximo na sequência.

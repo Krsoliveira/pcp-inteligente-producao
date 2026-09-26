@@ -14,6 +14,9 @@ public interface LoteSpringDataRepository extends JpaRepository<LoteJpaEntity, U
 
     Optional<LoteJpaEntity> findByNumeroLote(String numeroLote);
 
+    boolean existsByMaterialIdAndFornecedorAndNotaFiscal(UUID materialId, String fornecedor,
+                                                         String notaFiscal);
+
     @Query("SELECT COUNT(l) + 1 FROM LoteJpaEntity l WHERE l.numeroLote LIKE :prefixo%")
     int proximoSequencial(@Param("prefixo") String prefixo);
 }

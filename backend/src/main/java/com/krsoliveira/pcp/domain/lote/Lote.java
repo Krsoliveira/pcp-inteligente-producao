@@ -5,10 +5,16 @@ import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 /**
- * Lote de produção: gerado automaticamente ao concluir uma ordem de produção.
+ * Lote rastreável de material, com duas origens possíveis:
+ * <ul>
+ *   <li><b>Produção</b> — gerado ao concluir uma ordem ({@link #criar}).</li>
+ *   <li><b>Compra</b> — entrada de matéria-prima recebida de fornecedor, com nota
+ *       fiscal ({@link #receberCompra}).</li>
+ * </ul>
  * Cada lote possui número rastreável, quantidade, datas de fabricação/validade
  * e status de ciclo de vida.
  *
@@ -16,10 +22,16 @@ import java.util.UUID;
  */
 public class Lote {
 
+    static final int FORNECEDOR_MAX = 150;
+    static final int NOTA_FISCAL_MAX = 44;
+    private static final DateTimeFormatter FORMATO_ANO_MES = DateTimeFormatter.ofPattern("yyyyMM");
+
     private final UUID id;
     private final String numeroLote;
     private final UUID materialId;
     private final UUID ordemProducaoId;
+    private final String fornecedor;
+    private final String notaFiscal;
     private final BigDecimal quantidade;
     private final String unidadeDeMedida;
     private final LocalDate dataFabricacao;
@@ -28,6 +40,7 @@ public class Lote {
     private final Instant criadoEm;
 
     private Lote(UUID id, String numeroLote, UUID materialId, UUID ordemProducaoId,
+                 String fornecedor, String notaFiscal,
                  BigDecimal quantidade, String unidadeDeMedida,
                  LocalDate dataFabricacao, LocalDate dataValidade,
                  StatusLote status, Instant criadoEm) {
@@ -35,6 +48,8 @@ public class Lote {
         this.numeroLote = numeroLote;
         this.materialId = materialId;
         this.ordemProducaoId = ordemProducaoId;
+        this.fornecedor = fornecedor;
+        this.notaFiscal = notaFiscal;
         this.quantidade = quantidade;
         this.unidadeDeMedida = unidadeDeMedida;
         this.dataFabricacao = dataFabricacao;
@@ -44,14 +59,54 @@ public class Lote {
     }
 
     /**
-     * Fábrica para um lote NOVO. Valida todas as invariantes antes de criar —
+     * Fábrica para um lote de PRODUÇÃO. Valida todas as invariantes antes de criar —
      * se retornar, o lote é garantidamente válido e nasce DISPONIVEL.
      *
-     * @param ordemProducaoId pode ser {@code null} para entradas manuais futuras
+     * @param ordemProducaoId ordem que gerou o lote (para compras, use {@link #receberCompra})
      */
     public static Lote criar(String numeroLote, UUID materialId, UUID ordemProducaoId,
                              BigDecimal quantidade, String unidadeDeMedida,
                              LocalDate dataFabricacao, LocalDate dataValidade) {
+        validarDadosComuns(numeroLote, materialId, quantidade, unidadeDeMedida,
+                dataFabricacao, dataValidade);
+        return new Lote(UUID.randomUUID(), numeroLote.trim(), materialId, ordemProducaoId,
+                null, null, quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
+                StatusLote.DISPONIVEL, Instant.now());
+    }
+
+    /**
+     * Fábrica para um lote COMPRADO (entrada de matéria-prima). Fornecedor e nota fiscal
+     * são obrigatórios — são a rastreabilidade de origem do material.
+     * A regra "somente matéria-prima" é validada pelo caso de uso, que conhece o Material.
+     */
+    public static Lote receberCompra(String numeroLote, UUID materialId,
+                                     String fornecedor, String notaFiscal,
+                                     BigDecimal quantidade, String unidadeDeMedida,
+                                     LocalDate dataFabricacao, LocalDate dataValidade) {
+        validarDadosComuns(numeroLote, materialId, quantidade, unidadeDeMedida,
+                dataFabricacao, dataValidade);
+        if (fornecedor == null || fornecedor.isBlank()) {
+            throw new RegraDeNegocioException("O fornecedor é obrigatório na entrada de material.");
+        }
+        if (fornecedor.trim().length() > FORNECEDOR_MAX) {
+            throw new RegraDeNegocioException(
+                    "O fornecedor deve ter no máximo %d caracteres.".formatted(FORNECEDOR_MAX));
+        }
+        if (notaFiscal == null || notaFiscal.isBlank()) {
+            throw new RegraDeNegocioException("A nota fiscal é obrigatória na entrada de material.");
+        }
+        if (notaFiscal.trim().length() > NOTA_FISCAL_MAX) {
+            throw new RegraDeNegocioException(
+                    "A nota fiscal deve ter no máximo %d caracteres.".formatted(NOTA_FISCAL_MAX));
+        }
+        return new Lote(UUID.randomUUID(), numeroLote.trim(), materialId, null,
+                fornecedor.trim(), notaFiscal.trim(), quantidade, unidadeDeMedida.trim(),
+                dataFabricacao, dataValidade, StatusLote.DISPONIVEL, Instant.now());
+    }
+
+    private static void validarDadosComuns(String numeroLote, UUID materialId,
+                                           BigDecimal quantidade, String unidadeDeMedida,
+                                           LocalDate dataFabricacao, LocalDate dataValidade) {
         if (numeroLote == null || numeroLote.isBlank()) {
             throw new RegraDeNegocioException("O número do lote é obrigatório.");
         }
@@ -74,9 +129,21 @@ public class Lote {
             throw new RegraDeNegocioException(
                     "A data de validade não pode ser anterior à data de fabricação.");
         }
-        return new Lote(UUID.randomUUID(), numeroLote.trim(), materialId, ordemProducaoId,
-                quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
-                StatusLote.DISPONIVEL, Instant.now());
+    }
+
+    /**
+     * Prefixo do número de lote: {@code MAT-{codigoMaterial}-{yyyyMM}}.
+     * O número completo acrescenta um sequencial por prefixo — ver {@link #numeroLote}.
+     */
+    public static String prefixoNumeroLote(String codigoMaterial, LocalDate dataFabricacao) {
+        return "MAT-%s-%s".formatted(codigoMaterial, dataFabricacao.format(FORMATO_ANO_MES));
+    }
+
+    /**
+     * Número rastreável do lote: {@code MAT-{codigoMaterial}-{yyyyMM}-{seq:03d}}.
+     */
+    public static String numeroLote(String prefixo, int sequencial) {
+        return "%s-%03d".formatted(prefixo, sequencial);
     }
 
     /**
@@ -84,12 +151,17 @@ public class Lote {
      * Não revalida invariantes.
      */
     public static Lote reconstituir(UUID id, String numeroLote, UUID materialId,
-                                    UUID ordemProducaoId, BigDecimal quantidade,
-                                    String unidadeDeMedida, LocalDate dataFabricacao,
-                                    LocalDate dataValidade, StatusLote status,
-                                    Instant criadoEm) {
-        return new Lote(id, numeroLote, materialId, ordemProducaoId, quantidade,
-                unidadeDeMedida, dataFabricacao, dataValidade, status, criadoEm);
+                                    UUID ordemProducaoId, String fornecedor, String notaFiscal,
+                                    BigDecimal quantidade, String unidadeDeMedida,
+                                    LocalDate dataFabricacao, LocalDate dataValidade,
+                                    StatusLote status, Instant criadoEm) {
+        return new Lote(id, numeroLote, materialId, ordemProducaoId, fornecedor, notaFiscal,
+                quantidade, unidadeDeMedida, dataFabricacao, dataValidade, status, criadoEm);
+    }
+
+    /** O lote veio de compra (entrada de material) e não de uma ordem de produção? */
+    public boolean ehDeCompra() {
+        return notaFiscal != null;
     }
 
     /**
@@ -133,6 +205,8 @@ public class Lote {
     public String getNumeroLote() { return numeroLote; }
     public UUID getMaterialId() { return materialId; }
     public UUID getOrdemProducaoId() { return ordemProducaoId; }
+    public String getFornecedor() { return fornecedor; }
+    public String getNotaFiscal() { return notaFiscal; }
     public BigDecimal getQuantidade() { return quantidade; }
     public String getUnidadeDeMedida() { return unidadeDeMedida; }
     public LocalDate getDataFabricacao() { return dataFabricacao; }

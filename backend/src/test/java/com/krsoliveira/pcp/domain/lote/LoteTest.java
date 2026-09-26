@@ -158,4 +158,37 @@ class LoteTest {
                     .hasMessageContaining("disponíveis");
         }
     }
+
+    @Nested
+    @DisplayName("Entrada por compra")
+    class EntradaPorCompra {
+
+        @Test
+        @DisplayName("lote de compra guarda fornecedor e nota fiscal e não tem ordem")
+        void loteDeCompra() {
+            Lote lote = Lote.receberCompra("MAT-MP-001-202609-001", MATERIAL_ID, "Fornecedor",
+                    "NF-1", new BigDecimal("10"), "kg",
+                    LocalDate.of(2026, 9, 1), LocalDate.of(2027, 9, 1));
+
+            assertThat(lote.ehDeCompra()).isTrue();
+            assertThat(lote.getOrdemProducaoId()).isNull();
+            assertThat(lote.getStatus()).isEqualTo(StatusLote.DISPONIVEL);
+        }
+
+        @Test
+        @DisplayName("lote de produção não é de compra")
+        void loteDeProducao() {
+            assertThat(loteValido().ehDeCompra()).isFalse();
+        }
+
+        @Test
+        @DisplayName("nota fiscal acima de 44 caracteres é rejeitada")
+        void notaFiscalLonga() {
+            assertThatThrownBy(() -> Lote.receberCompra("MAT-1", MATERIAL_ID, "Fornecedor",
+                    "9".repeat(45), new BigDecimal("10"), "kg",
+                    LocalDate.of(2026, 9, 1), LocalDate.of(2027, 9, 1)))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("44");
+        }
+    }
 }

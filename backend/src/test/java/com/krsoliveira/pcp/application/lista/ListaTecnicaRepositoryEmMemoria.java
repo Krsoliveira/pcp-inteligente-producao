@@ -26,6 +26,11 @@ public class ListaTecnicaRepositoryEmMemoria implements ListaTecnicaRepository {
     }
 
     @Override
+    public List<ListaTecnica> listarTodas() {
+        return List.copyOf(dados.values());
+    }
+
+    @Override
     public List<ListaTecnica> listarPorMaterial(UUID materialId) {
         return dados.values().stream()
                 .filter(l -> materialId.equals(l.getMaterialId()))
