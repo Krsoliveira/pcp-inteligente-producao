@@ -12,7 +12,12 @@
 -- Em produção, uma migração deste tipo exigiria: backup, script de conversão
 -- de dados e janela de manutenção — documentado aqui para registro.
 
-TRUNCATE TABLE ordem_producao;
+-- CASCADE é obrigatório: a V6 (aplicada antes desta) já criou lote e
+-- consumo_material com FK para ordem_producao, e o PostgreSQL recusa TRUNCATE
+-- em tabela referenciada mesmo vazia. Sem CASCADE a migração falha em banco novo.
+-- Em banco novo essas tabelas estão vazias; em banco de dev, os dados delas
+-- apontam para ordens descartadas e também precisam sair.
+TRUNCATE TABLE ordem_producao CASCADE;
 
 ALTER TABLE ordem_producao
     DROP COLUMN produto;
