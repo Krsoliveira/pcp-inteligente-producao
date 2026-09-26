@@ -150,7 +150,23 @@ npm install
 npm run dev
 ```
 
-Acesse em <http://localhost:5173>.
+Acesse em <http://localhost:5173> e use **Criar conta** (o autocadastro cria o perfil
+Planejador).
+
+### 5. Usuário administrador (opcional)
+
+A API cria um usuário **GERENTE** na inicialização a partir de variáveis de ambiente.
+As credenciais nunca vão para o código nem para o Git. No PowerShell, antes de subir a API:
+
+```powershell
+$env:ADMIN_NOME  = "Seu Nome"
+$env:ADMIN_EMAIL = "seu@email.com"
+$env:ADMIN_SENHA = "uma-senha-forte"
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev,seed"
+```
+
+É idempotente: se o e-mail já existir, nada muda (uma conta existente nunca é promovida).
+Em produção (Render), defina as mesmas variáveis no painel do serviço.
 
 A variável `VITE_API_BASE_URL` em `frontend/.env.example` pode ser deixada vazia em
 desenvolvimento — o Vite usa proxy automático para `localhost:8080`.

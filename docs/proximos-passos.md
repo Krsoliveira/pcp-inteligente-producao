@@ -19,6 +19,9 @@ Atualize este arquivo ao encerrar cada sessão de trabalho.
    dataset estão em dia.
 4. **Tela de cadastro** (`/cadastro`) — o autocadastro cria sempre o perfil
    `PLANEJADOR`, e o backend garante essa regra (um `perfil` enviado é ignorado).
+5. **Administrador inicial** — a API cria um usuário `GERENTE` na inicialização a partir
+   de `ADMIN_NOME`, `ADMIN_EMAIL` e `ADMIN_SENHA` (variáveis de ambiente, fora do Git).
+   Idempotente e nunca promove conta existente. Ver README, seção 5.
 
 ## Pendências
 
@@ -41,8 +44,7 @@ Atualize este arquivo ao encerrar cada sessão de trabalho.
 3. **Fase 5c — módulo de IA**: previsão de demanda, análise de atrasos e
    recomendações, usando o histórico do dataset sintético.
 4. Depois:
-   - forma de criar/promover usuários `GERENTE` (hoje o autocadastro só cria
-     `PLANEJADOR`);
+   - tela/endpoint para um `GERENTE` promover outros usuários;
    - testes automatizados de frontend (Vitest);
    - carregar o ECharts sob demanda (bundle de ~1 MB).
 
