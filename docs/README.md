@@ -36,3 +36,8 @@ Regras dos ADRs deste projeto:
 | [0002](adr/0002-rabbitmq-mensageria.md) | RabbitMQ como mensageria | Aceito |
 | [0003](adr/0003-openai-provedor-ia.md) | OpenAI como provedor de IA (com camada de abstração) | Aceito |
 | [0004](adr/0004-render-hospedagem-backend.md) | Render como hospedagem do backend | Aceito |
+| [0005](adr/0005-autenticacao-jwt.md) | Autenticação com JWT | Aceito |
+| [0006](adr/0006-dataset-carga-inicial.md) | Dataset e estratégia de carga inicial | Substituído parcialmente por ADR-0009 |
+| [0007](adr/0007-modelo-material-lista-tecnica-lote.md) | Material, Lista Técnica (BOM), Consumo e Lote | Aceito |
+| [0008](adr/0008-banco-de-dados-provedor.md) | Banco de dados: PostgreSQL local e Neon em produção | Aceito |
+| [0009](adr/0009-dataset-sintetico-modelo-expandido.md) | Dataset sintético para o modelo expandido | Aceito |

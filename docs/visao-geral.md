@@ -53,9 +53,9 @@ Artificial)** como copiloto do planejador:
 | 1 | Backend núcleo: API de ordens de produção ponta a ponta | Concluída |
 | 2 | Autenticação e perfis (JWT) | Concluída |
 | 3 | Frontend: dashboard inicial | Concluída |
-| 4 | Carga de dados reais (Kaggle) | Concluída |
-| 5a | Material + Lista Técnica (BOM) + adaptação de OrdemProducao | Em andamento |
-| 5b | ConsumoMaterial + Lote + ConcluirOrdemProducao | Pendente |
+| 4 | Carga de dados inicial (substituída pelo dataset sintético do ADR-0009) | Concluída |
+| 5a | Material + Lista Técnica (BOM) + adaptação de OrdemProducao | Concluída |
+| 5b | ConsumoMaterial + Lote + ConcluirOrdemProducao + dataset sintético (ADR-0009) | Concluída |
 | 5c | Módulo de IA (GeradorDeRecomendacoes) | Pendente |
 | 6 | Integrações simuladas e deploy | Pendente |
 

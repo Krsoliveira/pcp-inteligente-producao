@@ -35,10 +35,10 @@ Dashboard para planejamento da produção com apoio de IA: previsão de demanda,
 
 ## Dados (`data/`)
 
-Datasets reais do Kaggle:
-- Manufacturing Dataset
-- Supply Chain Dataset
-- Production Planning Dataset
+Dataset **sintético** e determinístico de um fabricante de peças mecânicas — materiais,
+listas técnicas (BOM) versionadas, ~740 ordens, consumos com desvios justificados e lotes
+([ADR-0009](docs/adr/0009-dataset-sintetico-modelo-expandido.md)). Nenhum dataset público
+cobre BOM + consumo + lote com coerência referencial. Detalhes em [`data/`](data/README.md).
 
 ## Diferencial
 
@@ -71,7 +71,7 @@ Pipeline de CI em `.github/workflows/ci.yml`, ativado automaticamente ao dar pus
 ├── backend/             # Java + Spring Boot (Clean Architecture)
 ├── frontend/            # React + TypeScript
 ├── docs/                # Documentação: visão, arquitetura, glossário e ADRs
-├── data/                # Datasets e scripts de carga
+├── data/                # Gerador do dataset sintético (CSVs em backend/src/main/resources/dados)
 ├── docker-compose.yml   # Infra local: PostgreSQL, Redis, RabbitMQ
 └── .env.example         # Modelo de variáveis de ambiente (copiar para .env)
 ```
@@ -127,15 +127,18 @@ docker compose ps   # todos devem exibir "healthy"
 cd backend
 
 # Compilar e rodar todos os testes (unitários + integração via Testcontainers)
-./mvnw verify
+mvn verify
 
 # Subir a API
-./mvnw spring-boot:run
+mvn spring-boot:run
+
+# Subir a API carregando o dataset sintético (idempotente — só carrega em banco vazio)
+mvn spring-boot:run -Dspring-boot.run.profiles=dev,seed
 ```
 
 | Recurso | URL |
 |---|---|
-| API REST | <http://localhost:8080/api> |
+| API REST | <http://localhost:8080/api/v1> |
 | Swagger UI | <http://localhost:8080/swagger-ui.html> |
 | Actuator (health) | <http://localhost:8080/actuator/health> |
 
