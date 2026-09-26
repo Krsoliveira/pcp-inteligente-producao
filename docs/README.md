@@ -10,6 +10,7 @@ Este diretório concentra toda a documentação do projeto. A regra é simples:
 | [`visao-geral.md`](visao-geral.md) | Problema, objetivos, escopo e usuários | Antes de qualquer coisa |
 | [`arquitetura.md`](arquitetura.md) | Camadas, fluxo de dados, diagramas e convenções | Antes de escrever ou revisar código |
 | [`glossario.md`](glossario.md) | Termos de PCP e termos técnicos usados no projeto | Sempre que um termo for desconhecido |
+| [`proximos-passos.md`](proximos-passos.md) | Estado atual do trabalho, pendências e próximos passos | Ao retomar o trabalho |
 | [`adr/`](adr/) | ADRs — registros de decisões de arquitetura | Quando quiser saber *por que* algo é como é |
 
 ## O que é um ADR?
