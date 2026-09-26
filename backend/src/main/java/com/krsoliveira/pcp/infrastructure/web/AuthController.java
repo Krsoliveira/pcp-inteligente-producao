@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
+import com.krsoliveira.pcp.domain.usuario.Perfil;
 import com.krsoliveira.pcp.infrastructure.security.JwtService;
 import com.krsoliveira.pcp.infrastructure.security.UsuarioDetailsService;
 import com.krsoliveira.pcp.infrastructure.web.dto.LoginRequest;
@@ -22,13 +23,15 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Endpoints PÚBLICOS de autenticação — não exigem token JWT.
  *
- * POST /api/v1/auth/registrar — cria um novo usuário (201).
+ * POST /api/v1/auth/registrar — cria um novo usuário PLANEJADOR (201).
  * POST /api/v1/auth/login     — valida credenciais e devolve um JWT Bearer (200).
  */
 @RestController
 @RequestMapping("/api/v1/auth")
 @Tag(name = "Autenticação", description = "Registro de usuários e geração de tokens JWT")
 public class AuthController {
+
+    private static final Perfil PERFIL_AUTOCADASTRO = Perfil.PLANEJADOR;
 
     private final RegistrarUsuario registrarUsuario;
     private final AuthenticationManager authenticationManager;
@@ -47,11 +50,13 @@ public class AuthController {
 
     @PostMapping("/registrar")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Registra um novo usuário",
-            description = "Cria a conta e devolve 201 sem corpo. Use /login para obter o token.")
+    @Operation(summary = "Registra um novo usuário com perfil PLANEJADOR",
+            description = "Cria a conta e devolve 201 sem corpo. Use /login para obter o token. "
+                    + "O cadastro público sempre cria PLANEJADOR — um campo 'perfil' enviado é ignorado.")
     public void registrar(@Valid @RequestBody RegistrarRequest request) {
+        // Autocadastro nunca concede GERENTE: o perfil é decidido aqui, não pelo cliente.
         registrarUsuario.executar(
-                request.nome(), request.email(), request.senha(), request.perfil());
+                request.nome(), request.email(), request.senha(), PERFIL_AUTOCADASTRO);
     }
 
     @PostMapping("/login")
