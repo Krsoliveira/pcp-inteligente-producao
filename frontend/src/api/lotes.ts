@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { Lote } from '../types'
+import type { Lote, RegistrarEntradaMaterialRequest } from '../types'
 
 export const listarLotes = async (): Promise<Lote[]> => {
   const { data } = await apiClient.get<Lote[]>('/v1/lotes')
@@ -15,5 +15,12 @@ export const listarLotesPorOrdem = async (ordemId: string): Promise<Lote[]> => {
   const { data } = await apiClient.get<Lote[]>('/v1/lotes', {
     params: { ordemProducaoId: ordemId },
   })
+  return data
+}
+
+export const registrarEntradaMaterial = async (
+  payload: RegistrarEntradaMaterialRequest,
+): Promise<Lote> => {
+  const { data } = await apiClient.post<Lote>('/v1/lotes/entradas', payload)
   return data
 }

@@ -34,6 +34,12 @@ public class LoteJpaEntity {
     @Column(name = "ordem_producao_id")
     private UUID ordemProducaoId;
 
+    @Column(length = 150)
+    private String fornecedor;
+
+    @Column(name = "nota_fiscal", length = 44)
+    private String notaFiscal;
+
     @Column(nullable = false, precision = 12, scale = 4)
     private BigDecimal quantidade;
 
@@ -61,6 +67,8 @@ public class LoteJpaEntity {
         entity.numeroLote = lote.getNumeroLote();
         entity.materialId = lote.getMaterialId();
         entity.ordemProducaoId = lote.getOrdemProducaoId();
+        entity.fornecedor = lote.getFornecedor();
+        entity.notaFiscal = lote.getNotaFiscal();
         entity.quantidade = lote.getQuantidade();
         entity.unidadeDeMedida = lote.getUnidadeDeMedida();
         entity.dataFabricacao = lote.getDataFabricacao();
@@ -72,7 +80,7 @@ public class LoteJpaEntity {
 
     public Lote paraDominio() {
         return Lote.reconstituir(id, numeroLote, materialId, ordemProducaoId,
-                quantidade, unidadeDeMedida, dataFabricacao, dataValidade,
+                fornecedor, notaFiscal, quantidade, unidadeDeMedida, dataFabricacao, dataValidade,
                 status, criadoEm);
     }
 }

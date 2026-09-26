@@ -116,17 +116,32 @@ export interface CadastrarListaTecnicaRequest {
 
 export type StatusLote = 'DISPONIVEL' | 'BLOQUEADO' | 'CONSUMIDO' | 'VENCIDO'
 
+export type OrigemLote = 'PRODUCAO' | 'COMPRA'
+
 export interface Lote {
   id: string
   numeroLote: string
   materialId: string
   ordemProducaoId: string | null
+  origem: OrigemLote
+  /** Preenchidos apenas em lotes de compra (entrada de material). */
+  fornecedor: string | null
+  notaFiscal: string | null
   quantidade: number
   unidadeDeMedida: string
   dataFabricacao: string
   dataValidade: string
   status: StatusLote
   criadoEm: string
+}
+
+export interface RegistrarEntradaMaterialRequest {
+  materialId: string
+  fornecedor: string
+  notaFiscal: string
+  quantidade: number
+  dataFabricacao: string
+  dataValidade: string
 }
 
 // ---- Consumo de Material ----

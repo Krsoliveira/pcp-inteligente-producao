@@ -1,16 +1,24 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
+import com.krsoliveira.pcp.application.lote.RegistrarEntradaMaterial;
+import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.infrastructure.web.dto.LoteResponse;
+import com.krsoliveira.pcp.infrastructure.web.dto.RegistrarEntradaMaterialRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,9 +32,26 @@ import java.util.UUID;
 public class LoteController {
 
     private final ConsultarLotes consultarLotes;
+    private final RegistrarEntradaMaterial registrarEntradaMaterial;
 
-    public LoteController(ConsultarLotes consultarLotes) {
+    public LoteController(ConsultarLotes consultarLotes,
+                          RegistrarEntradaMaterial registrarEntradaMaterial) {
         this.consultarLotes = consultarLotes;
+        this.registrarEntradaMaterial = registrarEntradaMaterial;
+    }
+
+    @PostMapping("/entradas")
+    @Operation(summary = "Registrar entrada de material",
+            description = "Recebimento de matéria-prima comprada: gera um lote DISPONIVEL "
+                    + "com fornecedor e nota fiscal. Somente materiais do tipo MATERIA_PRIMA.")
+    public ResponseEntity<LoteResponse> registrarEntrada(
+            @Valid @RequestBody RegistrarEntradaMaterialRequest request) {
+        Lote lote = registrarEntradaMaterial.executar(new RegistrarEntradaMaterial.Comando(
+                request.materialId(), request.fornecedor(), request.notaFiscal(),
+                request.quantidade(), request.dataFabricacao(), request.dataValidade()));
+        URI local = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/api/v1/lotes/{id}").buildAndExpand(lote.getId()).toUri();
+        return ResponseEntity.created(local).body(LoteResponse.de(lote));
     }
 
     @GetMapping

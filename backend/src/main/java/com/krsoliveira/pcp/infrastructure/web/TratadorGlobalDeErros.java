@@ -4,6 +4,7 @@ import com.krsoliveira.pcp.application.auth.EmailJaUtilizadoException;
 import com.krsoliveira.pcp.application.consumo.ConsumoMaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
 import com.krsoliveira.pcp.application.lista.VersaoListaTecnicaJaExisteException;
+import com.krsoliveira.pcp.application.lote.EntradaMaterialDuplicadaException;
 import com.krsoliveira.pcp.application.lote.LoteNaoEncontradoException;
 import com.krsoliveira.pcp.application.material.CodigoMaterialJaUtilizadoException;
 import com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException;
@@ -79,6 +80,14 @@ public class TratadorGlobalDeErros {
     public ProblemDetail listaTecnicaNaoEncontrada(ListaTecnicaNaoEncontradaException ex) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
         problema.setTitle("Recurso não encontrado");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(EntradaMaterialDuplicadaException.class)
+    public ProblemDetail entradaDuplicada(EntradaMaterialDuplicadaException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problema.setTitle("Conflito");
         problema.setDetail(ex.getMessage());
         return problema;
     }

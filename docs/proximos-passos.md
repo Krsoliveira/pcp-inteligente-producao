@@ -22,6 +22,12 @@ Atualize este arquivo ao encerrar cada sessão de trabalho.
 5. **Administrador inicial** — a API cria um usuário `GERENTE` na inicialização a partir
    de `ADMIN_NOME`, `ADMIN_EMAIL` e `ADMIN_SENHA` (variáveis de ambiente, fora do Git).
    Idempotente e nunca promove conta existente. Ver README, seção 5.
+6. **Correção da tela de Listas Técnicas** — ela deslogava o usuário: a API exigia
+   `materialId` e o erro 400 virava um falso 401. Agora `materialId` é opcional e a rota
+   interna `/error` é pública (erros voltam com o status real).
+7. **Entrada de material** ([ADR-0010](adr/0010-entrada-de-material-por-compra.md)) —
+   recebimento de matéria-prima com fornecedor e nota fiscal obrigatórios gera lote
+   rastreável (`POST /api/v1/lotes/entradas`, tela Lotes → Entrada de Material).
 
 ## Pendências
 
@@ -45,6 +51,7 @@ Atualize este arquivo ao encerrar cada sessão de trabalho.
    recomendações, usando o histórico do dataset sintético.
 4. Depois:
    - tela/endpoint para um `GERENTE` promover outros usuários;
+   - **saldo de estoque**: baixar dos lotes de matéria-prima o consumo das ordens;
    - testes automatizados de frontend (Vitest);
    - carregar o ECharts sob demanda (bundle de ~1 MB).
 

@@ -42,3 +42,4 @@ Regras dos ADRs deste projeto:
 | [0007](adr/0007-modelo-material-lista-tecnica-lote.md) | Material, Lista Técnica (BOM), Consumo e Lote | Aceito |
 | [0008](adr/0008-banco-de-dados-provedor.md) | Banco de dados: PostgreSQL local e Neon em produção | Aceito |
 | [0009](adr/0009-dataset-sintetico-modelo-expandido.md) | Dataset sintético para o modelo expandido | Aceito |
+| [0010](adr/0010-entrada-de-material-por-compra.md) | Entrada de matéria-prima por compra gera lote | Aceito |

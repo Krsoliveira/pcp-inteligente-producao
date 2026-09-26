@@ -266,7 +266,7 @@ public class DataLoader implements CommandLineRunner {
 
             loteRepository.salvar(Lote.reconstituir(UUID.randomUUID(),
                     Lote.numeroLote(prefixo, sequencial), material.getId(), ordem.getId(),
-                    ordem.getQuantidadeProduzida(), material.getUnidadeDeMedida(),
+                    null, null, ordem.getQuantidadeProduzida(), material.getUnidadeDeMedida(),
                     fabricacao, validade, StatusLote.valueOf(linha.get("status")),
                     instante(fabricacao)));
             total++;

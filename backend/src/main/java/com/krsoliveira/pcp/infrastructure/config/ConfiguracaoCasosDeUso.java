@@ -8,6 +8,7 @@ import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
 import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
 import com.krsoliveira.pcp.application.lista.ConsultarListaTecnica;
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
+import com.krsoliveira.pcp.application.lote.RegistrarEntradaMaterial;
 import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
@@ -61,6 +62,12 @@ public class ConfiguracaoCasosDeUso {
     @Bean
     ConsultarLotes consultarLotes(LoteRepository loteRepository) {
         return new ConsultarLotes(loteRepository);
+    }
+
+    @Bean
+    RegistrarEntradaMaterial registrarEntradaMaterial(LoteRepository loteRepository,
+                                                      MaterialRepository materialRepository) {
+        return new RegistrarEntradaMaterial(loteRepository, materialRepository);
     }
 
     // --- Ordens de produção ---
