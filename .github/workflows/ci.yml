@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   backend:
@@ -19,6 +19,8 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Dataset sintético em dia com o gerador (ADR-0009)
+        run: python3 data/scripts/gerar_dataset_sintetico.py --verificar
       - name: Build & test
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
