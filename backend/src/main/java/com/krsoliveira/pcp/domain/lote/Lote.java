@@ -5,6 +5,7 @@ import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 /**
@@ -15,6 +16,8 @@ import java.util.UUID;
  * Classe de domínio PURA: sem anotações de framework.
  */
 public class Lote {
+
+    private static final DateTimeFormatter FORMATO_ANO_MES = DateTimeFormatter.ofPattern("yyyyMM");
 
     private final UUID id;
     private final String numeroLote;
@@ -77,6 +80,21 @@ public class Lote {
         return new Lote(UUID.randomUUID(), numeroLote.trim(), materialId, ordemProducaoId,
                 quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
                 StatusLote.DISPONIVEL, Instant.now());
+    }
+
+    /**
+     * Prefixo do número de lote: {@code MAT-{codigoMaterial}-{yyyyMM}}.
+     * O número completo acrescenta um sequencial por prefixo — ver {@link #numeroLote}.
+     */
+    public static String prefixoNumeroLote(String codigoMaterial, LocalDate dataFabricacao) {
+        return "MAT-%s-%s".formatted(codigoMaterial, dataFabricacao.format(FORMATO_ANO_MES));
+    }
+
+    /**
+     * Número rastreável do lote: {@code MAT-{codigoMaterial}-{yyyyMM}-{seq:03d}}.
+     */
+    public static String numeroLote(String prefixo, int sequencial) {
+        return "%s-%03d".formatted(prefixo, sequencial);
     }
 
     /**

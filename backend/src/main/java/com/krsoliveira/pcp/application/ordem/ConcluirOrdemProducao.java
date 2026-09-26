@@ -13,7 +13,6 @@ import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -128,9 +127,8 @@ public class ConcluirOrdemProducao {
 
     private String gerarNumeroLote(String codigoMaterial, LocalDate dataFabricacao,
                                    UUID materialId) {
-        String anoMes = dataFabricacao.format(DateTimeFormatter.ofPattern("yyyyMM"));
-        String prefixo = "MAT-%s-%s".formatted(codigoMaterial, anoMes);
+        String prefixo = Lote.prefixoNumeroLote(codigoMaterial, dataFabricacao);
         int seq = loteRepository.proximoSequencial(materialId, prefixo);
-        return "%s-%03d".formatted(prefixo, seq);
+        return Lote.numeroLote(prefixo, seq);
     }
 }
