@@ -1,0 +1,5 @@
+nome,descricao,cor
+Produção Normal,Ordem planejada pelo MRP para atender a demanda prevista.,#1565c0
+Reposição de Estoque,Reposição de semiacabados para o estoque intermediário.,#2e7d32
+Pedido Urgente,Ordem encaixada fora do plano para atender cliente prioritário.,#ef6c00
+Retrabalho,Correção de peças reprovadas pela inspeção de qualidade.,#c62828

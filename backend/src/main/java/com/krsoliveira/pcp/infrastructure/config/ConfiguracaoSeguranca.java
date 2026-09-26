@@ -49,6 +49,10 @@ public class ConfiguracaoSeguranca {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // /error é o forward interno do Spring para erros (ex.: 400 por
+                        // parâmetro ausente). Protegido, ele virava um falso 401 e o
+                        // frontend deslogava o usuário.
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()

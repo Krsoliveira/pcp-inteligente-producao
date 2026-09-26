@@ -1,0 +1,22 @@
+codigo,descricao,tipo,unidade_de_medida
+MP-ACO-1045,Barra redonda aço SAE 1045 Ø50mm,MATERIA_PRIMA,kg
+MP-CHAPA-3MM,Chapa aço carbono 3mm,MATERIA_PRIMA,kg
+MP-ALU-A380,Lingote de alumínio A380,MATERIA_PRIMA,kg
+MP-ARAME-MIG,"Arame de solda MIG ER70S-6 1,0mm",MATERIA_PRIMA,kg
+MP-TINTA-EPOXI,Tinta epóxi industrial cinza,MATERIA_PRIMA,L
+MP-OLEO-TEMPERA,Óleo mineral para têmpera,MATERIA_PRIMA,L
+MP-PARAF-M8,Parafuso sextavado M8x25 classe 8.8,MATERIA_PRIMA,un
+MP-ROLAM-6205,Rolamento rígido de esferas 6205-2RS,MATERIA_PRIMA,un
+MP-ORING-40,Anel O-ring NBR 40x3mm,MATERIA_PRIMA,un
+MP-GAXETA-NBR,Gaxeta de vedação NBR,MATERIA_PRIMA,un
+SA-EIXO-USIN,Eixo usinado Ø40mm,SEMIACABADO,un
+SA-EIXO-TEMP,Eixo temperado e revenido Ø40mm,SEMIACABADO,un
+SA-CARC-FUND,Carcaça bruta fundida em alumínio,SEMIACABADO,un
+SA-CARC-USIN,Carcaça usinada em alumínio,SEMIACABADO,un
+SA-SUPORTE-EST,Suporte estampado em aço,SEMIACABADO,un
+SA-ESTRUT-SOLD,Estrutura soldada da base,SEMIACABADO,un
+PA-MOTOR-A200,Conjunto motor A200,PRODUTO_ACABADO,un
+PA-REDUTOR-R50,Redutor de velocidade R50,PRODUTO_ACABADO,un
+PA-VALVULA-V10,Válvula de controle V10,PRODUTO_ACABADO,un
+PA-BASE-B30,Base de fixação pintada B30,PRODUTO_ACABADO,un
+PA-SUPORTE-PINT,Suporte pintado para painel,PRODUTO_ACABADO,un

@@ -1,9 +1,12 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
+import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.ConsultarOrdensProducao;
 import com.krsoliveira.pcp.application.ordem.CriarOrdemProducao;
 import com.krsoliveira.pcp.infrastructure.web.dto.AtualizarStatusRequest;
+import com.krsoliveira.pcp.infrastructure.web.dto.ConcluirOrdemRequest;
+import com.krsoliveira.pcp.infrastructure.web.dto.ConcluirOrdemResponse;
 import com.krsoliveira.pcp.infrastructure.web.dto.CriarOrdemProducaoRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.OrdemProducaoResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,13 +39,16 @@ public class OrdemProducaoController {
     private final CriarOrdemProducao criarOrdemProducao;
     private final ConsultarOrdensProducao consultarOrdensProducao;
     private final AtualizarStatusOrdemProducao atualizarStatusOrdemProducao;
+    private final ConcluirOrdemProducao concluirOrdemProducao;
 
     public OrdemProducaoController(CriarOrdemProducao criarOrdemProducao,
                                    ConsultarOrdensProducao consultarOrdensProducao,
-                                   AtualizarStatusOrdemProducao atualizarStatusOrdemProducao) {
+                                   AtualizarStatusOrdemProducao atualizarStatusOrdemProducao,
+                                   ConcluirOrdemProducao concluirOrdemProducao) {
         this.criarOrdemProducao = criarOrdemProducao;
         this.consultarOrdensProducao = consultarOrdensProducao;
         this.atualizarStatusOrdemProducao = atualizarStatusOrdemProducao;
+        this.concluirOrdemProducao = concluirOrdemProducao;
     }
 
     @PostMapping
@@ -71,10 +77,22 @@ public class OrdemProducaoController {
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Avança ou cancela o status de uma ordem",
-            description = "Transições válidas: PLANEJADA→LIBERADA→EM_PRODUCAO→CONCLUIDA; "
-                    + "CANCELADA é permitida a partir de qualquer estado não terminal.")
+            description = "Transições válidas: PLANEJADA→LIBERADA→EM_PRODUCAO; "
+                    + "CANCELADA é permitida a partir de qualquer estado não terminal. "
+                    + "Para concluir, use POST /{id}/concluir.")
     public OrdemProducaoResponse atualizarStatus(@PathVariable UUID id,
                                                  @Valid @RequestBody AtualizarStatusRequest request) {
         return OrdemProducaoResponse.de(atualizarStatusOrdemProducao.executar(id, request.status()));
+    }
+
+    @PostMapping("/{id}/concluir")
+    @Operation(summary = "Concluir ordem de produção",
+            description = "Valida que todos os consumos de material estão registrados e justificados, "
+                    + "define a quantidade produzida e gera um lote rastreável automaticamente.")
+    public ResponseEntity<ConcluirOrdemResponse> concluir(@PathVariable UUID id,
+                                                           @Valid @RequestBody ConcluirOrdemRequest request) {
+        ConcluirOrdemProducao.Resultado resultado =
+                concluirOrdemProducao.executar(request.paraComando(id));
+        return ResponseEntity.ok(ConcluirOrdemResponse.de(resultado));
     }
 }
