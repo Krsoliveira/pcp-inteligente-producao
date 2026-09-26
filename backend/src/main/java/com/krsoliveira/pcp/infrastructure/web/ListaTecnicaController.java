@@ -67,12 +67,15 @@ public class ListaTecnicaController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar listas técnicas por material",
-               description = "Retorna todas as versões de lista técnica de um material.")
-    public ResponseEntity<List<ListaTecnicaResponse>> listarPorMaterial(
-            @RequestParam UUID materialId) {
-        List<ListaTecnicaResponse> resposta = consultarListaTecnica.listarPorMaterial(materialId)
-                .stream().map(ListaTecnicaResponse::de).toList();
+    @Operation(summary = "Listar listas técnicas",
+               description = "Sem materialId, retorna todas as listas; com materialId, "
+                       + "todas as versões de lista técnica daquele material.")
+    public ResponseEntity<List<ListaTecnicaResponse>> listar(
+            @RequestParam(required = false) UUID materialId) {
+        var listas = materialId == null
+                ? consultarListaTecnica.listarTodas()
+                : consultarListaTecnica.listarPorMaterial(materialId);
+        List<ListaTecnicaResponse> resposta = listas.stream().map(ListaTecnicaResponse::de).toList();
         return ResponseEntity.ok(resposta);
     }
 }
