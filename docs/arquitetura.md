@@ -66,7 +66,7 @@ flowchart TD
 **Porta (interface de saída)** → o domínio declara *o que precisa* ("preciso salvar uma
 ordem") como interface Java; a infraestrutura fornece *como fazer* (JPA + PostgreSQL).
 *Exemplo prático:* a interface `OrdemProducaoRepository` vive no domínio; a classe
-`OrdemProducaoRepositoryJpa` vive na infraestrutura. Nos testes, trocamos por uma
+`OrdemProducaoRepositoryAdapter` vive na infraestrutura. Nos testes, trocamos por uma
 implementação em memória — e o domínio nem percebe.
 
 ## Fluxo de dados de uma requisição
@@ -88,22 +88,22 @@ sequenceDiagram
     S->>D: OrdemProducao.criar(...) — valida regras de negócio
     S->>R: salvar(ordem)
     R-->>S: ordem persistida
-    S->>Q: publica evento OrdemCriada
+    S-->>Q: publica evento OrdemCriada (planejado)
     S-->>C: resultado
     C-->>F: 201 Created + JSON
 ```
 
-O evento publicado no RabbitMQ permite que módulos como a IA reajam de forma
-**assíncrona** (sem travar a resposta ao usuário).
+A publicação de eventos no RabbitMQ está **planejada** (ainda não implementada): permitirá
+que módulos como a IA reajam de forma **assíncrona**, sem travar a resposta ao usuário.
 
 ## Papel de cada tecnologia
 
 | Tecnologia | Papel | Equivalente cotidiano |
 |---|---|---|
 | PostgreSQL | Banco de dados relacional — fonte da verdade | O arquivo oficial da fábrica |
-| Redis | Cache — respostas frequentes em memória | Post-it com a informação mais pedida |
-| RabbitMQ | Mensageria — eventos entre módulos ([ADR-0002](adr/0002-rabbitmq-mensageria.md)) | Esteira interna de recados |
-| OpenAI | Motor de IA ([ADR-0003](adr/0003-openai-provedor-ia.md)) | Consultor especializado sob demanda |
+| Redis *(planejado)* | Cache — respostas frequentes em memória | Post-it com a informação mais pedida |
+| RabbitMQ *(planejado)* | Mensageria — eventos entre módulos ([ADR-0002](adr/0002-rabbitmq-mensageria.md)) | Esteira interna de recados |
+| OpenAI *(planejado)* | Motor de IA ([ADR-0003](adr/0003-openai-provedor-ia.md)) | Consultor especializado sob demanda |
 | Flyway | Migrações de banco versionadas | Histórico de reformas do prédio, em ordem |
 | Swagger/OpenAPI | Documentação viva da API | Catálogo dos serviços que a API oferece |
 

@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.application.ordem;
 
+import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
 import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
@@ -21,6 +22,11 @@ public class AtualizarStatusOrdemProducao {
     }
 
     public OrdemProducao executar(UUID id, StatusOrdemProducao novoStatus) {
+        if (novoStatus == StatusOrdemProducao.CONCLUIDA) {
+            throw new RegraDeNegocioException(
+                    "Para concluir uma ordem utilize o endpoint POST /ordens-producao/{id}/concluir, " +
+                    "que valida os consumos de material e gera o lote de produção.");
+        }
         OrdemProducao ordem = repositorio.buscarPorId(id)
                 .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(id));
         ordem.alterarStatusPara(novoStatus);
