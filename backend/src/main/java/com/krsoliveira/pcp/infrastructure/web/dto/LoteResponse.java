@@ -20,7 +20,12 @@ public record LoteResponse(UUID id,
                            LocalDate dataFabricacao,
                            LocalDate dataValidade,
                            StatusLote status,
-                           Instant criadoEm) {
+                           Instant criadoEm,
+                           LocalDate dataEmissaoNf,
+                           LocalDate dataRecebimento,
+                           String criadoPor,
+                           Instant atualizadoEm,
+                           String atualizadoPor) {
 
     public static LoteResponse de(Lote lote) {
         return new LoteResponse(
@@ -36,6 +41,11 @@ public record LoteResponse(UUID id,
                 lote.getDataFabricacao(),
                 lote.getDataValidade(),
                 lote.getStatus(),
-                lote.getCriadoEm());
+                lote.getCriadoEm(),
+                lote.getOrigemCompra() == null ? null : lote.getOrigemCompra().dataEmissaoNf(),
+                lote.getOrigemCompra() == null ? null : lote.getOrigemCompra().dataRecebimento(),
+                lote.getAssinatura().criadoPor(),
+                lote.getAssinatura().alteradoEm(),
+                lote.getAssinatura().alteradoPor());
     }
 }

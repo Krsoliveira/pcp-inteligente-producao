@@ -399,7 +399,6 @@ interface RegistrarConsumoDialogProps {
 function RegistrarConsumoDialog({ consumo, ordemId, onFechar, onSucesso }: RegistrarConsumoDialogProps) {
   const [qtd, setQtd] = useState('')
   const [justificativa, setJustificativa] = useState('')
-  const [responsavel, setResponsavel] = useState('')
   const [erro, setErro] = useState<string | null>(null)
 
   const desvio = consumo && qtd ? Number(qtd) - consumo.quantidadePlanejada : 0
@@ -407,13 +406,13 @@ function RegistrarConsumoDialog({ consumo, ordemId, onFechar, onSucesso }: Regis
 
   const { mutate, isPending } = useMutation({
     mutationFn: (payload: RegistrarConsumoRequest) => registrarConsumo(ordemId, consumo!.id, payload),
-    onSuccess: () => { onSucesso(); onFechar(); setQtd(''); setJustificativa(''); setResponsavel(''); setErro(null) },
+    onSuccess: () => { onSucesso(); onFechar(); setQtd(''); setJustificativa(''); setErro(null) },
     onError: (err: unknown) => { if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro.'); else setErro('Erro inesperado.') },
   })
 
   const handleSubmit = () => {
     if (!qtd) { setErro('Informe a quantidade consumida.'); return }
-    const payload: RegistrarConsumoRequest = { quantidadeConsumida: Number(qtd), justificativa: justificativa || undefined, justificadoPor: responsavel || undefined }
+    const payload: RegistrarConsumoRequest = { quantidadeConsumida: Number(qtd), justificativa: justificativa || undefined }
     mutate(payload)
   }
 
@@ -439,10 +438,8 @@ function RegistrarConsumoDialog({ consumo, ordemId, onFechar, onSucesso }: Regis
                 <Alert severity="warning" sx={{ py: 0.5 }}>Desvio detectado. Justificativa obrigatória.</Alert>
               </Grid>
               <Grid size={12}>
-                <TextField label="Justificativa *" value={justificativa} onChange={(e) => setJustificativa(e.target.value)} fullWidth multiline rows={2} />
-              </Grid>
-              <Grid size={12}>
-                <TextField label="Responsável *" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} fullWidth />
+                <TextField label="Justificativa *" value={justificativa} onChange={(e) => setJustificativa(e.target.value)} fullWidth multiline rows={2}
+                  helperText="A justificativa fica registrada em seu nome, com data e hora." />
               </Grid>
             </>
           )}

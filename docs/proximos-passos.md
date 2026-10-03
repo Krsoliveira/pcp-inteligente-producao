@@ -3,8 +3,33 @@
 Registro do estado do trabalho para retomar sem perder contexto.
 Atualize este arquivo ao encerrar cada sessão de trabalho.
 
-**Última atualização:** 2026-09-26  
-**Estado:** Fases 5a e 5b concluídas e publicadas na `main` (PRs #27 e #28); `main` e `develop` sincronizadas.
+**Última atualização:** 2026-10-03  
+**Estado:** rastreabilidade e auditoria ([ADR-0011](adr/0011-rastreabilidade-e-auditoria.md)) em andamento —
+entrega 1 (base no backend) concluída na branch `feature/rastreabilidade-auditoria`.
+
+## Em andamento: rastreabilidade (ADR-0011)
+
+Objetivo: responder, para qualquer registro, *quem fez, quando, o que mudou* e *de onde veio*.
+
+- [x] **Entrega 1 — base no backend**
+  - Assinatura (criado por/em, alterado por/em) em material, lista técnica, tipo de ordem,
+    ordem, consumo e lote; o usuário vem do login.
+  - Trilha de auditoria imutável (`evento_auditoria`, trigger bloqueia UPDATE/DELETE/TRUNCATE)
+    e consulta paginada `GET /api/v1/auditoria/eventos` (entidade, registro, usuário, ação,
+    período por dia).
+  - Casos de uso transacionais (porta `Transacao`): ação e evento gravados juntos.
+  - Entrada de material exige emissão da NF e recebimento.
+  - Migração V9 assina os registros antigos como `sistema:migracao-v9`; a carga inicial
+    gera o histórico simulado (~5 mil eventos).
+  - Frontend: datas da NF no diálogo de entrada; campo "Responsável" removido do consumo.
+- [ ] **Entrega 2 — telas**: colunas "criado por/em" e filtro por período nas listagens,
+      aba **Histórico** nos detalhes (ordem, lote, material, lista técnica), tela de detalhe
+      do lote (NF, datas, quem deu entrada).
+- [ ] **Entrega 3 — genealogia**: consumo alocado a lotes, saldo do lote, rastreio para trás
+      (produto → lotes → NF) e para frente (lote de MP → ordens/lotes); gerador do dataset
+      com lotes de compra e alocações.
+- [ ] Mesclar as correções de layout da branch `fix/layout-dashboard` (gráfico do dashboard,
+      overflow no celular).
 
 ## Concluído nesta etapa
 

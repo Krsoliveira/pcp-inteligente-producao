@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.domain.lote;
 
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -22,40 +23,35 @@ import java.util.UUID;
  */
 public class Lote {
 
-    static final int FORNECEDOR_MAX = 150;
-    static final int NOTA_FISCAL_MAX = 44;
     private static final DateTimeFormatter FORMATO_ANO_MES = DateTimeFormatter.ofPattern("yyyyMM");
 
     private final UUID id;
     private final String numeroLote;
     private final UUID materialId;
     private final UUID ordemProducaoId;
-    private final String fornecedor;
-    private final String notaFiscal;
+    private final OrigemCompra origemCompra;
     private final BigDecimal quantidade;
     private final String unidadeDeMedida;
     private final LocalDate dataFabricacao;
     private final LocalDate dataValidade;
     private StatusLote status;
-    private final Instant criadoEm;
+    private Assinatura assinatura;
 
     private Lote(UUID id, String numeroLote, UUID materialId, UUID ordemProducaoId,
-                 String fornecedor, String notaFiscal,
-                 BigDecimal quantidade, String unidadeDeMedida,
+                 OrigemCompra origemCompra, BigDecimal quantidade, String unidadeDeMedida,
                  LocalDate dataFabricacao, LocalDate dataValidade,
-                 StatusLote status, Instant criadoEm) {
+                 StatusLote status, Assinatura assinatura) {
         this.id = id;
         this.numeroLote = numeroLote;
         this.materialId = materialId;
         this.ordemProducaoId = ordemProducaoId;
-        this.fornecedor = fornecedor;
-        this.notaFiscal = notaFiscal;
+        this.origemCompra = origemCompra;
         this.quantidade = quantidade;
         this.unidadeDeMedida = unidadeDeMedida;
         this.dataFabricacao = dataFabricacao;
         this.dataValidade = dataValidade;
         this.status = status;
-        this.criadoEm = criadoEm;
+        this.assinatura = assinatura;
     }
 
     /**
@@ -66,42 +62,35 @@ public class Lote {
      */
     public static Lote criar(String numeroLote, UUID materialId, UUID ordemProducaoId,
                              BigDecimal quantidade, String unidadeDeMedida,
-                             LocalDate dataFabricacao, LocalDate dataValidade) {
+                             LocalDate dataFabricacao, LocalDate dataValidade, String usuario) {
         validarDadosComuns(numeroLote, materialId, quantidade, unidadeDeMedida,
                 dataFabricacao, dataValidade);
         return new Lote(UUID.randomUUID(), numeroLote.trim(), materialId, ordemProducaoId,
-                null, null, quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
-                StatusLote.DISPONIVEL, Instant.now());
+                null, quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
+                StatusLote.DISPONIVEL, Assinatura.nova(usuario));
     }
 
     /**
-     * Fábrica para um lote COMPRADO (entrada de matéria-prima). Fornecedor e nota fiscal
-     * são obrigatórios — são a rastreabilidade de origem do material.
-     * A regra "somente matéria-prima" é validada pelo caso de uso, que conhece o Material.
+     * Fábrica para um lote COMPRADO (entrada de matéria-prima). A {@link OrigemCompra}
+     * — fornecedor, nota fiscal e datas de emissão e recebimento — é a rastreabilidade de
+     * origem do material. A regra "somente matéria-prima" é validada pelo caso de uso,
+     * que conhece o Material.
      */
-    public static Lote receberCompra(String numeroLote, UUID materialId,
-                                     String fornecedor, String notaFiscal,
+    public static Lote receberCompra(String numeroLote, UUID materialId, OrigemCompra origemCompra,
                                      BigDecimal quantidade, String unidadeDeMedida,
-                                     LocalDate dataFabricacao, LocalDate dataValidade) {
+                                     LocalDate dataFabricacao, LocalDate dataValidade, String usuario) {
         validarDadosComuns(numeroLote, materialId, quantidade, unidadeDeMedida,
                 dataFabricacao, dataValidade);
-        if (fornecedor == null || fornecedor.isBlank()) {
-            throw new RegraDeNegocioException("O fornecedor é obrigatório na entrada de material.");
+        if (origemCompra == null) {
+            throw new RegraDeNegocioException("A origem da compra (fornecedor e nota fiscal) é obrigatória.");
         }
-        if (fornecedor.trim().length() > FORNECEDOR_MAX) {
+        if (dataFabricacao.isAfter(origemCompra.dataRecebimento())) {
             throw new RegraDeNegocioException(
-                    "O fornecedor deve ter no máximo %d caracteres.".formatted(FORNECEDOR_MAX));
+                    "A data de fabricação não pode ser posterior ao recebimento do material.");
         }
-        if (notaFiscal == null || notaFiscal.isBlank()) {
-            throw new RegraDeNegocioException("A nota fiscal é obrigatória na entrada de material.");
-        }
-        if (notaFiscal.trim().length() > NOTA_FISCAL_MAX) {
-            throw new RegraDeNegocioException(
-                    "A nota fiscal deve ter no máximo %d caracteres.".formatted(NOTA_FISCAL_MAX));
-        }
-        return new Lote(UUID.randomUUID(), numeroLote.trim(), materialId, null,
-                fornecedor.trim(), notaFiscal.trim(), quantidade, unidadeDeMedida.trim(),
-                dataFabricacao, dataValidade, StatusLote.DISPONIVEL, Instant.now());
+        return new Lote(UUID.randomUUID(), numeroLote.trim(), materialId, null, origemCompra,
+                quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
+                StatusLote.DISPONIVEL, Assinatura.nova(usuario));
     }
 
     private static void validarDadosComuns(String numeroLote, UUID materialId,
@@ -151,66 +140,74 @@ public class Lote {
      * Não revalida invariantes.
      */
     public static Lote reconstituir(UUID id, String numeroLote, UUID materialId,
-                                    UUID ordemProducaoId, String fornecedor, String notaFiscal,
+                                    UUID ordemProducaoId, OrigemCompra origemCompra,
                                     BigDecimal quantidade, String unidadeDeMedida,
                                     LocalDate dataFabricacao, LocalDate dataValidade,
-                                    StatusLote status, Instant criadoEm) {
-        return new Lote(id, numeroLote, materialId, ordemProducaoId, fornecedor, notaFiscal,
-                quantidade, unidadeDeMedida, dataFabricacao, dataValidade, status, criadoEm);
+                                    StatusLote status, Assinatura assinatura) {
+        return new Lote(id, numeroLote, materialId, ordemProducaoId, origemCompra,
+                quantidade, unidadeDeMedida, dataFabricacao, dataValidade, status, assinatura);
     }
 
     /** O lote veio de compra (entrada de material) e não de uma ordem de produção? */
     public boolean ehDeCompra() {
-        return notaFiscal != null;
+        return origemCompra != null;
     }
 
     /**
      * Bloqueia o lote (ex.: retenção por qualidade).
      * Só é possível se estiver DISPONIVEL.
      */
-    public void bloquear() {
+    public void bloquear(String usuario) {
+        Assinatura alterada = assinatura.alterada(usuario);
         if (this.status != StatusLote.DISPONIVEL) {
             throw new RegraDeNegocioException(
                     "Apenas lotes disponíveis podem ser bloqueados. Status atual: %s.".formatted(status));
         }
         this.status = StatusLote.BLOQUEADO;
+        this.assinatura = alterada;
     }
 
     /**
      * Marca o lote como vencido. Chamado por processo agendado
      * quando {@code dataValidade < hoje}.
      */
-    public void marcarComoVencido() {
+    public void marcarComoVencido(String usuario) {
+        Assinatura alterada = assinatura.alterada(usuario);
         if (this.status != StatusLote.DISPONIVEL && this.status != StatusLote.BLOQUEADO) {
             throw new RegraDeNegocioException(
                     "Lotes já consumidos ou vencidos não podem ser marcados como vencidos. Status atual: %s."
                             .formatted(status));
         }
         this.status = StatusLote.VENCIDO;
+        this.assinatura = alterada;
     }
 
     /**
      * Marca o lote como consumido (utilizado como insumo de outra ordem).
      * Só é possível se estiver DISPONIVEL.
      */
-    public void marcarComoConsumido() {
+    public void marcarComoConsumido(String usuario) {
+        Assinatura alterada = assinatura.alterada(usuario);
         if (this.status != StatusLote.DISPONIVEL) {
             throw new RegraDeNegocioException(
                     "Apenas lotes disponíveis podem ser consumidos. Status atual: %s.".formatted(status));
         }
         this.status = StatusLote.CONSUMIDO;
+        this.assinatura = alterada;
     }
 
     public UUID getId() { return id; }
     public String getNumeroLote() { return numeroLote; }
     public UUID getMaterialId() { return materialId; }
     public UUID getOrdemProducaoId() { return ordemProducaoId; }
-    public String getFornecedor() { return fornecedor; }
-    public String getNotaFiscal() { return notaFiscal; }
+    public OrigemCompra getOrigemCompra() { return origemCompra; }
+    public String getFornecedor() { return origemCompra == null ? null : origemCompra.fornecedor(); }
+    public String getNotaFiscal() { return origemCompra == null ? null : origemCompra.notaFiscal(); }
     public BigDecimal getQuantidade() { return quantidade; }
     public String getUnidadeDeMedida() { return unidadeDeMedida; }
     public LocalDate getDataFabricacao() { return dataFabricacao; }
     public LocalDate getDataValidade() { return dataValidade; }
     public StatusLote getStatus() { return status; }
-    public Instant getCriadoEm() { return criadoEm; }
+    public Assinatura getAssinatura() { return assinatura; }
+    public Instant getCriadoEm() { return assinatura.criadoEm(); }
 }

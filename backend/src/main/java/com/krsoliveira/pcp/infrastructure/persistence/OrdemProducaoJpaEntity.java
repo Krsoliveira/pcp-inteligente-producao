@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 import jakarta.persistence.Column;
@@ -68,6 +69,12 @@ public class OrdemProducaoJpaEntity {
     @Column(name = "atualizada_em", nullable = false)
     private Instant atualizadaEm;
 
+    @Column(name = "criada_por", nullable = false, length = 150)
+    private String criadaPor;
+
+    @Column(name = "atualizada_por", nullable = false, length = 150)
+    private String atualizadaPor;
+
     /** Exigido pelo JPA; não usar diretamente. */
     protected OrdemProducaoJpaEntity() {}
 
@@ -84,14 +91,18 @@ public class OrdemProducaoJpaEntity {
         entity.inicioPlanejado = ordem.getInicioPlanejado();
         entity.fimPlanejado = ordem.getFimPlanejado();
         entity.status = ordem.getStatus();
-        entity.criadaEm = ordem.getCriadaEm();
-        entity.atualizadaEm = ordem.getAtualizadaEm();
+        Assinatura a = ordem.getAssinatura();
+        entity.criadaEm = a.criadoEm();
+        entity.atualizadaEm = a.alteradoEm();
+        entity.criadaPor = a.criadoPor();
+        entity.atualizadaPor = a.alteradoPor();
         return entity;
     }
 
     public OrdemProducao paraDominio() {
         return OrdemProducao.reconstituir(id, codigo, materialId, listaTecnicaId,
                 tipoOrdemId, centroDeTrabalho, quantidade, quantidadeProduzida,
-                inicioPlanejado, fimPlanejado, status, criadaEm, atualizadaEm);
+                inicioPlanejado, fimPlanejado, status,
+                new Assinatura(criadaPor, criadaEm, atualizadaPor, atualizadaEm));
     }
 }

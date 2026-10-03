@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.domain.consumo;
 
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -24,13 +25,13 @@ public class ConsumoMaterial {
     private String justificativa;
     private String justificadoPor;
     private Instant justificadoEm;
-    private final Instant criadoEm;
+    private Assinatura assinatura;
 
     private ConsumoMaterial(UUID id, UUID ordemProducaoId, UUID materialId,
                             BigDecimal quantidadePlanejada, BigDecimal quantidadeConsumida,
                             String unidadeDeMedida, String justificativa,
                             String justificadoPor, Instant justificadoEm,
-                            Instant criadoEm) {
+                            Assinatura assinatura) {
         this.id = id;
         this.ordemProducaoId = ordemProducaoId;
         this.materialId = materialId;
@@ -40,7 +41,7 @@ public class ConsumoMaterial {
         this.justificativa = justificativa;
         this.justificadoPor = justificadoPor;
         this.justificadoEm = justificadoEm;
-        this.criadoEm = criadoEm;
+        this.assinatura = assinatura;
     }
 
     /**
@@ -49,7 +50,7 @@ public class ConsumoMaterial {
      */
     public static ConsumoMaterial projetar(UUID ordemProducaoId, UUID materialId,
                                            BigDecimal quantidadePlanejada,
-                                           String unidadeDeMedida) {
+                                           String unidadeDeMedida, String usuario) {
         if (ordemProducaoId == null) {
             throw new RegraDeNegocioException("A ordem de produção do consumo é obrigatória.");
         }
@@ -65,7 +66,7 @@ public class ConsumoMaterial {
         }
         return new ConsumoMaterial(UUID.randomUUID(), ordemProducaoId, materialId,
                 quantidadePlanejada, null, unidadeDeMedida.trim(),
-                null, null, null, Instant.now());
+                null, null, null, Assinatura.nova(usuario));
     }
 
     /**
@@ -76,18 +77,18 @@ public class ConsumoMaterial {
                                                BigDecimal quantidadeConsumida,
                                                String unidadeDeMedida,
                                                String justificativa, String justificadoPor,
-                                               Instant justificadoEm, Instant criadoEm) {
+                                               Instant justificadoEm, Assinatura assinatura) {
         return new ConsumoMaterial(id, ordemProducaoId, materialId, quantidadePlanejada,
                 quantidadeConsumida, unidadeDeMedida, justificativa, justificadoPor,
-                justificadoEm, criadoEm);
+                justificadoEm, assinatura);
     }
 
     /**
-     * Registra o consumo real do material. Se houver desvio (consumida != planejada),
-     * a justificativa e o responsável são obrigatórios.
+     * Registra o consumo real do material. Se houver desvio (consumida != planejada), a
+     * justificativa é obrigatória, e o responsável por ela é o próprio usuário que
+     * registra — não um nome digitado.
      */
-    public void registrarConsumo(BigDecimal quantidadeConsumida,
-                                 String justificativa, String justificadoPor) {
+    public void registrarConsumo(BigDecimal quantidadeConsumida, String justificativa, String usuario) {
         if (quantidadeConsumida == null || quantidadeConsumida.compareTo(BigDecimal.ZERO) < 0) {
             throw new RegraDeNegocioException(
                     "A quantidade consumida deve ser zero ou maior.");
@@ -100,17 +101,19 @@ public class ConsumoMaterial {
             throw new RegraDeNegocioException(
                     "Justificativa obrigatória quando há desvio entre quantidade consumida e planejada.");
         }
-        if (temDesvio && (justificadoPor == null || justificadoPor.isBlank())) {
-            throw new RegraDeNegocioException(
-                    "Responsável pela justificativa é obrigatório quando há desvio.");
-        }
 
+        Assinatura novaAssinatura = assinatura.alterada(usuario);
         this.quantidadeConsumida = quantidadeConsumida;
         if (temDesvio) {
             this.justificativa = justificativa.trim();
-            this.justificadoPor = justificadoPor.trim();
-            this.justificadoEm = Instant.now();
+            this.justificadoPor = novaAssinatura.alteradoPor();
+            this.justificadoEm = novaAssinatura.alteradoEm();
+        } else {
+            this.justificativa = null;
+            this.justificadoPor = null;
+            this.justificadoEm = null;
         }
+        this.assinatura = novaAssinatura;
     }
 
     /**
@@ -150,5 +153,6 @@ public class ConsumoMaterial {
     public String getJustificativa() { return justificativa; }
     public String getJustificadoPor() { return justificadoPor; }
     public Instant getJustificadoEm() { return justificadoEm; }
-    public Instant getCriadoEm() { return criadoEm; }
+    public Assinatura getAssinatura() { return assinatura; }
+    public Instant getCriadoEm() { return assinatura.criadoEm(); }
 }

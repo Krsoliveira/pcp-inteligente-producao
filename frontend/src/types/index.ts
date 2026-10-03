@@ -22,6 +22,8 @@ export interface OrdemProducao {
   atrasada: boolean
   criadaEm: string
   atualizadaEm: string
+  criadaPor: string
+  atualizadaPor: string
 }
 
 export interface CriarOrdemRequest {
@@ -50,6 +52,8 @@ export interface TipoOrdem {
   cor: string
   criadoEm: string
   atualizadoEm: string
+  criadoPor: string
+  atualizadoPor: string
 }
 
 export interface CadastrarTipoOrdemRequest {
@@ -76,6 +80,8 @@ export interface Material {
   unidadeDeMedida: string
   criadoEm: string
   atualizadoEm: string
+  criadoPor: string
+  atualizadoPor: string
 }
 
 export interface CadastrarMaterialRequest {
@@ -104,6 +110,8 @@ export interface ListaTecnica {
   itens: ItemListaTecnica[]
   criadaEm: string
   atualizadaEm: string
+  criadaPor: string
+  atualizadaPor: string
 }
 
 export interface CadastrarListaTecnicaRequest {
@@ -132,13 +140,21 @@ export interface Lote {
   dataFabricacao: string
   dataValidade: string
   status: StatusLote
+  /** Datas da nota fiscal — apenas lotes de compra. */
+  dataEmissaoNf: string | null
+  dataRecebimento: string | null
   criadoEm: string
+  criadoPor: string
+  atualizadoEm: string
+  atualizadoPor: string
 }
 
 export interface RegistrarEntradaMaterialRequest {
   materialId: string
   fornecedor: string
   notaFiscal: string
+  dataEmissaoNf: string
+  dataRecebimento: string
   quantidade: number
   dataFabricacao: string
   dataValidade: string
@@ -160,12 +176,15 @@ export interface ConsumoMaterial {
   justificadoPor: string | null
   justificadoEm: string | null
   criadoEm: string
+  criadoPor: string
+  atualizadoEm: string
+  atualizadoPor: string
 }
 
 export interface RegistrarConsumoRequest {
   quantidadeConsumida: number
+  /** O responsável é o usuário logado — definido pelo backend. */
   justificativa?: string
-  justificadoPor?: string
 }
 
 // ---- Autenticação ----

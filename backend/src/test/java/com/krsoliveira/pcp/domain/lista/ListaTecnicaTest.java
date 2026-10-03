@@ -17,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class ListaTecnicaTest {
 
+    private static final String USUARIO = "teste@pcp";
+
     private static final UUID MATERIAL_ID = UUID.randomUUID();
     private static final UUID COMPONENTE_ID = UUID.randomUUID();
 
@@ -25,7 +27,7 @@ class ListaTecnicaTest {
     }
 
     private ListaTecnica listaValida() {
-        return ListaTecnica.criar(MATERIAL_ID, "v1", itensValidos());
+        return ListaTecnica.criar(MATERIAL_ID, "v1", itensValidos(), USUARIO);
     }
 
     @Nested
@@ -47,7 +49,7 @@ class ListaTecnicaTest {
         @Test
         @DisplayName("rejeita lista sem itens")
         void rejeitaListaSemItens() {
-            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, "v1", List.of()))
+            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, "v1", List.of(), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("componente");
         }
@@ -55,7 +57,7 @@ class ListaTecnicaTest {
         @Test
         @DisplayName("rejeita versão em branco")
         void rejeitaVersaoEmBranco() {
-            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, "  ", itensValidos()))
+            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, "  ", itensValidos(), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("versão");
         }
@@ -63,7 +65,7 @@ class ListaTecnicaTest {
         @Test
         @DisplayName("rejeita material nulo")
         void rejeitaMaterialNulo() {
-            assertThatThrownBy(() -> ListaTecnica.criar(null, "v1", itensValidos()))
+            assertThatThrownBy(() -> ListaTecnica.criar(null, "v1", itensValidos(), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("material");
         }
@@ -78,7 +80,7 @@ class ListaTecnicaTest {
         void ativaListaEmRevisao() {
             ListaTecnica lista = listaValida();
 
-            lista.ativar();
+            lista.ativar(USUARIO);
 
             assertThat(lista.getStatus()).isEqualTo(StatusListaTecnica.ATIVA);
         }
@@ -87,9 +89,9 @@ class ListaTecnicaTest {
         @DisplayName("obsoleta lista ativa")
         void obseletaListaAtiva() {
             ListaTecnica lista = listaValida();
-            lista.ativar();
+            lista.ativar(USUARIO);
 
-            lista.obsoleter();
+            lista.obsoleter(USUARIO);
 
             assertThat(lista.getStatus()).isEqualTo(StatusListaTecnica.OBSOLETA);
         }
@@ -98,9 +100,9 @@ class ListaTecnicaTest {
         @DisplayName("não permite ativar lista já ativa")
         void naoPermiteAtivarListaJaAtiva() {
             ListaTecnica lista = listaValida();
-            lista.ativar();
+            lista.ativar(USUARIO);
 
-            assertThatThrownBy(lista::ativar)
+            assertThatThrownBy(() -> lista.ativar(USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("revisão");
         }
@@ -110,7 +112,7 @@ class ListaTecnicaTest {
         void naoPermiteObsoletarEmRevisao() {
             ListaTecnica lista = listaValida();
 
-            assertThatThrownBy(lista::obsoleter)
+            assertThatThrownBy(() -> lista.obsoleter(USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("ativas");
         }

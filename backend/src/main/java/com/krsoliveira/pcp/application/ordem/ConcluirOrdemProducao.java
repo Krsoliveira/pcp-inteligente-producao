@@ -1,6 +1,10 @@
 package com.krsoliveira.pcp.application.ordem;
 
+import com.krsoliveira.pcp.application.comum.Detalhes;
+import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
 import com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException;
+import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
+import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterialRepository;
@@ -10,6 +14,7 @@ import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
+import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,7 +31,7 @@ import java.util.UUID;
  * 4. Chama {@code OrdemProducao.concluir(quantidadeProduzida)}.
  * 5. Gera número do lote: {@code MAT-{codigo}-{yyyyMM}-{seq:03d}}.
  * 6. Cria e persiste o Lote com status DISPONIVEL.
- * 7. Persiste a ordem concluída.
+ * 7. Persiste a ordem concluída e registra os eventos de auditoria — tudo numa transação.
  *
  * Esta classe substitui a transição direta para CONCLUIDA em
  * {@code AtualizarStatusOrdemProducao}, adicionando rastreabilidade.
@@ -37,15 +42,18 @@ public class ConcluirOrdemProducao {
     private final ConsumoMaterialRepository consumoRepository;
     private final LoteRepository loteRepository;
     private final MaterialRepository materialRepository;
+    private final ExecucaoAuditada execucao;
 
     public ConcluirOrdemProducao(OrdemProducaoRepository ordemRepository,
                                   ConsumoMaterialRepository consumoRepository,
                                   LoteRepository loteRepository,
-                                  MaterialRepository materialRepository) {
+                                  MaterialRepository materialRepository,
+                                  ExecucaoAuditada execucao) {
         this.ordemRepository = ordemRepository;
         this.consumoRepository = consumoRepository;
         this.loteRepository = loteRepository;
         this.materialRepository = materialRepository;
+        this.execucao = execucao;
     }
 
     public record Comando(UUID ordemProducaoId,
@@ -56,43 +64,63 @@ public class ConcluirOrdemProducao {
     public record Resultado(OrdemProducao ordem, Lote lote) {}
 
     public Resultado executar(Comando comando) {
-        OrdemProducao ordem = ordemRepository.buscarPorId(comando.ordemProducaoId())
-                .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(
-                        comando.ordemProducaoId()));
+        return execucao.executar(ctx -> {
+            OrdemProducao ordem = ordemRepository.buscarPorId(comando.ordemProducaoId())
+                    .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(
+                            comando.ordemProducaoId()));
 
-        // Valida o status ANTES de verificar consumos — mensagem de erro mais precisa
-        if (!ordem.getStatus().podeSerConcluida()) {
-            throw new RegraDeNegocioException(
-                    "Apenas ordens EM_PRODUCAO podem ser concluídas. Status atual: %s."
-                            .formatted(ordem.getStatus()));
-        }
+            // Valida o status ANTES de verificar consumos — mensagem de erro mais precisa
+            if (!ordem.getStatus().podeSerConcluida()) {
+                throw new RegraDeNegocioException(
+                        "Apenas ordens EM_PRODUCAO podem ser concluídas. Status atual: %s."
+                                .formatted(ordem.getStatus()));
+            }
 
-        List<ConsumoMaterial> consumos = consumoRepository
-                .listarPorOrdemProducao(comando.ordemProducaoId());
+            List<ConsumoMaterial> consumos = consumoRepository
+                    .listarPorOrdemProducao(comando.ordemProducaoId());
 
-        validarConsumos(consumos);
+            validarConsumos(consumos);
 
-        ordem.concluir(comando.quantidadeProduzida());
+            StatusOrdemProducao statusAnterior = ordem.getStatus();
+            ordem.concluir(comando.quantidadeProduzida(), ctx.usuario());
 
-        Material material = materialRepository.buscarPorId(ordem.getMaterialId())
-                .orElseThrow(() -> new MaterialNaoEncontradoException(ordem.getMaterialId()));
+            Material material = materialRepository.buscarPorId(ordem.getMaterialId())
+                    .orElseThrow(() -> new MaterialNaoEncontradoException(ordem.getMaterialId()));
 
-        String numeroLote = gerarNumeroLote(material.getCodigo(),
-                comando.dataFabricacao(), ordem.getMaterialId());
+            String numeroLote = gerarNumeroLote(material.getCodigo(),
+                    comando.dataFabricacao(), ordem.getMaterialId());
 
-        Lote lote = Lote.criar(
-                numeroLote,
-                ordem.getMaterialId(),
-                ordem.getId(),
-                comando.quantidadeProduzida(),
-                material.getUnidadeDeMedida(),
-                comando.dataFabricacao(),
-                comando.dataValidade());
+            Lote lote = Lote.criar(
+                    numeroLote,
+                    ordem.getMaterialId(),
+                    ordem.getId(),
+                    comando.quantidadeProduzida(),
+                    material.getUnidadeDeMedida(),
+                    comando.dataFabricacao(),
+                    comando.dataValidade(),
+                    ctx.usuario());
 
-        OrdemProducao ordemSalva = ordemRepository.salvar(ordem);
-        Lote loteSalvo = loteRepository.salvar(lote);
+            OrdemProducao ordemSalva = ordemRepository.salvar(ordem);
+            Lote loteSalvo = loteRepository.salvar(lote);
 
-        return new Resultado(ordemSalva, loteSalvo);
+            ctx.registrar(TipoEntidade.ORDEM_PRODUCAO, ordemSalva.getId(), ordemSalva.getCodigo(),
+                    AcaoAuditoria.ORDEM_CONCLUIDA,
+                    Detalhes.vazio()
+                            .mudanca("status", statusAnterior, ordemSalva.getStatus())
+                            .e("quantidadePlanejada", ordemSalva.getQuantidade())
+                            .e("quantidadeProduzida", ordemSalva.getQuantidadeProduzida())
+                            .e("loteGerado", loteSalvo.getNumeroLote()));
+            ctx.registrar(TipoEntidade.LOTE, loteSalvo.getId(), loteSalvo.getNumeroLote(),
+                    AcaoAuditoria.LOTE_GERADO,
+                    Detalhes.com("numeroLote", loteSalvo.getNumeroLote())
+                            .e("material", material.getCodigo())
+                            .e("ordemProducao", ordemSalva.getCodigo())
+                            .e("quantidade", loteSalvo.getQuantidade())
+                            .e("unidadeDeMedida", loteSalvo.getUnidadeDeMedida())
+                            .e("dataFabricacao", loteSalvo.getDataFabricacao())
+                            .e("dataValidade", loteSalvo.getDataValidade()));
+            return new Resultado(ordemSalva, loteSalvo);
+        });
     }
 
     private void validarConsumos(List<ConsumoMaterial> consumos) {

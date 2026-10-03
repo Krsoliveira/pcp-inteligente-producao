@@ -14,7 +14,9 @@ public record ListaTecnicaResponse(
         StatusListaTecnica status,
         List<ItemListaTecnicaResponse> itens,
         Instant criadaEm,
-        Instant atualizadaEm
+        Instant atualizadaEm,
+        String criadaPor,
+        String atualizadaPor
 ) {
     public static ListaTecnicaResponse de(ListaTecnica lista) {
         return new ListaTecnicaResponse(
@@ -24,7 +26,9 @@ public record ListaTecnicaResponse(
                 lista.getStatus(),
                 lista.getItens().stream().map(ItemListaTecnicaResponse::de).toList(),
                 lista.getCriadaEm(),
-                lista.getAtualizadaEm()
+                lista.getAtualizadaEm(),
+                lista.getAssinatura().criadoPor(),
+                lista.getAssinatura().alteradoPor()
         );
     }
 }

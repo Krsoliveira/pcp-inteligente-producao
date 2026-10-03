@@ -1,11 +1,15 @@
 package com.krsoliveira.pcp.infrastructure.seed;
 
+import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
 import com.krsoliveira.pcp.application.consumo.ConsumoMaterialRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.lote.LoteRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.material.MaterialRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.ordem.OrdemProducaoRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.ordem.TipoOrdemRepositoryEmMemoria;
+import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
+import com.krsoliveira.pcp.domain.auditoria.EventoAuditoria;
+import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
@@ -18,9 +22,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,10 +47,11 @@ class DataLoaderTest {
     private final OrdemProducaoRepositoryEmMemoria ordens = new OrdemProducaoRepositoryEmMemoria();
     private final ConsumoMaterialRepositoryEmMemoria consumos = new ConsumoMaterialRepositoryEmMemoria();
     private final LoteRepositoryEmMemoria lotes = new LoteRepositoryEmMemoria();
+    private final TrilhaDeAuditoriaEmMemoria trilha = new TrilhaDeAuditoriaEmMemoria();
 
     private DataLoader loaderEm(LocalDate hoje) {
         Clock relogio = Clock.fixed(hoje.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneId.of("UTC"));
-        return new DataLoader(materiais, tipos, listas, ordens, consumos, lotes, relogio);
+        return new DataLoader(materiais, tipos, listas, ordens, consumos, lotes, trilha, relogio);
     }
 
     @Test
@@ -182,5 +189,69 @@ class DataLoaderTest {
                 .isBeforeOrEqualTo(hoje)
                 .isAfter(hoje.minusDays(30));
         assertThat(ordens.listarTodas()).anyMatch(o -> o.estaAtrasada(hoje));
+    }
+
+    @Nested
+    @DisplayName("rastreabilidade (ADR-0011)")
+    class Rastreabilidade {
+
+        @Test
+        @DisplayName("todo registro é assinado pela carga inicial; consumo justificado, pelo responsável")
+        void assinaturas() {
+            loaderEm(DATA_REFERENCIA).run();
+
+            assertThat(materiais.listarTodos()).allMatch(m ->
+                    DataLoader.RESPONSAVEL.equals(m.getAssinatura().criadoPor()));
+            assertThat(ordens.listarTodas()).allMatch(o ->
+                    DataLoader.RESPONSAVEL.equals(o.getAssinatura().criadoPor()));
+            assertThat(lotes.listarTodos()).allMatch(l ->
+                    DataLoader.RESPONSAVEL.equals(l.getAssinatura().criadoPor()));
+            assertThat(ordens.listarTodas().stream()
+                    .flatMap(o -> consumos.listarPorOrdemProducao(o.getId()).stream())
+                    .filter(c -> c.getJustificativa() != null))
+                    .isNotEmpty()
+                    .allSatisfy(c -> {
+                        assertThat(c.getJustificadoPor()).isNotBlank();
+                        assertThat(c.getAssinatura().alteradoPor()).isEqualTo(c.getJustificadoPor());
+                    });
+        }
+
+        @Test
+        @DisplayName("dados mestres são cadastrados antes da primeira ordem")
+        void dadosMestresAntesDasOrdens() {
+            loaderEm(DATA_REFERENCIA).run();
+
+            Instant primeiraOrdem = ordens.listarTodas().stream()
+                    .map(OrdemProducao::getCriadaEm).min(Comparator.naturalOrder()).orElseThrow();
+            assertThat(materiais.listarTodos()).allMatch(m -> m.getCriadoEm().isBefore(primeiraOrdem));
+        }
+
+        @Test
+        @DisplayName("a trilha tem o histórico de cada ordem, em ordem cronológica e nunca no futuro")
+        void historicoDasOrdens() {
+            loaderEm(DATA_REFERENCIA).run();
+            Instant agora = DATA_REFERENCIA.atStartOfDay(ZoneOffset.UTC).toInstant();
+
+            assertThat(trilha.eventos()).allMatch(e -> !e.getOcorridoEm().isAfter(agora));
+            assertThat(trilha.eventos(AcaoAuditoria.CRIADO).stream()
+                    .filter(e -> e.getTipoEntidade() == TipoEntidade.ORDEM_PRODUCAO))
+                    .hasSize((int) ordens.contarTodas());
+
+            long concluidas = ordens.listarTodas().stream()
+                    .filter(o -> o.getStatus() == StatusOrdemProducao.CONCLUIDA).count();
+            assertThat(trilha.eventos(AcaoAuditoria.ORDEM_CONCLUIDA)).hasSize((int) concluidas);
+            assertThat(trilha.eventos(AcaoAuditoria.LOTE_GERADO)).hasSize(lotes.listarTodos().size());
+
+            OrdemProducao concluida = ordens.listarTodas().stream()
+                    .filter(o -> o.getStatus() == StatusOrdemProducao.CONCLUIDA).findFirst().orElseThrow();
+            List<AcaoAuditoria> historico = trilha.eventos().stream()
+                    .filter(e -> e.getEntidadeId().equals(concluida.getId()))
+                    .sorted(Comparator.comparing(EventoAuditoria::getOcorridoEm))
+                    .map(EventoAuditoria::getAcao)
+                    .filter(a -> a != AcaoAuditoria.CONSUMO_REGISTRADO)
+                    .toList();
+            assertThat(historico).containsExactly(AcaoAuditoria.CRIADO, AcaoAuditoria.STATUS_ALTERADO,
+                    AcaoAuditoria.STATUS_ALTERADO, AcaoAuditoria.ORDEM_CONCLUIDA);
+        }
     }
 }

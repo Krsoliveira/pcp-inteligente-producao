@@ -18,7 +18,10 @@ public record ConsumoMaterialResponse(UUID id,
                                       String justificativa,
                                       String justificadoPor,
                                       Instant justificadoEm,
-                                      Instant criadoEm) {
+                                      Instant criadoEm,
+                                      String criadoPor,
+                                      Instant atualizadoEm,
+                                      String atualizadoPor) {
 
     public static ConsumoMaterialResponse de(ConsumoMaterial consumo) {
         return new ConsumoMaterialResponse(
@@ -34,6 +37,9 @@ public record ConsumoMaterialResponse(UUID id,
                 consumo.getJustificativa(),
                 consumo.getJustificadoPor(),
                 consumo.getJustificadoEm(),
-                consumo.getCriadoEm());
+                consumo.getCriadoEm(),
+                consumo.getAssinatura().criadoPor(),
+                consumo.getAssinatura().alteradoEm(),
+                consumo.getAssinatura().alteradoPor());
     }
 }

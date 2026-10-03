@@ -55,7 +55,7 @@ public class AuthController {
                     + "O cadastro público sempre cria PLANEJADOR — um campo 'perfil' enviado é ignorado.")
     public void registrar(@Valid @RequestBody RegistrarRequest request) {
         // Autocadastro nunca concede GERENTE: o perfil é decidido aqui, não pelo cliente.
-        registrarUsuario.executar(
+        registrarUsuario.autocadastrar(
                 request.nome(), request.email(), request.senha(), PERFIL_AUTOCADASTRO);
     }
 

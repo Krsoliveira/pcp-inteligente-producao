@@ -1,6 +1,10 @@
 package com.krsoliveira.pcp.infrastructure.config;
 
+import com.krsoliveira.pcp.application.auditoria.ConsultarTrilhaDeAuditoria;
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
+import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
+import com.krsoliveira.pcp.application.comum.Transacao;
+import com.krsoliveira.pcp.application.comum.UsuarioAtual;
 import com.krsoliveira.pcp.application.consumo.ConsultarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.RegistrarConsumoMaterial;
@@ -18,6 +22,7 @@ import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.ConsultarOrdensProducao;
 import com.krsoliveira.pcp.application.ordem.ConsultarTiposOrdem;
 import com.krsoliveira.pcp.application.ordem.CriarOrdemProducao;
+import com.krsoliveira.pcp.domain.auditoria.TrilhaDeAuditoria;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterialRepository;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
@@ -39,6 +44,19 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ConfiguracaoCasosDeUso {
 
+    // --- Auditoria ---
+
+    @Bean
+    ExecucaoAuditada execucaoAuditada(UsuarioAtual usuarioAtual, Transacao transacao,
+                                      TrilhaDeAuditoria trilha) {
+        return new ExecucaoAuditada(usuarioAtual, transacao, trilha);
+    }
+
+    @Bean
+    ConsultarTrilhaDeAuditoria consultarTrilhaDeAuditoria(TrilhaDeAuditoria trilha) {
+        return new ConsultarTrilhaDeAuditoria(trilha);
+    }
+
     // --- Consumo de Material ---
 
     @Bean
@@ -48,8 +66,11 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
-    RegistrarConsumoMaterial registrarConsumoMaterial(ConsumoMaterialRepository consumoRepository) {
-        return new RegistrarConsumoMaterial(consumoRepository);
+    RegistrarConsumoMaterial registrarConsumoMaterial(ConsumoMaterialRepository consumoRepository,
+                                                      OrdemProducaoRepository ordemRepository,
+                                                      MaterialRepository materialRepository,
+                                                      ExecucaoAuditada execucao) {
+        return new RegistrarConsumoMaterial(consumoRepository, ordemRepository, materialRepository, execucao);
     }
 
     @Bean
@@ -66,16 +87,21 @@ public class ConfiguracaoCasosDeUso {
 
     @Bean
     RegistrarEntradaMaterial registrarEntradaMaterial(LoteRepository loteRepository,
-                                                      MaterialRepository materialRepository) {
-        return new RegistrarEntradaMaterial(loteRepository, materialRepository);
+                                                      MaterialRepository materialRepository,
+                                                      ExecucaoAuditada execucao) {
+        return new RegistrarEntradaMaterial(loteRepository, materialRepository, execucao);
     }
 
     // --- Ordens de produção ---
 
     @Bean
     CriarOrdemProducao criarOrdemProducao(OrdemProducaoRepository ordemRepository,
-                                          ProjetarConsumoMaterial projetarConsumoMaterial) {
-        return new CriarOrdemProducao(ordemRepository, projetarConsumoMaterial);
+                                          ProjetarConsumoMaterial projetarConsumoMaterial,
+                                          MaterialRepository materialRepository,
+                                          ListaTecnicaRepository listaTecnicaRepository,
+                                          ExecucaoAuditada execucao) {
+        return new CriarOrdemProducao(ordemRepository, projetarConsumoMaterial, materialRepository,
+                listaTecnicaRepository, execucao);
     }
 
     @Bean
@@ -84,24 +110,27 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
-    AtualizarStatusOrdemProducao atualizarStatusOrdemProducao(OrdemProducaoRepository repositorio) {
-        return new AtualizarStatusOrdemProducao(repositorio);
+    AtualizarStatusOrdemProducao atualizarStatusOrdemProducao(OrdemProducaoRepository repositorio,
+                                                              ExecucaoAuditada execucao) {
+        return new AtualizarStatusOrdemProducao(repositorio, execucao);
     }
 
     @Bean
     ConcluirOrdemProducao concluirOrdemProducao(OrdemProducaoRepository ordemRepository,
                                                  ConsumoMaterialRepository consumoRepository,
                                                  LoteRepository loteRepository,
-                                                 MaterialRepository materialRepository) {
+                                                 MaterialRepository materialRepository,
+                                                 ExecucaoAuditada execucao) {
         return new ConcluirOrdemProducao(ordemRepository, consumoRepository,
-                loteRepository, materialRepository);
+                loteRepository, materialRepository, execucao);
     }
 
-    // --- Tipos de Ordem ---
+    // --- Tipos de ordem ---
 
     @Bean
-    CadastrarTipoOrdem cadastrarTipoOrdem(TipoOrdemRepository tipoOrdemRepository) {
-        return new CadastrarTipoOrdem(tipoOrdemRepository);
+    CadastrarTipoOrdem cadastrarTipoOrdem(TipoOrdemRepository tipoOrdemRepository,
+                                          ExecucaoAuditada execucao) {
+        return new CadastrarTipoOrdem(tipoOrdemRepository, execucao);
     }
 
     @Bean
@@ -110,15 +139,16 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
-    AtualizarTipoOrdem atualizarTipoOrdem(TipoOrdemRepository tipoOrdemRepository) {
-        return new AtualizarTipoOrdem(tipoOrdemRepository);
+    AtualizarTipoOrdem atualizarTipoOrdem(TipoOrdemRepository tipoOrdemRepository,
+                                          ExecucaoAuditada execucao) {
+        return new AtualizarTipoOrdem(tipoOrdemRepository, execucao);
     }
 
     // --- Materiais ---
 
     @Bean
-    CadastrarMaterial cadastrarMaterial(MaterialRepository materialRepository) {
-        return new CadastrarMaterial(materialRepository);
+    CadastrarMaterial cadastrarMaterial(MaterialRepository materialRepository, ExecucaoAuditada execucao) {
+        return new CadastrarMaterial(materialRepository, execucao);
     }
 
     @Bean
@@ -126,17 +156,20 @@ public class ConfiguracaoCasosDeUso {
         return new ConsultarMateriais(materialRepository);
     }
 
-    // --- Listas Técnicas ---
+    // --- Listas técnicas ---
 
     @Bean
     CadastrarListaTecnica cadastrarListaTecnica(ListaTecnicaRepository listaTecnicaRepository,
-                                                MaterialRepository materialRepository) {
-        return new CadastrarListaTecnica(listaTecnicaRepository, materialRepository);
+                                                MaterialRepository materialRepository,
+                                                ExecucaoAuditada execucao) {
+        return new CadastrarListaTecnica(listaTecnicaRepository, materialRepository, execucao);
     }
 
     @Bean
-    AtivarListaTecnica ativarListaTecnica(ListaTecnicaRepository listaTecnicaRepository) {
-        return new AtivarListaTecnica(listaTecnicaRepository);
+    AtivarListaTecnica ativarListaTecnica(ListaTecnicaRepository listaTecnicaRepository,
+                                          MaterialRepository materialRepository,
+                                          ExecucaoAuditada execucao) {
+        return new AtivarListaTecnica(listaTecnicaRepository, materialRepository, execucao);
     }
 
     @Bean
@@ -148,7 +181,8 @@ public class ConfiguracaoCasosDeUso {
 
     @Bean
     RegistrarUsuario registrarUsuario(UsuarioRepository usuarioRepository,
-                                      CodificadorDeSenha codificadorDeSenha) {
-        return new RegistrarUsuario(usuarioRepository, codificadorDeSenha);
+                                      CodificadorDeSenha codificadorDeSenha,
+                                      ExecucaoAuditada execucao) {
+        return new RegistrarUsuario(usuarioRepository, codificadorDeSenha, execucao);
     }
 }

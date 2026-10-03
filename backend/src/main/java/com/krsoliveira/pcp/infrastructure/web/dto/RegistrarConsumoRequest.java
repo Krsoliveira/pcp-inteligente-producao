@@ -9,8 +9,8 @@ import java.util.UUID;
 
 /**
  * Corpo da requisição de registro de consumo real de material.
- * Se houver desvio (consumida ≠ planejada), justificativa e justificadoPor
- * são obrigatórios — validação feita no domínio.
+ * Se houver desvio (consumida ≠ planejada), a justificativa é obrigatória —
+ * validação feita no domínio.
  */
 public record RegistrarConsumoRequest(
 
@@ -18,12 +18,11 @@ public record RegistrarConsumoRequest(
         @DecimalMin(value = "0.0", message = "quantidadeConsumida não pode ser negativa")
         BigDecimal quantidadeConsumida,
 
-        String justificativa,
+        String justificativa) {
 
-        String justificadoPor) {
-
+    /** O responsável pela justificativa é o usuário logado — não é informado no corpo. */
     public RegistrarConsumoMaterial.Comando paraComando(UUID consumoMaterialId) {
         return new RegistrarConsumoMaterial.Comando(
-                consumoMaterialId, quantidadeConsumida, justificativa, justificadoPor);
+                consumoMaterialId, quantidadeConsumida, justificativa);
     }
 }

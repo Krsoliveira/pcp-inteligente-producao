@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.domain.ordem;
 
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -36,14 +37,13 @@ public class OrdemProducao {
     private final LocalDate inicioPlanejado;
     private final LocalDate fimPlanejado;
     private StatusOrdemProducao status;
-    private final Instant criadaEm;
-    private Instant atualizadaEm;
+    private Assinatura assinatura;
 
     private OrdemProducao(UUID id, String codigo, UUID materialId, UUID listaTecnicaId,
                           UUID tipoOrdemId, String centroDeTrabalho, int quantidade,
                           BigDecimal quantidadeProduzida,
                           LocalDate inicioPlanejado, LocalDate fimPlanejado,
-                          StatusOrdemProducao status, Instant criadaEm, Instant atualizadaEm) {
+                          StatusOrdemProducao status, Assinatura assinatura) {
         this.id = id;
         this.codigo = codigo;
         this.materialId = materialId;
@@ -55,8 +55,7 @@ public class OrdemProducao {
         this.inicioPlanejado = inicioPlanejado;
         this.fimPlanejado = fimPlanejado;
         this.status = status;
-        this.criadaEm = criadaEm;
-        this.atualizadaEm = atualizadaEm;
+        this.assinatura = assinatura;
     }
 
     /**
@@ -67,7 +66,8 @@ public class OrdemProducao {
      */
     public static OrdemProducao criar(String codigo, UUID materialId, UUID listaTecnicaId,
                                       UUID tipoOrdemId, String centroDeTrabalho, int quantidade,
-                                      LocalDate inicioPlanejado, LocalDate fimPlanejado) {
+                                      LocalDate inicioPlanejado, LocalDate fimPlanejado,
+                                      String usuario) {
         if (codigo == null || codigo.isBlank()) {
             throw new RegraDeNegocioException("O código da ordem é obrigatório.");
         }
@@ -90,10 +90,9 @@ public class OrdemProducao {
             throw new RegraDeNegocioException(
                     "A data de fim planejada não pode ser anterior à de início.");
         }
-        Instant agora = Instant.now();
         return new OrdemProducao(UUID.randomUUID(), codigo.trim(), materialId, listaTecnicaId,
                 tipoOrdemId, centroDeTrabalho.trim(), quantidade, null,
-                inicioPlanejado, fimPlanejado, StatusOrdemProducao.PLANEJADA, agora, agora);
+                inicioPlanejado, fimPlanejado, StatusOrdemProducao.PLANEJADA, Assinatura.nova(usuario));
     }
 
     /**
@@ -105,24 +104,24 @@ public class OrdemProducao {
                                              String centroDeTrabalho, int quantidade,
                                              BigDecimal quantidadeProduzida,
                                              LocalDate inicioPlanejado, LocalDate fimPlanejado,
-                                             StatusOrdemProducao status,
-                                             Instant criadaEm, Instant atualizadaEm) {
+                                             StatusOrdemProducao status, Assinatura assinatura) {
         return new OrdemProducao(id, codigo, materialId, listaTecnicaId, tipoOrdemId,
                 centroDeTrabalho, quantidade, quantidadeProduzida,
-                inicioPlanejado, fimPlanejado, status, criadaEm, atualizadaEm);
+                inicioPlanejado, fimPlanejado, status, assinatura);
     }
 
     /**
      * Avança (ou cancela) o ciclo de vida da ordem, respeitando a máquina
      * de estados de {@link StatusOrdemProducao}.
      */
-    public void alterarStatusPara(StatusOrdemProducao novoStatus) {
+    public void alterarStatusPara(StatusOrdemProducao novoStatus, String usuario) {
+        Assinatura alterada = assinatura.alterada(usuario);
         if (!status.podeTransicionarPara(novoStatus)) {
             throw new RegraDeNegocioException(
                     "Transição de status inválida: %s -> %s.".formatted(status, novoStatus));
         }
         this.status = novoStatus;
-        this.atualizadaEm = Instant.now();
+        this.assinatura = alterada;
     }
 
     /**
@@ -130,7 +129,8 @@ public class OrdemProducao {
      * Só é possível a partir do status EM_PRODUCAO. A validação de consumos
      * e geração de lote é responsabilidade do caso de uso {@code ConcluirOrdemProducao}.
      */
-    public void concluir(BigDecimal quantidadeProduzida) {
+    public void concluir(BigDecimal quantidadeProduzida, String usuario) {
+        Assinatura alterada = assinatura.alterada(usuario);
         if (!status.podeSerConcluida()) {
             throw new RegraDeNegocioException(
                     "Apenas ordens EM_PRODUCAO podem ser concluídas. Status atual: %s.".formatted(status));
@@ -140,7 +140,7 @@ public class OrdemProducao {
         }
         this.quantidadeProduzida = quantidadeProduzida;
         this.status = StatusOrdemProducao.CONCLUIDA;
-        this.atualizadaEm = Instant.now();
+        this.assinatura = alterada;
     }
 
     /**
@@ -163,6 +163,7 @@ public class OrdemProducao {
     public LocalDate getInicioPlanejado() { return inicioPlanejado; }
     public LocalDate getFimPlanejado() { return fimPlanejado; }
     public StatusOrdemProducao getStatus() { return status; }
-    public Instant getCriadaEm() { return criadaEm; }
-    public Instant getAtualizadaEm() { return atualizadaEm; }
+    public Assinatura getAssinatura() { return assinatura; }
+    public Instant getCriadaEm() { return assinatura.criadoEm(); }
+    public Instant getAtualizadaEm() { return assinatura.alteradoEm(); }
 }

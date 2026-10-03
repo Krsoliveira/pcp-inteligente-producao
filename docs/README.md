@@ -43,3 +43,4 @@ Regras dos ADRs deste projeto:
 | [0008](adr/0008-banco-de-dados-provedor.md) | Banco de dados: PostgreSQL local e Neon em produção | Aceito |
 | [0009](adr/0009-dataset-sintetico-modelo-expandido.md) | Dataset sintético para o modelo expandido | Aceito |
 | [0010](adr/0010-entrada-de-material-por-compra.md) | Entrada de matéria-prima por compra gera lote | Aceito |
+| [0011](adr/0011-rastreabilidade-e-auditoria.md) | Rastreabilidade e auditoria: assinatura, trilha de eventos e genealogia de lotes | Aceito |

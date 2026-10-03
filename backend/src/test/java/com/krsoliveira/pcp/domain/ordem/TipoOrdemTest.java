@@ -10,6 +10,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TipoOrdemTest {
 
+    private static final String USUARIO = "teste@pcp";
+
     @Nested
     @DisplayName("Criação")
     class Criacao {
@@ -17,7 +19,7 @@ class TipoOrdemTest {
         @Test
         @DisplayName("cria tipo de ordem válido")
         void criaTipoOrdemValido() {
-            TipoOrdem tipo = TipoOrdem.criar("Produção Normal", "Ordens de produção padrão", "#1565c0");
+            TipoOrdem tipo = TipoOrdem.criar("Produção Normal", "Ordens de produção padrão", "#1565c0", USUARIO);
 
             assertThat(tipo.getId()).isNotNull();
             assertThat(tipo.getNome()).isEqualTo("Produção Normal");
@@ -29,7 +31,7 @@ class TipoOrdemTest {
         @Test
         @DisplayName("aceita descrição nula")
         void aceitaDescricaoNula() {
-            TipoOrdem tipo = TipoOrdem.criar("Manutenção", null, "#e65100");
+            TipoOrdem tipo = TipoOrdem.criar("Manutenção", null, "#e65100", USUARIO);
 
             assertThat(tipo.getDescricao()).isNull();
         }
@@ -37,7 +39,7 @@ class TipoOrdemTest {
         @Test
         @DisplayName("rejeita nome em branco")
         void rejeitaNomeEmBranco() {
-            assertThatThrownBy(() -> TipoOrdem.criar("  ", null, "#1565c0"))
+            assertThatThrownBy(() -> TipoOrdem.criar("  ", null, "#1565c0", USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("nome");
         }
@@ -45,7 +47,7 @@ class TipoOrdemTest {
         @Test
         @DisplayName("rejeita cor em branco")
         void rejeitaCorEmBranco() {
-            assertThatThrownBy(() -> TipoOrdem.criar("Teste", null, "  "))
+            assertThatThrownBy(() -> TipoOrdem.criar("Teste", null, "  ", USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("cor");
         }
@@ -58,10 +60,10 @@ class TipoOrdemTest {
         @Test
         @DisplayName("atualiza todos os campos editáveis")
         void atualizaCampos() {
-            TipoOrdem tipo = TipoOrdem.criar("Produção", "Desc original", "#1565c0");
+            TipoOrdem tipo = TipoOrdem.criar("Produção", "Desc original", "#1565c0", USUARIO);
             var criadoEm = tipo.getCriadoEm();
 
-            tipo.atualizar("Retrabalho", "Ordens de reprocessamento", "#d32f2f");
+            tipo.atualizar("Retrabalho", "Ordens de reprocessamento", "#d32f2f", USUARIO);
 
             assertThat(tipo.getNome()).isEqualTo("Retrabalho");
             assertThat(tipo.getDescricao()).isEqualTo("Ordens de reprocessamento");
@@ -73,9 +75,9 @@ class TipoOrdemTest {
         @Test
         @DisplayName("rejeita atualização com nome em branco")
         void rejeitaNomeEmBranco() {
-            TipoOrdem tipo = TipoOrdem.criar("Produção", null, "#1565c0");
+            TipoOrdem tipo = TipoOrdem.criar("Produção", null, "#1565c0", USUARIO);
 
-            assertThatThrownBy(() -> tipo.atualizar("", null, "#1565c0"))
+            assertThatThrownBy(() -> tipo.atualizar("", null, "#1565c0", USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("nome");
         }

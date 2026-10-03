@@ -1,8 +1,11 @@
 package com.krsoliveira.pcp.application.lote;
 
+import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
 import com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.material.MaterialRepositoryEmMemoria;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
+import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.StatusLote;
 import com.krsoliveira.pcp.domain.material.Material;
@@ -15,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import static com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria.USUARIO_TESTE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -22,25 +26,29 @@ class RegistrarEntradaMaterialTest {
 
     private static final LocalDate FABRICACAO = LocalDate.of(2026, 9, 10);
     private static final LocalDate VALIDADE = LocalDate.of(2027, 9, 10);
+    private static final LocalDate EMISSAO_NF = LocalDate.of(2026, 9, 12);
+    private static final LocalDate RECEBIMENTO = LocalDate.of(2026, 9, 15);
 
     private final MaterialRepositoryEmMemoria materiais = new MaterialRepositoryEmMemoria();
     private final LoteRepositoryEmMemoria lotes = new LoteRepositoryEmMemoria();
-    private final RegistrarEntradaMaterial casoDeUso = new RegistrarEntradaMaterial(lotes, materiais);
+    private final TrilhaDeAuditoriaEmMemoria trilha = new TrilhaDeAuditoriaEmMemoria();
+    private final RegistrarEntradaMaterial casoDeUso =
+            new RegistrarEntradaMaterial(lotes, materiais, trilha.execucao());
 
     private Material aco;
     private Material semiacabado;
 
     @BeforeEach
     void preparar() {
-        aco = Material.criar("MP-ACO-1045", "Barra aço SAE 1045", TipoMaterial.MATERIA_PRIMA, "kg");
-        semiacabado = Material.criar("SA-EIXO", "Eixo usinado", TipoMaterial.SEMIACABADO, "un");
+        aco = Material.criar("MP-ACO-1045", "Barra aço SAE 1045", TipoMaterial.MATERIA_PRIMA, "kg", USUARIO_TESTE);
+        semiacabado = Material.criar("SA-EIXO", "Eixo usinado", TipoMaterial.SEMIACABADO, "un", USUARIO_TESTE);
         materiais.salvar(aco);
         materiais.salvar(semiacabado);
     }
 
     private RegistrarEntradaMaterial.Comando comando(UUID materialId, String fornecedor, String nf) {
         return new RegistrarEntradaMaterial.Comando(materialId, fornecedor, nf,
-                new BigDecimal("500.0000"), FABRICACAO, VALIDADE);
+                EMISSAO_NF, RECEBIMENTO, new BigDecimal("500.0000"), FABRICACAO, VALIDADE);
     }
 
     @Test
@@ -56,6 +64,40 @@ class RegistrarEntradaMaterialTest {
         assertThat(lote.getNotaFiscal()).isEqualTo("12345");
         assertThat(lote.getUnidadeDeMedida()).isEqualTo("kg");
         assertThat(lotes.listarTodos()).containsExactly(lote);
+    }
+
+    @Test
+    @DisplayName("guarda as datas da nota fiscal, quem deu entrada e registra o evento")
+    void rastreabilidadeDaEntrada() {
+        Lote lote = casoDeUso.executar(comando(aco.getId(), "Aços Brasil Ltda", "12345"));
+
+        assertThat(lote.getOrigemCompra().dataEmissaoNf()).isEqualTo(EMISSAO_NF);
+        assertThat(lote.getOrigemCompra().dataRecebimento()).isEqualTo(RECEBIMENTO);
+        assertThat(lote.getAssinatura().criadoPor()).isEqualTo(USUARIO_TESTE);
+        assertThat(lote.getCriadoEm()).isNotNull();
+        assertThat(trilha.eventos()).singleElement().satisfies(evento -> {
+            assertThat(evento.getTipoEntidade()).isEqualTo(TipoEntidade.LOTE);
+            assertThat(evento.getEntidadeId()).isEqualTo(lote.getId());
+            assertThat(evento.getAcao()).isEqualTo(AcaoAuditoria.ENTRADA_REGISTRADA);
+            assertThat(evento.getUsuario()).isEqualTo(USUARIO_TESTE);
+            assertThat(evento.getDetalhes())
+                    .containsEntry("notaFiscal", "12345")
+                    .containsEntry("dataEmissaoNf", "2026-09-12")
+                    .containsEntry("dataRecebimento", "2026-09-15");
+        });
+    }
+
+    @Test
+    @DisplayName("rejeita recebimento anterior à emissão da nota fiscal")
+    void recebimentoAntesDaEmissao() {
+        var comando = new RegistrarEntradaMaterial.Comando(aco.getId(), "Fornecedor", "1",
+                RECEBIMENTO, EMISSAO_NF, new BigDecimal("1"), FABRICACAO, VALIDADE);
+
+        assertThatThrownBy(() -> casoDeUso.executar(comando))
+                .isInstanceOf(RegraDeNegocioException.class)
+                .hasMessageContaining("anterior à emissão");
+        assertThat(lotes.listarTodos()).isEmpty();
+        assertThat(trilha.eventos()).isEmpty();
     }
 
     @Test

@@ -1,6 +1,8 @@
 package com.krsoliveira.pcp.infrastructure.config;
 
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
+import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
+import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.usuario.CodificadorDeSenha;
 import com.krsoliveira.pcp.domain.usuario.Perfil;
 import com.krsoliveira.pcp.domain.usuario.Usuario;
@@ -44,7 +46,9 @@ class AdministradorInicialTest {
         }
     };
 
-    private final RegistrarUsuario registrarUsuario = new RegistrarUsuario(repositorio, codificador);
+    private final TrilhaDeAuditoriaEmMemoria trilha = new TrilhaDeAuditoriaEmMemoria();
+    private final RegistrarUsuario registrarUsuario =
+            new RegistrarUsuario(repositorio, codificador, trilha.execucao());
 
     private AdministradorInicial com(String nome, String email, String senha) {
         return new AdministradorInicial(repositorio, registrarUsuario, nome, email, senha);
@@ -67,6 +71,9 @@ class AdministradorInicialTest {
         assertThat(admin).isNotNull();
         assertThat(admin.getPerfil()).isEqualTo(Perfil.GERENTE);
         assertThat(admin.getSenhaHash()).isEqualTo("hash:SenhaForte123");
+        assertThat(trilha.eventos(AcaoAuditoria.USUARIO_REGISTRADO)).singleElement()
+                .satisfies(evento -> assertThat(evento.getUsuario())
+                        .isEqualTo(AdministradorInicial.RESPONSAVEL));
     }
 
     @Test
@@ -85,7 +92,7 @@ class AdministradorInicialTest {
     @Test
     @DisplayName("não promove conta já existente com o mesmo e-mail")
     void naoPromoveContaExistente() {
-        registrarUsuario.executar("Outra Pessoa", "admin@pcp.dev", "senhaDela123", Perfil.PLANEJADOR);
+        registrarUsuario.autocadastrar("Outra Pessoa", "admin@pcp.dev", "senhaDela123", Perfil.PLANEJADOR);
 
         com("Admin Teste", "admin@pcp.dev", "SenhaForte123").run(null);
 

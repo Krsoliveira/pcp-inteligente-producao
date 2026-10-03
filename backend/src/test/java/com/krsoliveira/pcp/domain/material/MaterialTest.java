@@ -13,8 +13,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class MaterialTest {
 
+    private static final String USUARIO = "teste@pcp";
+
     private Material materialValido() {
-        return Material.criar("MAT-001", "Motor elétrico 5CV", TipoMaterial.PRODUTO_ACABADO, "un");
+        return Material.criar("MAT-001", "Motor elétrico 5CV", TipoMaterial.PRODUTO_ACABADO, "un", USUARIO);
     }
 
     @Nested
@@ -25,7 +27,7 @@ class MaterialTest {
         @DisplayName("cria material válido e normaliza código em maiúsculas")
         void criaMaterialValido() {
             Material material = Material.criar("mat-001", "Motor elétrico 5CV",
-                    TipoMaterial.PRODUTO_ACABADO, "un");
+                    TipoMaterial.PRODUTO_ACABADO, "un", USUARIO);
 
             assertThat(material.getId()).isNotNull();
             assertThat(material.getCodigo()).isEqualTo("MAT-001");
@@ -38,7 +40,7 @@ class MaterialTest {
         @DisplayName("rejeita código em branco")
         void rejeitaCodigoEmBranco() {
             assertThatThrownBy(() ->
-                    Material.criar("  ", "Descrição", TipoMaterial.MATERIA_PRIMA, "kg"))
+                    Material.criar("  ", "Descrição", TipoMaterial.MATERIA_PRIMA, "kg", USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("código");
         }
@@ -47,7 +49,7 @@ class MaterialTest {
         @DisplayName("rejeita descrição em branco")
         void rejeitaDescricaoEmBranco() {
             assertThatThrownBy(() ->
-                    Material.criar("MAT-001", "", TipoMaterial.SEMIACABADO, "m"))
+                    Material.criar("MAT-001", "", TipoMaterial.SEMIACABADO, "m", USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("descrição");
         }
@@ -56,7 +58,7 @@ class MaterialTest {
         @DisplayName("rejeita tipo nulo")
         void rejeitaTipoNulo() {
             assertThatThrownBy(() ->
-                    Material.criar("MAT-001", "Descrição", null, "un"))
+                    Material.criar("MAT-001", "Descrição", null, "un", USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("tipo");
         }
@@ -65,7 +67,7 @@ class MaterialTest {
         @DisplayName("rejeita unidade de medida em branco")
         void rejeitaUnidadeEmBranco() {
             assertThatThrownBy(() ->
-                    Material.criar("MAT-001", "Descrição", TipoMaterial.PRODUTO_ACABADO, "  "))
+                    Material.criar("MAT-001", "Descrição", TipoMaterial.PRODUTO_ACABADO, "  ", USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("unidade");
         }

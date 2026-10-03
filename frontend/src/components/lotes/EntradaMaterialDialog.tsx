@@ -25,6 +25,8 @@ interface Formulario {
   materialId: string
   fornecedor: string
   notaFiscal: string
+  dataEmissaoNf: string
+  dataRecebimento: string
   quantidade: string
   dataFabricacao: string
   dataValidade: string
@@ -38,6 +40,8 @@ const VAZIO: Formulario = {
   materialId: '',
   fornecedor: '',
   notaFiscal: '',
+  dataEmissaoNf: '',
+  dataRecebimento: '',
   quantidade: '',
   dataFabricacao: '',
   dataValidade: '',
@@ -53,8 +57,18 @@ function validar(f: Formulario): Erros {
   if (!f.quantidade || !Number.isFinite(quantidade) || quantidade <= 0) {
     erros.quantidade = 'Informe uma quantidade maior que zero.'
   }
+  if (!f.dataEmissaoNf) erros.dataEmissaoNf = 'Informe a emissão da nota fiscal.'
+  else if (f.dataEmissaoNf > hojeIso()) erros.dataEmissaoNf = 'Não pode estar no futuro.'
+  if (!f.dataRecebimento) erros.dataRecebimento = 'Informe a data de recebimento.'
+  else if (f.dataRecebimento > hojeIso()) erros.dataRecebimento = 'Não pode estar no futuro.'
+  else if (f.dataEmissaoNf && f.dataRecebimento < f.dataEmissaoNf) {
+    erros.dataRecebimento = 'Não pode ser anterior à emissão da NF.'
+  }
   if (!f.dataFabricacao) erros.dataFabricacao = 'Informe a data de fabricação.'
   else if (f.dataFabricacao > hojeIso()) erros.dataFabricacao = 'Não pode estar no futuro.'
+  else if (f.dataRecebimento && f.dataFabricacao > f.dataRecebimento) {
+    erros.dataFabricacao = 'Não pode ser posterior ao recebimento.'
+  }
   if (!f.dataValidade) erros.dataValidade = 'Informe a data de validade.'
   else if (f.dataFabricacao && f.dataValidade < f.dataFabricacao) {
     erros.dataValidade = 'Não pode ser anterior à fabricação.'
@@ -64,7 +78,8 @@ function validar(f: Formulario): Erros {
 
 /**
  * Registro de recebimento de matéria-prima comprada. Gera um lote DISPONIVEL
- * com fornecedor e nota fiscal (POST /api/v1/lotes/entradas).
+ * com fornecedor, nota fiscal e suas datas (POST /api/v1/lotes/entradas). Quem
+ * registrou e quando é gravado pelo backend.
  */
 export function EntradaMaterialDialog({ aberto, onFechar, onRegistrado }: EntradaMaterialDialogProps) {
   const [form, setForm] = useState<Formulario>(VAZIO)
@@ -120,6 +135,8 @@ export function EntradaMaterialDialog({ aberto, onFechar, onRegistrado }: Entrad
       materialId: form.materialId,
       fornecedor: form.fornecedor.trim(),
       notaFiscal: form.notaFiscal.trim(),
+      dataEmissaoNf: form.dataEmissaoNf,
+      dataRecebimento: form.dataRecebimento,
       quantidade: Number(form.quantidade.replace(',', '.')),
       dataFabricacao: form.dataFabricacao,
       dataValidade: form.dataValidade,
@@ -156,6 +173,16 @@ export function EntradaMaterialDialog({ aberto, onFechar, onRegistrado }: Entrad
               error={!!erros.notaFiscal} helperText={erros.notaFiscal ?? 'Número ou chave de acesso.'} fullWidth
               slotProps={{ htmlInput: { maxLength: 44 } }} />
           </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField label="Emissão da NF *" type="date" value={form.dataEmissaoNf} onChange={alterar('dataEmissaoNf')}
+              error={!!erros.dataEmissaoNf} helperText={erros.dataEmissaoNf} fullWidth
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: hojeIso() } }} />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField label="Recebimento *" type="date" value={form.dataRecebimento} onChange={alterar('dataRecebimento')}
+              error={!!erros.dataRecebimento} helperText={erros.dataRecebimento ?? 'Dia em que o material chegou.'} fullWidth
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: form.dataEmissaoNf || undefined, max: hojeIso() } }} />
+          </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField label="Quantidade *" value={form.quantidade} onChange={alterar('quantidade')}
               error={!!erros.quantidade} helperText={erros.quantidade} fullWidth
@@ -167,7 +194,7 @@ export function EntradaMaterialDialog({ aberto, onFechar, onRegistrado }: Entrad
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField label="Fabricação *" type="date" value={form.dataFabricacao} onChange={alterar('dataFabricacao')}
               error={!!erros.dataFabricacao} helperText={erros.dataFabricacao} fullWidth
-              slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: hojeIso() } }} />
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: form.dataRecebimento || hojeIso() } }} />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField label="Validade *" type="date" value={form.dataValidade} onChange={alterar('dataValidade')}

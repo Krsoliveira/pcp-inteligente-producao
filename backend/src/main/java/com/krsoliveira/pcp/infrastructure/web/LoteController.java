@@ -48,7 +48,7 @@ public class LoteController {
             @Valid @RequestBody RegistrarEntradaMaterialRequest request) {
         Lote lote = registrarEntradaMaterial.executar(new RegistrarEntradaMaterial.Comando(
                 request.materialId(), request.fornecedor(), request.notaFiscal(),
-                request.quantidade(), request.dataFabricacao(), request.dataValidade()));
+                request.dataEmissaoNf(), request.dataRecebimento(), request.quantidade(), request.dataFabricacao(), request.dataValidade()));
         URI local = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/api/v1/lotes/{id}").buildAndExpand(lote.getId()).toUri();
         return ResponseEntity.created(local).body(LoteResponse.de(lote));
