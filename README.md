@@ -55,7 +55,10 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
   consumo projetado automaticamente a partir da BOM.
 - **Consumo de materiais** — planejado × consumido; todo desvio exige justificativa, registrada em nome do usuário logado.
 - **Lotes rastreáveis** — gerados na conclusão da ordem ou na **entrada de matéria-prima**
-  (fornecedor, nota fiscal, emissão da NF e recebimento obrigatórios), com alerta de vencimento.
+  (fornecedor, nota fiscal, emissão da NF e recebimento obrigatórios), com saldo e alerta de vencimento.
+- **Genealogia de lotes** — todo consumo informa de quais lotes saiu (sugestão FEFO); do
+  produto acabado chega-se à nota fiscal da matéria-prima e, do lote comprado, a todas as
+  ordens e lotes que o usaram. Consumos simultâneos não ultrapassam o saldo (bloqueio de linha).
 - **Rastreabilidade** — cada registro mostra quem criou, quem alterou e quando; a trilha de
   auditoria (`GET /api/v1/auditoria/eventos`) filtra por entidade, registro, usuário, ação e período.
 - **Dashboard** — total de ordens, atrasadas, em produção, concluídas e lotes disponíveis.
@@ -90,7 +93,7 @@ flowchart LR
         JPA[infrastructure/persistence<br/>Adaptadores JPA] -. implementa .-> DOM
     end
     RQ -->|HTTPS · JSON · JWT| WEB
-    JPA --> DB[(PostgreSQL 16<br/>Flyway V1–V9)]
+    JPA --> DB[(PostgreSQL 16<br/>Flyway V1–V10)]
 ```
 
 ### Modelo de domínio
@@ -105,6 +108,8 @@ erDiagram
     ORDEM_PRODUCAO ||--|{ CONSUMO_MATERIAL : "consome"
     ORDEM_PRODUCAO ||--o| LOTE : "gera (produção)"
     MATERIAL ||--o{ LOTE : "rastreado em"
+    CONSUMO_MATERIAL ||--o{ ALOCACAO_LOTE : "saiu de"
+    LOTE ||--o{ ALOCACAO_LOTE : "usado em"
 ```
 
 Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
@@ -188,7 +193,7 @@ O `docker-compose.yml` também sobe Redis e RabbitMQ, reservados para as próxim
 | 5a | Material + lista técnica (BOM) versionada | ✅ |
 | 5b | Consumo de material, lotes, conclusão de ordem, dataset sintético, entrada de matéria-prima | ✅ |
 | 5c | **Módulo de IA** — previsão de demanda, análise de atrasos e recomendações | 🔜 |
-| 6 | Saldo de estoque, integrações simuladas (SAP, Power BI) e deploy (Render + Neon) | 🔜 |
+| 6 | Integrações simuladas (SAP, Power BI) e deploy (Render + Neon) | 🔜 |
 
 Planejado para as próximas fases: cache com Redis, eventos com RabbitMQ e testes de
 frontend (Vitest). Estado detalhado em [docs/proximos-passos.md](docs/proximos-passos.md).

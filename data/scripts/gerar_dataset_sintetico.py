@@ -8,6 +8,8 @@ modelo de domínio expandido do ADR-0007:
     Material → Lista Técnica (BOM versionada) → Ordem de Produção
              → Consumo de Material (planejado × real, com desvios justificados)
              → Lote (gerado na conclusão da ordem)
+    Compra de matéria-prima (NF) → Lote de compra
+    Consumo ← Alocação → Lote (genealogia, ADR-0011)
 
 Os CSVs são gravados em ``backend/src/main/resources/dados/`` e lidos pelo
 ``DataLoader`` (perfil Spring ``seed``). O script não é executado em runtime: ele é
@@ -18,6 +20,12 @@ Padrões embutidos de propósito (matéria-prima para a IA da Fase 5c):
   * Gargalos: Tratamento Térmico e Soldagem atrasam mais (análise de atrasos).
   * Desvios de consumo com causas por centro de trabalho (refugo, setup, porosidade).
   * Troca de versão de BOM no meio do histórico (v1 OBSOLETA → v2 ATIVA).
+
+Genealogia (ADR-0011): o estoque é simulado em ordem cronológica. Cada consumo é
+alocado aos lotes disponíveis do componente pela regra FEFO (vence primeiro, sai
+primeiro). Faltando matéria-prima, gera-se uma compra (lote com NF); faltando
+semiacabado, uma ordem de reposição concluída pouco antes. O status final de cada lote
+vem do saldo (zerado → CONSUMIDO).
 
 Uso:
     python3 data/scripts/gerar_dataset_sintetico.py            # grava os CSVs
@@ -191,6 +199,23 @@ PERFIS_CENTRO: dict[str, PerfilCentro] = {
 
 RESPONSAVEIS = ("supervisor.turno.a", "supervisor.turno.b", "supervisor.turno.c", "analista.pcp")
 
+# Compras de matéria-prima: fornecedores, validade do lote e embalagem (múltiplo de compra).
+FORNECEDORES: dict[str, tuple[str, ...]] = {
+    "MP-ACO-1045": ("Aços Brasil Ltda", "Siderúrgica Vale do Aço S.A."),
+    "MP-CHAPA-3MM": ("Aços Brasil Ltda", "Laminados Paulista Ltda"),
+    "MP-ALU-A380": ("Alumínio Nordeste Ltda", "Metais Leves do Sul S.A."),
+    "MP-ARAME-MIG": ("Soldas Técnicas Ltda",),
+    "MP-TINTA-EPOXI": ("Tintas Industriais Cores Ltda", "Revestimentos Proteq S.A."),
+    "MP-OLEO-TEMPERA": ("Lubrificantes Petroquímica Ltda",),
+    "MP-PARAF-M8": ("Fixadores Paraná Ltda", "Parafusos Garra S.A."),
+    "MP-ROLAM-6205": ("Rolamentos Precisão Ltda",),
+    "MP-ORING-40": ("Vedações Borrachas Ltda",),
+    "MP-GAXETA-NBR": ("Vedações Borrachas Ltda",),
+}
+VALIDADE_COMPRA_MESES = {"MP-TINTA-EPOXI": 12, "MP-OLEO-TEMPERA": 24, "MP-ORING-40": 36, "MP-GAXETA-NBR": 36}
+VALIDADE_COMPRA_PADRAO_MESES = 60
+EMBALAGEM = {"kg": Decimal("25"), "L": Decimal("20"), "un": Decimal("50")}
+
 # --------------------------------------------------------------------------------------
 # Estruturas geradas
 # --------------------------------------------------------------------------------------
@@ -210,6 +235,24 @@ class Ordem:
     quantidade_produzida: Decimal | None = None
     data_conclusao: date | None = None
     consumos: list[dict] = field(default_factory=list)
+
+
+@dataclass
+class LoteSim:
+    """Lote na simulação de estoque: de produção (ordem) ou de compra (nota fiscal)."""
+    material: MaterialDef
+    quantidade: Decimal
+    fabricacao: date
+    validade: date
+    disponivel_a_partir: date          # conclusão da ordem ou recebimento da compra
+    ordem: Ordem | None = None
+    compra: dict | None = None         # fornecedor, nota_fiscal, emissao, recebimento
+    bloqueado: bool = False
+    saldo: Decimal = Decimal("0")
+    status: str = "DISPONIVEL"
+
+    def __post_init__(self) -> None:
+        self.saldo = self.quantidade
 
 
 # --------------------------------------------------------------------------------------
@@ -375,23 +418,171 @@ def transform_consumos(rng: random.Random, ordens: list[Ordem], materiais: dict[
             o.quantidade_produzida = max(Decimal(1), produzida)
 
 
-def transform_lotes(rng: random.Random, ordens: list[Ordem]) -> list[dict]:
-    lotes = []
-    for o in ordens:
-        if o.status != "CONCLUIDA":
-            continue
-        fabricacao = o.data_conclusao
-        validade = _somar_meses(fabricacao, o.material.validade_meses)
-        if validade < DATA_REFERENCIA:
-            status = "VENCIDO"
-        elif rng.random() < 0.03:
-            status = "BLOQUEADO"
-        elif o.material.tipo == "SEMIACABADO" and (DATA_REFERENCIA - fabricacao).days > 45:
-            status = "CONSUMIDO"
-        else:
-            status = "DISPONIVEL"
-        lotes.append({"ordem": o, "fabricacao": fabricacao, "validade": validade, "status": status})
-    return lotes
+def transform_lotes(rng: random.Random, ordens: list[Ordem]) -> list[LoteSim]:
+    """Um lote por ordem concluída; ~3% ficam retidos pela qualidade (BLOQUEADO)."""
+    return [_lote_de_producao(o, bloqueado=rng.random() < 0.03)
+            for o in ordens if o.status == "CONCLUIDA"]
+
+
+def _lote_de_producao(o: Ordem, bloqueado: bool = False) -> LoteSim:
+    return LoteSim(o.material, Decimal(o.quantidade_produzida), o.data_conclusao,
+                   _somar_meses(o.data_conclusao, o.material.validade_meses), o.data_conclusao,
+                   ordem=o, bloqueado=bloqueado)
+
+
+def _data_do_consumo(o: Ordem) -> date:
+    """Concluída: no dia da conclusão. Em produção: até o fim planejado, nunca no futuro."""
+    if o.data_conclusao:
+        return o.data_conclusao
+    return max(o.inicio, min(o.fim, DATA_REFERENCIA - timedelta(days=1)))
+
+
+class SimuladorEstoque:
+    """Aloca os consumos aos lotes (FEFO), comprando matéria-prima e produzindo
+    semiacabado sob demanda quando falta saldo."""
+
+    def __init__(self, rng: random.Random, ordens: list[Ordem], lotes: list[LoteSim],
+                 materiais: dict[str, MaterialDef],
+                 boms: dict[tuple[str, str], list[tuple[str, Decimal]]]) -> None:
+        self.rng = rng
+        self.ordens = ordens
+        self.lotes = lotes
+        self.materiais = materiais
+        self.boms = boms
+        self.alocacoes: list[dict] = []
+        self.sequenciais: dict[int, int] = {}
+        for o in ordens:
+            ano, seq = o.codigo.split("-")[1:]
+            self.sequenciais[int(ano)] = max(self.sequenciais.get(int(ano), 0), int(seq))
+        self.proxima_nf = 100_001
+        self.demanda_diaria = self._demanda_diaria_mp()
+
+    def _demanda_diaria_mp(self) -> dict[str, Decimal]:
+        total: dict[str, Decimal] = {}
+        for o in self.ordens:
+            for c in o.consumos:
+                if c["componente"].tipo == "MATERIA_PRIMA" and c["consumida"]:
+                    total[c["componente"].codigo] = total.get(c["componente"].codigo, Decimal(0)) + c["consumida"]
+        dias = Decimal(30 * MESES_DE_HISTORICO)
+        return {codigo: qtd / dias for codigo, qtd in total.items()}
+
+    def executar(self) -> None:
+        pendentes = [(o, c) for o in self.ordens for c in o.consumos if c["consumida"]]
+        pendentes.sort(key=lambda oc: (_data_do_consumo(oc[0]), oc[0].codigo, oc[1]["componente"].codigo))
+        for o, c in pendentes:
+            c["data_registro"] = _data_do_consumo(o)
+            self._alocar(o, c, c["data_registro"])
+        self._repor_para_carteira()
+        for lote in self.lotes:
+            if lote.saldo == 0:
+                lote.status = "CONSUMIDO"
+            elif lote.validade < DATA_REFERENCIA:
+                lote.status = "VENCIDO"
+            elif lote.bloqueado:
+                lote.status = "BLOQUEADO"
+            else:
+                lote.status = "DISPONIVEL"
+
+    def _repor_para_carteira(self) -> None:
+        """Garante saldo para os consumos ainda não registrados das ordens em produção —
+        o cenário "atual" precisa permitir registrar consumo pela tela. Semiacabados
+        primeiro: a reposição deles consome matéria-prima."""
+        pendente: dict[str, Decimal] = {}
+        for o in self.ordens:
+            if o.status == "EM_PRODUCAO":
+                for c in o.consumos:
+                    if c["consumida"] is None:
+                        codigo = c["componente"].codigo
+                        pendente[codigo] = pendente.get(codigo, Decimal(0)) + c["planejada"] * Decimal("1.10")
+        for tipo in ("SEMIACABADO", "MATERIA_PRIMA"):
+            for codigo in sorted(pendente):
+                material = self.materiais[codigo]
+                if material.tipo != tipo:
+                    continue
+                disponivel = sum((lote.saldo for lote in self._elegiveis(material, DATA_REFERENCIA)), Decimal(0))
+                if disponivel < pendente[codigo]:
+                    falta = pendente[codigo] - disponivel
+                    if tipo == "MATERIA_PRIMA":
+                        self._comprar(material, falta, DATA_REFERENCIA)
+                    else:
+                        self._produzir(material, falta, DATA_REFERENCIA)
+
+    def _elegiveis(self, material: MaterialDef, data: date) -> list[LoteSim]:
+        # Disponível antes do dia do consumo (estritamente) e válido até ele.
+        lotes = [lote for lote in self.lotes
+                 if lote.material is material and lote.saldo > 0 and not lote.bloqueado
+                 and lote.disponivel_a_partir < data <= lote.validade]
+        return sorted(lotes, key=lambda lote: (lote.validade, lote.fabricacao))
+
+    def _alocar(self, o: Ordem, consumo: dict, data: date) -> None:
+        restante = consumo["consumida"]
+        material = consumo["componente"]
+        for lote in self._elegiveis(material, data):
+            restante = self._retirar(o, consumo, lote, restante, data)
+            if restante == 0:
+                return
+        novo = self._comprar(material, restante, data) if material.tipo == "MATERIA_PRIMA" \
+            else self._produzir(material, restante, data)
+        restante = self._retirar(o, consumo, novo, restante, data)
+        assert restante == 0, f"{o.codigo}: falta de {material.codigo}"
+
+    def _retirar(self, o: Ordem, consumo: dict, lote: LoteSim, restante: Decimal, data: date) -> Decimal:
+        quantidade = min(lote.saldo, restante)
+        lote.saldo -= quantidade
+        self.alocacoes.append({"ordem": o, "consumo": consumo, "lote": lote,
+                               "quantidade": quantidade, "data": data})
+        return restante - quantidade
+
+    def _comprar(self, material: MaterialDef, falta: Decimal, data: date) -> LoteSim:
+        """Compra que cobre a falta e algumas semanas de demanda, em embalagens fechadas."""
+        cobertura = self.demanda_diaria.get(material.codigo, Decimal(0)) * Decimal(self.rng.randint(20, 45))
+        embalagem = EMBALAGEM[material.unidade]
+        quantidade = (max(falta, cobertura) / embalagem).to_integral_value(rounding="ROUND_CEILING") * embalagem
+        recebimento = data - timedelta(days=self.rng.randint(1, 6))
+        emissao = recebimento - timedelta(days=self.rng.randint(0, 4))
+        fabricacao = emissao - timedelta(days=self.rng.randint(3, 40))
+        validade = _somar_meses(fabricacao, VALIDADE_COMPRA_MESES.get(material.codigo,
+                                                                     VALIDADE_COMPRA_PADRAO_MESES))
+        compra = {"fornecedor": self.rng.choice(FORNECEDORES[material.codigo]),
+                  "nota_fiscal": f"{self.proxima_nf:06d}", "emissao": emissao, "recebimento": recebimento}
+        self.proxima_nf += 1
+        lote = LoteSim(material, _q4(quantidade), fabricacao, validade, recebimento, compra=compra)
+        self.lotes.append(lote)
+        return lote
+
+    def _produzir(self, material: MaterialDef, falta: Decimal, data: date) -> LoteSim:
+        """Ordem de reposição concluída pouco antes do consumo, com seus próprios consumos alocados."""
+        quantidade = int((falta * Decimal(str(round(self.rng.uniform(1.05, 1.25), 2))))
+                         .to_integral_value(rounding="ROUND_CEILING"))
+        conclusao = data - timedelta(days=self.rng.randint(1, 3))
+        inicio = conclusao - timedelta(days=self.rng.randint(*PERFIS_CENTRO[material.centro].lead_time_dias))
+        self.sequenciais[inicio.year] = self.sequenciais.get(inicio.year, 0) + 1
+        codigo = f"OP-{inicio.year}-{self.sequenciais[inicio.year]:04d}"
+        versao = _versao_vigente(material.codigo, inicio)
+        o = Ordem(codigo, material, versao, "Reposição de Estoque", material.centro, quantidade,
+                  inicio, conclusao, status="CONCLUIDA", quantidade_produzida=Decimal(quantidade),
+                  data_conclusao=conclusao)
+        for comp_codigo, qtd_item in self.boms[(material.codigo, versao)]:
+            planejada = _q4(qtd_item * quantidade)
+            consumo = {"componente": self.materiais[comp_codigo], "planejada": planejada,
+                       "consumida": planejada, "justificativa": "", "justificado_por": "",
+                       "data_registro": conclusao}
+            o.consumos.append(consumo)
+            self._alocar(o, consumo, conclusao)
+        self.ordens.append(o)
+        lote = _lote_de_producao(o)
+        self.lotes.append(lote)
+        return lote
+
+
+def transform_genealogia(ordens: list[Ordem], lotes: list[LoteSim], materiais: dict[str, MaterialDef],
+                         boms: dict[tuple[str, str], list[tuple[str, Decimal]]]) -> list[dict]:
+    """Simula o estoque e devolve as alocações consumo → lote. Semente própria: não
+    altera a sequência aleatória das etapas anteriores."""
+    simulador = SimuladorEstoque(random.Random(SEMENTE + 1), ordens, lotes, materiais, boms)
+    simulador.executar()
+    ordens.sort(key=lambda o: (o.inicio, o.codigo))
+    return simulador.alocacoes
 
 
 def _somar_meses(d: date, meses: int) -> date:
@@ -400,7 +591,8 @@ def _somar_meses(d: date, meses: int) -> date:
     return date(ano, mes, min(d.day, 28))
 
 
-def validate_dataset(ordens: list[Ordem], lotes: list[dict], materiais: dict[str, MaterialDef]) -> None:
+def validate_dataset(ordens: list[Ordem], lotes: list[LoteSim], alocacoes: list[dict],
+                     materiais: dict[str, MaterialDef]) -> None:
     """Garante as invariantes do domínio ANTES de exportar (falha rápido)."""
     erros: list[str] = []
     codigos = [o.codigo for o in ordens]
@@ -419,11 +611,35 @@ def validate_dataset(ordens: list[Ordem], lotes: list[dict], materiais: dict[str
         for c in o.consumos:
             if c["consumida"] is not None and c["consumida"] != c["planejada"] and not c["justificativa"]:
                 erros.append(f"{o.codigo}: desvio sem justificativa em {c['componente'].codigo}")
+    alocado_por_lote: dict[int, Decimal] = {}
+    alocado_por_consumo: dict[int, Decimal] = {}
+    for a in alocacoes:
+        lote, consumo = a["lote"], a["consumo"]
+        alocado_por_lote[id(lote)] = alocado_por_lote.get(id(lote), Decimal(0)) + a["quantidade"]
+        alocado_por_consumo[id(consumo)] = alocado_por_consumo.get(id(consumo), Decimal(0)) + a["quantidade"]
+        if lote.material is not consumo["componente"]:
+            erros.append(f"{a['ordem'].codigo}: lote de outro material em {consumo['componente'].codigo}")
+        if not lote.disponivel_a_partir < a["data"] <= lote.validade:
+            erros.append(f"{a['ordem'].codigo}: lote fora da janela de uso em {a['data']}")
+        if a["quantidade"] <= 0:
+            erros.append(f"{a['ordem'].codigo}: alocação não positiva")
+    for o in ordens:
+        for c in o.consumos:
+            if c["consumida"] and alocado_por_consumo.get(id(c), Decimal(0)) != c["consumida"]:
+                erros.append(f"{o.codigo}: alocações ≠ consumido em {c['componente'].codigo}")
     for lote in lotes:
-        if lote["validade"] < lote["fabricacao"]:
-            erros.append(f"{lote['ordem'].codigo}: validade antes da fabricação")
-        if lote["fabricacao"] > DATA_REFERENCIA:
-            erros.append(f"{lote['ordem'].codigo}: lote fabricado no futuro")
+        ref = lote.ordem.codigo if lote.ordem else f"NF {lote.compra['nota_fiscal']}"
+        if lote.validade < lote.fabricacao:
+            erros.append(f"{ref}: validade antes da fabricação")
+        if lote.fabricacao > DATA_REFERENCIA:
+            erros.append(f"{ref}: lote fabricado no futuro")
+        if lote.saldo < 0 or lote.saldo + alocado_por_lote.get(id(lote), Decimal(0)) != lote.quantidade:
+            erros.append(f"{ref}: saldo inconsistente")
+        if (lote.saldo == 0) != (lote.status == "CONSUMIDO"):
+            erros.append(f"{ref}: status {lote.status} com saldo {lote.saldo}")
+        if lote.compra and not (lote.fabricacao <= lote.compra["recebimento"]
+                                and lote.compra["emissao"] <= lote.compra["recebimento"]):
+            erros.append(f"{ref}: datas da compra incoerentes")
     for mat, _v, _s, itens in LISTAS_TECNICAS:
         if materiais[mat].tipo == "MATERIA_PRIMA":
             erros.append(f"{mat}: matéria-prima não pode ter lista técnica")
@@ -442,7 +658,9 @@ def _csv(cabecalho: list[str], linhas: list[list]) -> str:
     return buffer.getvalue()
 
 
-def export_csvs(ordens: list[Ordem], lotes: list[dict]) -> dict[str, str]:
+def export_csvs(ordens: list[Ordem], lotes: list[LoteSim], alocacoes: list[dict]) -> dict[str, str]:
+    producao = sorted((lote for lote in lotes if lote.ordem), key=lambda lote: (lote.fabricacao, lote.ordem.codigo))
+    compras = sorted((lote for lote in lotes if lote.compra), key=lambda lote: lote.compra["nota_fiscal"])
     arquivos = {
         "dataset.properties": (
             "# Gerado por data/scripts/gerar_dataset_sintetico.py — não edite à mão.\n"
@@ -461,20 +679,38 @@ def export_csvs(ordens: list[Ordem], lotes: list[dict]) -> dict[str, str]:
             [[m, v, comp, qtd] for m, v, _s, itens in LISTAS_TECNICAS for comp, qtd in itens]),
         "ordens_producao.csv": _csv(
             ["codigo", "material_codigo", "versao_lista", "tipo_ordem", "centro_de_trabalho",
-             "quantidade", "quantidade_produzida", "inicio_planejado", "fim_planejado", "status"],
+             "quantidade", "quantidade_produzida", "inicio_planejado", "fim_planejado", "status",
+             "data_conclusao"],
             [[o.codigo, o.material.codigo, o.versao_lista, o.tipo_ordem, o.centro, o.quantidade,
-              o.quantidade_produzida, o.inicio.isoformat(), o.fim.isoformat(), o.status]
+              o.quantidade_produzida, o.inicio.isoformat(), o.fim.isoformat(), o.status,
+              o.data_conclusao.isoformat() if o.data_conclusao else None]
              for o in ordens]),
         "consumos_material.csv": _csv(
             ["ordem_codigo", "componente_codigo", "quantidade_planejada", "quantidade_consumida",
-             "justificativa", "justificado_por"],
+             "justificativa", "justificado_por", "data_registro"],
             [[o.codigo, c["componente"].codigo, c["planejada"], c["consumida"],
-              c["justificativa"], c["justificado_por"]]
+              c["justificativa"], c["justificado_por"],
+              c["data_registro"].isoformat() if c.get("data_registro") else None]
              for o in ordens for c in o.consumos]),
         "lotes.csv": _csv(
-            ["ordem_codigo", "data_fabricacao", "data_validade", "status"],
-            [[lote["ordem"].codigo, lote["fabricacao"].isoformat(), lote["validade"].isoformat(),
-              lote["status"]] for lote in lotes]),
+            ["ordem_codigo", "data_fabricacao", "data_validade", "status", "saldo"],
+            [[lote.ordem.codigo, lote.fabricacao.isoformat(), lote.validade.isoformat(),
+              lote.status, _q4(lote.saldo)] for lote in producao]),
+        "lotes_compra.csv": _csv(
+            ["material_codigo", "fornecedor", "nota_fiscal", "data_emissao_nf", "data_recebimento",
+             "quantidade", "data_fabricacao", "data_validade", "status", "saldo"],
+            [[lote.material.codigo, lote.compra["fornecedor"], lote.compra["nota_fiscal"],
+              lote.compra["emissao"].isoformat(), lote.compra["recebimento"].isoformat(),
+              lote.quantidade, lote.fabricacao.isoformat(), lote.validade.isoformat(),
+              lote.status, _q4(lote.saldo)] for lote in compras]),
+        "alocacoes_lote.csv": _csv(
+            ["ordem_codigo", "componente_codigo", "lote_ordem_codigo", "lote_nota_fiscal", "quantidade"],
+            [[a["ordem"].codigo, a["consumo"]["componente"].codigo,
+              a["lote"].ordem.codigo if a["lote"].ordem else None,
+              a["lote"].compra["nota_fiscal"] if a["lote"].compra else None,
+              _q4(a["quantidade"])]
+             for a in sorted(alocacoes, key=lambda a: (a["data"], a["ordem"].codigo,
+                                                       a["consumo"]["componente"].codigo))]),
     }
     return arquivos
 
@@ -486,8 +722,9 @@ def gerar() -> dict[str, str]:
     transform_status(rng, ordens)
     transform_consumos(rng, ordens, materiais, boms)
     lotes = transform_lotes(rng, ordens)
-    validate_dataset(ordens, lotes, materiais)
-    return export_csvs(ordens, lotes)
+    alocacoes = transform_genealogia(ordens, lotes, materiais, boms)
+    validate_dataset(ordens, lotes, alocacoes, materiais)
+    return export_csvs(ordens, lotes, alocacoes)
 
 
 def main() -> int:

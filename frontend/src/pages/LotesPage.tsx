@@ -26,7 +26,7 @@ import { EntradaMaterialDialog } from '../components/lotes/EntradaMaterialDialog
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { StatusLoteBadge } from '../components/StatusBadge'
-import { dataLocalIso, formatarData, formatarDataHora } from '../utils/formatacao'
+import { dataLocalIso, formatarData, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import type { Lote, StatusLote } from '../types'
 
 export function LotesPage() {
@@ -148,7 +148,7 @@ export function LotesPage() {
                   <TableCell>Número do Lote</TableCell>
                   <TableCell>Material</TableCell>
                   <TableCell>Origem</TableCell>
-                  <TableCell align="right">Quantidade</TableCell>
+                  <TableCell align="right">Saldo / Qtd</TableCell>
                   <TableCell>Fabricação</TableCell>
                   <TableCell>Validade</TableCell>
                   <TableCell>Status</TableCell>
@@ -186,7 +186,10 @@ export function LotesPage() {
                         )}
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body2">{lote.quantidade.toLocaleString('pt-BR')} {lote.unidadeDeMedida}</Typography>
+                        <Typography variant="body2" noWrap>
+                          <strong>{formatarQuantidade(lote.saldo)}</strong>
+                          {` / ${formatarQuantidade(lote.quantidade, lote.unidadeDeMedida)}`}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" color="text.secondary">{formatarData(lote.dataFabricacao)}</Typography>

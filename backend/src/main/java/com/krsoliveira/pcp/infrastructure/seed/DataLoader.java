@@ -12,8 +12,11 @@ import com.krsoliveira.pcp.domain.lista.ItemListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
+import com.krsoliveira.pcp.domain.lote.AlocacaoLote;
+import com.krsoliveira.pcp.domain.lote.AlocacaoLoteRepository;
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
+import com.krsoliveira.pcp.domain.lote.OrigemCompra;
 import com.krsoliveira.pcp.domain.lote.StatusLote;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
@@ -54,7 +57,8 @@ import java.util.UUID;
  *
  * Lê os CSVs de {@code classpath:dados/} — gerados por
  * {@code data/scripts/gerar_dataset_sintetico.py} — e persiste, nesta ordem:
- * materiais → tipos de ordem → listas técnicas → ordens → consumos → lotes.
+ * materiais → tipos de ordem → listas técnicas → ordens → consumos → lotes (de produção e
+ * de compra) → alocações de lote (genealogia).
  *
  * Decisões:
  * <ul>
@@ -70,7 +74,7 @@ import java.util.UUID;
  *   <li><b>Rastreabilidade</b> (ADR-0011): todo registro é assinado por
  *       {@value #RESPONSAVEL} (consumos justificados, pelo responsável do dataset) e a
  *       trilha de auditoria recebe o histórico simulado — criação, transições de status,
- *       consumos, conclusões e lotes —, com datas coerentes com o planejamento de cada
+ *       consumos, conclusões, entradas, lotes e alocações —, com datas coerentes com o planejamento de cada
  *       ordem e nunca no futuro. Dados mestres são datados antes da primeira ordem.</li>
  *   <li><b>Idempotência</b>: se já houver ordens ou materiais, a carga não roda.</li>
  *   <li><b>Atomicidade</b>: tudo numa transação — falha no meio não deixa carga parcial.</li>
@@ -92,6 +96,7 @@ public class DataLoader implements CommandLineRunner {
     private final OrdemProducaoRepository ordemRepository;
     private final ConsumoMaterialRepository consumoRepository;
     private final LoteRepository loteRepository;
+    private final AlocacaoLoteRepository alocacaoRepository;
     private final TrilhaDeAuditoria trilha;
     private final Clock relogio;
     private final List<EventoAuditoria> eventos = new ArrayList<>();
@@ -104,9 +109,10 @@ public class DataLoader implements CommandLineRunner {
                       OrdemProducaoRepository ordemRepository,
                       ConsumoMaterialRepository consumoRepository,
                       LoteRepository loteRepository,
+                      AlocacaoLoteRepository alocacaoRepository,
                       TrilhaDeAuditoria trilha) {
         this(materialRepository, tipoOrdemRepository, listaTecnicaRepository, ordemRepository,
-                consumoRepository, loteRepository, trilha, Clock.systemDefaultZone());
+                consumoRepository, loteRepository, alocacaoRepository, trilha, Clock.systemDefaultZone());
     }
 
     DataLoader(MaterialRepository materialRepository,
@@ -115,6 +121,7 @@ public class DataLoader implements CommandLineRunner {
                OrdemProducaoRepository ordemRepository,
                ConsumoMaterialRepository consumoRepository,
                LoteRepository loteRepository,
+               AlocacaoLoteRepository alocacaoRepository,
                TrilhaDeAuditoria trilha,
                Clock relogio) {
         this.materialRepository = materialRepository;
@@ -123,6 +130,7 @@ public class DataLoader implements CommandLineRunner {
         this.ordemRepository = ordemRepository;
         this.consumoRepository = consumoRepository;
         this.loteRepository = loteRepository;
+        this.alocacaoRepository = alocacaoRepository;
         this.trilha = trilha;
         this.relogio = relogio;
     }
@@ -145,15 +153,23 @@ public class DataLoader implements CommandLineRunner {
         Map<String, TipoOrdem> tipos = carregarTiposOrdem(cadastroMestre);
         Map<String, ListaTecnica> listas = carregarListasTecnicas(materiais, cadastroMestre);
         Map<String, OrdemProducao> ordens = carregarOrdens(materiais, tipos, listas, deslocamentoDias);
-        int consumos = carregarConsumos(materiais, ordens);
-        int lotes = carregarLotes(materiais, ordens, deslocamentoDias);
+        Map<String, ConsumoCarga> consumos = carregarConsumos(materiais, ordens, deslocamentoDias);
+        Map<String, LoteCarga> lotes = new LinkedHashMap<>();
+        Map<String, Integer> sequenciais = new HashMap<>();
+        carregarLotesDeProducao(materiais, ordens, deslocamentoDias, sequenciais, lotes);
+        carregarLotesDeCompra(materiais, deslocamentoDias, sequenciais, lotes);
+        List<AlocacaoLote> alocacoes = carregarAlocacoes(consumos, lotes);
+        registrarConsumos(consumos);
+        salvarLotes(lotes);
+        alocacaoRepository.salvarTodas(alocacoes);
         trilha.registrar(eventos);
 
         log.info("DataLoader: carga concluída em {} ms — materiais={}, tiposOrdem={}, "
-                        + "listasTecnicas={}, ordens={}, consumos={}, lotes={}, eventosAuditoria={}, "
-                        + "deslocamentoDias={}",
+                        + "listasTecnicas={}, ordens={}, consumos={}, lotes={}, alocacoes={}, "
+                        + "eventosAuditoria={}, deslocamentoDias={}",
                 System.currentTimeMillis() - inicio, materiais.size(), tipos.size(),
-                listas.size(), ordens.size(), consumos, lotes, eventos.size(), deslocamentoDias);
+                listas.size(), ordens.size(), consumos.size(), lotes.size(), alocacoes.size(),
+                eventos.size(), deslocamentoDias);
     }
 
     private long calcularDeslocamentoDias() {
@@ -311,7 +327,8 @@ public class DataLoader implements CommandLineRunner {
                 ultimaAlteracao = quando;
             }
             if (status == StatusOrdemProducao.CONCLUIDA) {
-                ultimaAlteracao = posterior(ultimaAlteracao, momento(fim, LocalTime.of(17, 0)));
+                LocalDate conclusao = LocalDate.parse(linha.get("data_conclusao")).plusDays(deslocamentoDias);
+                ultimaAlteracao = posterior(ultimaAlteracao, momento(conclusao, LocalTime.of(17, 0)));
             }
 
             OrdemProducao ordem = OrdemProducao.reconstituir(id, codigo,
@@ -338,8 +355,48 @@ public class DataLoader implements CommandLineRunner {
         };
     }
 
-    private int carregarConsumos(Map<String, Material> materiais, Map<String, OrdemProducao> ordens) {
-        List<ConsumoMaterial> consumos = new ArrayList<>();
+    /** Consumo lido do dataset, com quem o registrou e quando (para alocações e eventos). */
+    private record ConsumoCarga(ConsumoMaterial consumo, OrdemProducao ordem, Material componente,
+                                String responsavel, Instant registradoEm, List<String> lotes) {}
+
+    /** Lote em montagem: o saldo corre à medida que as alocações são aplicadas. */
+    private static final class LoteCarga {
+        final UUID id = UUID.randomUUID();
+        final String numero;
+        final Material material;
+        final OrdemProducao ordem;
+        final OrigemCompra origemCompra;
+        final BigDecimal quantidade;
+        final LocalDate fabricacao;
+        final LocalDate validade;
+        final StatusLote statusFinal;
+        final BigDecimal saldoFinal;
+        final Instant criadoEm;
+        BigDecimal saldo;
+        Instant alteradoEm;
+
+        LoteCarga(String numero, Material material, OrdemProducao ordem, OrigemCompra origemCompra,
+                  BigDecimal quantidade, LocalDate fabricacao, LocalDate validade,
+                  StatusLote statusFinal, BigDecimal saldoFinal, Instant criadoEm) {
+            this.numero = numero;
+            this.material = material;
+            this.ordem = ordem;
+            this.origemCompra = origemCompra;
+            this.quantidade = quantidade;
+            this.fabricacao = fabricacao;
+            this.validade = validade;
+            this.statusFinal = statusFinal;
+            this.saldoFinal = saldoFinal;
+            this.criadoEm = criadoEm;
+            this.saldo = quantidade;
+            this.alteradoEm = criadoEm;
+        }
+    }
+
+    private Map<String, ConsumoCarga> carregarConsumos(Map<String, Material> materiais,
+                                                       Map<String, OrdemProducao> ordens,
+                                                       long deslocamentoDias) {
+        Map<String, ConsumoCarga> consumos = new LinkedHashMap<>();
         for (var linha : LeitorCsv.ler(DIRETORIO + "consumos_material.csv")) {
             OrdemProducao ordem = buscar(ordens, linha.get("ordem_codigo"), "ordem");
             Material componente = buscar(materiais, linha.get("componente_codigo"), "material");
@@ -350,7 +407,9 @@ public class DataLoader implements CommandLineRunner {
             String responsavel = justificado ? linha.get("justificado_por") : RESPONSAVEL;
             Instant registradoEm = consumida.isBlank()
                     ? ordem.getCriadaEm()
-                    : posterior(ordem.getCriadaEm(), momento(ordem.getFimPlanejado(), LocalTime.of(16, 0)));
+                    : posterior(ordem.getCriadaEm(), momento(
+                            LocalDate.parse(linha.get("data_registro")).plusDays(deslocamentoDias),
+                            LocalTime.of(10, 0)));
 
             ConsumoMaterial consumo = ConsumoMaterial.reconstituir(UUID.randomUUID(), ordem.getId(),
                     componente.getId(), new BigDecimal(linha.get("quantidade_planejada")),
@@ -360,30 +419,19 @@ public class DataLoader implements CommandLineRunner {
                     justificado ? responsavel : null,
                     justificado ? registradoEm : null,
                     new Assinatura(RESPONSAVEL, ordem.getCriadaEm(), responsavel, registradoEm));
-            consumos.add(consumo);
-            if (consumo.getQuantidadeConsumida() != null) {
-                registrar(TipoEntidade.ORDEM_PRODUCAO, ordem.getId(), ordem.getCodigo(),
-                        AcaoAuditoria.CONSUMO_REGISTRADO, responsavel, registradoEm,
-                        Detalhes.com("material", componente.getCodigo())
-                                .e("quantidadePlanejada", consumo.getQuantidadePlanejada())
-                                .e("quantidadeConsumida", consumo.getQuantidadeConsumida())
-                                .e("desvio", consumo.getDesvio())
-                                .e("unidadeDeMedida", consumo.getUnidadeDeMedida())
-                                .e("justificativa", consumo.getJustificativa()));
-            }
+            consumos.put(chaveConsumo(ordem.getCodigo(), componente.getCodigo()),
+                    new ConsumoCarga(consumo, ordem, componente, responsavel, registradoEm, new ArrayList<>()));
         }
-        consumoRepository.salvarTodos(consumos);
-        return consumos.size();
+        consumoRepository.salvarTodos(consumos.values().stream().map(ConsumoCarga::consumo).toList());
+        return consumos;
     }
 
-    private int carregarLotes(Map<String, Material> materiais, Map<String, OrdemProducao> ordens,
-                              long deslocamentoDias) {
+    private void carregarLotesDeProducao(Map<String, Material> materiais, Map<String, OrdemProducao> ordens,
+                                         long deslocamentoDias, Map<String, Integer> sequenciais,
+                                         Map<String, LoteCarga> lotes) {
         Map<UUID, Material> materiaisPorId = new HashMap<>();
         materiais.values().forEach(m -> materiaisPorId.put(m.getId(), m));
-        // Banco vazio → o sequencial por prefixo é controlado em memória (evita 1 query por lote).
-        Map<String, Integer> sequenciais = new HashMap<>();
 
-        int total = 0;
         for (var linha : LeitorCsv.ler(DIRETORIO + "lotes.csv")) {
             OrdemProducao ordem = buscar(ordens, linha.get("ordem_codigo"), "ordem");
             if (ordem.getQuantidadeProduzida() == null) {
@@ -392,14 +440,13 @@ public class DataLoader implements CommandLineRunner {
             Material material = materiaisPorId.get(ordem.getMaterialId());
             LocalDate fabricacao = LocalDate.parse(linha.get("data_fabricacao")).plusDays(deslocamentoDias);
             LocalDate validade = LocalDate.parse(linha.get("data_validade")).plusDays(deslocamentoDias);
-            String prefixo = Lote.prefixoNumeroLote(material.getCodigo(), fabricacao);
-            int sequencial = sequenciais.merge(prefixo, 1, Integer::sum);
-
-            StatusLote status = StatusLote.valueOf(linha.get("status"));
-            String numero = Lote.numeroLote(prefixo, sequencial);
-            UUID id = UUID.randomUUID();
+            String numero = proximoNumero(sequenciais, material, fabricacao);
             Instant geradoEm = ordem.getAtualizadaEm();
-            Instant alteradoEm = geradoEm;
+
+            LoteCarga lote = new LoteCarga(numero, material, ordem, null, ordem.getQuantidadeProduzida(),
+                    fabricacao, validade, StatusLote.valueOf(linha.get("status")),
+                    new BigDecimal(linha.get("saldo")), geradoEm);
+            lotes.put(refProducao(ordem.getCodigo()), lote);
 
             registrar(TipoEntidade.ORDEM_PRODUCAO, ordem.getId(), ordem.getCodigo(),
                     AcaoAuditoria.ORDEM_CONCLUIDA, RESPONSAVEL, geradoEm,
@@ -408,28 +455,157 @@ public class DataLoader implements CommandLineRunner {
                             .e("quantidadePlanejada", ordem.getQuantidade())
                             .e("quantidadeProduzida", ordem.getQuantidadeProduzida())
                             .e("loteGerado", numero));
-            registrar(TipoEntidade.LOTE, id, numero, AcaoAuditoria.LOTE_GERADO, RESPONSAVEL, geradoEm,
+            registrar(TipoEntidade.LOTE, lote.id, numero, AcaoAuditoria.LOTE_GERADO, RESPONSAVEL, geradoEm,
                     Detalhes.com("numeroLote", numero)
                             .e("material", material.getCodigo())
                             .e("ordemProducao", ordem.getCodigo())
-                            .e("quantidade", ordem.getQuantidadeProduzida())
+                            .e("quantidade", lote.quantidade)
                             .e("unidadeDeMedida", material.getUnidadeDeMedida())
                             .e("dataFabricacao", fabricacao)
                             .e("dataValidade", validade));
-            if (status != StatusLote.DISPONIVEL) {
-                alteradoEm = posterior(geradoEm, status == StatusLote.VENCIDO
-                        ? momento(validade.plusDays(1), LocalTime.of(0, 5))
-                        : momento(fabricacao.plusDays(7), LocalTime.of(9, 0)));
-                registrar(TipoEntidade.LOTE, id, numero, AcaoAuditoria.STATUS_ALTERADO, RESPONSAVEL,
-                        alteradoEm, Detalhes.vazio().mudanca("status", StatusLote.DISPONIVEL, status));
-            }
-
-            loteRepository.salvar(Lote.reconstituir(id, numero, material.getId(), ordem.getId(),
-                    null, ordem.getQuantidadeProduzida(), material.getUnidadeDeMedida(),
-                    fabricacao, validade, status, assinatura(geradoEm, alteradoEm)));
-            total++;
         }
-        return total;
+    }
+
+    private void carregarLotesDeCompra(Map<String, Material> materiais, long deslocamentoDias,
+                                       Map<String, Integer> sequenciais, Map<String, LoteCarga> lotes) {
+        for (var linha : LeitorCsv.ler(DIRETORIO + "lotes_compra.csv")) {
+            Material material = buscar(materiais, linha.get("material_codigo"), "material");
+            OrigemCompra origem = new OrigemCompra(linha.get("fornecedor"), linha.get("nota_fiscal"),
+                    LocalDate.parse(linha.get("data_emissao_nf")).plusDays(deslocamentoDias),
+                    LocalDate.parse(linha.get("data_recebimento")).plusDays(deslocamentoDias));
+            LocalDate fabricacao = LocalDate.parse(linha.get("data_fabricacao")).plusDays(deslocamentoDias);
+            LocalDate validade = LocalDate.parse(linha.get("data_validade")).plusDays(deslocamentoDias);
+            String numero = proximoNumero(sequenciais, material, fabricacao);
+            Instant recebidoEm = momento(origem.dataRecebimento(), LocalTime.of(9, 0));
+
+            LoteCarga lote = new LoteCarga(numero, material, null, origem,
+                    new BigDecimal(linha.get("quantidade")), fabricacao, validade,
+                    StatusLote.valueOf(linha.get("status")), new BigDecimal(linha.get("saldo")), recebidoEm);
+            lotes.put(refCompra(origem.notaFiscal()), lote);
+
+            registrar(TipoEntidade.LOTE, lote.id, numero, AcaoAuditoria.ENTRADA_REGISTRADA, RESPONSAVEL, recebidoEm,
+                    Detalhes.com("numeroLote", numero)
+                            .e("material", material.getCodigo())
+                            .e("fornecedor", origem.fornecedor())
+                            .e("notaFiscal", origem.notaFiscal())
+                            .e("dataEmissaoNf", origem.dataEmissaoNf())
+                            .e("dataRecebimento", origem.dataRecebimento())
+                            .e("quantidade", lote.quantidade)
+                            .e("unidadeDeMedida", material.getUnidadeDeMedida())
+                            .e("dataFabricacao", fabricacao)
+                            .e("dataValidade", validade));
+        }
+    }
+
+    /**
+     * Aplica as alocações em ordem cronológica: baixa o saldo de cada lote, registra a
+     * genealogia e o evento LOTE_ALOCADO. Confere que cada consumo foi coberto por inteiro
+     * e que o saldo final bate com o dataset.
+     */
+    private List<AlocacaoLote> carregarAlocacoes(Map<String, ConsumoCarga> consumos, Map<String, LoteCarga> lotes) {
+        List<AlocacaoLote> alocacoes = new ArrayList<>();
+        Map<UUID, BigDecimal> alocadoPorConsumo = new HashMap<>();
+        for (var linha : LeitorCsv.ler(DIRETORIO + "alocacoes_lote.csv")) {
+            ConsumoCarga carga = buscar(consumos,
+                    chaveConsumo(linha.get("ordem_codigo"), linha.get("componente_codigo")), "consumo");
+            String loteOrdem = linha.get("lote_ordem_codigo");
+            LoteCarga lote = buscar(lotes, loteOrdem.isBlank()
+                    ? refCompra(linha.get("lote_nota_fiscal")) : refProducao(loteOrdem), "lote");
+            BigDecimal quantidade = new BigDecimal(linha.get("quantidade"));
+            if (!lote.material.getId().equals(carga.consumo().getMaterialId()) || quantidade.compareTo(lote.saldo) > 0) {
+                throw new IllegalStateException("Dataset inconsistente: alocação inválida no lote " + lote.numero);
+            }
+            Instant quando = posterior(lote.criadoEm, carga.registradoEm());
+            BigDecimal saldoAntes = lote.saldo;
+            lote.saldo = lote.saldo.subtract(quantidade);
+            lote.alteradoEm = posterior(lote.alteradoEm, quando);
+
+            alocacoes.add(AlocacaoLote.reconstituir(UUID.randomUUID(), carga.consumo().getId(), lote.id,
+                    quantidade, carga.responsavel(), quando));
+            alocadoPorConsumo.merge(carga.consumo().getId(), quantidade, BigDecimal::add);
+            carga.lotes().add(lote.numero + ": " + quantidade.stripTrailingZeros().toPlainString());
+
+            Detalhes detalhes = Detalhes.com("ordemProducao", carga.ordem().getCodigo())
+                    .e("material", carga.componente().getCodigo())
+                    .e("quantidade", quantidade)
+                    .e("unidadeDeMedida", lote.material.getUnidadeDeMedida())
+                    .mudanca("saldo", saldoAntes, lote.saldo);
+            if (lote.saldo.signum() == 0) {
+                detalhes.mudanca("status", StatusLote.DISPONIVEL, StatusLote.CONSUMIDO);
+            }
+            registrar(TipoEntidade.LOTE, lote.id, lote.numero, AcaoAuditoria.LOTE_ALOCADO,
+                    carga.responsavel(), quando, detalhes);
+        }
+        for (ConsumoCarga carga : consumos.values()) {
+            BigDecimal consumida = carga.consumo().getQuantidadeConsumida();
+            BigDecimal alocado = alocadoPorConsumo.getOrDefault(carga.consumo().getId(), BigDecimal.ZERO);
+            if (consumida != null && consumida.compareTo(alocado) != 0) {
+                throw new IllegalStateException("Dataset inconsistente: consumo de %s em %s sem alocação completa."
+                        .formatted(carga.componente().getCodigo(), carga.ordem().getCodigo()));
+            }
+        }
+        for (LoteCarga lote : lotes.values()) {
+            if (lote.saldo.compareTo(lote.saldoFinal) != 0) {
+                throw new IllegalStateException("Dataset inconsistente: saldo do lote " + lote.numero);
+            }
+        }
+        return alocacoes;
+    }
+
+    private void registrarConsumos(Map<String, ConsumoCarga> consumos) {
+        for (ConsumoCarga carga : consumos.values()) {
+            ConsumoMaterial consumo = carga.consumo();
+            if (consumo.getQuantidadeConsumida() == null) {
+                continue;
+            }
+            registrar(TipoEntidade.ORDEM_PRODUCAO, carga.ordem().getId(), carga.ordem().getCodigo(),
+                    AcaoAuditoria.CONSUMO_REGISTRADO, carga.responsavel(), carga.registradoEm(),
+                    Detalhes.com("material", carga.componente().getCodigo())
+                            .e("quantidadePlanejada", consumo.getQuantidadePlanejada())
+                            .e("quantidadeConsumida", consumo.getQuantidadeConsumida())
+                            .e("desvio", consumo.getDesvio())
+                            .e("unidadeDeMedida", consumo.getUnidadeDeMedida())
+                            .e("justificativa", consumo.getJustificativa())
+                            .e("lotes", carga.lotes().isEmpty() ? null : String.join("; ", carga.lotes())));
+        }
+    }
+
+    /** Status que não vêm do saldo (vencido, bloqueado) ganham evento próprio; depois grava. */
+    private void salvarLotes(Map<String, LoteCarga> lotes) {
+        for (LoteCarga lote : lotes.values()) {
+            StatusLote status = lote.statusFinal;
+            if (status == StatusLote.VENCIDO || status == StatusLote.BLOQUEADO) {
+                Instant quando = posterior(lote.alteradoEm, status == StatusLote.VENCIDO
+                        ? momento(lote.validade.plusDays(1), LocalTime.of(0, 5))
+                        : momento(lote.fabricacao.plusDays(1), LocalTime.of(9, 0)));
+                registrar(TipoEntidade.LOTE, lote.id, lote.numero, AcaoAuditoria.STATUS_ALTERADO, RESPONSAVEL,
+                        quando, Detalhes.vazio().mudanca("status", StatusLote.DISPONIVEL, status));
+                lote.alteradoEm = quando;
+            }
+            loteRepository.salvar(Lote.reconstituir(lote.id, lote.numero, lote.material.getId(),
+                    lote.ordem == null ? null : lote.ordem.getId(), lote.origemCompra,
+                    lote.quantidade, lote.saldo, lote.material.getUnidadeDeMedida(),
+                    lote.fabricacao, lote.validade, status,
+                    new Assinatura(RESPONSAVEL, lote.criadoEm, RESPONSAVEL, lote.alteradoEm)));
+        }
+    }
+
+    /** Banco vazio → o sequencial por prefixo é controlado em memória (evita 1 query por lote). */
+    private static String proximoNumero(Map<String, Integer> sequenciais, Material material, LocalDate fabricacao) {
+        String prefixo = Lote.prefixoNumeroLote(material.getCodigo(), fabricacao);
+        return Lote.numeroLote(prefixo, sequenciais.merge(prefixo, 1, Integer::sum));
+    }
+
+    private static String chaveConsumo(String ordemCodigo, String componenteCodigo) {
+        return ordemCodigo + "|" + componenteCodigo;
+    }
+
+    private static String refProducao(String ordemCodigo) {
+        return "OP|" + ordemCodigo;
+    }
+
+    private static String refCompra(String notaFiscal) {
+        return "NF|" + notaFiscal;
     }
 
     /** Data e hora no fuso do relógio, limitadas a "agora": o histórico nunca fica no futuro. */

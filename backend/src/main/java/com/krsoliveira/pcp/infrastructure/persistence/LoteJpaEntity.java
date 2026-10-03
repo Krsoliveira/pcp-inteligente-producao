@@ -51,6 +51,9 @@ public class LoteJpaEntity {
     @Column(nullable = false, precision = 12, scale = 4)
     private BigDecimal quantidade;
 
+    @Column(nullable = false, precision = 12, scale = 4)
+    private BigDecimal saldo;
+
     @Column(name = "unidade_de_medida", nullable = false, length = 10)
     private String unidadeDeMedida;
 
@@ -92,6 +95,7 @@ public class LoteJpaEntity {
             entity.dataRecebimento = origem.dataRecebimento();
         }
         entity.quantidade = lote.getQuantidade();
+        entity.saldo = lote.getSaldo();
         entity.unidadeDeMedida = lote.getUnidadeDeMedida();
         entity.dataFabricacao = lote.getDataFabricacao();
         entity.dataValidade = lote.getDataValidade();
@@ -108,7 +112,7 @@ public class LoteJpaEntity {
         return Lote.reconstituir(id, numeroLote, materialId, ordemProducaoId,
                 notaFiscal == null ? null
                         : new OrigemCompra(fornecedor, notaFiscal, dataEmissaoNf, dataRecebimento),
-                quantidade, unidadeDeMedida, dataFabricacao, dataValidade, status,
+                quantidade, saldo, unidadeDeMedida, dataFabricacao, dataValidade, status,
                 new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm));
     }
 }

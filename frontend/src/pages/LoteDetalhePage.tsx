@@ -20,9 +20,11 @@ import LocalShippingIcon from '@mui/icons-material/LocalShippingOutlined'
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturingOutlined'
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined'
 import ScienceIcon from '@mui/icons-material/ScienceOutlined'
+import CallSplitIcon from '@mui/icons-material/CallSplit'
+import LinearProgress from '@mui/material/LinearProgress'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { buscarLotePorId } from '../api/lotes'
+import { buscarLotePorId, rastrearLote } from '../api/lotes'
 import { buscarOrdemPorId } from '../api/ordens'
 import { listarConsumosPorOrdem } from '../api/consumos'
 import { buscarListaTecnicaPorId } from '../api/listasTecnicas'
@@ -32,11 +34,13 @@ import { InfoRow } from '../components/InfoRow'
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
 import { StatusLoteBadge, StatusOrdemBadge } from '../components/StatusBadge'
 import { diasAte, formatarData, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
-import type { ConsumoMaterial, Lote, Material } from '../types'
+import type { ConsumoMaterial, LoteOrigem, Lote, Material, RastreabilidadeLote } from '../types'
 
 /**
- * Detalhe de um lote: identificação, origem (nota fiscal ou ordem de produção),
- * o que foi consumido para produzi-lo e o histórico de auditoria.
+ * Detalhe de um lote: identificação e saldo, origem (nota fiscal ou ordem de produção),
+ * o que foi consumido para produzi-lo — com os lotes de onde saiu cada material —,
+ * onde ele foi usado e o histórico de auditoria. Navegando de lote em lote chega-se
+ * do produto acabado à nota fiscal da matéria-prima (ADR-0011).
  */
 export function LoteDetalhePage() {
   const { id } = useParams<{ id: string }>()
@@ -47,6 +51,12 @@ export function LoteDetalhePage() {
     enabled: !!id,
   })
   const lote = loteQuery.data
+
+  const rastreioQuery = useQuery({
+    queryKey: ['lote-rastreabilidade', id],
+    queryFn: () => rastrearLote(id!),
+    enabled: !!id,
+  })
 
   const materiaisQuery = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const materialPorId = new Map((materiaisQuery.data ?? []).map((m) => [m.id, m]))
@@ -93,9 +103,15 @@ export function LoteDetalhePage() {
 
         {lote.origem === 'PRODUCAO' && lote.ordemProducaoId && (
           <Grid size={12}>
-            <MateriaisConsumidosCard ordemId={lote.ordemProducaoId} materialPorId={materialPorId} />
+            <MateriaisConsumidosCard ordemId={lote.ordemProducaoId} materialPorId={materialPorId}
+              rastreio={rastreioQuery.data} />
           </Grid>
         )}
+
+        <Grid size={12}>
+          <OndeFoiUsadoCard lote={lote} rastreio={rastreioQuery.data} carregando={rastreioQuery.isLoading}
+            erro={rastreioQuery.isError} materialPorId={materialPorId} />
+        </Grid>
 
         <Grid size={12}>
           <HistoricoAuditoria tipoEntidade="LOTE" entidadeId={lote.id} titulo="Histórico do lote" />
@@ -132,6 +148,18 @@ function IdentificacaoCard({ lote, material }: { lote: Lote; material?: Material
         <InfoRow label="Status"><StatusLoteBadge status={lote.status} /></InfoRow>
         <InfoRow label="Material">{material ? `${material.codigo} — ${material.descricao}` : '…'}</InfoRow>
         <InfoRow label="Quantidade">{formatarQuantidade(lote.quantidade, lote.unidadeDeMedida)}</InfoRow>
+        <InfoRow label="Saldo">
+          <Box>
+            <Typography variant="body2" fontWeight={600}>
+              {formatarQuantidade(lote.saldo, lote.unidadeDeMedida)}
+              <Typography component="span" variant="caption" color="text.secondary">
+                {` · ${Math.round((lote.saldo / lote.quantidade) * 100)}% disponível`}
+              </Typography>
+            </Typography>
+            <LinearProgress variant="determinate" value={Math.min(100, (lote.saldo / lote.quantidade) * 100)}
+              aria-label="Saldo do lote" sx={{ mt: 0.5, height: 6, borderRadius: 3, maxWidth: 220 }} />
+          </Box>
+        </InfoRow>
         <InfoRow label="Fabricação">{formatarData(lote.dataFabricacao)}</InfoRow>
         <InfoRow label="Validade">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
@@ -217,7 +245,12 @@ function OrigemProducaoCard({ lote }: { lote: Lote }) {
   )
 }
 
-function MateriaisConsumidosCard({ ordemId, materialPorId }: { ordemId: string; materialPorId: Map<string, Material> }) {
+function MateriaisConsumidosCard({ ordemId, materialPorId, rastreio }: {
+  ordemId: string
+  materialPorId: Map<string, Material>
+  rastreio?: RastreabilidadeLote
+}) {
+  const lotesPorConsumo = new Map((rastreio?.origens ?? []).map((o) => [o.consumoId, o.lotes]))
   const { data: consumos = [], isLoading, isError } = useQuery({
     queryKey: ['consumos', ordemId],
     queryFn: () => listarConsumosPorOrdem(ordemId),
@@ -242,13 +275,15 @@ function MateriaisConsumidosCard({ ordemId, materialPorId }: { ordemId: string; 
                 <TableCell align="right">Planejado</TableCell>
                 <TableCell align="right">Consumido</TableCell>
                 <TableCell align="right">Desvio</TableCell>
+                <TableCell>Lotes de origem</TableCell>
                 <TableCell>Justificativa</TableCell>
                 <TableCell>Registrado por</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {consumos.map((c) => (
-                <LinhaConsumo key={c.id} consumo={c} material={materialPorId.get(c.materialId)} />
+                <LinhaConsumo key={c.id} consumo={c} material={materialPorId.get(c.materialId)}
+                  lotes={rastreio ? lotesPorConsumo.get(c.id) ?? [] : undefined} />
               ))}
             </TableBody>
           </Table>
@@ -258,7 +293,7 @@ function MateriaisConsumidosCard({ ordemId, materialPorId }: { ordemId: string; 
   )
 }
 
-function LinhaConsumo({ consumo: c, material }: { consumo: ConsumoMaterial; material?: Material }) {
+function LinhaConsumo({ consumo: c, material, lotes }: { consumo: ConsumoMaterial; material?: Material; lotes?: LoteOrigem[] }) {
   const desvio = c.desvio ?? 0
   const temDesvio = c.registrado && Math.abs(desvio) > 0.0001
   return (
@@ -285,6 +320,9 @@ function LinhaConsumo({ consumo: c, material }: { consumo: ConsumoMaterial; mate
         )}
       </TableCell>
       <TableCell>
+        <LotesDeOrigem lotes={lotes} registrado={c.registrado} unidade={c.unidadeDeMedida} />
+      </TableCell>
+      <TableCell>
         <Typography variant="body2" color={c.justificativa ? 'text.primary' : 'text.disabled'}>
           {c.justificativa ?? '—'}
         </Typography>
@@ -293,6 +331,111 @@ function LinhaConsumo({ consumo: c, material }: { consumo: ConsumoMaterial; mate
         {c.registrado ? <Assinatura usuario={c.atualizadoPor} instante={c.atualizadoEm} /> : '—'}
       </TableCell>
     </TableRow>
+  )
+}
+
+/** Links para os lotes de onde saiu o material; compra mostra a NF. */
+function LotesDeOrigem({ lotes, registrado, unidade }: { lotes?: LoteOrigem[]; registrado: boolean; unidade: string }) {
+  if (!registrado) return <Typography variant="body2" color="text.disabled">—</Typography>
+  if (!lotes) return <Skeleton width={120} />
+  if (lotes.length === 0) {
+    return (
+      <Tooltip title="Consumo registrado antes da genealogia de lotes.">
+        <Typography variant="body2" color="text.disabled">Sem rastreio</Typography>
+      </Tooltip>
+    )
+  }
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+      {lotes.map((l) => (
+        <Box key={l.loteId}>
+          <Link component={RouterLink} to={`/lotes/${l.loteId}`} variant="body2"
+            sx={{ fontFamily: 'monospace', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+            {l.numeroLote}
+          </Link>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+            {formatarQuantidade(l.quantidade, unidade)}
+            {l.origem === 'COMPRA' ? ` · NF ${l.notaFiscal} · ${l.fornecedor}` : ' · produção'}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+function OndeFoiUsadoCard({ lote, rastreio, carregando, erro, materialPorId }: {
+  lote: Lote
+  rastreio?: RastreabilidadeLote
+  carregando: boolean
+  erro: boolean
+  materialPorId: Map<string, Material>
+}) {
+  const destinos = rastreio?.destinos ?? []
+  const usado = destinos.reduce((t, d) => t + Number(d.quantidade), 0)
+
+  return (
+    <CardSecao titulo="Onde foi usado" icone={<CallSplitIcon color="action" fontSize="small" />}>
+      {carregando ? (
+        <Skeleton variant="rounded" height={100} />
+      ) : erro ? (
+        <Alert severity="error">Não foi possível carregar a rastreabilidade do lote.</Alert>
+      ) : destinos.length === 0 ? (
+        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+          {lote.status === 'CONSUMIDO'
+            ? 'Lote consumido antes da genealogia de lotes — sem registro de onde foi usado.'
+            : 'Este lote ainda não foi usado em nenhuma ordem.'}
+        </Typography>
+      ) : (
+        <>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            {`Usado em ${destinos.length} ${destinos.length === 1 ? 'consumo' : 'consumos'} — `
+              + `${formatarQuantidade(usado, lote.unidadeDeMedida)} de ${formatarQuantidade(lote.quantidade, lote.unidadeDeMedida)}.`}
+          </Typography>
+          <TableContainer>
+            <Table size="small" sx={{ '& th': { whiteSpace: 'nowrap' } }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Ordem</TableCell>
+                  <TableCell>Produziu</TableCell>
+                  <TableCell align="right">Quantidade</TableCell>
+                  <TableCell>Lote gerado</TableCell>
+                  <TableCell>Alocado por</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {destinos.map((d) => (
+                  <TableRow key={d.alocacaoId}>
+                    <TableCell>
+                      <Link component={RouterLink} to={`/ordens/${d.ordemProducaoId}`} variant="body2" fontWeight={600} noWrap>
+                        {d.ordemCodigo}
+                      </Link>
+                      <Box sx={{ mt: 0.25 }}><StatusOrdemBadge status={d.ordemStatus} /></Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{materialPorId.get(d.materialProduzidoId)?.codigo ?? '…'}</Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body2" noWrap>{formatarQuantidade(d.quantidade, d.unidadeDeMedida)}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      {d.loteGeradoId ? (
+                        <Link component={RouterLink} to={`/lotes/${d.loteGeradoId}`} variant="body2"
+                          sx={{ fontFamily: 'monospace', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+                          {d.loteGeradoNumero}
+                        </Link>
+                      ) : (
+                        <Typography variant="body2" color="text.disabled">Ordem em andamento</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell><Assinatura usuario={d.alocadoPor} instante={d.alocadoEm} /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
+      )}
+    </CardSecao>
   )
 }
 

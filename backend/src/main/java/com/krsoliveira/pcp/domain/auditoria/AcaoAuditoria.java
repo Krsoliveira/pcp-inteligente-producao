@@ -13,6 +13,8 @@ public enum AcaoAuditoria {
     CONSUMO_REGISTRADO,
     ORDEM_CONCLUIDA,
     LOTE_GERADO,
+    /** Parte do saldo do lote foi usada num consumo (genealogia). */
+    LOTE_ALOCADO,
     ENTRADA_REGISTRADA,
     USUARIO_REGISTRADO
 }

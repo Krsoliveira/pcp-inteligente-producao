@@ -4,8 +4,8 @@ Registro do estado do trabalho para retomar sem perder contexto.
 Atualize este arquivo ao encerrar cada sessão de trabalho.
 
 **Última atualização:** 2026-10-03  
-**Estado:** rastreabilidade e auditoria ([ADR-0011](adr/0011-rastreabilidade-e-auditoria.md)) em andamento —
-entrega 1 (base no backend) concluída na branch `feature/rastreabilidade-auditoria`.
+**Estado:** rastreabilidade ([ADR-0011](adr/0011-rastreabilidade-e-auditoria.md)) — entregas 1, 2 e 3
+concluídas, em PRs empilhados (#37 → #38 → genealogia), com as correções de layout no #36.
 
 ## Em andamento: rastreabilidade (ADR-0011)
 
@@ -29,11 +29,15 @@ Objetivo: responder, para qualquer registro, *quem fez, quando, o que mudou* e *
   - Lista de lotes: linha abre o detalhe, coluna "Registrado" (data/hora e usuário) e
     filtro por período de registro.
   - Componente `HistoricoAuditoria` reutilizável, já usado também no detalhe da ordem.
-- [ ] **Entrega 3 — genealogia**: consumo alocado a lotes e saldo do lote. No detalhe do
-      lote produzido, cada material consumido mostra **de quais lotes veio** (com link até
-      a NF); no lote de matéria-prima, **onde foi usado** (ordens e lotes gerados). Se a
-      tela ficar carregada, vira uma tela própria de rastreio. Atualizar o gerador do
-      dataset com lotes de compra e alocações.
+- [x] **Entrega 3 — genealogia** (branch `feature/genealogia-lotes`)
+  - Consumo alocado a lotes (FEFO sugerido na tela), saldo do lote, lote zerado vira
+    CONSUMIDO; bloqueio de linha contra consumos simultâneos (V10).
+  - Detalhe do lote: saldo, **lotes de origem** de cada material consumido (até a NF) e
+    **onde foi usado** (ordens e lotes gerados). `GET /lotes/{id}/rastreabilidade`.
+  - Dataset: simulação cronológica do estoque com compras de matéria-prima, ordens de
+    reposição de semiacabado e ~2 mil alocações.
+- [ ] **Estorno de consumo**: o registro passou a ser único; corrigir um consumo exigirá
+      estornar as alocações (devolvendo saldo) com evento próprio na trilha.
 - [ ] Aba Histórico nos detalhes de material e lista técnica (reutilizar `HistoricoAuditoria`).
 
 ## Backlog: perfis e segregação de funções
@@ -102,7 +106,6 @@ decisão. Proposta para quando for implementado:
    Spring Boot 4 + springdoc 3, React 19, React Router 7, Vite 8 + plugin-react 6,
    ECharts 6.
 4. Depois:
-   - **saldo de estoque**: baixar dos lotes de matéria-prima o consumo das ordens;
    - testes automatizados de frontend (Vitest);
    - carregar o ECharts sob demanda (bundle de ~1 MB).
 
