@@ -18,11 +18,12 @@ class LoteTest {
 
     private static final UUID MATERIAL_ID = UUID.randomUUID();
     private static final UUID ORDEM_ID = UUID.randomUUID();
+    private static final UUID NOTA_ID = UUID.randomUUID();
     private static final LocalDate FABRICACAO = LocalDate.of(2026, 9, 1);
     private static final LocalDate VALIDADE = LocalDate.of(2027, 9, 1);
 
     private Lote loteValido() {
-        return Lote.criar("MAT-ACO-1020-202609-001", MATERIAL_ID, ORDEM_ID,
+        return Lote.criar("2609010001", MATERIAL_ID, ORDEM_ID,
                 new BigDecimal("100.0000"), "kg", FABRICACAO, VALIDADE, USUARIO);
     }
 
@@ -37,7 +38,7 @@ class LoteTest {
 
             assertThat(lote.getId()).isNotNull();
             assertThat(lote.getStatus()).isEqualTo(StatusLote.DISPONIVEL);
-            assertThat(lote.getNumeroLote()).isEqualTo("MAT-ACO-1020-202609-001");
+            assertThat(lote.getNumeroLote()).isEqualTo("2609010001");
             assertThat(lote.getMaterialId()).isEqualTo(MATERIAL_ID);
             assertThat(lote.getOrdemProducaoId()).isEqualTo(ORDEM_ID);
             assertThat(lote.getQuantidade()).isEqualByComparingTo(new BigDecimal("100.0000"));
@@ -47,7 +48,7 @@ class LoteTest {
         @DisplayName("rejeita quantidade zero ou negativa")
         void rejeitaQuantidadeInvalida() {
             assertThatThrownBy(() ->
-                    Lote.criar("MAT-001", MATERIAL_ID, ORDEM_ID,
+                    Lote.criar("2609010001", MATERIAL_ID, ORDEM_ID,
                             BigDecimal.ZERO, "kg", FABRICACAO, VALIDADE, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("quantidade");
@@ -57,7 +58,7 @@ class LoteTest {
         @DisplayName("rejeita validade anterior à fabricação")
         void rejeitaValidadeAnterior() {
             assertThatThrownBy(() ->
-                    Lote.criar("MAT-001", MATERIAL_ID, ORDEM_ID,
+                    Lote.criar("2609010001", MATERIAL_ID, ORDEM_ID,
                             new BigDecimal("10"), "kg", VALIDADE, FABRICACAO, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("validade");
@@ -74,10 +75,29 @@ class LoteTest {
         }
 
         @Test
+        @DisplayName("rejeita número do lote acima de 20 caracteres ou com símbolos")
+        void rejeitaNumeroInvalido() {
+            assertThatThrownBy(() -> Lote.normalizarNumero("1".repeat(21)))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("20");
+            assertThatThrownBy(() -> Lote.normalizarNumero("LOTE 1"))
+                    .isInstanceOf(RegraDeNegocioException.class);
+        }
+
+        @Test
+        @DisplayName("número do lote de produção é AAMMDD + sequência do dia")
+        void numeroLoteProducao() {
+            assertThat(Lote.numeroLoteProducao(LocalDate.of(2026, 10, 3), 1)).isEqualTo("2610030001");
+            assertThat(Lote.prefixoLoteProducao(LocalDate.of(2026, 10, 3))).isEqualTo("261003");
+            assertThatThrownBy(() -> Lote.numeroLoteProducao(LocalDate.of(2026, 10, 3), 10_000))
+                    .isInstanceOf(RegraDeNegocioException.class);
+        }
+
+        @Test
         @DisplayName("rejeita material nulo")
         void rejeitaMaterialNulo() {
             assertThatThrownBy(() ->
-                    Lote.criar("MAT-001", null, ORDEM_ID,
+                    Lote.criar("2609010001", null, ORDEM_ID,
                             new BigDecimal("10"), "kg", FABRICACAO, VALIDADE, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("material");
@@ -86,7 +106,7 @@ class LoteTest {
         @Test
         @DisplayName("aceita ordem de produção nula (entrada manual futura)")
         void aceitaOrdemNula() {
-            Lote lote = Lote.criar("MAT-001", MATERIAL_ID, null,
+            Lote lote = Lote.criar("2609010001", MATERIAL_ID, null,
                     new BigDecimal("10"), "kg", FABRICACAO, VALIDADE, USUARIO);
 
             assertThat(lote.getOrdemProducaoId()).isNull();
@@ -168,7 +188,7 @@ class LoteTest {
         @Test
         @DisplayName("lote de compra guarda fornecedor e nota fiscal e não tem ordem")
         void loteDeCompra() {
-            Lote lote = Lote.receberCompra("MAT-MP-001-202609-001", MATERIAL_ID, origem("NF-1"),
+            Lote lote = Lote.receberCompra("ab-123/45", MATERIAL_ID, origem("NF-1"), NOTA_ID,
                     new BigDecimal("10"), "kg",
                     LocalDate.of(2026, 9, 1), LocalDate.of(2027, 9, 1), USUARIO);
 
@@ -176,6 +196,8 @@ class LoteTest {
             assertThat(lote.getOrdemProducaoId()).isNull();
             assertThat(lote.getStatus()).isEqualTo(StatusLote.DISPONIVEL);
             assertThat(lote.getNotaFiscal()).isEqualTo("NF-1");
+            assertThat(lote.getNotaFiscalId()).isEqualTo(NOTA_ID);
+            assertThat(lote.getNumeroLote()).isEqualTo("AB-123/45");
             assertThat(lote.getOrigemCompra().dataEmissaoNf()).isEqualTo(LocalDate.of(2026, 9, 2));
             assertThat(lote.getOrigemCompra().dataRecebimento()).isEqualTo(LocalDate.of(2026, 9, 3));
             assertThat(lote.getAssinatura().criadoPor()).isEqualTo(USUARIO);
@@ -202,9 +224,19 @@ class LoteTest {
         }
 
         @Test
+        @DisplayName("lote de compra exige a nota fiscal de entrada")
+        void exigeNotaFiscal() {
+            assertThatThrownBy(() -> Lote.receberCompra("L1", MATERIAL_ID, origem("NF-1"), null,
+                    new BigDecimal("10"), "kg",
+                    LocalDate.of(2026, 9, 1), LocalDate.of(2027, 9, 1), USUARIO))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("nota fiscal");
+        }
+
+        @Test
         @DisplayName("fabricação posterior ao recebimento é rejeitada")
         void fabricacaoDepoisDoRecebimento() {
-            assertThatThrownBy(() -> Lote.receberCompra("MAT-1", MATERIAL_ID, origem("NF-1"),
+            assertThatThrownBy(() -> Lote.receberCompra("L1", MATERIAL_ID, origem("NF-1"), NOTA_ID,
                     new BigDecimal("10"), "kg",
                     LocalDate.of(2026, 9, 4), LocalDate.of(2027, 9, 1), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)

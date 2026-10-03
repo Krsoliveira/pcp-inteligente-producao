@@ -60,11 +60,13 @@ class OrdemProducaoApiTest {
     private static final String BASE_ORDENS     = "/api/v1/ordens-producao";
     private static final String BASE_MATERIAIS   = "/api/v1/materiais";
     private static final String BASE_LISTAS      = "/api/v1/listas-tecnicas";
+    private static final String BASE_NOTAS       = "/api/v1/notas-fiscais";
 
     private String jwtToken;
     private String idCriado;
     private String materialId;
     private String listaTecnicaId;
+    private String materiaPrimaId;
 
     @BeforeAll
     @SuppressWarnings("unchecked")
@@ -86,16 +88,15 @@ class OrdemProducaoApiTest {
 
         // 2. Criar matéria-prima (componente da BOM)
         ResponseEntity<Void> respMp = rest.postForEntity(BASE_MATERIAIS, json(Map.of(
-                "codigo", "MP-ACO",
                 "descricao", "Aço estrutural",
                 "tipo", "MATERIA_PRIMA",
                 "unidadeDeMedida", "kg")), Void.class);
         assertThat(respMp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         String mpId = extrairIdDaLocation(respMp);
+        materiaPrimaId = mpId;
 
         // 3. Criar produto acabado (o que será produzido)
         ResponseEntity<Void> respPa = rest.postForEntity(BASE_MATERIAIS, json(Map.of(
-                "codigo", "PA-VIGA-6M",
                 "descricao", "Viga metálica 6m",
                 "tipo", "PRODUTO_ACABADO",
                 "unidadeDeMedida", "un")), Void.class);
@@ -249,6 +250,116 @@ class OrdemProducaoApiTest {
                 Map.class);
 
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    @Order(20)
+    @DisplayName("código do material é gerado na faixa do tipo (110 matéria-prima, 103 produto acabado)")
+    @SuppressWarnings("unchecked")
+    void codigoDoMaterialGeradoPorFaixa() {
+        ResponseEntity<List> materiais = rest.exchange(BASE_MATERIAIS, HttpMethod.GET, json(null), List.class);
+
+        Map<String, String> codigoPorId = new java.util.HashMap<>();
+        ((List<Map<String, Object>>) materiais.getBody())
+                .forEach(m -> codigoPorId.put((String) m.get("id"), (String) m.get("codigo")));
+        assertThat(codigoPorId).containsEntry(materiaPrimaId, "110000001").containsEntry(materialId, "103000001");
+    }
+
+    @Test
+    @Order(21)
+    @DisplayName("entrada de nota fiscal cria um lote por item e alimenta o estoque")
+    @SuppressWarnings("unchecked")
+    void entradaDeNotaFiscalAlimentaEstoque() {
+        ResponseEntity<Map> nota = rest.postForEntity(BASE_NOTAS, json(notaFiscal("NF-900", "lote-a1")), Map.class);
+
+        assertThat(nota.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(nota.getHeaders().getLocation()).isNotNull();
+        assertThat(nota.getBody().get("quantidadeItens")).isEqualTo(1);
+        List<Map<String, Object>> itens = (List<Map<String, Object>>) nota.getBody().get("itens");
+        assertThat(itens).singleElement().satisfies(item -> {
+            assertThat(item.get("numeroLote")).isEqualTo("LOTE-A1");
+            assertThat(item.get("notaFiscalId")).isEqualTo(nota.getBody().get("id"));
+        });
+
+        ResponseEntity<List> estoque = rest.exchange("/api/v1/estoque", HttpMethod.GET, json(null), List.class);
+        assertThat(estoque.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> posicao = ((List<Map<String, Object>>) estoque.getBody()).stream()
+                .filter(p -> materiaPrimaId.equals(p.get("materialId"))).findFirst().orElseThrow();
+        assertThat(((Number) posicao.get("saldoDisponivel")).doubleValue()).isEqualTo(250.0);
+        assertThat(posicao.get("lotesDisponiveis")).isEqualTo(1);
+
+        ResponseEntity<List> lotes = rest.exchange("/api/v1/lotes?materialId=" + materiaPrimaId, HttpMethod.GET,
+                json(null), List.class);
+        assertThat(lotes.getBody()).hasSize(1);
+
+        ResponseEntity<List> notas = rest.exchange(BASE_NOTAS, HttpMethod.GET, json(null), List.class);
+        assertThat(notas.getBody()).hasSize(1);
+    }
+
+    @Test
+    @Order(25)
+    @DisplayName("a mesma nota pode trazer o mesmo material em lotes diferentes")
+    @SuppressWarnings("unchecked")
+    void mesmoMaterialEmLotesDiferentesNaNota() {
+        Map<String, Object> item = Map.of("materialId", materiaPrimaId, "quantidade", 10,
+                "dataFabricacao", "2026-08-15", "dataValidade", "2031-08-15");
+        Map<String, Object> corpo = new java.util.HashMap<>(notaFiscal("NF-910", "X"));
+        Map<String, Object> lote1 = new java.util.HashMap<>(item);
+        lote1.put("numeroLote", "C-1");
+        Map<String, Object> lote2 = new java.util.HashMap<>(item);
+        lote2.put("numeroLote", "C-2");
+        corpo.put("itens", List.of(lote1, lote2));
+
+        ResponseEntity<Map> resposta = rest.postForEntity(BASE_NOTAS, json(corpo), Map.class);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(resposta.getBody().get("quantidadeItens")).isEqualTo(2);
+    }
+
+    @Test
+    @Order(22)
+    @DisplayName("nota fiscal repetida do mesmo fornecedor devolve 409")
+    void notaFiscalRepetidaDevolve409() {
+        ResponseEntity<Map> resposta = rest.postForEntity(BASE_NOTAS, json(notaFiscal("NF-900", "LOTE-B1")),
+                Map.class);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    @Order(23)
+    @DisplayName("lote do fornecedor já recebido devolve 409")
+    void loteRepetidoDevolve409() {
+        ResponseEntity<Map> resposta = rest.postForEntity(BASE_NOTAS, json(notaFiscal("NF-901", "LOTE-A1")),
+                Map.class);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    @Order(24)
+    @DisplayName("nota fiscal sem itens devolve 400")
+    void notaFiscalSemItensDevolve400() {
+        Map<String, Object> corpo = new java.util.HashMap<>(notaFiscal("NF-902", "X"));
+        corpo.put("itens", List.of());
+
+        ResponseEntity<Map> resposta = rest.postForEntity(BASE_NOTAS, json(corpo), Map.class);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    private Map<String, Object> notaFiscal(String numero, String numeroLote) {
+        return Map.of(
+                "fornecedor", "Aços Brasil Ltda",
+                "numero", numero,
+                "dataEmissao", "2026-09-01",
+                "dataRecebimento", "2026-09-02",
+                "itens", List.of(Map.of(
+                        "materialId", materiaPrimaId,
+                        "quantidade", 250,
+                        "numeroLote", numeroLote,
+                        "dataFabricacao", "2026-08-15",
+                        "dataValidade", "2031-08-15")));
     }
 
     @Test

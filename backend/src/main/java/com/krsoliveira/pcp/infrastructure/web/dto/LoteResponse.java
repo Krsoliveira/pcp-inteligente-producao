@@ -26,7 +26,8 @@ public record LoteResponse(UUID id,
                            String criadoPor,
                            Instant atualizadoEm,
                            String atualizadoPor,
-                           BigDecimal saldo) {
+                           BigDecimal saldo,
+                           UUID notaFiscalId) {
 
     public static LoteResponse de(Lote lote) {
         return new LoteResponse(
@@ -48,6 +49,7 @@ public record LoteResponse(UUID id,
                 lote.getAssinatura().criadoPor(),
                 lote.getAssinatura().alteradoEm(),
                 lote.getAssinatura().alteradoPor(),
-                lote.getSaldo());
+                lote.getSaldo(),
+                lote.getNotaFiscalId());
     }
 }

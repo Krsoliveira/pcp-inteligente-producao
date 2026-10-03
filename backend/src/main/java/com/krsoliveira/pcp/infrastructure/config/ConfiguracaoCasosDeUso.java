@@ -13,7 +13,11 @@ import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
 import com.krsoliveira.pcp.application.lista.ConsultarListaTecnica;
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
 import com.krsoliveira.pcp.application.lote.RastrearLote;
-import com.krsoliveira.pcp.application.lote.RegistrarEntradaMaterial;
+import com.krsoliveira.pcp.application.estoque.ConsultarEstoque;
+import com.krsoliveira.pcp.application.notafiscal.ConsultarNotasFiscais;
+import com.krsoliveira.pcp.application.notafiscal.RegistrarEntradaNotaFiscal;
+import com.krsoliveira.pcp.domain.estoque.ConsultaEstoque;
+import com.krsoliveira.pcp.domain.notafiscal.NotaFiscalEntradaRepository;
 import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
@@ -98,11 +102,25 @@ public class ConfiguracaoCasosDeUso {
         return new RastrearLote(loteRepository, alocacaoRepository, consumoRepository, ordemRepository);
     }
 
+    // --- Suprimentos: notas fiscais de entrada e estoque (ADR-0012) ---
+
     @Bean
-    RegistrarEntradaMaterial registrarEntradaMaterial(LoteRepository loteRepository,
-                                                      MaterialRepository materialRepository,
-                                                      ExecucaoAuditada execucao) {
-        return new RegistrarEntradaMaterial(loteRepository, materialRepository, execucao);
+    RegistrarEntradaNotaFiscal registrarEntradaNotaFiscal(NotaFiscalEntradaRepository notaRepository,
+                                                          LoteRepository loteRepository,
+                                                          MaterialRepository materialRepository,
+                                                          ExecucaoAuditada execucao) {
+        return new RegistrarEntradaNotaFiscal(notaRepository, loteRepository, materialRepository, execucao);
+    }
+
+    @Bean
+    ConsultarNotasFiscais consultarNotasFiscais(NotaFiscalEntradaRepository notaRepository,
+                                                LoteRepository loteRepository) {
+        return new ConsultarNotasFiscais(notaRepository, loteRepository);
+    }
+
+    @Bean
+    ConsultarEstoque consultarEstoque(ConsultaEstoque consultaEstoque, MaterialRepository materialRepository) {
+        return new ConsultarEstoque(consultaEstoque, materialRepository);
     }
 
     // --- Ordens de produção ---

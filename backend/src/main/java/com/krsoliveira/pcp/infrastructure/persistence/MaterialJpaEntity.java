@@ -24,7 +24,7 @@ public class MaterialJpaEntity {
     @Id
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, unique = true, length = 9)
     private String codigo;
 
     @Column(nullable = false, length = 200)

@@ -55,7 +55,7 @@ class ConcluirOrdemProducaoTest {
     @DisplayName("conclui ordem com consumos registrados e gera lote DISPONIVEL")
     void concluiOrdemEGeraLote() {
         OrdemProducao ordem = criarOrdemEmProducao();
-        Material material = criarMaterial(ordem.getMaterialId(), "PA-VIGA");
+        Material material = criarMaterial(ordem.getMaterialId(), "103000001");
         projetarERegistrarConsumos(ordem.getId(), ordem.getMaterialId());
 
         ConcluirOrdemProducao.Resultado resultado = casoDeUso.executar(
@@ -70,14 +70,14 @@ class ConcluirOrdemProducaoTest {
         assertThat(lote.getStatus()).isEqualTo(StatusLote.DISPONIVEL);
         assertThat(lote.getMaterialId()).isEqualTo(ordem.getMaterialId());
         assertThat(lote.getOrdemProducaoId()).isEqualTo(ordem.getId());
-        assertThat(lote.getNumeroLote()).startsWith("MAT-PA-VIGA-202609-");
+        assertThat(lote.getNumeroLote()).isEqualTo("2609190001");
     }
 
     @Test
     @DisplayName("registra ORDEM_CONCLUIDA (status de → para) e LOTE_GERADO com o usuário logado")
     void registraEventosDeConclusao() {
         OrdemProducao ordem = criarOrdemEmProducao();
-        criarMaterial(ordem.getMaterialId(), "PA-VIGA");
+        criarMaterial(ordem.getMaterialId(), "103000001");
         projetarERegistrarConsumos(ordem.getId(), ordem.getMaterialId());
 
         ConcluirOrdemProducao.Resultado resultado = casoDeUso.executar(
@@ -100,25 +100,32 @@ class ConcluirOrdemProducaoTest {
     }
 
     @Test
-    @DisplayName("o número do lote segue o padrão MAT-{codigo}-{yyyyMM}-{seq}")
+    @DisplayName("o número do lote é AAMMDD da fabricação + sequência do dia, sem o código do material")
     void numeroLoteSegueFormato() {
         OrdemProducao ordem = criarOrdemEmProducao();
-        criarMaterial(ordem.getMaterialId(), "ACO-1020");
+        criarMaterial(ordem.getMaterialId(), "103000002");
         projetarERegistrarConsumos(ordem.getId(), ordem.getMaterialId());
 
         ConcluirOrdemProducao.Resultado resultado = casoDeUso.executar(
                 new ConcluirOrdemProducao.Comando(
                         ordem.getId(), new BigDecimal("50"), FABRICACAO, VALIDADE));
 
-        assertThat(resultado.lote().getNumeroLote())
-                .isEqualTo("MAT-ACO-1020-202609-001");
+        assertThat(resultado.lote().getNumeroLote()).isEqualTo("2609190001");
+
+        // Segundo lote do mesmo dia, de outro material: a sequência é do dia, não do material.
+        OrdemProducao outra = criarOrdemEmProducao();
+        criarMaterial(outra.getMaterialId(), "103000005");
+        projetarERegistrarConsumos(outra.getId(), outra.getMaterialId());
+        var segundo = casoDeUso.executar(new ConcluirOrdemProducao.Comando(
+                outra.getId(), new BigDecimal("10"), FABRICACAO, VALIDADE));
+        assertThat(segundo.lote().getNumeroLote()).isEqualTo("2609190002");
     }
 
     @Test
     @DisplayName("rejeita conclusão quando há consumo não registrado")
     void rejeitaConsumoNaoRegistrado() {
         OrdemProducao ordem = criarOrdemEmProducao();
-        criarMaterial(ordem.getMaterialId(), "PA-TESTE");
+        criarMaterial(ordem.getMaterialId(), "103000003");
 
         // Projeta consumo mas não registra
         ConsumoMaterial consumo = ConsumoMaterial.projetar(
@@ -137,7 +144,7 @@ class ConcluirOrdemProducaoTest {
     @DisplayName("rejeita conclusão quando consumo tem desvio sem justificativa")
     void rejeitaDesvioSemJustificativa() {
         OrdemProducao ordem = criarOrdemEmProducao();
-        criarMaterial(ordem.getMaterialId(), "PA-TESTE2");
+        criarMaterial(ordem.getMaterialId(), "103000004");
 
         // Consumo com desvio mas sem justificativa (força via reconstituir)
         ConsumoMaterial consumoComDesvio = ConsumoMaterial.projetar(

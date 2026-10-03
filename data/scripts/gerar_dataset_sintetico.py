@@ -42,6 +42,7 @@ import csv
 import io
 import math
 import random
+import re
 import sys
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -117,6 +118,15 @@ MATERIAIS: list[MaterialDef] = [
     MaterialDef("PA-BASE-B30", "Base de fixação pintada B30", "PRODUTO_ACABADO", "un", PINTURA, 12, 70),
     MaterialDef("PA-SUPORTE-PINT", "Suporte pintado para painel", "PRODUTO_ACABADO", "un", PINTURA, 12, 150),
 ]
+
+# Código exportado (ADR-0012): 9 dígitos, faixa por tipo — 103 acabado, 105 semiacabado,
+# 110 matéria-prima —, sequencial na ordem da lista acima. Internamente o gerador usa
+# as chaves mnemônicas (MP-ACO-1045...), mais legíveis nas BOMs e regras.
+PREFIXO_CODIGO = {"PRODUTO_ACABADO": "103", "SEMIACABADO": "105", "MATERIA_PRIMA": "110"}
+CODIGO: dict[str, str] = {}
+for _tipo, _prefixo in PREFIXO_CODIGO.items():
+    for _seq, _m in enumerate((m for m in MATERIAIS if m.tipo == _tipo), start=1):
+        CODIGO[_m.codigo] = f"{_prefixo}{_seq:06d}"
 
 # BOM: (material, versão, status, [(componente, quantidade por unidade)])
 # A unidade de medida do item é sempre a unidade do componente.
@@ -455,6 +465,8 @@ class SimuladorEstoque:
             ano, seq = o.codigo.split("-")[1:]
             self.sequenciais[int(ano)] = max(self.sequenciais.get(int(ano), 0), int(seq))
         self.proxima_nf = 100_001
+        self.notas: dict[tuple, dict] = {}  # (fornecedor, ano, semana) → nota
+        self.proximo_lote_fornecedor = 1
         self.demanda_diaria = self._demanda_diaria_mp()
 
     def _demanda_diaria_mp(self) -> dict[str, Decimal]:
@@ -538,17 +550,37 @@ class SimuladorEstoque:
         cobertura = self.demanda_diaria.get(material.codigo, Decimal(0)) * Decimal(self.rng.randint(20, 45))
         embalagem = EMBALAGEM[material.unidade]
         quantidade = (max(falta, cobertura) / embalagem).to_integral_value(rounding="ROUND_CEILING") * embalagem
-        recebimento = data - timedelta(days=self.rng.randint(1, 6))
-        emissao = recebimento - timedelta(days=self.rng.randint(0, 4))
-        fabricacao = emissao - timedelta(days=self.rng.randint(3, 40))
+        fornecedor = self.rng.choice(FORNECEDORES[material.codigo])
+        nota = self._nota(fornecedor, data - timedelta(days=self.rng.randint(1, 6)), data)
+        recebimento = nota["recebimento"]
+        fabricacao = nota["emissao"] - timedelta(days=self.rng.randint(3, 40))
         validade = _somar_meses(fabricacao, VALIDADE_COMPRA_MESES.get(material.codigo,
                                                                      VALIDADE_COMPRA_PADRAO_MESES))
-        compra = {"fornecedor": self.rng.choice(FORNECEDORES[material.codigo]),
-                  "nota_fiscal": f"{self.proxima_nf:06d}", "emissao": emissao, "recebimento": recebimento}
-        self.proxima_nf += 1
+        compra = {**nota, "numero_lote": self._lote_do_fornecedor(fornecedor, recebimento)}
         lote = LoteSim(material, _q4(quantidade), fabricacao, validade, recebimento, compra=compra)
         self.lotes.append(lote)
         return lote
+
+    def _nota(self, fornecedor: str, recebimento: date, data_consumo: date) -> dict:
+        """Compras do mesmo fornecedor na mesma semana chegam na mesma nota fiscal — desde
+        que ela tenha sido recebida antes do consumo; senão, abre outra nota."""
+        ano, semana, _ = recebimento.isocalendar()
+        chave = (fornecedor, ano, semana)
+        if chave in self.notas and self.notas[chave]["recebimento"] >= data_consumo:
+            chave = chave + (recebimento,)
+        if chave not in self.notas:
+            self.notas[chave] = {"fornecedor": fornecedor, "nota_fiscal": f"{self.proxima_nf:06d}",
+                                 "emissao": recebimento - timedelta(days=self.rng.randint(0, 4)),
+                                 "recebimento": recebimento}
+            self.proxima_nf += 1
+        return self.notas[chave]
+
+    def _lote_do_fornecedor(self, fornecedor: str, recebimento: date) -> str:
+        """Lote impresso pelo fornecedor (≤ 20): iniciais + AAMM + sequência — ex.: ABL25020007."""
+        iniciais = "".join(p[0] for p in fornecedor.replace(".", "").split() if p[0].isalpha())[:3].upper()
+        numero = f"{iniciais}{recebimento:%y%m}{self.proximo_lote_fornecedor:04d}"
+        self.proximo_lote_fornecedor += 1
+        return numero
 
     def _produzir(self, material: MaterialDef, falta: Decimal, data: date) -> LoteSim:
         """Ordem de reposição concluída pouco antes do consumo, com seus próprios consumos alocados."""
@@ -637,6 +669,8 @@ def validate_dataset(ordens: list[Ordem], lotes: list[LoteSim], alocacoes: list[
             erros.append(f"{ref}: saldo inconsistente")
         if (lote.saldo == 0) != (lote.status == "CONSUMIDO"):
             erros.append(f"{ref}: status {lote.status} com saldo {lote.saldo}")
+        if lote.compra and not re.fullmatch(r"[A-Z0-9./-]{1,20}", lote.compra["numero_lote"]):
+            erros.append(f"{ref}: lote do fornecedor fora do padrão")
         if lote.compra and not (lote.fabricacao <= lote.compra["recebimento"]
                                 and lote.compra["emissao"] <= lote.compra["recebimento"]):
             erros.append(f"{ref}: datas da compra incoerentes")
@@ -660,7 +694,8 @@ def _csv(cabecalho: list[str], linhas: list[list]) -> str:
 
 def export_csvs(ordens: list[Ordem], lotes: list[LoteSim], alocacoes: list[dict]) -> dict[str, str]:
     producao = sorted((lote for lote in lotes if lote.ordem), key=lambda lote: (lote.fabricacao, lote.ordem.codigo))
-    compras = sorted((lote for lote in lotes if lote.compra), key=lambda lote: lote.compra["nota_fiscal"])
+    compras = sorted((lote for lote in lotes if lote.compra),
+                     key=lambda lote: (lote.compra["nota_fiscal"], lote.compra["numero_lote"]))
     arquivos = {
         "dataset.properties": (
             "# Gerado por data/scripts/gerar_dataset_sintetico.py — não edite à mão.\n"
@@ -669,26 +704,26 @@ def export_csvs(ordens: list[Ordem], lotes: list[LoteSim], alocacoes: list[dict]
         ),
         "materiais.csv": _csv(
             ["codigo", "descricao", "tipo", "unidade_de_medida"],
-            [[m.codigo, m.descricao, m.tipo, m.unidade] for m in MATERIAIS]),
+            [[CODIGO[m.codigo], m.descricao, m.tipo, m.unidade] for m in MATERIAIS]),
         "tipos_ordem.csv": _csv(["nome", "descricao", "cor"], [list(t) for t in TIPOS_ORDEM]),
         "listas_tecnicas.csv": _csv(
             ["material_codigo", "versao", "status"],
-            [[m, v, s] for m, v, s, _i in LISTAS_TECNICAS]),
+            [[CODIGO[m], v, s] for m, v, s, _i in LISTAS_TECNICAS]),
         "itens_lista_tecnica.csv": _csv(
             ["material_codigo", "versao", "componente_codigo", "quantidade_planejada"],
-            [[m, v, comp, qtd] for m, v, _s, itens in LISTAS_TECNICAS for comp, qtd in itens]),
+            [[CODIGO[m], v, CODIGO[comp], qtd] for m, v, _s, itens in LISTAS_TECNICAS for comp, qtd in itens]),
         "ordens_producao.csv": _csv(
             ["codigo", "material_codigo", "versao_lista", "tipo_ordem", "centro_de_trabalho",
              "quantidade", "quantidade_produzida", "inicio_planejado", "fim_planejado", "status",
              "data_conclusao"],
-            [[o.codigo, o.material.codigo, o.versao_lista, o.tipo_ordem, o.centro, o.quantidade,
+            [[o.codigo, CODIGO[o.material.codigo], o.versao_lista, o.tipo_ordem, o.centro, o.quantidade,
               o.quantidade_produzida, o.inicio.isoformat(), o.fim.isoformat(), o.status,
               o.data_conclusao.isoformat() if o.data_conclusao else None]
              for o in ordens]),
         "consumos_material.csv": _csv(
             ["ordem_codigo", "componente_codigo", "quantidade_planejada", "quantidade_consumida",
              "justificativa", "justificado_por", "data_registro"],
-            [[o.codigo, c["componente"].codigo, c["planejada"], c["consumida"],
+            [[o.codigo, CODIGO[c["componente"].codigo], c["planejada"], c["consumida"],
               c["justificativa"], c["justificado_por"],
               c["data_registro"].isoformat() if c.get("data_registro") else None]
              for o in ordens for c in o.consumos]),
@@ -698,16 +733,18 @@ def export_csvs(ordens: list[Ordem], lotes: list[LoteSim], alocacoes: list[dict]
               lote.status, _q4(lote.saldo)] for lote in producao]),
         "lotes_compra.csv": _csv(
             ["material_codigo", "fornecedor", "nota_fiscal", "data_emissao_nf", "data_recebimento",
-             "quantidade", "data_fabricacao", "data_validade", "status", "saldo"],
-            [[lote.material.codigo, lote.compra["fornecedor"], lote.compra["nota_fiscal"],
+             "numero_lote", "quantidade", "data_fabricacao", "data_validade", "status", "saldo"],
+            [[CODIGO[lote.material.codigo], lote.compra["fornecedor"], lote.compra["nota_fiscal"],
               lote.compra["emissao"].isoformat(), lote.compra["recebimento"].isoformat(),
-              lote.quantidade, lote.fabricacao.isoformat(), lote.validade.isoformat(),
+              lote.compra["numero_lote"], lote.quantidade, lote.fabricacao.isoformat(), lote.validade.isoformat(),
               lote.status, _q4(lote.saldo)] for lote in compras]),
         "alocacoes_lote.csv": _csv(
-            ["ordem_codigo", "componente_codigo", "lote_ordem_codigo", "lote_nota_fiscal", "quantidade"],
-            [[a["ordem"].codigo, a["consumo"]["componente"].codigo,
+            ["ordem_codigo", "componente_codigo", "lote_ordem_codigo", "lote_nota_fiscal", "lote_numero",
+             "quantidade"],
+            [[a["ordem"].codigo, CODIGO[a["consumo"]["componente"].codigo],
               a["lote"].ordem.codigo if a["lote"].ordem else None,
               a["lote"].compra["nota_fiscal"] if a["lote"].compra else None,
+              a["lote"].compra["numero_lote"] if a["lote"].compra else None,
               _q4(a["quantidade"])]
              for a in sorted(alocacoes, key=lambda a: (a["data"], a["ordem"].codigo,
                                                        a["consumo"]["componente"].codigo))]),

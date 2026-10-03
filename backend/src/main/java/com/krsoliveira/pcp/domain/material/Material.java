@@ -32,13 +32,11 @@ public class Material {
     }
 
     /**
-     * Fábrica para um material NOVO. Valida todas as invariantes antes de criar.
+     * Fábrica para um material NOVO. Valida todas as invariantes antes de criar — inclusive
+     * que o código tem 9 dígitos na faixa do tipo ({@link CodigoMaterial}).
      */
     public static Material criar(String codigo, String descricao, TipoMaterial tipo,
                                  String unidadeDeMedida, String usuario) {
-        if (codigo == null || codigo.isBlank()) {
-            throw new RegraDeNegocioException("O código do material é obrigatório.");
-        }
         if (descricao == null || descricao.isBlank()) {
             throw new RegraDeNegocioException("A descrição do material é obrigatória.");
         }
@@ -48,7 +46,8 @@ public class Material {
         if (unidadeDeMedida == null || unidadeDeMedida.isBlank()) {
             throw new RegraDeNegocioException("A unidade de medida do material é obrigatória.");
         }
-        return new Material(UUID.randomUUID(), codigo.trim().toUpperCase(),
+        CodigoMaterial.validar(codigo, tipo);
+        return new Material(UUID.randomUUID(), codigo,
                 descricao.trim(), tipo, unidadeDeMedida.trim(), Assinatura.nova(usuario));
     }
 

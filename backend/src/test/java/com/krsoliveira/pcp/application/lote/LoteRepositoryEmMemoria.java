@@ -3,6 +3,7 @@ package com.krsoliveira.pcp.application.lote;
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,23 +69,30 @@ public class LoteRepositoryEmMemoria implements LoteRepository {
     }
 
     @Override
-    public Optional<Lote> buscarPorNumeroLote(String numeroLote) {
+    public List<Lote> listarPorMaterial(UUID materialId) {
+        return dados.values().stream().filter(l -> materialId.equals(l.getMaterialId())).toList();
+    }
+
+    @Override
+    public List<Lote> listarPorNotasFiscais(Collection<UUID> notaFiscalIds) {
         return dados.values().stream()
-                .filter(l -> l.getNumeroLote().equals(numeroLote))
-                .findFirst();
+                .filter(l -> l.getNotaFiscalId() != null && notaFiscalIds.contains(l.getNotaFiscalId()))
+                .toList();
     }
 
     @Override
-    public boolean existeEntrada(UUID materialId, String fornecedor, String notaFiscal) {
+    public boolean existeLote(UUID materialId, String numeroLote, String fornecedor) {
         return dados.values().stream().anyMatch(l -> materialId.equals(l.getMaterialId())
-                && fornecedor.equals(l.getFornecedor()) && notaFiscal.equals(l.getNotaFiscal()));
+                && numeroLote.equals(l.getNumeroLote())
+                && Objects.equals(fornecedor == null ? null : fornecedor.toLowerCase(),
+                        l.getFornecedor() == null ? null : l.getFornecedor().toLowerCase()));
     }
 
     @Override
-    public int proximoSequencial(UUID materialId, String prefixo) {
-        long count = dados.values().stream()
-                .filter(l -> l.getNumeroLote().startsWith(prefixo))
-                .count();
-        return (int) count + 1;
+    public int proximoSequencialProducao(LocalDate data) {
+        String prefixo = Lote.prefixoLoteProducao(data);
+        return (int) dados.values().stream()
+                .filter(l -> l.getOrdemProducaoId() != null && l.getNumeroLote().startsWith(prefixo))
+                .count() + 1;
     }
 }

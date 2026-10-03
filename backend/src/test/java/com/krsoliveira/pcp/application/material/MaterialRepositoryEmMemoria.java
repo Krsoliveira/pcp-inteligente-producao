@@ -1,7 +1,9 @@
 package com.krsoliveira.pcp.application.material;
 
+import com.krsoliveira.pcp.domain.material.CodigoMaterial;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
+import com.krsoliveira.pcp.domain.material.TipoMaterial;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +40,12 @@ public class MaterialRepositoryEmMemoria implements MaterialRepository {
     }
 
     @Override
-    public boolean existePorCodigo(String codigo) {
-        return materiais.stream().anyMatch(m -> m.getCodigo().equals(codigo));
+    public String proximoCodigo(TipoMaterial tipo) {
+        return materiais.stream()
+                .map(Material::getCodigo)
+                .filter(codigo -> codigo.startsWith(tipo.prefixoCodigo()))
+                .max(String::compareTo)
+                .map(ultimo -> CodigoMaterial.seguinte(ultimo, tipo))
+                .orElseGet(() -> CodigoMaterial.primeiro(tipo));
     }
 }

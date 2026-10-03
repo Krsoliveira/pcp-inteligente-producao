@@ -1,7 +1,9 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
 import com.krsoliveira.pcp.domain.material.Material;
+import com.krsoliveira.pcp.domain.material.CodigoMaterial;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
+import com.krsoliveira.pcp.domain.material.TipoMaterial;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -13,6 +15,9 @@ import java.util.UUID;
  */
 @Repository
 public class MaterialRepositoryAdapter implements MaterialRepository {
+
+    /** Espaço de chaves do bloqueio consultivo da geração de código de material. */
+    private static final long CHAVE_BLOQUEIO_CODIGO = 7_300_000L;
 
     private final MaterialSpringDataRepository springDataRepository;
 
@@ -42,8 +47,15 @@ public class MaterialRepositoryAdapter implements MaterialRepository {
                 .toList();
     }
 
+    /**
+     * Bloqueio consultivo do Postgres por tipo, válido até o fim da transação: cadastros
+     * simultâneos do mesmo tipo esperam um pelo outro e não colidem no código.
+     */
     @Override
-    public boolean existePorCodigo(String codigo) {
-        return springDataRepository.existsByCodigo(codigo);
+    public String proximoCodigo(TipoMaterial tipo) {
+        springDataRepository.bloquearFaixaDeCodigo(CHAVE_BLOQUEIO_CODIGO + Integer.parseInt(tipo.prefixoCodigo()));
+        return springDataRepository.ultimoCodigoComPrefixo(tipo.prefixoCodigo())
+                .map(ultimo -> CodigoMaterial.seguinte(ultimo, tipo))
+                .orElseGet(() -> CodigoMaterial.primeiro(tipo));
     }
 }

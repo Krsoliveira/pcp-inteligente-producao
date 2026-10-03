@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.application.material;
 
 import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
+import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.material.TipoMaterial;
@@ -22,32 +23,43 @@ class CadastrarMaterialTest {
     private final TrilhaDeAuditoriaEmMemoria trilha = new TrilhaDeAuditoriaEmMemoria();
     private final CadastrarMaterial casoDeUso = new CadastrarMaterial(repositorio, trilha.execucao());
 
-    private CadastrarMaterial.Comando comandoValido(String codigo) {
-        return new CadastrarMaterial.Comando(
-                codigo, "Motor elétrico 5CV", TipoMaterial.PRODUTO_ACABADO, "un");
+    private UUID cadastrar(TipoMaterial tipo) {
+        return casoDeUso.executar(new CadastrarMaterial.Comando("Motor elétrico 5CV", tipo, "un"));
+    }
+
+    private String codigo(UUID id) {
+        return repositorio.buscarPorId(id).orElseThrow().getCodigo();
     }
 
     @Test
-    @DisplayName("cadastra e persiste material válido, retornando UUID")
-    void cadastraEPersisteMaterial() {
-        UUID id = casoDeUso.executar(comandoValido("MAT-001"));
+    @DisplayName("gera o primeiro código da faixa do tipo (103, 105, 110)")
+    void geraPrimeiroCodigoDaFaixa() {
+        assertThat(codigo(cadastrar(TipoMaterial.PRODUTO_ACABADO))).isEqualTo("103000001");
+        assertThat(codigo(cadastrar(TipoMaterial.SEMIACABADO))).isEqualTo("105000001");
+        assertThat(codigo(cadastrar(TipoMaterial.MATERIA_PRIMA))).isEqualTo("110000001");
+    }
 
-        assertThat(id).isNotNull();
-        assertThat(repositorio.buscarPorId(id)).isPresent();
-        assertThat(repositorio.buscarPorId(id).get().getCodigo()).isEqualTo("MAT-001");
+    @Test
+    @DisplayName("cada tipo segue a própria sequência")
+    void sequenciaPorTipo() {
+        cadastrar(TipoMaterial.MATERIA_PRIMA);
+        cadastrar(TipoMaterial.PRODUTO_ACABADO);
+
+        assertThat(codigo(cadastrar(TipoMaterial.MATERIA_PRIMA))).isEqualTo("110000002");
+        assertThat(codigo(cadastrar(TipoMaterial.PRODUTO_ACABADO))).isEqualTo("103000002");
     }
 
     @Test
     @DisplayName("assina o material e registra o evento CRIADO na trilha de auditoria")
     void assinaERegistraEvento() {
-        UUID id = casoDeUso.executar(comandoValido("MAT-001"));
+        UUID id = cadastrar(TipoMaterial.PRODUTO_ACABADO);
 
         var material = repositorio.buscarPorId(id).orElseThrow();
         assertThat(material.getAssinatura().criadoPor()).isEqualTo(USUARIO_TESTE);
         assertThat(trilha.eventos()).singleElement().satisfies(evento -> {
             assertThat(evento.getTipoEntidade()).isEqualTo(TipoEntidade.MATERIAL);
             assertThat(evento.getEntidadeId()).isEqualTo(id);
-            assertThat(evento.getReferencia()).isEqualTo("MAT-001");
+            assertThat(evento.getReferencia()).isEqualTo("103000001");
             assertThat(evento.getAcao()).isEqualTo(AcaoAuditoria.CRIADO);
             assertThat(evento.getUsuario()).isEqualTo(USUARIO_TESTE);
             assertThat(evento.getDetalhes()).containsEntry("tipo", "PRODUTO_ACABADO");
@@ -55,31 +67,11 @@ class CadastrarMaterialTest {
     }
 
     @Test
-    @DisplayName("falha de negócio não registra evento")
-    void falhaNaoRegistraEvento() {
-        casoDeUso.executar(comandoValido("MAT-001"));
-
-        assertThatThrownBy(() -> casoDeUso.executar(comandoValido("MAT-001")));
-        assertThat(trilha.eventos()).hasSize(1);
-    }
-
-    @Test
-    @DisplayName("normaliza código em maiúsculas antes de verificar duplicata")
-    void normalizaCodigoAntesDeVerificarDuplicata() {
-        casoDeUso.executar(comandoValido("mat-001"));
-
-        assertThatThrownBy(() -> casoDeUso.executar(comandoValido("MAT-001")))
-                .isInstanceOf(CodigoMaterialJaUtilizadoException.class)
-                .hasMessageContaining("MAT-001");
-    }
-
-    @Test
-    @DisplayName("rejeita código duplicado com CodigoMaterialJaUtilizadoException")
-    void rejeitaCodigoDuplicado() {
-        casoDeUso.executar(comandoValido("MAT-001"));
-
-        assertThatThrownBy(() -> casoDeUso.executar(comandoValido("MAT-001")))
-                .isInstanceOf(CodigoMaterialJaUtilizadoException.class)
-                .hasMessageContaining("MAT-001");
+    @DisplayName("tipo é obrigatório e a falha não registra evento")
+    void tipoObrigatorio() {
+        assertThatThrownBy(() -> cadastrar(null))
+                .isInstanceOf(RegraDeNegocioException.class)
+                .hasMessageContaining("tipo");
+        assertThat(trilha.eventos()).isEmpty();
     }
 }

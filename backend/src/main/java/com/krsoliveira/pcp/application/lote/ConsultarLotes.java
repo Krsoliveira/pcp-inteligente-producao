@@ -27,6 +27,13 @@ public class ConsultarLotes {
                 .orElseThrow(() -> new LoteNaoEncontradoException(id));
     }
 
+    /** Todos os lotes do material (qualquer status), do mais novo para o mais antigo. */
+    public List<Lote> listarPorMaterial(UUID materialId) {
+        return loteRepository.listarPorMaterial(materialId).stream()
+                .sorted(java.util.Comparator.comparing(Lote::getCriadoEm).reversed())
+                .toList();
+    }
+
     public List<Lote> listarPorOrdem(UUID ordemProducaoId) {
         return loteRepository.listarPorOrdemProducao(ordemProducaoId);
     }
