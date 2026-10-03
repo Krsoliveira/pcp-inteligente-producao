@@ -22,12 +22,30 @@ Objetivo: responder, para qualquer registro, *quem fez, quando, o que mudou* e *
   - Migração V9 assina os registros antigos como `sistema:migracao-v9`; a carga inicial
     gera o histórico simulado (~5 mil eventos).
   - Frontend: datas da NF no diálogo de entrada; campo "Responsável" removido do consumo.
-- [ ] **Entrega 2 — telas**: colunas "criado por/em" e filtro por período nas listagens,
-      aba **Histórico** nos detalhes (ordem, lote, material, lista técnica), tela de detalhe
-      do lote (NF, datas, quem deu entrada).
-- [ ] **Entrega 3 — genealogia**: consumo alocado a lotes, saldo do lote, rastreio para trás
-      (produto → lotes → NF) e para frente (lote de MP → ordens/lotes); gerador do dataset
-      com lotes de compra e alocações.
+- [x] **Entrega 2 — detalhe do lote** (branch `feature/detalhe-lote`)
+  - Tela `/lotes/:id`: identificação, origem (compra: fornecedor, NF, emissão,
+    recebimento e quem deu entrada; produção: ordem, lista técnica e quem gerou),
+    materiais consumidos pela ordem de origem e histórico de auditoria.
+  - Lista de lotes: linha abre o detalhe, coluna "Registrado" (data/hora e usuário) e
+    filtro por período de registro.
+  - Componente `HistoricoAuditoria` reutilizável, já usado também no detalhe da ordem.
+- [ ] **Entrega 3 — genealogia**: consumo alocado a lotes e saldo do lote. No detalhe do
+      lote produzido, cada material consumido mostra **de quais lotes veio** (com link até
+      a NF); no lote de matéria-prima, **onde foi usado** (ordens e lotes gerados). Se a
+      tela ficar carregada, vira uma tela própria de rastreio. Atualizar o gerador do
+      dataset com lotes de compra e alocações.
+- [ ] Aba Histórico nos detalhes de material e lista técnica (reutilizar `HistoricoAuditoria`).
+
+## Backlog: perfis e segregação de funções
+
+Hoje existem só `PLANEJADOR` (autocadastro) e `GERENTE` (administrador inicial), e nenhuma
+rota restringe acesso por perfil — a trilha de auditoria fica visível para todos por
+decisão. Proposta para quando for implementado:
+
+- Perfis padrão: **Gerente, Analista, Assistente e Auxiliar**.
+- Matriz de permissões por perfil (quem cadastra, quem libera/conclui ordem, quem dá
+  entrada de material, quem consulta a auditoria), aplicada no backend.
+- Tela para o Gerente atribuir perfis (substitui o item "promover usuários").
 - [ ] Mesclar as correções de layout da branch `fix/layout-dashboard` (gráfico do dashboard,
       overflow no celular).
 
@@ -84,7 +102,6 @@ Objetivo: responder, para qualquer registro, *quem fez, quando, o que mudou* e *
    Spring Boot 4 + springdoc 3, React 19, React Router 7, Vite 8 + plugin-react 6,
    ECharts 6.
 4. Depois:
-   - tela/endpoint para um `GERENTE` promover outros usuários;
    - **saldo de estoque**: baixar dos lotes de matéria-prima o consumo das ordens;
    - testes automatizados de frontend (Vitest);
    - carregar o ECharts sob demanda (bundle de ~1 MB).
