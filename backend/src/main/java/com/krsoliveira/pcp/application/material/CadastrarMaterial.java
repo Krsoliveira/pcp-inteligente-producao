@@ -1,5 +1,9 @@
 package com.krsoliveira.pcp.application.material;
 
+import com.krsoliveira.pcp.application.comum.Detalhes;
+import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
+import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
+import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.material.TipoMaterial;
@@ -7,37 +11,42 @@ import com.krsoliveira.pcp.domain.material.TipoMaterial;
 import java.util.UUID;
 
 /**
- * Caso de uso: cadastrar um novo material no sistema.
- *
- * Garante unicidade do código antes de persistir.
+ * Caso de uso: cadastrar um material (produto acabado, semiacabado ou matéria-prima).
+ * O código é único e normalizado em maiúsculas. Registra quem cadastrou.
  */
 public class CadastrarMaterial {
 
     private final MaterialRepository materialRepository;
+    private final ExecucaoAuditada execucao;
 
-    public CadastrarMaterial(MaterialRepository materialRepository) {
+    public CadastrarMaterial(MaterialRepository materialRepository, ExecucaoAuditada execucao) {
         this.materialRepository = materialRepository;
+        this.execucao = execucao;
     }
 
     public record Comando(String codigo, String descricao, TipoMaterial tipo,
                           String unidadeDeMedida) {}
 
     public UUID executar(Comando comando) {
-        String codigoNormalizado = comando.codigo() == null
-                ? null : comando.codigo().trim().toUpperCase();
+        return execucao.executar(ctx -> {
+            String codigoNormalizado = comando.codigo() == null
+                    ? null : comando.codigo().trim().toUpperCase();
 
-        if (materialRepository.existePorCodigo(codigoNormalizado)) {
-            throw new CodigoMaterialJaUtilizadoException(codigoNormalizado);
-        }
+            if (materialRepository.existePorCodigo(codigoNormalizado)) {
+                throw new CodigoMaterialJaUtilizadoException(codigoNormalizado);
+            }
 
-        Material material = Material.criar(
-                comando.codigo(),
-                comando.descricao(),
-                comando.tipo(),
-                comando.unidadeDeMedida()
-        );
+            Material material = Material.criar(comando.codigo(), comando.descricao(),
+                    comando.tipo(), comando.unidadeDeMedida(), ctx.usuario());
+            materialRepository.salvar(material);
 
-        materialRepository.salvar(material);
-        return material.getId();
+            ctx.registrar(TipoEntidade.MATERIAL, material.getId(), material.getCodigo(),
+                    AcaoAuditoria.CRIADO,
+                    Detalhes.com("codigo", material.getCodigo())
+                            .e("descricao", material.getDescricao())
+                            .e("tipo", material.getTipo())
+                            .e("unidadeDeMedida", material.getUnidadeDeMedida()));
+            return material.getId();
+        });
     }
 }

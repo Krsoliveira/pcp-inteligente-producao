@@ -22,6 +22,14 @@ public record RegistrarEntradaMaterialRequest(
         @Size(max = 44, message = "Nota fiscal deve ter no máximo 44 caracteres")
         String notaFiscal,
 
+        @NotNull(message = "Data de emissão da NF é obrigatória")
+        @PastOrPresent(message = "Data de emissão da NF não pode estar no futuro")
+        LocalDate dataEmissaoNf,
+
+        @NotNull(message = "Data de recebimento é obrigatória")
+        @PastOrPresent(message = "Data de recebimento não pode estar no futuro")
+        LocalDate dataRecebimento,
+
         @NotNull(message = "Quantidade é obrigatória")
         @DecimalMin(value = "0.0001", message = "Quantidade deve ser maior que zero")
         BigDecimal quantidade,

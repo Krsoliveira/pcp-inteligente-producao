@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 import com.krsoliveira.pcp.domain.lista.ItemListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
@@ -49,6 +50,12 @@ public class ListaTecnicaJpaEntity {
     @Column(name = "atualizada_em", nullable = false)
     private Instant atualizadaEm;
 
+    @Column(name = "criada_por", nullable = false, length = 150)
+    private String criadaPor;
+
+    @Column(name = "atualizada_por", nullable = false, length = 150)
+    private String atualizadaPor;
+
     protected ListaTecnicaJpaEntity() {}
 
     public static ListaTecnicaJpaEntity deDominio(ListaTecnica lista) {
@@ -57,8 +64,11 @@ public class ListaTecnicaJpaEntity {
         entity.materialId = lista.getMaterialId();
         entity.versao = lista.getVersao();
         entity.status = lista.getStatus();
-        entity.criadaEm = lista.getCriadaEm();
-        entity.atualizadaEm = lista.getAtualizadaEm();
+        Assinatura a = lista.getAssinatura();
+        entity.criadaEm = a.criadoEm();
+        entity.atualizadaEm = a.alteradoEm();
+        entity.criadaPor = a.criadoPor();
+        entity.atualizadaPor = a.alteradoPor();
 
         entity.itens = lista.getItens().stream()
                 .map(item -> ItemListaTecnicaJpaEntity.deDominio(item, entity))
@@ -72,7 +82,7 @@ public class ListaTecnicaJpaEntity {
                 .map(ItemListaTecnicaJpaEntity::paraDominio)
                 .toList();
         return ListaTecnica.reconstituir(id, materialId, versao, status,
-                itensDominio, criadaEm, atualizadaEm);
+                itensDominio, new Assinatura(criadaPor, criadaEm, atualizadaPor, atualizadaEm));
     }
 
     public UUID getId() { return id; }

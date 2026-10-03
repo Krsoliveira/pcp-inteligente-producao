@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.domain.ordem;
 
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -20,17 +21,14 @@ public class TipoOrdem {
     private String nome;
     private String descricao;
     private String cor;
-    private final Instant criadoEm;
-    private Instant atualizadoEm;
+    private Assinatura assinatura;
 
-    private TipoOrdem(UUID id, String nome, String descricao, String cor,
-                      Instant criadoEm, Instant atualizadoEm) {
+    private TipoOrdem(UUID id, String nome, String descricao, String cor, Assinatura assinatura) {
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
         this.cor = cor;
-        this.criadoEm = criadoEm;
-        this.atualizadoEm = atualizadoEm;
+        this.assinatura = assinatura;
     }
 
     /**
@@ -38,32 +36,32 @@ public class TipoOrdem {
      *
      * @param cor código hexadecimal para badge no frontend (ex.: "#1565c0")
      */
-    public static TipoOrdem criar(String nome, String descricao, String cor) {
+    public static TipoOrdem criar(String nome, String descricao, String cor, String usuario) {
         validarNome(nome);
         validarCor(cor);
-        Instant agora = Instant.now();
         return new TipoOrdem(UUID.randomUUID(), nome.trim(), descricao != null ? descricao.trim() : null,
-                cor.trim(), agora, agora);
+                cor.trim(), Assinatura.nova(usuario));
     }
 
     /**
      * Reconstrói um tipo de ordem EXISTENTE a partir do banco de dados.
      */
     public static TipoOrdem reconstituir(UUID id, String nome, String descricao, String cor,
-                                         Instant criadoEm, Instant atualizadoEm) {
-        return new TipoOrdem(id, nome, descricao, cor, criadoEm, atualizadoEm);
+                                         Assinatura assinatura) {
+        return new TipoOrdem(id, nome, descricao, cor, assinatura);
     }
 
     /**
      * Atualiza os dados editáveis do tipo de ordem.
      */
-    public void atualizar(String nome, String descricao, String cor) {
+    public void atualizar(String nome, String descricao, String cor, String usuario) {
+        Assinatura alterada = assinatura.alterada(usuario);
         validarNome(nome);
         validarCor(cor);
         this.nome = nome.trim();
         this.descricao = descricao != null ? descricao.trim() : null;
         this.cor = cor.trim();
-        this.atualizadoEm = Instant.now();
+        this.assinatura = alterada;
     }
 
     private static void validarNome(String nome) {
@@ -82,6 +80,7 @@ public class TipoOrdem {
     public String getNome() { return nome; }
     public String getDescricao() { return descricao; }
     public String getCor() { return cor; }
-    public Instant getCriadoEm() { return criadoEm; }
-    public Instant getAtualizadoEm() { return atualizadoEm; }
+    public Assinatura getAssinatura() { return assinatura; }
+    public Instant getCriadoEm() { return assinatura.criadoEm(); }
+    public Instant getAtualizadoEm() { return assinatura.alteradoEm(); }
 }

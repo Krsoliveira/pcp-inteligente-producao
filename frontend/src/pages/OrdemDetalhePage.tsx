@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link as RouterLink } from 'react-router-dom'
+import Link from '@mui/material/Link'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -31,14 +32,18 @@ import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { buscarOrdemPorId, concluirOrdem } from '../api/ordens'
-import { listarConsumosPorOrdem, registrarConsumo } from '../api/consumos'
+import { listarConsumosPorOrdem } from '../api/consumos'
 import { listarLotesPorOrdem } from '../api/lotes'
 import { buscarListaTecnicaPorId } from '../api/listasTecnicas'
 import { buscarMaterialPorId, listarMateriais } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { StatusOrdemBadge, StatusLoteBadge } from '../components/StatusBadge'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
-import type { ConsumoMaterial, ConcluirOrdemRequest, RegistrarConsumoRequest } from '../types'
+import { InfoRow } from '../components/InfoRow'
+import { RegistrarConsumoDialog } from '../components/consumo/RegistrarConsumoDialog'
+import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
+import { formatarDataHora } from '../utils/formatacao'
+import type { ConsumoMaterial, ConcluirOrdemRequest } from '../types'
 
 export function OrdemDetalhePage() {
   const { id } = useParams<{ id: string }>()
@@ -94,6 +99,9 @@ export function OrdemDetalhePage() {
     queryClient.invalidateQueries({ queryKey: ['consumos', id] })
     queryClient.invalidateQueries({ queryKey: ['lotes-ordem', id] })
     queryClient.invalidateQueries({ queryKey: ['ordens'] })
+    queryClient.invalidateQueries({ queryKey: ['lotes'] })
+    queryClient.invalidateQueries({ queryKey: ['lotes-disponiveis'] })
+    queryClient.invalidateQueries({ queryKey: ['auditoria'] })
   }
 
   const ordem = ordemQuery.data
@@ -175,6 +183,8 @@ export function OrdemDetalhePage() {
                     {ordem.atrasada && <Chip label="Atrasada" size="small" color="error" sx={{ height: 18, fontSize: '0.65rem' }} />}
                   </Box>
                 </InfoRow>
+                <InfoRow label="Criada por">{`${ordem.criadaPor} · ${formatarDataHora(ordem.criadaEm)}`}</InfoRow>
+                <InfoRow label="Última alteração">{`${ordem.atualizadaPor} · ${formatarDataHora(ordem.atualizadaEm)}`}</InfoRow>
               </Grid>
             </CardContent>
           </Card>
@@ -330,7 +340,9 @@ export function OrdemDetalhePage() {
                 {lotes.map((lote) => (
                   <Grid key={lote.id} container spacing={2}>
                     <InfoRow label="Número do Lote">
-                      <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>{lote.numeroLote}</Typography>
+                      <Link component={RouterLink} to={`/lotes/${lote.id}`} variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
+                        {lote.numeroLote}
+                      </Link>
                     </InfoRow>
                     <InfoRow label="Quantidade">{Number(lote.quantidade).toLocaleString('pt-BR')} {lote.unidadeDeMedida}</InfoRow>
                     <InfoRow label="Fabricação">{formatarData(lote.dataFabricacao)}</InfoRow>
@@ -342,11 +354,16 @@ export function OrdemDetalhePage() {
             </Card>
           </Grid>
         )}
+
+        <Grid size={12}>
+          <HistoricoAuditoria tipoEntidade="ORDEM_PRODUCAO" entidadeId={ordem.id} titulo="Histórico da ordem" />
+        </Grid>
       </Grid>
 
       {/* Dialog: Registrar consumo */}
       <RegistrarConsumoDialog
         consumo={consumoSelecionado}
+        material={consumoSelecionado ? materialPorId.get(consumoSelecionado.materialId) : undefined}
         ordemId={id!}
         onFechar={() => setConsumoSelecionado(null)}
         onSucesso={invalidar}
@@ -366,93 +383,6 @@ export function OrdemDetalhePage() {
         onFechar={() => { setDialogStatus(false); invalidar() }}
       />
     </Box>
-  )
-}
-
-// ---- Helper: linha de informação ----
-function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <>
-      <Grid size={{ xs: 12, sm: 5 }}>
-        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          {label}
-        </Typography>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 7 }}>
-        {typeof children === 'string' ? (
-          <Typography variant="body2">{children}</Typography>
-        ) : children}
-      </Grid>
-    </>
-  )
-}
-
-// ---- Dialog: Registrar consumo ----
-
-interface RegistrarConsumoDialogProps {
-  consumo: ConsumoMaterial | null
-  ordemId: string
-  onFechar: () => void
-  onSucesso: () => void
-}
-
-function RegistrarConsumoDialog({ consumo, ordemId, onFechar, onSucesso }: RegistrarConsumoDialogProps) {
-  const [qtd, setQtd] = useState('')
-  const [justificativa, setJustificativa] = useState('')
-  const [responsavel, setResponsavel] = useState('')
-  const [erro, setErro] = useState<string | null>(null)
-
-  const desvio = consumo && qtd ? Number(qtd) - consumo.quantidadePlanejada : 0
-  const temDesvio = Math.abs(desvio) > 0.0001
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: (payload: RegistrarConsumoRequest) => registrarConsumo(ordemId, consumo!.id, payload),
-    onSuccess: () => { onSucesso(); onFechar(); setQtd(''); setJustificativa(''); setResponsavel(''); setErro(null) },
-    onError: (err: unknown) => { if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro.'); else setErro('Erro inesperado.') },
-  })
-
-  const handleSubmit = () => {
-    if (!qtd) { setErro('Informe a quantidade consumida.'); return }
-    const payload: RegistrarConsumoRequest = { quantidadeConsumida: Number(qtd), justificativa: justificativa || undefined, justificadoPor: responsavel || undefined }
-    mutate(payload)
-  }
-
-  return (
-    <Dialog open={!!consumo} onClose={onFechar} fullWidth maxWidth="xs">
-      <DialogTitle>Registrar Consumo</DialogTitle>
-      <DialogContent dividers>
-        {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
-        {consumo && (
-          <Box sx={{ mb: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="caption" color="text.secondary">Quantidade planejada</Typography>
-            <Typography variant="body2" fontWeight={600}>{consumo.quantidadePlanejada.toLocaleString('pt-BR')} {consumo.unidadeDeMedida}</Typography>
-          </Box>
-        )}
-        <Grid container spacing={2}>
-          <Grid size={12}>
-            <TextField label="Quantidade consumida *" type="number" value={qtd} onChange={(e) => setQtd(e.target.value)} fullWidth inputProps={{ min: 0, step: 0.0001 }}
-              helperText={qtd && temDesvio ? `Desvio: ${desvio > 0 ? '+' : ''}${desvio.toLocaleString('pt-BR')} ${consumo?.unidadeDeMedida}` : ''} />
-          </Grid>
-          {temDesvio && (
-            <>
-              <Grid size={12}>
-                <Alert severity="warning" sx={{ py: 0.5 }}>Desvio detectado. Justificativa obrigatória.</Alert>
-              </Grid>
-              <Grid size={12}>
-                <TextField label="Justificativa *" value={justificativa} onChange={(e) => setJustificativa(e.target.value)} fullWidth multiline rows={2} />
-              </Grid>
-              <Grid size={12}>
-                <TextField label="Responsável *" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} fullWidth />
-              </Grid>
-            </>
-          )}
-        </Grid>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onFechar} disabled={isPending}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={isPending}>{isPending ? 'Salvando…' : 'Registrar'}</Button>
-      </DialogActions>
-    </Dialog>
   )
 }
 

@@ -13,12 +13,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ConsumoMaterialTest {
 
+    private static final String USUARIO = "teste@pcp";
+
     private static final UUID ORDEM_ID = UUID.randomUUID();
     private static final UUID MATERIAL_ID = UUID.randomUUID();
 
     private ConsumoMaterial consumoProjetado() {
         return ConsumoMaterial.projetar(ORDEM_ID, MATERIAL_ID,
-                new BigDecimal("50.0000"), "kg");
+                new BigDecimal("50.0000"), "kg", USUARIO);
     }
 
     @Nested
@@ -44,7 +46,7 @@ class ConsumoMaterialTest {
         @DisplayName("rejeita quantidade planejada zero ou negativa")
         void rejeitaQuantidadeInvalida() {
             assertThatThrownBy(() ->
-                    ConsumoMaterial.projetar(ORDEM_ID, MATERIAL_ID, BigDecimal.ZERO, "kg"))
+                    ConsumoMaterial.projetar(ORDEM_ID, MATERIAL_ID, BigDecimal.ZERO, "kg", USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("quantidade planejada");
         }
@@ -53,7 +55,7 @@ class ConsumoMaterialTest {
         @DisplayName("rejeita material nulo")
         void rejeitaMaterialNulo() {
             assertThatThrownBy(() ->
-                    ConsumoMaterial.projetar(ORDEM_ID, null, new BigDecimal("10"), "kg"))
+                    ConsumoMaterial.projetar(ORDEM_ID, null, new BigDecimal("10"), "kg", USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("material");
         }
@@ -68,7 +70,7 @@ class ConsumoMaterialTest {
         void registraSemDesvio() {
             ConsumoMaterial consumo = consumoProjetado();
 
-            consumo.registrarConsumo(new BigDecimal("50.0000"), null, null);
+            consumo.registrarConsumo(new BigDecimal("50.0000"), null, USUARIO);
 
             assertThat(consumo.estaRegistrado()).isTrue();
             assertThat(consumo.getDesvio()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -82,14 +84,16 @@ class ConsumoMaterialTest {
             ConsumoMaterial consumo = consumoProjetado();
 
             consumo.registrarConsumo(new BigDecimal("55.0000"),
-                    "Perda no setup da máquina", "João Silva");
+                    "Perda no setup da máquina", "joao@pcp");
 
             assertThat(consumo.estaRegistrado()).isTrue();
             assertThat(consumo.getDesvio()).isEqualByComparingTo(new BigDecimal("5.0000"));
             assertThat(consumo.estaJustificado()).isTrue();
             assertThat(consumo.getJustificativa()).isEqualTo("Perda no setup da máquina");
-            assertThat(consumo.getJustificadoPor()).isEqualTo("João Silva");
+            assertThat(consumo.getJustificadoPor()).isEqualTo("joao@pcp");
             assertThat(consumo.getJustificadoEm()).isNotNull();
+            assertThat(consumo.getAssinatura().alteradoPor()).isEqualTo("joao@pcp");
+            assertThat(consumo.getAssinatura().criadoPor()).isEqualTo(USUARIO);
         }
 
         @Test
@@ -98,21 +102,34 @@ class ConsumoMaterialTest {
             ConsumoMaterial consumo = consumoProjetado();
 
             assertThatThrownBy(() ->
-                    consumo.registrarConsumo(new BigDecimal("60.0000"), null, null))
+                    consumo.registrarConsumo(new BigDecimal("60.0000"), null, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("Justificativa obrigatória");
         }
 
         @Test
-        @DisplayName("rejeita desvio com justificativa mas sem responsável")
-        void rejeitaDesvioSemResponsavel() {
+        @DisplayName("rejeita registro sem usuário responsável")
+        void rejeitaRegistroSemUsuario() {
             ConsumoMaterial consumo = consumoProjetado();
 
             assertThatThrownBy(() ->
                     consumo.registrarConsumo(new BigDecimal("60.0000"),
-                            "Perda de material", null))
+                            "Perda de material", " "))
                     .isInstanceOf(RegraDeNegocioException.class)
-                    .hasMessageContaining("Responsável");
+                    .hasMessageContaining("usuário responsável");
+        }
+
+        @Test
+        @DisplayName("o registro é único: o consumo já baixou saldo dos lotes")
+        void registroUnico() {
+            ConsumoMaterial consumo = consumoProjetado();
+            consumo.registrarConsumo(new BigDecimal("55.0000"), "Perda no setup", USUARIO);
+
+            assertThatThrownBy(() -> consumo.registrarConsumo(new BigDecimal("50.0000"), null, "outro@pcp"))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("já foi registrado");
+            assertThat(consumo.getQuantidadeConsumida()).isEqualByComparingTo("55");
+            assertThat(consumo.getAssinatura().alteradoPor()).isEqualTo(USUARIO);
         }
 
         @Test
@@ -121,7 +138,7 @@ class ConsumoMaterialTest {
             ConsumoMaterial consumo = consumoProjetado();
 
             assertThatThrownBy(() ->
-                    consumo.registrarConsumo(new BigDecimal("-1"), null, null))
+                    consumo.registrarConsumo(new BigDecimal("-1"), null, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("quantidade consumida");
         }
@@ -132,7 +149,7 @@ class ConsumoMaterialTest {
             ConsumoMaterial consumo = consumoProjetado();
 
             consumo.registrarConsumo(BigDecimal.ZERO,
-                    "Material substituído por alternativo", "Maria Santos");
+                    "Material substituído por alternativo", USUARIO);
 
             assertThat(consumo.estaRegistrado()).isTrue();
             assertThat(consumo.getDesvio()).isEqualByComparingTo(new BigDecimal("-50.0000"));

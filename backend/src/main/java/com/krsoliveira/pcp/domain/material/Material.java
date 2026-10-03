@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.domain.material;
 
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -18,25 +19,23 @@ public class Material {
     private final String descricao;
     private final TipoMaterial tipo;
     private final String unidadeDeMedida;
-    private final Instant criadoEm;
-    private Instant atualizadoEm;
+    private final Assinatura assinatura;
 
     private Material(UUID id, String codigo, String descricao, TipoMaterial tipo,
-                     String unidadeDeMedida, Instant criadoEm, Instant atualizadoEm) {
+                     String unidadeDeMedida, Assinatura assinatura) {
         this.id = id;
         this.codigo = codigo;
         this.descricao = descricao;
         this.tipo = tipo;
         this.unidadeDeMedida = unidadeDeMedida;
-        this.criadoEm = criadoEm;
-        this.atualizadoEm = atualizadoEm;
+        this.assinatura = assinatura;
     }
 
     /**
      * Fábrica para um material NOVO. Valida todas as invariantes antes de criar.
      */
     public static Material criar(String codigo, String descricao, TipoMaterial tipo,
-                                 String unidadeDeMedida) {
+                                 String unidadeDeMedida, String usuario) {
         if (codigo == null || codigo.isBlank()) {
             throw new RegraDeNegocioException("O código do material é obrigatório.");
         }
@@ -49,9 +48,8 @@ public class Material {
         if (unidadeDeMedida == null || unidadeDeMedida.isBlank()) {
             throw new RegraDeNegocioException("A unidade de medida do material é obrigatória.");
         }
-        Instant agora = Instant.now();
         return new Material(UUID.randomUUID(), codigo.trim().toUpperCase(),
-                descricao.trim(), tipo, unidadeDeMedida.trim(), agora, agora);
+                descricao.trim(), tipo, unidadeDeMedida.trim(), Assinatura.nova(usuario));
     }
 
     /**
@@ -60,8 +58,8 @@ public class Material {
      */
     public static Material reconstituir(UUID id, String codigo, String descricao,
                                         TipoMaterial tipo, String unidadeDeMedida,
-                                        Instant criadoEm, Instant atualizadoEm) {
-        return new Material(id, codigo, descricao, tipo, unidadeDeMedida, criadoEm, atualizadoEm);
+                                        Assinatura assinatura) {
+        return new Material(id, codigo, descricao, tipo, unidadeDeMedida, assinatura);
     }
 
     public UUID getId() { return id; }
@@ -69,6 +67,7 @@ public class Material {
     public String getDescricao() { return descricao; }
     public TipoMaterial getTipo() { return tipo; }
     public String getUnidadeDeMedida() { return unidadeDeMedida; }
-    public Instant getCriadoEm() { return criadoEm; }
-    public Instant getAtualizadoEm() { return atualizadoEm; }
+    public Assinatura getAssinatura() { return assinatura; }
+    public Instant getCriadoEm() { return assinatura.criadoEm(); }
+    public Instant getAtualizadoEm() { return assinatura.alteradoEm(); }
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Table from '@mui/material/Table'
@@ -25,11 +26,15 @@ import { EntradaMaterialDialog } from '../components/lotes/EntradaMaterialDialog
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { StatusLoteBadge } from '../components/StatusBadge'
+import { dataLocalIso, formatarData, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import type { Lote, StatusLote } from '../types'
 
 export function LotesPage() {
   const [filtroStatus, setFiltroStatus] = useState<StatusLote | 'TODOS'>('TODOS')
   const [busca, setBusca] = useState('')
+  const [periodoDe, setPeriodoDe] = useState('')
+  const [periodoAte, setPeriodoAte] = useState('')
+  const navigate = useNavigate()
   const [dialogAberto, setDialogAberto] = useState(false)
   const [loteRegistrado, setLoteRegistrado] = useState<Lote | null>(null)
 
@@ -50,7 +55,10 @@ export function LotesPage() {
       || l.numeroLote.toLowerCase().includes(termo)
       || (l.notaFiscal ?? '').toLowerCase().includes(termo)
       || (l.fornecedor ?? '').toLowerCase().includes(termo)
-    return statusOk && buscaOk
+    // Período pela data em que o lote entrou no sistema (entrada ou conclusão da ordem)
+    const registradoEm = dataLocalIso(l.criadoEm)
+    const periodoOk = (!periodoDe || registradoEm >= periodoDe) && (!periodoAte || registradoEm <= periodoAte)
+    return statusOk && buscaOk && periodoOk
   })
 
   const vencendoEm30 = lotes.filter((l) => {
@@ -102,6 +110,22 @@ export function LotesPage() {
             <MenuItem value="CONSUMIDO">Consumido</MenuItem>
             <MenuItem value="VENCIDO">Vencido</MenuItem>
           </TextField>
+          <TextField
+            label="Registrado de"
+            type="date"
+            value={periodoDe}
+            onChange={(e) => setPeriodoDe(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: periodoAte || undefined } }}
+            sx={{ minWidth: 160 }}
+          />
+          <TextField
+            label="até"
+            type="date"
+            value={periodoAte}
+            onChange={(e) => setPeriodoAte(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: periodoDe || undefined } }}
+            sx={{ minWidth: 160 }}
+          />
         </Box>
 
         {isLoading ? (
@@ -110,22 +134,25 @@ export function LotesPage() {
           <EmptyState
             Icone={AllInboxIcon}
             titulo="Nenhum lote encontrado"
-            descricao="Lotes nascem ao concluir ordens de produção ou ao registrar a entrada de matéria-prima."
+            descricao={lotes.length > 0
+              ? 'Nenhum lote atende aos filtros. Ajuste a busca, o status ou o período.'
+              : 'Lotes nascem ao concluir ordens de produção ou ao registrar a entrada de matéria-prima.'}
             acaoLabel="Entrada de Material"
             onAcao={() => setDialogAberto(true)}
           />
         ) : (
           <TableContainer>
-            <Table size="small">
+            <Table size="small" sx={{ '& th': { whiteSpace: 'nowrap' } }}>
               <TableHead>
                 <TableRow>
                   <TableCell>Número do Lote</TableCell>
                   <TableCell>Material</TableCell>
                   <TableCell>Origem</TableCell>
-                  <TableCell align="right">Quantidade</TableCell>
+                  <TableCell align="right">Saldo / Qtd</TableCell>
                   <TableCell>Fabricação</TableCell>
                   <TableCell>Validade</TableCell>
                   <TableCell>Status</TableCell>
+                  <TableCell>Registrado</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -135,7 +162,12 @@ export function LotesPage() {
                   const vencendoBreve = lote.status === 'DISPONIVEL' && diasParaVencer <= 30 && diasParaVencer >= 0
 
                   return (
-                    <TableRow key={lote.id} hover>
+                    <TableRow
+                      key={lote.id}
+                      hover
+                      onClick={() => navigate(`/lotes/${lote.id}`)}
+                      sx={{ cursor: 'pointer' }}
+                    >
                       <TableCell>
                         <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
                           {lote.numeroLote}
@@ -154,7 +186,10 @@ export function LotesPage() {
                         )}
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body2">{lote.quantidade.toLocaleString('pt-BR')} {lote.unidadeDeMedida}</Typography>
+                        <Typography variant="body2" noWrap>
+                          <strong>{formatarQuantidade(lote.saldo)}</strong>
+                          {` / ${formatarQuantidade(lote.quantidade, lote.unidadeDeMedida)}`}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" color="text.secondary">{formatarData(lote.dataFabricacao)}</Typography>
@@ -172,6 +207,10 @@ export function LotesPage() {
                         </Box>
                       </TableCell>
                       <TableCell><StatusLoteBadge status={lote.status} /></TableCell>
+                      <TableCell>
+                        <Typography variant="body2" noWrap>{formatarDataHora(lote.criadoEm)}</Typography>
+                        <Typography variant="caption" color="text.secondary">{lote.criadoPor}</Typography>
+                      </TableCell>
                     </TableRow>
                   )
                 })}
@@ -198,9 +237,4 @@ export function LotesPage() {
       </Snackbar>
     </Box>
   )
-}
-
-function formatarData(data: string): string {
-  const [ano, mes, dia] = data.split('-')
-  return `${dia}/${mes}/${ano}`
 }

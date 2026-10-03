@@ -17,7 +17,8 @@ import java.util.UUID;
  * Para cada item da lista técnica, cria um {@code ConsumoMaterial} com a
  * quantidade planejada = quantidade_item × quantidade_ordem.
  *
- * Chamado automaticamente por {@link com.krsoliveira.pcp.application.ordem.CriarOrdemProducao}.
+ * Chamado por {@link com.krsoliveira.pcp.application.ordem.CriarOrdemProducao}, dentro da
+ * mesma transação e com o mesmo usuário responsável.
  */
 public class ProjetarConsumoMaterial {
 
@@ -30,7 +31,8 @@ public class ProjetarConsumoMaterial {
         this.listaTecnicaRepository = listaTecnicaRepository;
     }
 
-    public record Comando(UUID ordemProducaoId, UUID listaTecnicaId, int quantidadeOrdem) {}
+    public record Comando(UUID ordemProducaoId, UUID listaTecnicaId, int quantidadeOrdem,
+                          String usuario) {}
 
     public List<ConsumoMaterial> executar(Comando comando) {
         ListaTecnica lista = listaTecnicaRepository.buscarPorId(comando.listaTecnicaId())
@@ -42,7 +44,8 @@ public class ProjetarConsumoMaterial {
                         item.getMaterialComponenteId(),
                         item.getQuantidadePlanejada()
                                 .multiply(BigDecimal.valueOf(comando.quantidadeOrdem())),
-                        item.getUnidadeDeMedida()))
+                        item.getUnidadeDeMedida(),
+                        comando.usuario()))
                 .toList();
 
         return consumoRepository.salvarTodos(consumos);

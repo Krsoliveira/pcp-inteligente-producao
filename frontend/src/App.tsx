@@ -10,6 +10,7 @@ import { MateriaisPage } from './pages/MateriaisPage'
 import { ListasTecnicasPage } from './pages/ListasTecnicasPage'
 import { TiposOrdemPage } from './pages/TiposOrdemPage'
 import { LotesPage } from './pages/LotesPage'
+import { LoteDetalhePage } from './pages/LoteDetalhePage'
 
 const router = createBrowserRouter([
   {
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
           { path: '/ordens', element: <OrdensPage /> },
           { path: '/ordens/:id', element: <OrdemDetalhePage /> },
           { path: '/lotes', element: <LotesPage /> },
+          { path: '/lotes/:id', element: <LoteDetalhePage /> },
           // Cadastros
           { path: '/materiais', element: <MateriaisPage /> },
           { path: '/listas-tecnicas', element: <ListasTecnicasPage /> },

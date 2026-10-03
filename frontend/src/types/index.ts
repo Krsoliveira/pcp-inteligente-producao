@@ -22,6 +22,8 @@ export interface OrdemProducao {
   atrasada: boolean
   criadaEm: string
   atualizadaEm: string
+  criadaPor: string
+  atualizadaPor: string
 }
 
 export interface CriarOrdemRequest {
@@ -50,6 +52,8 @@ export interface TipoOrdem {
   cor: string
   criadoEm: string
   atualizadoEm: string
+  criadoPor: string
+  atualizadoPor: string
 }
 
 export interface CadastrarTipoOrdemRequest {
@@ -76,6 +80,8 @@ export interface Material {
   unidadeDeMedida: string
   criadoEm: string
   atualizadoEm: string
+  criadoPor: string
+  atualizadoPor: string
 }
 
 export interface CadastrarMaterialRequest {
@@ -104,6 +110,8 @@ export interface ListaTecnica {
   itens: ItemListaTecnica[]
   criadaEm: string
   atualizadaEm: string
+  criadaPor: string
+  atualizadaPor: string
 }
 
 export interface CadastrarListaTecnicaRequest {
@@ -132,13 +140,23 @@ export interface Lote {
   dataFabricacao: string
   dataValidade: string
   status: StatusLote
+  /** Quantidade ainda disponível (quantidade − alocações a consumos). */
+  saldo: number
+  /** Datas da nota fiscal — apenas lotes de compra. */
+  dataEmissaoNf: string | null
+  dataRecebimento: string | null
   criadoEm: string
+  criadoPor: string
+  atualizadoEm: string
+  atualizadoPor: string
 }
 
 export interface RegistrarEntradaMaterialRequest {
   materialId: string
   fornecedor: string
   notaFiscal: string
+  dataEmissaoNf: string
+  dataRecebimento: string
   quantidade: number
   dataFabricacao: string
   dataValidade: string
@@ -160,12 +178,66 @@ export interface ConsumoMaterial {
   justificadoPor: string | null
   justificadoEm: string | null
   criadoEm: string
+  criadoPor: string
+  atualizadoEm: string
+  atualizadoPor: string
 }
 
 export interface RegistrarConsumoRequest {
   quantidadeConsumida: number
+  /** O responsável é o usuário logado — definido pelo backend. */
   justificativa?: string
-  justificadoPor?: string
+  /** De quais lotes saiu o material: a soma deve ser igual à quantidade consumida. */
+  alocacoes: AlocacaoLoteRequest[]
+}
+
+export interface AlocacaoLoteRequest {
+  loteId: string
+  quantidade: number
+}
+
+// ---- Genealogia de lotes ----
+
+export interface LoteOrigem {
+  loteId: string
+  numeroLote: string
+  origem: OrigemLote
+  fornecedor: string | null
+  notaFiscal: string | null
+  ordemProducaoId: string | null
+  quantidade: number
+  alocadoPor: string
+  alocadoEm: string
+}
+
+export interface OrigemConsumo {
+  consumoId: string
+  materialId: string
+  quantidadePlanejada: number
+  quantidadeConsumida: number | null
+  unidadeDeMedida: string
+  lotes: LoteOrigem[]
+}
+
+export interface DestinoLote {
+  alocacaoId: string
+  quantidade: number
+  unidadeDeMedida: string
+  alocadoPor: string
+  alocadoEm: string
+  ordemProducaoId: string
+  ordemCodigo: string
+  ordemStatus: StatusOrdem
+  materialProduzidoId: string
+  loteGeradoId: string | null
+  loteGeradoNumero: string | null
+}
+
+export interface RastreabilidadeLote {
+  loteId: string
+  numeroLote: string
+  origens: OrigemConsumo[]
+  destinos: DestinoLote[]
 }
 
 // ---- Autenticação ----
@@ -194,4 +266,65 @@ export interface ApiError {
   detail: string
   /** Erros de validação por campo (400). */
   erros?: Record<string, string>
+}
+
+// ---- Auditoria (ADR-0011) ----
+
+export type TipoEntidade =
+  | 'MATERIAL'
+  | 'LISTA_TECNICA'
+  | 'ORDEM_PRODUCAO'
+  | 'LOTE'
+  | 'TIPO_ORDEM'
+  | 'USUARIO'
+
+export type AcaoAuditoria =
+  | 'CRIADO'
+  | 'ALTERADO'
+  | 'STATUS_ALTERADO'
+  | 'ATIVADA'
+  | 'OBSOLETADA'
+  | 'CONSUMO_REGISTRADO'
+  | 'ORDEM_CONCLUIDA'
+  | 'LOTE_GERADO'
+  | 'LOTE_ALOCADO'
+  | 'ENTRADA_REGISTRADA'
+  | 'USUARIO_REGISTRADO'
+
+/** Mudança de valor registrada na trilha: {"de": ..., "para": ...}. */
+export interface MudancaAuditoria {
+  de: string | number | null
+  para: string | number | null
+}
+
+export interface EventoAuditoria {
+  id: string
+  tipoEntidade: TipoEntidade
+  entidadeId: string
+  referencia: string
+  acao: AcaoAuditoria
+  usuario: string
+  ocorridoEm: string
+  detalhes: Record<string, string | number | boolean | MudancaAuditoria>
+}
+
+export interface Pagina<T> {
+  itens: T[]
+  pagina: number
+  tamanho: number
+  total: number
+  totalPaginas: number
+}
+
+export interface FiltroEventosAuditoria {
+  tipoEntidade?: TipoEntidade
+  entidadeId?: string
+  usuario?: string
+  acao?: AcaoAuditoria
+  /** "YYYY-MM-DD", inclusivo. */
+  de?: string
+  /** "YYYY-MM-DD", inclusivo. */
+  ate?: string
+  pagina?: number
+  tamanho?: number
 }

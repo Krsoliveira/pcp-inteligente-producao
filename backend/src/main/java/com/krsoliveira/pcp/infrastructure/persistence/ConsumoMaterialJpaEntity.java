@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -48,6 +49,15 @@ public class ConsumoMaterialJpaEntity {
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
+    @Column(name = "atualizado_em", nullable = false)
+    private Instant atualizadoEm;
+
+    @Column(name = "criado_por", nullable = false, length = 150)
+    private String criadoPor;
+
+    @Column(name = "atualizado_por", nullable = false, length = 150)
+    private String atualizadoPor;
+
     protected ConsumoMaterialJpaEntity() {}
 
     public static ConsumoMaterialJpaEntity deDominio(ConsumoMaterial consumo) {
@@ -61,13 +71,18 @@ public class ConsumoMaterialJpaEntity {
         entity.justificativa = consumo.getJustificativa();
         entity.justificadoPor = consumo.getJustificadoPor();
         entity.justificadoEm = consumo.getJustificadoEm();
-        entity.criadoEm = consumo.getCriadoEm();
+        Assinatura a = consumo.getAssinatura();
+        entity.criadoEm = a.criadoEm();
+        entity.atualizadoEm = a.alteradoEm();
+        entity.criadoPor = a.criadoPor();
+        entity.atualizadoPor = a.alteradoPor();
         return entity;
     }
 
     public ConsumoMaterial paraDominio() {
         return ConsumoMaterial.reconstituir(id, ordemProducaoId, materialId,
                 quantidadePlanejada, quantidadeConsumida, unidadeDeMedida,
-                justificativa, justificadoPor, justificadoEm, criadoEm);
+                justificativa, justificadoPor, justificadoEm,
+                new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm));
     }
 }

@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.domain.ordem;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +16,8 @@ public interface OrdemProducaoRepository {
     OrdemProducao salvar(OrdemProducao ordem);
 
     Optional<OrdemProducao> buscarPorId(UUID id);
+
+    List<OrdemProducao> buscarPorIds(Collection<UUID> ids);
 
     List<OrdemProducao> listarTodas();
 

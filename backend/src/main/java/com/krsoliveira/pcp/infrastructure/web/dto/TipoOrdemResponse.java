@@ -10,7 +10,9 @@ public record TipoOrdemResponse(UUID id,
                                 String descricao,
                                 String cor,
                                 Instant criadoEm,
-                                Instant atualizadoEm) {
+                                Instant atualizadoEm,
+                                String criadoPor,
+                                String atualizadoPor) {
 
     public static TipoOrdemResponse de(TipoOrdem tipo) {
         return new TipoOrdemResponse(
@@ -19,6 +21,8 @@ public record TipoOrdemResponse(UUID id,
                 tipo.getDescricao(),
                 tipo.getCor(),
                 tipo.getCriadoEm(),
-                tipo.getAtualizadoEm());
+                tipo.getAtualizadoEm(),
+                tipo.getAssinatura().criadoPor(),
+                tipo.getAssinatura().alteradoPor());
     }
 }

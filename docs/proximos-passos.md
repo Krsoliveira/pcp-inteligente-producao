@@ -3,8 +3,55 @@
 Registro do estado do trabalho para retomar sem perder contexto.
 Atualize este arquivo ao encerrar cada sessão de trabalho.
 
-**Última atualização:** 2026-09-26  
-**Estado:** Fases 5a e 5b concluídas e publicadas na `main` (PRs #27 e #28); `main` e `develop` sincronizadas.
+**Última atualização:** 2026-10-03  
+**Estado:** rastreabilidade ([ADR-0011](adr/0011-rastreabilidade-e-auditoria.md)) — entregas 1, 2 e 3
+concluídas, em PRs empilhados (#37 → #38 → genealogia), com as correções de layout no #36.
+
+## Em andamento: rastreabilidade (ADR-0011)
+
+Objetivo: responder, para qualquer registro, *quem fez, quando, o que mudou* e *de onde veio*.
+
+- [x] **Entrega 1 — base no backend**
+  - Assinatura (criado por/em, alterado por/em) em material, lista técnica, tipo de ordem,
+    ordem, consumo e lote; o usuário vem do login.
+  - Trilha de auditoria imutável (`evento_auditoria`, trigger bloqueia UPDATE/DELETE/TRUNCATE)
+    e consulta paginada `GET /api/v1/auditoria/eventos` (entidade, registro, usuário, ação,
+    período por dia).
+  - Casos de uso transacionais (porta `Transacao`): ação e evento gravados juntos.
+  - Entrada de material exige emissão da NF e recebimento.
+  - Migração V9 assina os registros antigos como `sistema:migracao-v9`; a carga inicial
+    gera o histórico simulado (~5 mil eventos).
+  - Frontend: datas da NF no diálogo de entrada; campo "Responsável" removido do consumo.
+- [x] **Entrega 2 — detalhe do lote** (branch `feature/detalhe-lote`)
+  - Tela `/lotes/:id`: identificação, origem (compra: fornecedor, NF, emissão,
+    recebimento e quem deu entrada; produção: ordem, lista técnica e quem gerou),
+    materiais consumidos pela ordem de origem e histórico de auditoria.
+  - Lista de lotes: linha abre o detalhe, coluna "Registrado" (data/hora e usuário) e
+    filtro por período de registro.
+  - Componente `HistoricoAuditoria` reutilizável, já usado também no detalhe da ordem.
+- [x] **Entrega 3 — genealogia** (branch `feature/genealogia-lotes`)
+  - Consumo alocado a lotes (FEFO sugerido na tela), saldo do lote, lote zerado vira
+    CONSUMIDO; bloqueio de linha contra consumos simultâneos (V10).
+  - Detalhe do lote: saldo, **lotes de origem** de cada material consumido (até a NF) e
+    **onde foi usado** (ordens e lotes gerados). `GET /lotes/{id}/rastreabilidade`.
+  - Dataset: simulação cronológica do estoque com compras de matéria-prima, ordens de
+    reposição de semiacabado e ~2 mil alocações.
+- [ ] **Estorno de consumo**: o registro passou a ser único; corrigir um consumo exigirá
+      estornar as alocações (devolvendo saldo) com evento próprio na trilha.
+- [ ] Aba Histórico nos detalhes de material e lista técnica (reutilizar `HistoricoAuditoria`).
+
+## Backlog: perfis e segregação de funções
+
+Hoje existem só `PLANEJADOR` (autocadastro) e `GERENTE` (administrador inicial), e nenhuma
+rota restringe acesso por perfil — a trilha de auditoria fica visível para todos por
+decisão. Proposta para quando for implementado:
+
+- Perfis padrão: **Gerente, Analista, Assistente e Auxiliar**.
+- Matriz de permissões por perfil (quem cadastra, quem libera/conclui ordem, quem dá
+  entrada de material, quem consulta a auditoria), aplicada no backend.
+- Tela para o Gerente atribuir perfis (substitui o item "promover usuários").
+- [ ] Mesclar as correções de layout da branch `fix/layout-dashboard` (gráfico do dashboard,
+      overflow no celular).
 
 ## Concluído nesta etapa
 
@@ -59,8 +106,6 @@ Atualize este arquivo ao encerrar cada sessão de trabalho.
    Spring Boot 4 + springdoc 3, React 19, React Router 7, Vite 8 + plugin-react 6,
    ECharts 6.
 4. Depois:
-   - tela/endpoint para um `GERENTE` promover outros usuários;
-   - **saldo de estoque**: baixar dos lotes de matéria-prima o consumo das ordens;
    - testes automatizados de frontend (Vitest);
    - carregar o ECharts sob demanda (bundle de ~1 MB).
 

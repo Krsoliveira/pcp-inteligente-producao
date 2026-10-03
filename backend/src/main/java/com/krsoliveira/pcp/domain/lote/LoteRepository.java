@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.domain.lote;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,6 +14,19 @@ public interface LoteRepository {
     Lote salvar(Lote lote);
 
     Optional<Lote> buscarPorId(UUID id);
+
+    /**
+     * Busca o lote bloqueando-o até o fim da transação — para alocar saldo sem que dois
+     * consumos simultâneos retirem mais do que o lote tem.
+     */
+    Optional<Lote> buscarPorIdParaAtualizar(UUID id);
+
+    List<Lote> buscarPorIds(Collection<UUID> ids);
+
+    List<Lote> listarPorOrdens(Collection<UUID> ordemProducaoIds);
+
+    /** Lotes DISPONIVEIS do material com saldo, ordenados por validade (FEFO). */
+    List<Lote> listarDisponiveisPorMaterial(UUID materialId);
 
     List<Lote> listarTodos();
 

@@ -4,6 +4,7 @@ import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +30,12 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
     @Override
     public Optional<OrdemProducao> buscarPorId(UUID id) {
         return springData.findById(id).map(OrdemProducaoJpaEntity::paraDominio);
+    }
+
+    @Override
+    public List<OrdemProducao> buscarPorIds(Collection<UUID> ids) {
+        if (ids.isEmpty()) return List.of();
+        return springData.findAllById(ids).stream().map(OrdemProducaoJpaEntity::paraDominio).toList();
     }
 
     @Override
