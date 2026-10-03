@@ -16,8 +16,8 @@ export function KpiCard({ titulo, valor, subtitulo, Icone, cor = '#1565c0' }: Kp
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Box>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+          <Box sx={{ minWidth: 0 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {titulo}
             </Typography>
@@ -37,6 +37,7 @@ export function KpiCard({ titulo, valor, subtitulo, Icone, cor = '#1565c0' }: Kp
               bgcolor: `${cor}18`,
               display: 'flex',
               alignItems: 'center',
+              flexShrink: 0,
             }}
           >
             <Icone sx={{ color: cor, fontSize: 28 }} />

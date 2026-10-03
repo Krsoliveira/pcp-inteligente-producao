@@ -38,13 +38,24 @@ export function StatusPieChart({ ordens }: StatusPieChartProps) {
     }),
   )
 
+  const quantidadePorNome = Object.fromEntries(dados.map((d) => [d.name, d.value]))
+
+  // A rosca fica na parte de cima e o rodapé é reservado à legenda, que pode
+  // quebrar em duas linhas em cartões estreitos — assim as duas nunca se sobrepõem.
   const option = {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { bottom: '2%', left: 'center' },
+    legend: {
+      bottom: 0,
+      left: 'center',
+      icon: 'circle',
+      itemGap: 16,
+      formatter: (nome: string) => `${nome} (${quantidadePorNome[nome] ?? 0})`,
+    },
     series: [
       {
         type: 'pie',
-        radius: ['42%', '70%'],
+        center: ['50%', '40%'],
+        radius: ['36%', '58%'],
         avoidLabelOverlap: false,
         label: { show: false },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
@@ -64,7 +75,7 @@ export function StatusPieChart({ ordens }: StatusPieChartProps) {
             Nenhuma ordem cadastrada
           </Typography>
         ) : (
-          <ReactECharts option={option} style={{ height: 280 }} />
+          <ReactECharts option={option} style={{ height: 340 }} />
         )}
       </CardContent>
     </Card>
