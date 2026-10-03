@@ -4,8 +4,24 @@ Registro do estado do trabalho para retomar sem perder contexto.
 Atualize este arquivo ao encerrar cada sessão de trabalho.
 
 **Última atualização:** 2026-10-03  
-**Estado:** rastreabilidade ([ADR-0011](adr/0011-rastreabilidade-e-auditoria.md)) — entregas 1, 2 e 3
-concluídas, em PRs empilhados (#37 → #38 → genealogia), com as correções de layout no #36.
+**Estado:** rastreabilidade ([ADR-0011](adr/0011-rastreabilidade-e-auditoria.md)) concluída e
+mesclada; reestruturação de suprimentos ([ADR-0012](adr/0012-suprimentos-nota-fiscal-estoque.md))
+concluída na branch `feature/suprimentos-estoque`.
+
+## Concluído: suprimentos (ADR-0012)
+
+- [x] Código do material com 9 dígitos, gerado na faixa do tipo (103 / 105 / 110), exibido
+      como `103.000.001`; cadastro sem campo de código.
+- [x] Entrada de nota fiscal com vários itens (`/notas-fiscais`): cada item vira um lote
+      com o lote do fornecedor; nota e lote duplicados são recusados (409).
+- [x] Estoque por material (`/estoque`) calculado a partir dos lotes, com os lotes de cada
+      material (`/estoque/:materialId`). A lista geral de lotes foi substituída.
+- [x] Lote de produção `AAMMDD` + sequência do dia (`2610030001`).
+- [x] Menu: Cadastros · Suprimentos (Entrada de notas, Estoque) · Produção (Ordens).
+- [x] Migração V11: renumera códigos e lotes antigos, cria as notas dos lotes de compra
+      existentes e registra cada troca na trilha (`sistema:migracao-v11`).
+- [x] Dataset: 170 notas (algumas com vários itens) e lotes do fornecedor.
+- [ ] Estoque: exportar CSV e filtro por "abaixo do mínimo" (exige estoque mínimo no material).
 
 ## Em andamento: rastreabilidade (ADR-0011)
 
@@ -50,8 +66,6 @@ decisão. Proposta para quando for implementado:
 - Matriz de permissões por perfil (quem cadastra, quem libera/conclui ordem, quem dá
   entrada de material, quem consulta a auditoria), aplicada no backend.
 - Tela para o Gerente atribuir perfis (substitui o item "promover usuários").
-- [ ] Mesclar as correções de layout da branch `fix/layout-dashboard` (gráfico do dashboard,
-      overflow no celular).
 
 ## Concluído nesta etapa
 
