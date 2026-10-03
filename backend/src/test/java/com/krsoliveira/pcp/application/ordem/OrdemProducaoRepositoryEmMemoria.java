@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Objects;
+import java.util.Collection;
 
 /**
  * Implementação FAKE da porta para testes de caso de uso: um HashMap no lugar
@@ -28,6 +30,11 @@ public class OrdemProducaoRepositoryEmMemoria implements OrdemProducaoRepository
     @Override
     public Optional<OrdemProducao> buscarPorId(UUID id) {
         return Optional.ofNullable(dados.get(id));
+    }
+
+    @Override
+    public List<OrdemProducao> buscarPorIds(Collection<UUID> ids) {
+        return ids.stream().map(dados::get).filter(Objects::nonNull).toList();
     }
 
     @Override

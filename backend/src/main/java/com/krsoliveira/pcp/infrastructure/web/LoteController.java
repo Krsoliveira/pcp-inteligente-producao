@@ -1,9 +1,11 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
+import com.krsoliveira.pcp.application.lote.RastrearLote;
 import com.krsoliveira.pcp.application.lote.RegistrarEntradaMaterial;
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.infrastructure.web.dto.LoteResponse;
+import com.krsoliveira.pcp.infrastructure.web.dto.RastreabilidadeLoteResponse;
 import com.krsoliveira.pcp.infrastructure.web.dto.RegistrarEntradaMaterialRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,12 +21,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Lotes são gerados automaticamente ao concluir ordens de produção.
- * Este endpoint permite consultar e rastrear os lotes existentes.
+ * Lotes nascem ao concluir ordens de produção ou na entrada de matéria-prima comprada.
+ * Este controller registra entradas e permite consultar e rastrear os lotes.
  */
 @RestController
 @RequestMapping("/api/v1/lotes")
@@ -33,11 +36,14 @@ public class LoteController {
 
     private final ConsultarLotes consultarLotes;
     private final RegistrarEntradaMaterial registrarEntradaMaterial;
+    private final RastrearLote rastrearLote;
 
     public LoteController(ConsultarLotes consultarLotes,
-                          RegistrarEntradaMaterial registrarEntradaMaterial) {
+                          RegistrarEntradaMaterial registrarEntradaMaterial,
+                          RastrearLote rastrearLote) {
         this.consultarLotes = consultarLotes;
         this.registrarEntradaMaterial = registrarEntradaMaterial;
+        this.rastrearLote = rastrearLote;
     }
 
     @PostMapping("/entradas")
@@ -56,15 +62,30 @@ public class LoteController {
 
     @GetMapping
     @Operation(summary = "Listar lotes",
-            description = "Retorna todos os lotes. Use o parâmetro ordemProducaoId para filtrar por ordem.")
+            description = "Retorna todos os lotes. Filtros: ordemProducaoId (lote gerado pela ordem) ou "
+                    + "materialId com disponiveis=true (lotes que podem ser alocados a um consumo: "
+                    + "disponíveis, com saldo e dentro da validade, em ordem FEFO).")
     public ResponseEntity<List<LoteResponse>> listar(
-            @RequestParam(required = false) UUID ordemProducaoId) {
-        List<LoteResponse> lotes = (ordemProducaoId != null)
-                ? consultarLotes.listarPorOrdem(ordemProducaoId).stream()
-                        .map(LoteResponse::de).toList()
-                : consultarLotes.listarTodos().stream()
-                        .map(LoteResponse::de).toList();
-        return ResponseEntity.ok(lotes);
+            @RequestParam(required = false) UUID ordemProducaoId,
+            @RequestParam(required = false) UUID materialId,
+            @RequestParam(defaultValue = "false") boolean disponiveis) {
+        List<Lote> lotes;
+        if (ordemProducaoId != null) {
+            lotes = consultarLotes.listarPorOrdem(ordemProducaoId);
+        } else if (materialId != null && disponiveis) {
+            lotes = consultarLotes.listarDisponiveisParaConsumo(materialId, LocalDate.now());
+        } else {
+            lotes = consultarLotes.listarTodos();
+        }
+        return ResponseEntity.ok(lotes.stream().map(LoteResponse::de).toList());
+    }
+
+    @GetMapping("/{id}/rastreabilidade")
+    @Operation(summary = "Genealogia do lote",
+            description = "Origens: de quais lotes saiu cada material consumido para produzir o lote. "
+                    + "Destinos: em quais ordens o lote foi usado e quais lotes elas geraram.")
+    public ResponseEntity<RastreabilidadeLoteResponse> rastrear(@PathVariable UUID id) {
+        return ResponseEntity.ok(RastreabilidadeLoteResponse.de(rastrearLote.executar(id)));
     }
 
     @GetMapping("/{id}")

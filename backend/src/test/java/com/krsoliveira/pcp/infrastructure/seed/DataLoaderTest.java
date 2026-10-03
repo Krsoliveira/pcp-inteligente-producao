@@ -3,6 +3,7 @@ package com.krsoliveira.pcp.infrastructure.seed;
 import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
 import com.krsoliveira.pcp.application.consumo.ConsumoMaterialRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaRepositoryEmMemoria;
+import com.krsoliveira.pcp.application.lote.AlocacaoLoteRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.lote.LoteRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.material.MaterialRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.ordem.OrdemProducaoRepositoryEmMemoria;
@@ -13,7 +14,10 @@ import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
+import com.krsoliveira.pcp.domain.lote.AlocacaoLote;
 import com.krsoliveira.pcp.domain.lote.Lote;
+import com.krsoliveira.pcp.domain.lote.StatusLote;
+import com.krsoliveira.pcp.domain.material.TipoMaterial;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
@@ -21,6 +25,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -47,11 +52,12 @@ class DataLoaderTest {
     private final OrdemProducaoRepositoryEmMemoria ordens = new OrdemProducaoRepositoryEmMemoria();
     private final ConsumoMaterialRepositoryEmMemoria consumos = new ConsumoMaterialRepositoryEmMemoria();
     private final LoteRepositoryEmMemoria lotes = new LoteRepositoryEmMemoria();
+    private final AlocacaoLoteRepositoryEmMemoria alocacoes = new AlocacaoLoteRepositoryEmMemoria();
     private final TrilhaDeAuditoriaEmMemoria trilha = new TrilhaDeAuditoriaEmMemoria();
 
     private DataLoader loaderEm(LocalDate hoje) {
         Clock relogio = Clock.fixed(hoje.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneId.of("UTC"));
-        return new DataLoader(materiais, tipos, listas, ordens, consumos, lotes, trilha, relogio);
+        return new DataLoader(materiais, tipos, listas, ordens, consumos, lotes, alocacoes, trilha, relogio);
     }
 
     @Test
@@ -118,7 +124,7 @@ class DataLoaderTest {
         void ordensConcluidas() {
             loaderEm(DATA_REFERENCIA).run();
 
-            var lotesPorOrdem = lotes.listarTodos().stream()
+            var lotesPorOrdem = lotesDeProducao().stream()
                     .collect(Collectors.groupingBy(Lote::getOrdemProducaoId, Collectors.counting()));
 
             List<OrdemProducao> concluidas = ordens.listarTodas().stream()
@@ -139,7 +145,7 @@ class DataLoaderTest {
         void loteSomenteDeConcluidas() {
             loaderEm(DATA_REFERENCIA).run();
 
-            assertThat(lotes.listarTodos()).allSatisfy(lote -> {
+            assertThat(lotesDeProducao()).allSatisfy(lote -> {
                 OrdemProducao ordem = ordens.buscarPorId(lote.getOrdemProducaoId()).orElseThrow();
                 assertThat(ordem.getStatus()).isEqualTo(StatusOrdemProducao.CONCLUIDA);
                 assertThat(lote.getMaterialId()).isEqualTo(ordem.getMaterialId());
@@ -191,6 +197,85 @@ class DataLoaderTest {
         assertThat(ordens.listarTodas()).anyMatch(o -> o.estaAtrasada(hoje));
     }
 
+    private List<Lote> lotesDeProducao() {
+        return lotes.listarTodos().stream().filter(l -> l.getOrdemProducaoId() != null).toList();
+    }
+
+    @Nested
+    @DisplayName("genealogia (ADR-0011)")
+    class Genealogia {
+
+        @Test
+        @DisplayName("todo consumo registrado vem de lotes do mesmo material, somando o consumido")
+        void consumosAlocados() {
+            loaderEm(DATA_REFERENCIA).run();
+
+            var alocadoPorConsumo = alocacoes.todas().stream().collect(Collectors.groupingBy(
+                    AlocacaoLote::getConsumoMaterialId,
+                    Collectors.reducing(BigDecimal.ZERO, AlocacaoLote::getQuantidade, BigDecimal::add)));
+            List<ConsumoMaterial> registrados = ordens.listarTodas().stream()
+                    .flatMap(o -> consumos.listarPorOrdemProducao(o.getId()).stream())
+                    .filter(c -> c.getQuantidadeConsumida() != null && c.getQuantidadeConsumida().signum() > 0)
+                    .toList();
+            assertThat(registrados).isNotEmpty().allSatisfy(c -> assertThat(alocadoPorConsumo.get(c.getId()))
+                    .isEqualByComparingTo(c.getQuantidadeConsumida()));
+            assertThat(alocacoes.todas()).allSatisfy(a -> {
+                Lote lote = lotes.buscarPorId(a.getLoteId()).orElseThrow();
+                ConsumoMaterial consumo = consumos.buscarPorId(a.getConsumoMaterialId()).orElseThrow();
+                assertThat(lote.getMaterialId()).isEqualTo(consumo.getMaterialId());
+                assertThat(a.getCriadoEm()).isAfterOrEqualTo(lote.getCriadoEm());
+            });
+        }
+
+        @Test
+        @DisplayName("saldo = quantidade − alocado; saldo zero ⇔ CONSUMIDO")
+        void saldos() {
+            loaderEm(DATA_REFERENCIA).run();
+
+            var alocadoPorLote = alocacoes.todas().stream().collect(Collectors.groupingBy(
+                    AlocacaoLote::getLoteId,
+                    Collectors.reducing(BigDecimal.ZERO, AlocacaoLote::getQuantidade, BigDecimal::add)));
+            assertThat(lotes.listarTodos()).allSatisfy(lote -> {
+                BigDecimal alocado = alocadoPorLote.getOrDefault(lote.getId(), BigDecimal.ZERO);
+                assertThat(lote.getSaldo().add(alocado)).isEqualByComparingTo(lote.getQuantidade());
+                assertThat(lote.getSaldo().signum() == 0).isEqualTo(lote.getStatus() == StatusLote.CONSUMIDO);
+            });
+        }
+
+        @Test
+        @DisplayName("lotes de compra têm nota fiscal; matéria-prima rastreia até a NF")
+        void lotesDeCompra() {
+            loaderEm(DATA_REFERENCIA).run();
+
+            List<Lote> compras = lotes.listarTodos().stream().filter(Lote::ehDeCompra).toList();
+            assertThat(compras).isNotEmpty().allSatisfy(l -> {
+                assertThat(l.getNotaFiscal()).isNotBlank();
+                assertThat(l.getOrigemCompra().dataRecebimento()).isAfterOrEqualTo(l.getOrigemCompra().dataEmissaoNf());
+                assertThat(materiais.buscarPorId(l.getMaterialId()).orElseThrow().getTipo())
+                        .isEqualTo(TipoMaterial.MATERIA_PRIMA);
+            });
+            assertThat(trilha.eventos(AcaoAuditoria.ENTRADA_REGISTRADA)).hasSize(compras.size());
+            assertThat(trilha.eventos(AcaoAuditoria.LOTE_ALOCADO)).hasSize(alocacoes.todas().size());
+        }
+
+        @Test
+        @DisplayName("a carteira em produção tem saldo para os consumos pendentes")
+        void saldoParaACarteira() {
+            loaderEm(DATA_REFERENCIA).run();
+
+            var pendente = ordens.listarTodas().stream()
+                    .filter(o -> o.getStatus() == StatusOrdemProducao.EM_PRODUCAO)
+                    .flatMap(o -> consumos.listarPorOrdemProducao(o.getId()).stream())
+                    .filter(c -> !c.estaRegistrado())
+                    .collect(Collectors.groupingBy(ConsumoMaterial::getMaterialId,
+                            Collectors.reducing(BigDecimal.ZERO, ConsumoMaterial::getQuantidadePlanejada, BigDecimal::add)));
+            assertThat(pendente).isNotEmpty();
+            pendente.forEach((materialId, quantidade) -> assertThat(lotes.listarDisponiveisPorMaterial(materialId)
+                    .stream().map(Lote::getSaldo).reduce(BigDecimal.ZERO, BigDecimal::add))
+                    .isGreaterThanOrEqualTo(quantidade));
+        }
+    }
+
     @Nested
     @DisplayName("rastreabilidade (ADR-0011)")
     class Rastreabilidade {
@@ -240,7 +325,7 @@ class DataLoaderTest {
             long concluidas = ordens.listarTodas().stream()
                     .filter(o -> o.getStatus() == StatusOrdemProducao.CONCLUIDA).count();
             assertThat(trilha.eventos(AcaoAuditoria.ORDEM_CONCLUIDA)).hasSize((int) concluidas);
-            assertThat(trilha.eventos(AcaoAuditoria.LOTE_GERADO)).hasSize(lotes.listarTodos().size());
+            assertThat(trilha.eventos(AcaoAuditoria.LOTE_GERADO)).hasSize(lotesDeProducao().size());
 
             OrdemProducao concluida = ordens.listarTodas().stream()
                     .filter(o -> o.getStatus() == StatusOrdemProducao.CONCLUIDA).findFirst().orElseThrow();

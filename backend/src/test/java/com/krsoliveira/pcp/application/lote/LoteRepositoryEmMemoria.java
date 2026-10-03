@@ -9,6 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import com.krsoliveira.pcp.domain.lote.StatusLote;
+import java.util.Objects;
+import java.util.Comparator;
+import java.util.Collection;
 
 public class LoteRepositoryEmMemoria implements LoteRepository {
 
@@ -23,6 +27,32 @@ public class LoteRepositoryEmMemoria implements LoteRepository {
     @Override
     public Optional<Lote> buscarPorId(UUID id) {
         return Optional.ofNullable(dados.get(id));
+    }
+
+    @Override
+    public Optional<Lote> buscarPorIdParaAtualizar(UUID id) {
+        return buscarPorId(id);
+    }
+
+    @Override
+    public List<Lote> buscarPorIds(Collection<UUID> ids) {
+        return ids.stream().map(dados::get).filter(Objects::nonNull).toList();
+    }
+
+    @Override
+    public List<Lote> listarPorOrdens(Collection<UUID> ordemProducaoIds) {
+        return dados.values().stream()
+                .filter(l -> l.getOrdemProducaoId() != null && ordemProducaoIds.contains(l.getOrdemProducaoId()))
+                .toList();
+    }
+
+    @Override
+    public List<Lote> listarDisponiveisPorMaterial(UUID materialId) {
+        return dados.values().stream()
+                .filter(l -> materialId.equals(l.getMaterialId()) && l.getStatus() == StatusLote.DISPONIVEL
+                        && l.getSaldo().signum() > 0)
+                .sorted(Comparator.comparing(Lote::getDataValidade).thenComparing(Lote::getDataFabricacao))
+                .toList();
     }
 
     @Override

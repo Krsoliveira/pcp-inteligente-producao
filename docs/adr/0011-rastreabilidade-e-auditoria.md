@@ -65,6 +65,26 @@ alocação acima do saldo, e o lote zerado passa a `CONSUMIDO`. Isso permite ras
 para trás (produto acabado → lotes consumidos → NF/fornecedor) e para frente (lote de
 matéria-prima → ordens e lotes que o usaram).
 
+### 6. Genealogia — decisões de implementação (entrega 3)
+
+- **`AlocacaoLote`** (consumo, lote, quantidade, quem, quando) é um fato imutável, criado
+  só por `Lote.alocar`, que valida material, unidade, status `DISPONIVEL`, validade na
+  data do consumo e saldo.
+- **Saldo no lote** (coluna `saldo`, com `CHECK 0 ≤ saldo ≤ quantidade`) em vez de somar
+  as alocações a cada leitura: a busca de lotes disponíveis fica simples e indexada.
+- **Concorrência**: o caso de uso lê cada lote com `SELECT … FOR UPDATE` dentro da
+  transação. Dois consumos simultâneos no mesmo lote são serializados — o segundo vê o
+  saldo já baixado e é recusado se não couber.
+- **Registro único do consumo**: depois de registrado (e de baixar saldo), não pode ser
+  sobrescrito. Correções exigirão um **estorno** explícito (pendente), para a genealogia
+  nunca ficar inconsistente.
+- **FEFO** como sugestão: a tela distribui pelo que vence primeiro; o usuário pode
+  ajustar, e a soma precisa bater com o consumido.
+- Consulta **um nível por vez** (`GET /lotes/{id}/rastreabilidade`: origens e destinos);
+  a árvore completa se percorre navegando de lote em lote.
+- Lotes anteriores à V10 ficam com saldo derivado do status (consumido = 0) e sem
+  alocações — a tela indica "sem rastreio" nesses casos.
+
 ## Alternativas consideradas
 
 | Alternativa | Por que foi descartada |
@@ -74,6 +94,8 @@ matéria-prima → ordens e lotes que o usaram).
 | Só assinatura, sem histórico | Responde "quem criou", mas não "o que aconteceu desde então" — insuficiente para auditoria |
 | `@Transactional` nos controllers | Coloca a fronteira transacional na camada web; a atomicidade é regra do caso de uso |
 | Um lote por consumo | Na prática um consumo pode usar o fim de um lote e o início de outro |
+| Saldo calculado (soma das alocações) a cada consulta | Consulta de lotes disponíveis vira agregação sobre toda a genealogia; o saldo persistido com `CHECK` é simples e auditável pelos eventos |
+| Bloqueio otimista (`@Version`) | Exigiria versionar o lote no domínio e repetir a operação em conflito; o bloqueio de linha é curto (dura a transação) e o volume de consumos simultâneos no mesmo lote é baixo |
 
 ## Consequências
 

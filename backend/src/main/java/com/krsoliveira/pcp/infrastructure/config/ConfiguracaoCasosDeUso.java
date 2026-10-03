@@ -12,6 +12,7 @@ import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
 import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
 import com.krsoliveira.pcp.application.lista.ConsultarListaTecnica;
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
+import com.krsoliveira.pcp.application.lote.RastrearLote;
 import com.krsoliveira.pcp.application.lote.RegistrarEntradaMaterial;
 import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
@@ -25,6 +26,7 @@ import com.krsoliveira.pcp.application.ordem.CriarOrdemProducao;
 import com.krsoliveira.pcp.domain.auditoria.TrilhaDeAuditoria;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterialRepository;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
+import com.krsoliveira.pcp.domain.lote.AlocacaoLoteRepository;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
@@ -33,6 +35,7 @@ import com.krsoliveira.pcp.domain.usuario.CodificadorDeSenha;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import java.time.Clock;
 
 /**
  * Registra os casos de uso como beans do Spring.
@@ -69,8 +72,11 @@ public class ConfiguracaoCasosDeUso {
     RegistrarConsumoMaterial registrarConsumoMaterial(ConsumoMaterialRepository consumoRepository,
                                                       OrdemProducaoRepository ordemRepository,
                                                       MaterialRepository materialRepository,
+                                                      LoteRepository loteRepository,
+                                                      AlocacaoLoteRepository alocacaoRepository,
                                                       ExecucaoAuditada execucao) {
-        return new RegistrarConsumoMaterial(consumoRepository, ordemRepository, materialRepository, execucao);
+        return new RegistrarConsumoMaterial(consumoRepository, ordemRepository, materialRepository,
+                loteRepository, alocacaoRepository, execucao, Clock.systemDefaultZone());
     }
 
     @Bean
@@ -83,6 +89,13 @@ public class ConfiguracaoCasosDeUso {
     @Bean
     ConsultarLotes consultarLotes(LoteRepository loteRepository) {
         return new ConsultarLotes(loteRepository);
+    }
+
+    @Bean
+    RastrearLote rastrearLote(LoteRepository loteRepository, AlocacaoLoteRepository alocacaoRepository,
+                              ConsumoMaterialRepository consumoRepository,
+                              OrdemProducaoRepository ordemRepository) {
+        return new RastrearLote(loteRepository, alocacaoRepository, consumoRepository, ordemRepository);
     }
 
     @Bean

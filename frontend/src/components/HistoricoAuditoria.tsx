@@ -22,6 +22,7 @@ const ACAO_LABEL: Record<AcaoAuditoria, string> = {
   CONSUMO_REGISTRADO: 'Consumo registrado',
   ORDEM_CONCLUIDA: 'Ordem concluída',
   LOTE_GERADO: 'Lote gerado',
+  LOTE_ALOCADO: 'Lote alocado em consumo',
   ENTRADA_REGISTRADA: 'Entrada registrada',
   USUARIO_REGISTRADO: 'Usuário registrado',
 }
@@ -44,6 +45,8 @@ const CAMPO_LABEL: Record<string, string> = {
   quantidadeConsumida: 'Consumido',
   quantidadeProduzida: 'Produzido',
   desvio: 'Desvio',
+  saldo: 'Saldo',
+  lotes: 'Lotes de origem',
   justificativa: 'Justificativa',
   inicioPlanejado: 'Início planejado',
   fimPlanejado: 'Fim planejado',
@@ -84,7 +87,7 @@ const VALOR_LABEL: Record<string, string> = {
 }
 
 /** Campos numéricos: exibidos no padrão brasileiro (vírgula decimal). */
-const CAMPOS_NUMERICOS = new Set(['quantidade', 'quantidadePlanejada', 'quantidadeConsumida', 'quantidadeProduzida', 'desvio'])
+const CAMPOS_NUMERICOS = new Set(['quantidade', 'quantidadePlanejada', 'quantidadeConsumida', 'quantidadeProduzida', 'desvio', 'saldo'])
 
 /** O JSONB do banco não preserva a ordem das chaves: exibe na ordem de CAMPO_LABEL. */
 const ORDEM_CAMPOS = Object.keys(CAMPO_LABEL)

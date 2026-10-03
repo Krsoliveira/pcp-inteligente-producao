@@ -25,7 +25,8 @@ public record LoteResponse(UUID id,
                            LocalDate dataRecebimento,
                            String criadoPor,
                            Instant atualizadoEm,
-                           String atualizadoPor) {
+                           String atualizadoPor,
+                           BigDecimal saldo) {
 
     public static LoteResponse de(Lote lote) {
         return new LoteResponse(
@@ -46,6 +47,7 @@ public record LoteResponse(UUID id,
                 lote.getOrigemCompra() == null ? null : lote.getOrigemCompra().dataRecebimento(),
                 lote.getAssinatura().criadoPor(),
                 lote.getAssinatura().alteradoEm(),
-                lote.getAssinatura().alteradoPor());
+                lote.getAssinatura().alteradoPor(),
+                lote.getSaldo());
     }
 }

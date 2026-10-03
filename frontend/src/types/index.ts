@@ -140,6 +140,8 @@ export interface Lote {
   dataFabricacao: string
   dataValidade: string
   status: StatusLote
+  /** Quantidade ainda disponível (quantidade − alocações a consumos). */
+  saldo: number
   /** Datas da nota fiscal — apenas lotes de compra. */
   dataEmissaoNf: string | null
   dataRecebimento: string | null
@@ -185,6 +187,57 @@ export interface RegistrarConsumoRequest {
   quantidadeConsumida: number
   /** O responsável é o usuário logado — definido pelo backend. */
   justificativa?: string
+  /** De quais lotes saiu o material: a soma deve ser igual à quantidade consumida. */
+  alocacoes: AlocacaoLoteRequest[]
+}
+
+export interface AlocacaoLoteRequest {
+  loteId: string
+  quantidade: number
+}
+
+// ---- Genealogia de lotes ----
+
+export interface LoteOrigem {
+  loteId: string
+  numeroLote: string
+  origem: OrigemLote
+  fornecedor: string | null
+  notaFiscal: string | null
+  ordemProducaoId: string | null
+  quantidade: number
+  alocadoPor: string
+  alocadoEm: string
+}
+
+export interface OrigemConsumo {
+  consumoId: string
+  materialId: string
+  quantidadePlanejada: number
+  quantidadeConsumida: number | null
+  unidadeDeMedida: string
+  lotes: LoteOrigem[]
+}
+
+export interface DestinoLote {
+  alocacaoId: string
+  quantidade: number
+  unidadeDeMedida: string
+  alocadoPor: string
+  alocadoEm: string
+  ordemProducaoId: string
+  ordemCodigo: string
+  ordemStatus: StatusOrdem
+  materialProduzidoId: string
+  loteGeradoId: string | null
+  loteGeradoNumero: string | null
+}
+
+export interface RastreabilidadeLote {
+  loteId: string
+  numeroLote: string
+  origens: OrigemConsumo[]
+  destinos: DestinoLote[]
 }
 
 // ---- Autenticação ----
@@ -234,6 +287,7 @@ export type AcaoAuditoria =
   | 'CONSUMO_REGISTRADO'
   | 'ORDEM_CONCLUIDA'
   | 'LOTE_GERADO'
+  | 'LOTE_ALOCADO'
   | 'ENTRADA_REGISTRADA'
   | 'USUARIO_REGISTRADO'
 
