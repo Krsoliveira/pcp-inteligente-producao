@@ -87,8 +87,14 @@ public class ConsumoMaterial {
      * Registra o consumo real do material. Se houver desvio (consumida != planejada), a
      * justificativa é obrigatória, e o responsável por ela é o próprio usuário que
      * registra — não um nome digitado.
+     *
+     * O registro é único: o consumo já baixou saldo dos lotes alocados, e sobrescrevê-lo
+     * deixaria a genealogia inconsistente. Correções exigirão estorno.
      */
     public void registrarConsumo(BigDecimal quantidadeConsumida, String justificativa, String usuario) {
+        if (this.quantidadeConsumida != null) {
+            throw new RegraDeNegocioException("Este consumo já foi registrado.");
+        }
         if (quantidadeConsumida == null || quantidadeConsumida.compareTo(BigDecimal.ZERO) < 0) {
             throw new RegraDeNegocioException(
                     "A quantidade consumida deve ser zero ou maior.");

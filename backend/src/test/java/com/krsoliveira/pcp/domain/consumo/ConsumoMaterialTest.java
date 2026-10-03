@@ -120,17 +120,16 @@ class ConsumoMaterialTest {
         }
 
         @Test
-        @DisplayName("novo registro sem desvio limpa a justificativa anterior")
-        void novoRegistroSemDesvioLimpaJustificativa() {
+        @DisplayName("o registro é único: o consumo já baixou saldo dos lotes")
+        void registroUnico() {
             ConsumoMaterial consumo = consumoProjetado();
             consumo.registrarConsumo(new BigDecimal("55.0000"), "Perda no setup", USUARIO);
 
-            consumo.registrarConsumo(new BigDecimal("50.0000"), null, "outro@pcp");
-
-            assertThat(consumo.getJustificativa()).isNull();
-            assertThat(consumo.getJustificadoPor()).isNull();
-            assertThat(consumo.getJustificadoEm()).isNull();
-            assertThat(consumo.getAssinatura().alteradoPor()).isEqualTo("outro@pcp");
+            assertThatThrownBy(() -> consumo.registrarConsumo(new BigDecimal("50.0000"), null, "outro@pcp"))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("já foi registrado");
+            assertThat(consumo.getQuantidadeConsumida()).isEqualByComparingTo("55");
+            assertThat(consumo.getAssinatura().alteradoPor()).isEqualTo(USUARIO);
         }
 
         @Test

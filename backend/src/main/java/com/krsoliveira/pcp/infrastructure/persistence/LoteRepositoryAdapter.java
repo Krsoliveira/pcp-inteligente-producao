@@ -4,6 +4,7 @@ import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +32,30 @@ public class LoteRepositoryAdapter implements LoteRepository {
     @Override
     public Optional<Lote> buscarPorId(UUID id) {
         return springData.findById(id).map(LoteJpaEntity::paraDominio);
+    }
+
+    @Override
+    public Optional<Lote> buscarPorIdParaAtualizar(UUID id) {
+        return springData.buscarParaAtualizar(id).map(LoteJpaEntity::paraDominio);
+    }
+
+    @Override
+    public List<Lote> buscarPorIds(Collection<UUID> ids) {
+        if (ids.isEmpty()) return List.of();
+        return springData.findAllById(ids).stream().map(LoteJpaEntity::paraDominio).toList();
+    }
+
+    @Override
+    public List<Lote> listarPorOrdens(Collection<UUID> ordemProducaoIds) {
+        if (ordemProducaoIds.isEmpty()) return List.of();
+        return springData.findByOrdemProducaoIdIn(ordemProducaoIds).stream()
+                .map(LoteJpaEntity::paraDominio).toList();
+    }
+
+    @Override
+    public List<Lote> listarDisponiveisPorMaterial(UUID materialId) {
+        return springData.disponiveisPorMaterial(materialId).stream()
+                .map(LoteJpaEntity::paraDominio).toList();
     }
 
     @Override

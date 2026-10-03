@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.domain.consumo;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +16,8 @@ public interface ConsumoMaterialRepository {
     List<ConsumoMaterial> salvarTodos(List<ConsumoMaterial> consumos);
 
     Optional<ConsumoMaterial> buscarPorId(UUID id);
+
+    List<ConsumoMaterial> buscarPorIds(Collection<UUID> ids);
 
     List<ConsumoMaterial> listarPorOrdemProducao(UUID ordemProducaoId);
 }
