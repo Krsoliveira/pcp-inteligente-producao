@@ -21,6 +21,8 @@ import com.krsoliveira.pcp.domain.lote.StatusLote;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.material.TipoMaterial;
+import com.krsoliveira.pcp.domain.notafiscal.NotaFiscalEntrada;
+import com.krsoliveira.pcp.domain.notafiscal.NotaFiscalEntradaRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
 import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
@@ -57,8 +59,8 @@ import java.util.UUID;
  *
  * Lê os CSVs de {@code classpath:dados/} — gerados por
  * {@code data/scripts/gerar_dataset_sintetico.py} — e persiste, nesta ordem:
- * materiais → tipos de ordem → listas técnicas → ordens → consumos → lotes (de produção e
- * de compra) → alocações de lote (genealogia).
+ * materiais → tipos de ordem → listas técnicas → ordens → consumos → lotes de produção →
+ * notas fiscais de entrada com seus lotes de compra (ADR-0012) → alocações de lote (genealogia).
  *
  * Decisões:
  * <ul>
@@ -74,7 +76,7 @@ import java.util.UUID;
  *   <li><b>Rastreabilidade</b> (ADR-0011): todo registro é assinado por
  *       {@value #RESPONSAVEL} (consumos justificados, pelo responsável do dataset) e a
  *       trilha de auditoria recebe o histórico simulado — criação, transições de status,
- *       consumos, conclusões, entradas, lotes e alocações —, com datas coerentes com o planejamento de cada
+ *       consumos, conclusões, notas fiscais, lotes e alocações —, com datas coerentes com o planejamento de cada
  *       ordem e nunca no futuro. Dados mestres são datados antes da primeira ordem.</li>
  *   <li><b>Idempotência</b>: se já houver ordens ou materiais, a carga não roda.</li>
  *   <li><b>Atomicidade</b>: tudo numa transação — falha no meio não deixa carga parcial.</li>
@@ -97,6 +99,7 @@ public class DataLoader implements CommandLineRunner {
     private final ConsumoMaterialRepository consumoRepository;
     private final LoteRepository loteRepository;
     private final AlocacaoLoteRepository alocacaoRepository;
+    private final NotaFiscalEntradaRepository notaFiscalRepository;
     private final TrilhaDeAuditoria trilha;
     private final Clock relogio;
     private final List<EventoAuditoria> eventos = new ArrayList<>();
@@ -110,9 +113,11 @@ public class DataLoader implements CommandLineRunner {
                       ConsumoMaterialRepository consumoRepository,
                       LoteRepository loteRepository,
                       AlocacaoLoteRepository alocacaoRepository,
+                      NotaFiscalEntradaRepository notaFiscalRepository,
                       TrilhaDeAuditoria trilha) {
         this(materialRepository, tipoOrdemRepository, listaTecnicaRepository, ordemRepository,
-                consumoRepository, loteRepository, alocacaoRepository, trilha, Clock.systemDefaultZone());
+                consumoRepository, loteRepository, alocacaoRepository, notaFiscalRepository, trilha,
+                Clock.systemDefaultZone());
     }
 
     DataLoader(MaterialRepository materialRepository,
@@ -122,6 +127,7 @@ public class DataLoader implements CommandLineRunner {
                ConsumoMaterialRepository consumoRepository,
                LoteRepository loteRepository,
                AlocacaoLoteRepository alocacaoRepository,
+               NotaFiscalEntradaRepository notaFiscalRepository,
                TrilhaDeAuditoria trilha,
                Clock relogio) {
         this.materialRepository = materialRepository;
@@ -131,6 +137,7 @@ public class DataLoader implements CommandLineRunner {
         this.consumoRepository = consumoRepository;
         this.loteRepository = loteRepository;
         this.alocacaoRepository = alocacaoRepository;
+        this.notaFiscalRepository = notaFiscalRepository;
         this.trilha = trilha;
         this.relogio = relogio;
     }
@@ -155,9 +162,8 @@ public class DataLoader implements CommandLineRunner {
         Map<String, OrdemProducao> ordens = carregarOrdens(materiais, tipos, listas, deslocamentoDias);
         Map<String, ConsumoCarga> consumos = carregarConsumos(materiais, ordens, deslocamentoDias);
         Map<String, LoteCarga> lotes = new LinkedHashMap<>();
-        Map<String, Integer> sequenciais = new HashMap<>();
-        carregarLotesDeProducao(materiais, ordens, deslocamentoDias, sequenciais, lotes);
-        carregarLotesDeCompra(materiais, deslocamentoDias, sequenciais, lotes);
+        carregarLotesDeProducao(materiais, ordens, deslocamentoDias, lotes);
+        int notas = carregarNotasFiscais(materiais, deslocamentoDias, lotes);
         List<AlocacaoLote> alocacoes = carregarAlocacoes(consumos, lotes);
         registrarConsumos(consumos);
         salvarLotes(lotes);
@@ -165,10 +171,10 @@ public class DataLoader implements CommandLineRunner {
         trilha.registrar(eventos);
 
         log.info("DataLoader: carga concluída em {} ms — materiais={}, tiposOrdem={}, "
-                        + "listasTecnicas={}, ordens={}, consumos={}, lotes={}, alocacoes={}, "
+                        + "listasTecnicas={}, ordens={}, consumos={}, notasFiscais={}, lotes={}, alocacoes={}, "
                         + "eventosAuditoria={}, deslocamentoDias={}",
                 System.currentTimeMillis() - inicio, materiais.size(), tipos.size(),
-                listas.size(), ordens.size(), consumos.size(), lotes.size(), alocacoes.size(),
+                listas.size(), ordens.size(), consumos.size(), notas, lotes.size(), alocacoes.size(),
                 eventos.size(), deslocamentoDias);
     }
 
@@ -366,6 +372,7 @@ public class DataLoader implements CommandLineRunner {
         final Material material;
         final OrdemProducao ordem;
         final OrigemCompra origemCompra;
+        final UUID notaFiscalId;
         final BigDecimal quantidade;
         final LocalDate fabricacao;
         final LocalDate validade;
@@ -376,12 +383,13 @@ public class DataLoader implements CommandLineRunner {
         Instant alteradoEm;
 
         LoteCarga(String numero, Material material, OrdemProducao ordem, OrigemCompra origemCompra,
-                  BigDecimal quantidade, LocalDate fabricacao, LocalDate validade,
+                  UUID notaFiscalId, BigDecimal quantidade, LocalDate fabricacao, LocalDate validade,
                   StatusLote statusFinal, BigDecimal saldoFinal, Instant criadoEm) {
             this.numero = numero;
             this.material = material;
             this.ordem = ordem;
             this.origemCompra = origemCompra;
+            this.notaFiscalId = notaFiscalId;
             this.quantidade = quantidade;
             this.fabricacao = fabricacao;
             this.validade = validade;
@@ -427,9 +435,10 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void carregarLotesDeProducao(Map<String, Material> materiais, Map<String, OrdemProducao> ordens,
-                                         long deslocamentoDias, Map<String, Integer> sequenciais,
-                                         Map<String, LoteCarga> lotes) {
+                                         long deslocamentoDias, Map<String, LoteCarga> lotes) {
         Map<UUID, Material> materiaisPorId = new HashMap<>();
+        // Banco vazio → a sequência do dia (AAMMDD + NNNN) é controlada em memória.
+        Map<LocalDate, Integer> sequenciaPorDia = new HashMap<>();
         materiais.values().forEach(m -> materiaisPorId.put(m.getId(), m));
 
         for (var linha : LeitorCsv.ler(DIRETORIO + "lotes.csv")) {
@@ -440,10 +449,11 @@ public class DataLoader implements CommandLineRunner {
             Material material = materiaisPorId.get(ordem.getMaterialId());
             LocalDate fabricacao = LocalDate.parse(linha.get("data_fabricacao")).plusDays(deslocamentoDias);
             LocalDate validade = LocalDate.parse(linha.get("data_validade")).plusDays(deslocamentoDias);
-            String numero = proximoNumero(sequenciais, material, fabricacao);
+            String numero = Lote.numeroLoteProducao(fabricacao,
+                    sequenciaPorDia.merge(fabricacao, 1, Integer::sum));
             Instant geradoEm = ordem.getAtualizadaEm();
 
-            LoteCarga lote = new LoteCarga(numero, material, ordem, null, ordem.getQuantidadeProduzida(),
+            LoteCarga lote = new LoteCarga(numero, material, ordem, null, null, ordem.getQuantidadeProduzida(),
                     fabricacao, validade, StatusLote.valueOf(linha.get("status")),
                     new BigDecimal(linha.get("saldo")), geradoEm);
             lotes.put(refProducao(ordem.getCodigo()), lote);
@@ -466,35 +476,66 @@ public class DataLoader implements CommandLineRunner {
         }
     }
 
-    private void carregarLotesDeCompra(Map<String, Material> materiais, long deslocamentoDias,
-                                       Map<String, Integer> sequenciais, Map<String, LoteCarga> lotes) {
+    /**
+     * Cada nota do dataset vira um cabeçalho {@link NotaFiscalEntrada}; cada linha, um lote
+     * de compra (item da nota) com o número de lote do fornecedor. Devolve quantas notas.
+     */
+    private int carregarNotasFiscais(Map<String, Material> materiais, long deslocamentoDias,
+                                     Map<String, LoteCarga> lotes) {
+        Map<String, List<Map<String, String>>> itensPorNota = new LinkedHashMap<>();
         for (var linha : LeitorCsv.ler(DIRETORIO + "lotes_compra.csv")) {
-            Material material = buscar(materiais, linha.get("material_codigo"), "material");
-            OrigemCompra origem = new OrigemCompra(linha.get("fornecedor"), linha.get("nota_fiscal"),
-                    LocalDate.parse(linha.get("data_emissao_nf")).plusDays(deslocamentoDias),
-                    LocalDate.parse(linha.get("data_recebimento")).plusDays(deslocamentoDias));
-            LocalDate fabricacao = LocalDate.parse(linha.get("data_fabricacao")).plusDays(deslocamentoDias);
-            LocalDate validade = LocalDate.parse(linha.get("data_validade")).plusDays(deslocamentoDias);
-            String numero = proximoNumero(sequenciais, material, fabricacao);
-            Instant recebidoEm = momento(origem.dataRecebimento(), LocalTime.of(9, 0));
-
-            LoteCarga lote = new LoteCarga(numero, material, null, origem,
-                    new BigDecimal(linha.get("quantidade")), fabricacao, validade,
-                    StatusLote.valueOf(linha.get("status")), new BigDecimal(linha.get("saldo")), recebidoEm);
-            lotes.put(refCompra(origem.notaFiscal()), lote);
-
-            registrar(TipoEntidade.LOTE, lote.id, numero, AcaoAuditoria.ENTRADA_REGISTRADA, RESPONSAVEL, recebidoEm,
-                    Detalhes.com("numeroLote", numero)
-                            .e("material", material.getCodigo())
-                            .e("fornecedor", origem.fornecedor())
-                            .e("notaFiscal", origem.notaFiscal())
-                            .e("dataEmissaoNf", origem.dataEmissaoNf())
-                            .e("dataRecebimento", origem.dataRecebimento())
-                            .e("quantidade", lote.quantidade)
-                            .e("unidadeDeMedida", material.getUnidadeDeMedida())
-                            .e("dataFabricacao", fabricacao)
-                            .e("dataValidade", validade));
+            itensPorNota.computeIfAbsent(linha.get("fornecedor").toLowerCase() + "|" + linha.get("nota_fiscal"),
+                    k -> new ArrayList<>()).add(linha);
         }
+        for (var itens : itensPorNota.values()) {
+            var cabecalho = itens.get(0);
+            OrigemCompra origem = new OrigemCompra(cabecalho.get("fornecedor"), cabecalho.get("nota_fiscal"),
+                    LocalDate.parse(cabecalho.get("data_emissao_nf")).plusDays(deslocamentoDias),
+                    LocalDate.parse(cabecalho.get("data_recebimento")).plusDays(deslocamentoDias));
+            Instant recebidoEm = momento(origem.dataRecebimento(), LocalTime.of(9, 0));
+            NotaFiscalEntrada nota = NotaFiscalEntrada.reconstituir(UUID.randomUUID(), origem,
+                    assinatura(recebidoEm, recebidoEm));
+            notaFiscalRepository.salvar(nota);
+
+            List<String> numerosLote = new ArrayList<>();
+            for (var linha : itens) {
+                Material material = buscar(materiais, linha.get("material_codigo"), "material");
+                String numero = Lote.normalizarNumero(linha.get("numero_lote"));
+                LocalDate fabricacao = LocalDate.parse(linha.get("data_fabricacao")).plusDays(deslocamentoDias);
+                LocalDate validade = LocalDate.parse(linha.get("data_validade")).plusDays(deslocamentoDias);
+
+                LoteCarga lote = new LoteCarga(numero, material, null, origem, nota.getId(),
+                        new BigDecimal(linha.get("quantidade")), fabricacao, validade,
+                        StatusLote.valueOf(linha.get("status")), new BigDecimal(linha.get("saldo")), recebidoEm);
+                if (lotes.putIfAbsent(refCompra(origem.notaFiscal(), numero), lote) != null) {
+                    throw new IllegalStateException("Dataset inconsistente: lote repetido na nota "
+                            + origem.notaFiscal() + ": " + numero);
+                }
+                numerosLote.add(numero);
+
+                registrar(TipoEntidade.LOTE, lote.id, numero, AcaoAuditoria.ENTRADA_REGISTRADA, RESPONSAVEL,
+                        recebidoEm,
+                        Detalhes.com("numeroLote", numero)
+                                .e("material", material.getCodigo())
+                                .e("fornecedor", origem.fornecedor())
+                                .e("notaFiscal", origem.notaFiscal())
+                                .e("dataEmissaoNf", origem.dataEmissaoNf())
+                                .e("dataRecebimento", origem.dataRecebimento())
+                                .e("quantidade", lote.quantidade)
+                                .e("unidadeDeMedida", material.getUnidadeDeMedida())
+                                .e("dataFabricacao", fabricacao)
+                                .e("dataValidade", validade));
+            }
+            registrar(TipoEntidade.NOTA_FISCAL, nota.getId(), nota.getNumero(), AcaoAuditoria.ENTRADA_REGISTRADA,
+                    RESPONSAVEL, recebidoEm,
+                    Detalhes.com("fornecedor", nota.getFornecedor())
+                            .e("notaFiscal", nota.getNumero())
+                            .e("dataEmissaoNf", nota.getDataEmissao())
+                            .e("dataRecebimento", nota.getDataRecebimento())
+                            .e("itens", itens.size())
+                            .e("lotes", String.join("; ", numerosLote)));
+        }
+        return itensPorNota.size();
     }
 
     /**
@@ -510,7 +551,8 @@ public class DataLoader implements CommandLineRunner {
                     chaveConsumo(linha.get("ordem_codigo"), linha.get("componente_codigo")), "consumo");
             String loteOrdem = linha.get("lote_ordem_codigo");
             LoteCarga lote = buscar(lotes, loteOrdem.isBlank()
-                    ? refCompra(linha.get("lote_nota_fiscal")) : refProducao(loteOrdem), "lote");
+                    ? refCompra(linha.get("lote_nota_fiscal"), Lote.normalizarNumero(linha.get("lote_numero")))
+                    : refProducao(loteOrdem), "lote");
             BigDecimal quantidade = new BigDecimal(linha.get("quantidade"));
             if (!lote.material.getId().equals(carga.consumo().getMaterialId()) || quantidade.compareTo(lote.saldo) > 0) {
                 throw new IllegalStateException("Dataset inconsistente: alocação inválida no lote " + lote.numero);
@@ -584,16 +626,10 @@ public class DataLoader implements CommandLineRunner {
             }
             loteRepository.salvar(Lote.reconstituir(lote.id, lote.numero, lote.material.getId(),
                     lote.ordem == null ? null : lote.ordem.getId(), lote.origemCompra,
-                    lote.quantidade, lote.saldo, lote.material.getUnidadeDeMedida(),
+                    lote.notaFiscalId, lote.quantidade, lote.saldo, lote.material.getUnidadeDeMedida(),
                     lote.fabricacao, lote.validade, status,
                     new Assinatura(RESPONSAVEL, lote.criadoEm, RESPONSAVEL, lote.alteradoEm)));
         }
-    }
-
-    /** Banco vazio → o sequencial por prefixo é controlado em memória (evita 1 query por lote). */
-    private static String proximoNumero(Map<String, Integer> sequenciais, Material material, LocalDate fabricacao) {
-        String prefixo = Lote.prefixoNumeroLote(material.getCodigo(), fabricacao);
-        return Lote.numeroLote(prefixo, sequenciais.merge(prefixo, 1, Integer::sum));
     }
 
     private static String chaveConsumo(String ordemCodigo, String componenteCodigo) {
@@ -604,8 +640,8 @@ public class DataLoader implements CommandLineRunner {
         return "OP|" + ordemCodigo;
     }
 
-    private static String refCompra(String notaFiscal) {
-        return "NF|" + notaFiscal;
+    private static String refCompra(String notaFiscal, String numeroLote) {
+        return "NF|" + notaFiscal + "|" + numeroLote;
     }
 
     /** Data e hora no fuso do relógio, limitadas a "agora": o histórico nunca fica no futuro. */

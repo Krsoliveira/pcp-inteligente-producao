@@ -4,9 +4,10 @@ import com.krsoliveira.pcp.application.auth.EmailJaUtilizadoException;
 import com.krsoliveira.pcp.application.consumo.ConsumoMaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
 import com.krsoliveira.pcp.application.lista.VersaoListaTecnicaJaExisteException;
-import com.krsoliveira.pcp.application.lote.EntradaMaterialDuplicadaException;
+import com.krsoliveira.pcp.application.notafiscal.LoteDuplicadoException;
+import com.krsoliveira.pcp.application.notafiscal.NotaFiscalDuplicadaException;
+import com.krsoliveira.pcp.application.notafiscal.NotaFiscalNaoEncontradaException;
 import com.krsoliveira.pcp.application.lote.LoteNaoEncontradoException;
-import com.krsoliveira.pcp.application.material.CodigoMaterialJaUtilizadoException;
 import com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.ordem.CodigoJaUtilizadoException;
 import com.krsoliveira.pcp.application.ordem.NomeTipoOrdemJaUtilizadoException;
@@ -84,18 +85,18 @@ public class TratadorGlobalDeErros {
         return problema;
     }
 
-    @ExceptionHandler(EntradaMaterialDuplicadaException.class)
-    public ProblemDetail entradaDuplicada(EntradaMaterialDuplicadaException ex) {
+    @ExceptionHandler({NotaFiscalDuplicadaException.class, LoteDuplicadoException.class})
+    public ProblemDetail entradaDuplicada(RuntimeException ex) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problema.setTitle("Conflito");
         problema.setDetail(ex.getMessage());
         return problema;
     }
 
-    @ExceptionHandler(CodigoMaterialJaUtilizadoException.class)
-    public ProblemDetail codigoMaterialDuplicado(CodigoMaterialJaUtilizadoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problema.setTitle("Conflito");
+    @ExceptionHandler(NotaFiscalNaoEncontradaException.class)
+    public ProblemDetail notaFiscalNaoEncontrada(NotaFiscalNaoEncontradaException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problema.setTitle("Recurso não encontrado");
         problema.setDetail(ex.getMessage());
         return problema;
     }

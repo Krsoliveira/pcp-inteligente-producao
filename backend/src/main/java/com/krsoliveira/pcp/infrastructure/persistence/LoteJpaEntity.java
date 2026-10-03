@@ -27,7 +27,7 @@ public class LoteJpaEntity {
     @Id
     private UUID id;
 
-    @Column(name = "numero_lote", nullable = false, unique = true, length = 40)
+    @Column(name = "numero_lote", nullable = false, length = 20)
     private String numeroLote;
 
     @Column(name = "material_id", nullable = false)
@@ -35,6 +35,9 @@ public class LoteJpaEntity {
 
     @Column(name = "ordem_producao_id")
     private UUID ordemProducaoId;
+
+    @Column(name = "nota_fiscal_entrada_id")
+    private UUID notaFiscalId;
 
     @Column(length = 150)
     private String fornecedor;
@@ -87,6 +90,7 @@ public class LoteJpaEntity {
         entity.numeroLote = lote.getNumeroLote();
         entity.materialId = lote.getMaterialId();
         entity.ordemProducaoId = lote.getOrdemProducaoId();
+        entity.notaFiscalId = lote.getNotaFiscalId();
         OrigemCompra origem = lote.getOrigemCompra();
         if (origem != null) {
             entity.fornecedor = origem.fornecedor();
@@ -112,6 +116,7 @@ public class LoteJpaEntity {
         return Lote.reconstituir(id, numeroLote, materialId, ordemProducaoId,
                 notaFiscal == null ? null
                         : new OrigemCompra(fornecedor, notaFiscal, dataEmissaoNf, dataRecebimento),
+                notaFiscalId,
                 quantidade, saldo, unidadeDeMedida, dataFabricacao, dataValidade, status,
                 new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm));
     }

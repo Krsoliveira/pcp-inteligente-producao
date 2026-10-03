@@ -42,7 +42,7 @@ import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { InfoRow } from '../components/InfoRow'
 import { RegistrarConsumoDialog } from '../components/consumo/RegistrarConsumoDialog'
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
-import { formatarDataHora } from '../utils/formatacao'
+import { formatarCodigoMaterial, formatarDataHora } from '../utils/formatacao'
 import type { ConsumoMaterial, ConcluirOrdemRequest } from '../types'
 
 export function OrdemDetalhePage() {
@@ -83,7 +83,7 @@ export function OrdemDetalhePage() {
     const m = materialPorId.get(id)
     return (
       <Tooltip title={m?.descricao ?? ''}>
-        <Typography variant="body2" fontWeight={500}>{m?.codigo ?? '…'}</Typography>
+        <Typography variant="body2" fontWeight={500}>{m ? formatarCodigoMaterial(m.codigo) : '…'}</Typography>
       </Tooltip>
     )
   }
@@ -100,6 +100,7 @@ export function OrdemDetalhePage() {
     queryClient.invalidateQueries({ queryKey: ['lotes-ordem', id] })
     queryClient.invalidateQueries({ queryKey: ['ordens'] })
     queryClient.invalidateQueries({ queryKey: ['lotes'] })
+    queryClient.invalidateQueries({ queryKey: ['estoque'] })
     queryClient.invalidateQueries({ queryKey: ['lotes-disponiveis'] })
     queryClient.invalidateQueries({ queryKey: ['auditoria'] })
   }
@@ -165,7 +166,7 @@ export function OrdemDetalhePage() {
               <Divider sx={{ mb: 2 }} />
               <Grid container spacing={1.5}>
                 <InfoRow label="Status"><StatusOrdemBadge status={ordem.status} size="medium" /></InfoRow>
-                <InfoRow label="Material">{material ? `${material.codigo} — ${material.descricao}` : <Skeleton width={140} />}</InfoRow>
+                <InfoRow label="Material">{material ? `${formatarCodigoMaterial(material.codigo)} — ${material.descricao}` : <Skeleton width={140} />}</InfoRow>
                 <InfoRow label="Lista Técnica"><Chip label={listaTecnica?.versao ?? '…'} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} /></InfoRow>
                 <InfoRow label="Centro de Trabalho">{ordem.centroDeTrabalho}</InfoRow>
                 <InfoRow label="Quantidade planejada">{ordem.quantidade.toLocaleString('pt-BR')} {material?.unidadeDeMedida}</InfoRow>

@@ -18,7 +18,8 @@ import ListAltIcon from '@mui/icons-material/ListAlt'
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined'
 import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined'
-import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLongOutlined'
+import WarehouseIcon from '@mui/icons-material/WarehouseOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
 import MenuIcon from '@mui/icons-material/Menu'
 import FactoryIcon from '@mui/icons-material/Factory'
@@ -30,6 +31,8 @@ interface NavItem {
   label: string
   icon: React.ReactNode
   rota: string
+  /** Outras rotas que também destacam o item (ex.: telas de detalhe). */
+  ativoTambem?: string[]
 }
 
 interface NavSection {
@@ -53,10 +56,17 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    titulo: 'Suprimentos',
+    itens: [
+      { label: 'Entrada de notas', icon: <ReceiptLongIcon fontSize="small" />, rota: '/notas-fiscais' },
+      // O detalhe do lote (/lotes/:id) é navegado a partir do estoque.
+      { label: 'Estoque', icon: <WarehouseIcon fontSize="small" />, rota: '/estoque', ativoTambem: ['/lotes'] },
+    ],
+  },
+  {
     titulo: 'Produção',
     itens: [
       { label: 'Ordens', icon: <ListAltIcon fontSize="small" />, rota: '/ordens' },
-      { label: 'Lotes', icon: <AllInboxIcon fontSize="small" />, rota: '/lotes' },
     ],
   },
 ]
@@ -72,10 +82,10 @@ export function Layout() {
     navigate('/login')
   }
 
-  const isAtivo = (rota: string) =>
+  const isAtivo = ({ rota, ativoTambem = [] }: NavItem) =>
     rota === '/dashboard'
       ? location.pathname === rota
-      : location.pathname.startsWith(rota)
+      : [rota, ...ativoTambem].some((r) => location.pathname.startsWith(r))
 
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -123,7 +133,7 @@ export function Layout() {
               sx={{ px: 1, pb: 0 }}
             >
               {section.itens.map((item) => {
-                const ativo = isAtivo(item.rota)
+                const ativo = isAtivo(item)
                 return (
                   <ListItemButton
                     key={item.rota}

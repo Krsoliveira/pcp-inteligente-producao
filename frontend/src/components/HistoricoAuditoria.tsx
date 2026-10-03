@@ -46,7 +46,7 @@ const CAMPO_LABEL: Record<string, string> = {
   quantidadeProduzida: 'Produzido',
   desvio: 'Desvio',
   saldo: 'Saldo',
-  lotes: 'Lotes de origem',
+  lotes: 'Lotes',
   justificativa: 'Justificativa',
   inicioPlanejado: 'Início planejado',
   fimPlanejado: 'Fim planejado',
@@ -63,6 +63,7 @@ const CAMPO_LABEL: Record<string, string> = {
   nome: 'Nome',
   cor: 'Cor',
   perfil: 'Perfil',
+  motivo: 'Motivo',
 }
 
 /** Rótulos de status e tipos (os eventos guardam as constantes do backend). */

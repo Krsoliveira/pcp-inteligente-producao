@@ -84,8 +84,8 @@ export interface Material {
   atualizadoPor: string
 }
 
+/** O código (9 dígitos, faixa pelo tipo) é gerado pelo backend — ADR-0012. */
 export interface CadastrarMaterialRequest {
-  codigo: string
   descricao: string
   tipo: TipoMaterial
   unidadeDeMedida: string
@@ -132,7 +132,8 @@ export interface Lote {
   materialId: string
   ordemProducaoId: string | null
   origem: OrigemLote
-  /** Preenchidos apenas em lotes de compra (entrada de material). */
+  /** Preenchidos apenas em lotes de compra (item de uma nota fiscal de entrada). */
+  notaFiscalId: string | null
   fornecedor: string | null
   notaFiscal: string | null
   quantidade: number
@@ -151,15 +152,52 @@ export interface Lote {
   atualizadoPor: string
 }
 
-export interface RegistrarEntradaMaterialRequest {
-  materialId: string
+// ---- Suprimentos (ADR-0012) ----
+
+/** Nota fiscal de entrada; os itens são os lotes de compra que ela trouxe. */
+export interface NotaFiscal {
+  id: string
   fornecedor: string
-  notaFiscal: string
-  dataEmissaoNf: string
+  numero: string
+  dataEmissao: string
   dataRecebimento: string
+  registradaPor: string
+  registradaEm: string
+  quantidadeItens: number
+  itens: Lote[]
+}
+
+export interface ItemNotaFiscalRequest {
+  materialId: string
   quantidade: number
+  /** Lote do fornecedor — até 20 caracteres (letras, dígitos e . / -). */
+  numeroLote: string
   dataFabricacao: string
   dataValidade: string
+}
+
+export interface RegistrarNotaFiscalRequest {
+  fornecedor: string
+  numero: string
+  dataEmissao: string
+  dataRecebimento: string
+  itens: ItemNotaFiscalRequest[]
+}
+
+/** Posição de estoque de um material, calculada a partir dos saldos dos lotes. */
+export interface PosicaoEstoque {
+  materialId: string
+  codigo: string
+  descricao: string
+  tipo: TipoMaterial
+  unidadeDeMedida: string
+  /** Lotes DISPONIVEIS e dentro da validade. */
+  saldoDisponivel: number
+  lotesDisponiveis: number
+  /** Saldo parado em lotes bloqueados ou vencidos. */
+  saldoIndisponivel: number
+  proximoVencimento: string | null
+  ultimaEntrada: string | null
 }
 
 // ---- Consumo de Material ----
@@ -276,6 +314,7 @@ export type TipoEntidade =
   | 'ORDEM_PRODUCAO'
   | 'LOTE'
   | 'TIPO_ORDEM'
+  | 'NOTA_FISCAL'
   | 'USUARIO'
 
 export type AcaoAuditoria =

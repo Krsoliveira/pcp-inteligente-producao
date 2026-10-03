@@ -29,7 +29,7 @@ import java.util.UUID;
  * 2. Valida que todos os ConsumoMaterial estão registrados.
  * 3. Valida que desvios têm justificativa.
  * 4. Chama {@code OrdemProducao.concluir(quantidadeProduzida)}.
- * 5. Gera número do lote: {@code MAT-{codigo}-{yyyyMM}-{seq:03d}}.
+ * 5. Gera o número do lote de produção: {@code AAMMDD} + sequência do dia (ADR-0012).
  * 6. Cria e persiste o Lote com status DISPONIVEL.
  * 7. Persiste a ordem concluída e registra os eventos de auditoria — tudo numa transação.
  *
@@ -87,8 +87,11 @@ public class ConcluirOrdemProducao {
             Material material = materialRepository.buscarPorId(ordem.getMaterialId())
                     .orElseThrow(() -> new MaterialNaoEncontradoException(ordem.getMaterialId()));
 
-            String numeroLote = gerarNumeroLote(material.getCodigo(),
-                    comando.dataFabricacao(), ordem.getMaterialId());
+            if (comando.dataFabricacao() == null) {
+                throw new RegraDeNegocioException("A data de fabricação do lote é obrigatória.");
+            }
+            String numeroLote = Lote.numeroLoteProducao(comando.dataFabricacao(),
+                    loteRepository.proximoSequencialProducao(comando.dataFabricacao()));
 
             Lote lote = Lote.criar(
                     numeroLote,
@@ -151,12 +154,5 @@ public class ConcluirOrdemProducao {
                     .formatted(naoJustificados.size()) +
                     "Justifique todos os desvios antes de concluir a ordem.");
         }
-    }
-
-    private String gerarNumeroLote(String codigoMaterial, LocalDate dataFabricacao,
-                                   UUID materialId) {
-        String prefixo = Lote.prefixoNumeroLote(codigoMaterial, dataFabricacao);
-        int seq = loteRepository.proximoSequencial(materialId, prefixo);
-        return Lote.numeroLote(prefixo, seq);
     }
 }

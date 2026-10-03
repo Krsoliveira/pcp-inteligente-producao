@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Lote rastreável de material, com duas origens possíveis:
@@ -25,13 +26,18 @@ import java.util.UUID;
  */
 public class Lote {
 
-    private static final DateTimeFormatter FORMATO_ANO_MES = DateTimeFormatter.ofPattern("yyyyMM");
+    /** Número de lote: até 20 caracteres, letras, dígitos e os separadores . / - (ADR-0012). */
+    public static final int NUMERO_MAXIMO = 20;
+    private static final Pattern NUMERO_VALIDO = Pattern.compile("[A-Z0-9./-]{1,20}");
+    private static final DateTimeFormatter FORMATO_DATA_LOTE = DateTimeFormatter.ofPattern("yyMMdd");
+    private static final int SEQUENCIAL_MAXIMO_DIA = 9_999;
 
     private final UUID id;
     private final String numeroLote;
     private final UUID materialId;
     private final UUID ordemProducaoId;
     private final OrigemCompra origemCompra;
+    private final UUID notaFiscalId;
     private final BigDecimal quantidade;
     private BigDecimal saldo;
     private final String unidadeDeMedida;
@@ -41,7 +47,7 @@ public class Lote {
     private Assinatura assinatura;
 
     private Lote(UUID id, String numeroLote, UUID materialId, UUID ordemProducaoId,
-                 OrigemCompra origemCompra, BigDecimal quantidade, BigDecimal saldo,
+                 OrigemCompra origemCompra, UUID notaFiscalId, BigDecimal quantidade, BigDecimal saldo,
                  String unidadeDeMedida, LocalDate dataFabricacao, LocalDate dataValidade,
                  StatusLote status, Assinatura assinatura) {
         this.id = id;
@@ -49,6 +55,7 @@ public class Lote {
         this.materialId = materialId;
         this.ordemProducaoId = ordemProducaoId;
         this.origemCompra = origemCompra;
+        this.notaFiscalId = notaFiscalId;
         this.quantidade = quantidade;
         this.saldo = saldo;
         this.unidadeDeMedida = unidadeDeMedida;
@@ -60,49 +67,61 @@ public class Lote {
 
     /**
      * Fábrica para um lote de PRODUÇÃO. Valida todas as invariantes antes de criar —
-     * se retornar, o lote é garantidamente válido e nasce DISPONIVEL.
+     * se retornar, o lote é garantidamente válido e nasce DISPONIVEL. O número vem de
+     * {@link #numeroLoteProducao}.
      *
      * @param ordemProducaoId ordem que gerou o lote (para compras, use {@link #receberCompra})
      */
     public static Lote criar(String numeroLote, UUID materialId, UUID ordemProducaoId,
                              BigDecimal quantidade, String unidadeDeMedida,
                              LocalDate dataFabricacao, LocalDate dataValidade, String usuario) {
-        validarDadosComuns(numeroLote, materialId, quantidade, unidadeDeMedida,
-                dataFabricacao, dataValidade);
-        return new Lote(UUID.randomUUID(), numeroLote.trim(), materialId, ordemProducaoId,
-                null, quantidade, quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
+        String numero = normalizarNumero(numeroLote);
+        validarDadosComuns(materialId, quantidade, unidadeDeMedida, dataFabricacao, dataValidade);
+        return new Lote(UUID.randomUUID(), numero, materialId, ordemProducaoId,
+                null, null, quantidade, quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
                 StatusLote.DISPONIVEL, Assinatura.nova(usuario));
     }
 
     /**
-     * Fábrica para um lote COMPRADO (entrada de matéria-prima). A {@link OrigemCompra}
-     * — fornecedor, nota fiscal e datas de emissão e recebimento — é a rastreabilidade de
-     * origem do material. A regra "somente matéria-prima" é validada pelo caso de uso,
-     * que conhece o Material.
+     * Fábrica para um lote COMPRADO — um item da nota fiscal de entrada. O número é o
+     * lote do fornecedor (até 20 caracteres). A {@link OrigemCompra} — fornecedor, nota
+     * fiscal e datas — é a rastreabilidade de origem; {@code notaFiscalId} liga o lote ao
+     * registro da nota. A regra "somente matéria-prima" é validada pelo caso de uso.
      */
     public static Lote receberCompra(String numeroLote, UUID materialId, OrigemCompra origemCompra,
-                                     BigDecimal quantidade, String unidadeDeMedida,
+                                     UUID notaFiscalId, BigDecimal quantidade, String unidadeDeMedida,
                                      LocalDate dataFabricacao, LocalDate dataValidade, String usuario) {
-        validarDadosComuns(numeroLote, materialId, quantidade, unidadeDeMedida,
-                dataFabricacao, dataValidade);
-        if (origemCompra == null) {
-            throw new RegraDeNegocioException("A origem da compra (fornecedor e nota fiscal) é obrigatória.");
+        String numero = normalizarNumero(numeroLote);
+        validarDadosComuns(materialId, quantidade, unidadeDeMedida, dataFabricacao, dataValidade);
+        if (origemCompra == null || notaFiscalId == null) {
+            throw new RegraDeNegocioException("O lote de compra precisa da nota fiscal de entrada.");
         }
         if (dataFabricacao.isAfter(origemCompra.dataRecebimento())) {
             throw new RegraDeNegocioException(
                     "A data de fabricação não pode ser posterior ao recebimento do material.");
         }
-        return new Lote(UUID.randomUUID(), numeroLote.trim(), materialId, null, origemCompra,
+        return new Lote(UUID.randomUUID(), numero, materialId, null, origemCompra, notaFiscalId,
                 quantidade, quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
                 StatusLote.DISPONIVEL, Assinatura.nova(usuario));
     }
 
-    private static void validarDadosComuns(String numeroLote, UUID materialId,
-                                           BigDecimal quantidade, String unidadeDeMedida,
-                                           LocalDate dataFabricacao, LocalDate dataValidade) {
+    /** Sem espaços nas pontas, em maiúsculas; até 20 caracteres de letras, dígitos e . / - */
+    public static String normalizarNumero(String numeroLote) {
         if (numeroLote == null || numeroLote.isBlank()) {
             throw new RegraDeNegocioException("O número do lote é obrigatório.");
         }
+        String numero = numeroLote.trim().toUpperCase();
+        if (!NUMERO_VALIDO.matcher(numero).matches()) {
+            throw new RegraDeNegocioException(
+                    "O número do lote deve ter até %d caracteres: letras, dígitos e os separadores . / -"
+                            .formatted(NUMERO_MAXIMO));
+        }
+        return numero;
+    }
+
+    private static void validarDadosComuns(UUID materialId,
+                                           BigDecimal quantidade, String unidadeDeMedida,
+                                           LocalDate dataFabricacao, LocalDate dataValidade) {
         if (materialId == null) {
             throw new RegraDeNegocioException("O material do lote é obrigatório.");
         }
@@ -124,19 +143,21 @@ public class Lote {
         }
     }
 
-    /**
-     * Prefixo do número de lote: {@code MAT-{codigoMaterial}-{yyyyMM}}.
-     * O número completo acrescenta um sequencial por prefixo — ver {@link #numeroLote}.
-     */
-    public static String prefixoNumeroLote(String codigoMaterial, LocalDate dataFabricacao) {
-        return "MAT-%s-%s".formatted(codigoMaterial, dataFabricacao.format(FORMATO_ANO_MES));
+    /** Prefixo do número de lote de produção: a data no formato {@code AAMMDD}. */
+    public static String prefixoLoteProducao(LocalDate data) {
+        return data.format(FORMATO_DATA_LOTE);
     }
 
     /**
-     * Número rastreável do lote: {@code MAT-{codigoMaterial}-{yyyyMM}-{seq:03d}}.
+     * Número do lote de produção (ADR-0012): só dígitos, {@code AAMMDD} + sequência do dia
+     * com 4 dígitos — ex.: {@code 2610030001}. Ordena por data e não depende do material.
      */
-    public static String numeroLote(String prefixo, int sequencial) {
-        return "%s-%03d".formatted(prefixo, sequencial);
+    public static String numeroLoteProducao(LocalDate data, int sequencialDoDia) {
+        if (sequencialDoDia < 1 || sequencialDoDia > SEQUENCIAL_MAXIMO_DIA) {
+            throw new RegraDeNegocioException("Limite de %d lotes de produção por dia atingido."
+                    .formatted(SEQUENCIAL_MAXIMO_DIA));
+        }
+        return prefixoLoteProducao(data) + "%04d".formatted(sequencialDoDia);
     }
 
     /**
@@ -144,11 +165,11 @@ public class Lote {
      * Não revalida invariantes.
      */
     public static Lote reconstituir(UUID id, String numeroLote, UUID materialId,
-                                    UUID ordemProducaoId, OrigemCompra origemCompra,
+                                    UUID ordemProducaoId, OrigemCompra origemCompra, UUID notaFiscalId,
                                     BigDecimal quantidade, BigDecimal saldo, String unidadeDeMedida,
                                     LocalDate dataFabricacao, LocalDate dataValidade,
                                     StatusLote status, Assinatura assinatura) {
-        return new Lote(id, numeroLote, materialId, ordemProducaoId, origemCompra,
+        return new Lote(id, numeroLote, materialId, ordemProducaoId, origemCompra, notaFiscalId,
                 quantidade, saldo, unidadeDeMedida, dataFabricacao, dataValidade, status, assinatura);
     }
 
@@ -249,6 +270,7 @@ public class Lote {
     public UUID getMaterialId() { return materialId; }
     public UUID getOrdemProducaoId() { return ordemProducaoId; }
     public OrigemCompra getOrigemCompra() { return origemCompra; }
+    public UUID getNotaFiscalId() { return notaFiscalId; }
     public String getFornecedor() { return origemCompra == null ? null : origemCompra.fornecedor(); }
     public String getNotaFiscal() { return origemCompra == null ? null : origemCompra.notaFiscal(); }
     public BigDecimal getQuantidade() { return quantidade; }

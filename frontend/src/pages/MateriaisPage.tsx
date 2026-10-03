@@ -29,6 +29,7 @@ import { listarMateriais, cadastrarMaterial } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import type { TipoMaterial, CadastrarMaterialRequest } from '../types'
+import { codigoMaterialCorresponde, formatarCodigoMaterial } from '../utils/formatacao'
 import { TIPO_MATERIAL_LABEL } from '../types'
 
 const TIPO_COR: Record<TipoMaterial, string> = {
@@ -48,7 +49,7 @@ export function MateriaisPage() {
   })
 
   const filtrados = materiais.filter((m) => {
-    const buscaOk = busca === '' || m.codigo.toLowerCase().includes(busca.toLowerCase()) || m.descricao.toLowerCase().includes(busca.toLowerCase())
+    const buscaOk = busca === '' || codigoMaterialCorresponde(m.codigo, busca.trim()) || m.descricao.toLowerCase().includes(busca.toLowerCase())
     const tipoOk = filtroTipo === 'TODOS' || m.tipo === filtroTipo
     return buscaOk && tipoOk
   })
@@ -71,7 +72,7 @@ export function MateriaisPage() {
       <Card>
         <Box sx={{ p: 2, display: 'flex', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid', borderColor: 'divider' }}>
           <TextField
-            placeholder="Buscar por código ou descrição…"
+            placeholder="Buscar por código (103.000.001) ou descrição…"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             sx={{ flex: 1, minWidth: 220 }}
@@ -103,7 +104,7 @@ export function MateriaisPage() {
               <TableBody>
                 {filtrados.map((m) => (
                   <TableRow key={m.id} hover>
-                    <TableCell><Typography variant="body2" fontWeight={600}>{m.codigo}</Typography></TableCell>
+                    <TableCell><Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }} noWrap>{formatarCodigoMaterial(m.codigo)}</Typography></TableCell>
                     <TableCell>{m.descricao}</TableCell>
                     <TableCell>
                       <Chip label={TIPO_MATERIAL_LABEL[m.tipo]} size="small"
@@ -127,7 +128,14 @@ export function MateriaisPage() {
 
 interface CriarMaterialDialogProps { aberto: boolean; onFechar: () => void }
 
-const VAZIO: CadastrarMaterialRequest = { codigo: '', descricao: '', tipo: 'PRODUTO_ACABADO', unidadeDeMedida: '' }
+const VAZIO: CadastrarMaterialRequest = { descricao: '', tipo: 'PRODUTO_ACABADO', unidadeDeMedida: '' }
+
+/** Faixa de código por tipo (ADR-0012) — o backend gera o próximo livre. */
+const FAIXA_CODIGO: Record<TipoMaterial, string> = {
+  PRODUTO_ACABADO: '103.xxx.xxx',
+  SEMIACABADO: '105.xxx.xxx',
+  MATERIA_PRIMA: '110.xxx.xxx',
+}
 
 function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
   const [form, setForm] = useState<CadastrarMaterialRequest>(VAZIO)
@@ -148,7 +156,7 @@ function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
   })
 
   const handleSubmit = () => {
-    if (!form.codigo || !form.descricao || !form.unidadeDeMedida) { setErro('Preencha todos os campos.'); return }
+    if (!form.descricao.trim() || !form.unidadeDeMedida.trim()) { setErro('Preencha todos os campos.'); return }
     mutate(form)
   }
 
@@ -160,14 +168,11 @@ function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
       <DialogContent dividers>
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         <Grid container spacing={2} sx={{ mt: 0 }}>
-          <Grid size={{ xs: 12, sm: 5 }}>
-            <TextField label="Código *" value={form.codigo} onChange={(e) => setForm(p => ({ ...p, codigo: e.target.value.toUpperCase() }))} fullWidth inputProps={{ maxLength: 30 }} placeholder="ACO-1020" />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 7 }}>
-            <TextField label="Descrição *" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} fullWidth inputProps={{ maxLength: 200 }} />
+          <Grid size={12}>
+            <TextField label="Descrição *" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} fullWidth inputProps={{ maxLength: 200 }} autoFocus />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField select label="Tipo *" value={form.tipo} onChange={(e) => setForm(p => ({ ...p, tipo: e.target.value as TipoMaterial }))} fullWidth>
+            <TextField select label="Tipo *" value={form.tipo} onChange={(e) => setForm(p => ({ ...p, tipo: e.target.value as TipoMaterial }))} fullWidth helperText={`Código gerado automaticamente: ${FAIXA_CODIGO[form.tipo]}`}>
               {(Object.keys(TIPO_MATERIAL_LABEL) as TipoMaterial[]).map((t) => (
                 <MenuItem key={t} value={t}>{TIPO_MATERIAL_LABEL[t]}</MenuItem>
               ))}

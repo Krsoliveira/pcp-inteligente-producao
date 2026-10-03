@@ -7,5 +7,6 @@ public enum TipoEntidade {
     ORDEM_PRODUCAO,
     LOTE,
     TIPO_ORDEM,
-    USUARIO
+    USUARIO,
+    NOTA_FISCAL
 }

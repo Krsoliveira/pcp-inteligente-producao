@@ -60,7 +60,7 @@ class RegistrarConsumoMaterialTest {
         casoDeUso = new RegistrarConsumoMaterial(consumos, ordens, materiais, lotes, alocacoes,
                 trilha.execucao(), Clock.fixed(HOJE.atStartOfDay().toInstant(ZoneOffset.UTC), ZoneOffset.UTC));
 
-        aco = Material.criar("MP-ACO", "Aço", TipoMaterial.MATERIA_PRIMA, "kg", USUARIO_TESTE);
+        aco = Material.criar("110000001", "Aço", TipoMaterial.MATERIA_PRIMA, "kg", USUARIO_TESTE);
         materiais.salvar(aco);
         ordem = OrdemProducao.criar("OP-1", UUID.randomUUID(), UUID.randomUUID(), null, "CNC", 10,
                 HOJE, HOJE.plusDays(5), USUARIO_TESTE);
@@ -73,7 +73,7 @@ class RegistrarConsumoMaterialTest {
 
     private Lote loteDeCompra(Material material, String nf, String quantidade, LocalDate validade) {
         Lote lote = Lote.receberCompra("L-" + nf, material.getId(),
-                new OrigemCompra("Fornecedor", nf, HOJE.minusDays(10), HOJE.minusDays(5)),
+                new OrigemCompra("Fornecedor", nf, HOJE.minusDays(10), HOJE.minusDays(5)), UUID.randomUUID(),
                 new BigDecimal(quantidade), material.getUnidadeDeMedida(), HOJE.minusDays(20), validade,
                 USUARIO_TESTE);
         lotes.salvar(lote);
@@ -193,7 +193,7 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("lote de outro material é recusado")
         void outroMaterial() {
-            Material aluminio = Material.criar("MP-ALU", "Alumínio", TipoMaterial.MATERIA_PRIMA, "kg", USUARIO_TESTE);
+            Material aluminio = Material.criar("110000002", "Alumínio", TipoMaterial.MATERIA_PRIMA, "kg", USUARIO_TESTE);
             Lote loteAluminio = loteDeCompra(aluminio, "NF-X", "100", HOJE.plusMonths(6));
 
             assertThatThrownBy(() -> casoDeUso.executar(comando("50", null, de(loteAluminio, "50"))))

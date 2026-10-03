@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.domain.lote;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -32,22 +33,23 @@ public interface LoteRepository {
 
     List<Lote> listarPorOrdemProducao(UUID ordemProducaoId);
 
-    Optional<Lote> buscarPorNumeroLote(String numeroLote);
+
+    /** Todos os lotes do material, de qualquer status. */
+    List<Lote> listarPorMaterial(UUID materialId);
+
+    /** Lotes trazidos pelas notas fiscais informadas (os itens das notas). */
+    List<Lote> listarPorNotasFiscais(Collection<UUID> notaFiscalIds);
 
     /**
-     * Já existe entrada deste material com a mesma nota fiscal do mesmo fornecedor?
-     * Evita registrar o mesmo recebimento duas vezes.
+     * Já existe lote com este número para o material (e o fornecedor, em compras)?
+     * Lotes de fornecedores diferentes podem ter o mesmo número.
      */
-    boolean existeEntrada(UUID materialId, String fornecedor, String notaFiscal);
+    boolean existeLote(UUID materialId, String numeroLote, String fornecedor);
 
     /**
-     * Retorna o próximo número sequencial para geração do número do lote.
-     * Conta quantos lotes já existem para o mesmo material no mesmo ano-mês
-     * e retorna o próximo na sequência.
-     *
-     * @param materialId ID do material
-     * @param prefixo prefixo do número do lote (ex.: "MAT-ACO-1020-202609")
-     * @return próximo sequencial (1-based)
+     * Próximo sequencial do dia para lotes de produção ({@code AAMMDD} + sequência). A
+     * implementação garante que conclusões simultâneas não recebam o mesmo número —
+     * deve ser chamada dentro da transação que grava o lote.
      */
-    int proximoSequencial(UUID materialId, String prefixo);
+    int proximoSequencialProducao(LocalDate data);
 }

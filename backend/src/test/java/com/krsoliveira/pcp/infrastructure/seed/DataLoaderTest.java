@@ -5,6 +5,7 @@ import com.krsoliveira.pcp.application.consumo.ConsumoMaterialRepositoryEmMemori
 import com.krsoliveira.pcp.application.lista.ListaTecnicaRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.lote.AlocacaoLoteRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.lote.LoteRepositoryEmMemoria;
+import com.krsoliveira.pcp.application.notafiscal.NotaFiscalEntradaRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.material.MaterialRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.ordem.OrdemProducaoRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.ordem.TipoOrdemRepositoryEmMemoria;
@@ -53,11 +54,12 @@ class DataLoaderTest {
     private final ConsumoMaterialRepositoryEmMemoria consumos = new ConsumoMaterialRepositoryEmMemoria();
     private final LoteRepositoryEmMemoria lotes = new LoteRepositoryEmMemoria();
     private final AlocacaoLoteRepositoryEmMemoria alocacoes = new AlocacaoLoteRepositoryEmMemoria();
+    private final NotaFiscalEntradaRepositoryEmMemoria notas = new NotaFiscalEntradaRepositoryEmMemoria();
     private final TrilhaDeAuditoriaEmMemoria trilha = new TrilhaDeAuditoriaEmMemoria();
 
     private DataLoader loaderEm(LocalDate hoje) {
         Clock relogio = Clock.fixed(hoje.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneId.of("UTC"));
-        return new DataLoader(materiais, tipos, listas, ordens, consumos, lotes, alocacoes, trilha, relogio);
+        return new DataLoader(materiais, tipos, listas, ordens, consumos, lotes, alocacoes, notas, trilha, relogio);
     }
 
     @Test
@@ -153,19 +155,40 @@ class DataLoaderTest {
         }
 
         @Test
-        @DisplayName("números de lote são únicos e seguem MAT-{codigo}-{yyyyMM}-{seq}")
-        void numeroDeLote() {
+        @DisplayName("lote de produção: AAMMDD da fabricação + sequência do dia, único no sistema")
+        void numeroDeLoteDeProducao() {
             loaderEm(DATA_REFERENCIA).run();
 
-            List<Lote> todos = lotes.listarTodos();
-            assertThat(todos).extracting(Lote::getNumeroLote).doesNotHaveDuplicates();
-            assertThat(todos).allSatisfy(lote -> {
-                Material material = materiais.buscarPorId(lote.getMaterialId()).orElseThrow();
+            List<Lote> producao = lotesDeProducao();
+            assertThat(producao).extracting(Lote::getNumeroLote).doesNotHaveDuplicates();
+            assertThat(producao).allSatisfy(lote -> {
                 assertThat(lote.getNumeroLote())
-                        .startsWith(Lote.prefixoNumeroLote(material.getCodigo(), lote.getDataFabricacao()))
-                        .matches(".*-\\d{6}-\\d{3}$");
+                        .startsWith(Lote.prefixoLoteProducao(lote.getDataFabricacao()))
+                        .matches("\\d{10}");
                 assertThat(lote.getDataValidade()).isAfterOrEqualTo(lote.getDataFabricacao());
             });
+        }
+
+        @Test
+        @DisplayName("lote de compra: lote do fornecedor, item de uma nota fiscal registrada")
+        void lotesDeCompraPertencemANotas() {
+            loaderEm(DATA_REFERENCIA).run();
+
+            List<Lote> compras = lotes.listarTodos().stream().filter(Lote::ehDeCompra).toList();
+            assertThat(compras).isNotEmpty().allSatisfy(lote -> {
+                assertThat(lote.getNumeroLote()).matches("[A-Z0-9./-]{1,20}");
+                var nota = notas.buscarPorId(lote.getNotaFiscalId()).orElseThrow();
+                assertThat(nota.getDados()).isEqualTo(lote.getOrigemCompra());
+            });
+            assertThat(compras).extracting(l -> l.getMaterialId() + "|" + l.getNumeroLote() + "|" + l.getFornecedor())
+                    .doesNotHaveDuplicates();
+            assertThat(notas.listarTodas()).extracting(n -> n.getFornecedor().toLowerCase() + "|" + n.getNumero())
+                    .doesNotHaveDuplicates();
+            assertThat(compras.stream().collect(Collectors.groupingBy(Lote::getNotaFiscalId)).values())
+                    .as("há notas com mais de um item")
+                    .anyMatch(itens -> itens.size() > 1);
+            assertThat(trilha.eventos()).filteredOn(e -> e.getTipoEntidade() == TipoEntidade.NOTA_FISCAL)
+                    .hasSameSizeAs(notas.listarTodas());
         }
 
         @Test
@@ -254,7 +277,8 @@ class DataLoaderTest {
                 assertThat(materiais.buscarPorId(l.getMaterialId()).orElseThrow().getTipo())
                         .isEqualTo(TipoMaterial.MATERIA_PRIMA);
             });
-            assertThat(trilha.eventos(AcaoAuditoria.ENTRADA_REGISTRADA)).hasSize(compras.size());
+            assertThat(trilha.eventos(AcaoAuditoria.ENTRADA_REGISTRADA))
+                    .filteredOn(e -> e.getTipoEntidade() == TipoEntidade.LOTE).hasSize(compras.size());
             assertThat(trilha.eventos(AcaoAuditoria.LOTE_ALOCADO)).hasSize(alocacoes.todas().size());
         }
 

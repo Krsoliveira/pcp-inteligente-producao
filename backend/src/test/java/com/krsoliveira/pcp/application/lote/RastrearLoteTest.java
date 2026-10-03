@@ -44,7 +44,7 @@ class RastrearLoteTest {
     @BeforeEach
     void cenario() {
         loteAco = Lote.receberCompra("L-ACO", ACO,
-                new OrigemCompra("Aços Brasil", "NF-1", HOJE.minusDays(10), HOJE.minusDays(9)),
+                new OrigemCompra("Aços Brasil", "NF-1", HOJE.minusDays(10), HOJE.minusDays(9)), UUID.randomUUID(),
                 new BigDecimal("100"), "kg", HOJE.minusDays(30), HOJE.plusYears(5), USUARIO);
         lotes.salvar(loteAco);
 

@@ -49,13 +49,17 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
 
 ## Funcionalidades
 
-- **Materiais** — produto acabado, semiacabado e matéria-prima.
+- **Materiais** — produto acabado, semiacabado e matéria-prima, com código de 9 dígitos gerado na faixa do tipo (`103.000.001`, `105…`, `110…`).
 - **Listas técnicas (BOM)** — versionadas; ativar uma versão torna a anterior obsoleta.
 - **Ordens de produção** — ciclo `Planejada → Liberada → Em produção → Concluída`, com
   consumo projetado automaticamente a partir da BOM.
 - **Consumo de materiais** — planejado × consumido; todo desvio exige justificativa, registrada em nome do usuário logado.
-- **Lotes rastreáveis** — gerados na conclusão da ordem ou na **entrada de matéria-prima**
-  (fornecedor, nota fiscal, emissão da NF e recebimento obrigatórios), com saldo e alerta de vencimento.
+- **Entrada de notas** — nota fiscal de compra com vários itens; cada item vira um lote de
+  matéria-prima com o lote do fornecedor. A mesma nota ou o mesmo lote não entram duas vezes.
+- **Estoque** — posição por material calculada a partir dos lotes (disponível, indisponível,
+  próximo vencimento), com os lotes de cada material e alerta de vencimento.
+- **Lotes rastreáveis** — de compra (lote do fornecedor, ligado à nota) ou de produção
+  (`AAMMDD` + sequência do dia, ex.: `2610030001`), com saldo e validade.
 - **Genealogia de lotes** — todo consumo informa de quais lotes saiu (sugestão FEFO); do
   produto acabado chega-se à nota fiscal da matéria-prima e, do lote comprado, a todas as
   ordens e lotes que o usaram. Consumos simultâneos não ultrapassam o saldo (bloqueio de linha).
@@ -72,8 +76,8 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
     <td width="50%"><img src="docs/imagens/listas-tecnicas.png" alt="Listas técnicas versionadas"><br><sub><b>Listas técnicas</b> — versões ativas e obsoletas por material</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/imagens/entrada-material.png" alt="Entrada de matéria-prima"><br><sub><b>Entrada de material</b> — recebimento com fornecedor e nota fiscal</sub></td>
-    <td width="50%"><img src="docs/imagens/cadastro.png" alt="Tela de cadastro"><br><sub><b>Cadastro</b> — validação no cliente e no servidor</sub></td>
+    <td width="50%"><img src="docs/imagens/entrada-notas.png" alt="Entrada de nota fiscal com itens"><br><sub><b>Entrada de notas</b> — nota fiscal com vários itens; cada item vira um lote</sub></td>
+    <td width="50%"><img src="docs/imagens/estoque.png" alt="Estoque por material"><br><sub><b>Estoque</b> — saldo por material calculado a partir dos lotes</sub></td>
   </tr>
 </table>
 
@@ -192,6 +196,7 @@ O `docker-compose.yml` também sobe Redis e RabbitMQ, reservados para as próxim
 | 0–4 | Fundação, API de ordens, autenticação JWT, dashboard, carga de dados | ✅ |
 | 5a | Material + lista técnica (BOM) versionada | ✅ |
 | 5b | Consumo de material, lotes, conclusão de ordem, dataset sintético, entrada de matéria-prima | ✅ |
+| 5b+ | Rastreabilidade (auditoria e genealogia de lotes) e suprimentos (entrada de notas e estoque) | ✅ |
 | 5c | **Módulo de IA** — previsão de demanda, análise de atrasos e recomendações | 🔜 |
 | 6 | Integrações simuladas (SAP, Power BI) e deploy (Render + Neon) | 🔜 |
 
