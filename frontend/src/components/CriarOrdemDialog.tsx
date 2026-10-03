@@ -71,14 +71,13 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     enabled: aberto && !!form.materialId,
   })
 
+  // Seleciona a versão ATIVA ao escolher o material. A dependência é o id (texto), não o
+  // array: com a consulta desativada, `data = []` cria um array novo a cada render e o
+  // efeito entraria em loop (setForm → render → efeito...), travando a página de Ordens.
+  const listaAtivaId = listasTecnicas.find((l) => l.status === 'ATIVA')?.id ?? ''
   useEffect(() => {
-    const ativa = listasTecnicas.find((l) => l.status === 'ATIVA')
-    if (ativa) {
-      setForm((prev) => ({ ...prev, listaTecnicaId: ativa.id }))
-    } else {
-      setForm((prev) => ({ ...prev, listaTecnicaId: '' }))
-    }
-  }, [listasTecnicas])
+    setForm((prev) => (prev.listaTecnicaId === listaAtivaId ? prev : { ...prev, listaTecnicaId: listaAtivaId }))
+  }, [listaAtivaId])
 
   const { mutate, isPending } = useMutation({
     mutationFn: criarOrdem,

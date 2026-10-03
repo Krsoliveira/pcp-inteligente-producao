@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.security.core.userdetails.User;
+import com.krsoliveira.pcp.infrastructure.security.JwtService;
 
 /**
  * Teste de integração de ponta a ponta: sobe a aplicação inteira e um
@@ -51,6 +53,9 @@ class OrdemProducaoApiTest {
 
     @Autowired
     private TestRestTemplate rest;
+
+    @Autowired
+    private JwtService jwtService;
 
     private static final String BASE_ORDENS     = "/api/v1/ordens-producao";
     private static final String BASE_MATERIAIS   = "/api/v1/materiais";
@@ -242,6 +247,22 @@ class OrdemProducaoApiTest {
                 "/api/v1/auth/login",
                 jsonSemAuth(Map.of("email", "teste@pcp.com", "senha", "senhaErrada")),
                 Map.class);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    @Order(100)
+    @DisplayName("token válido de usuário que não existe mais retorna 401, não 500")
+    void tokenDeUsuarioInexistenteRetorna401() {
+        // Situação real: o banco foi recriado e o navegador ainda guarda o token antigo.
+        String tokenOrfao = jwtService.gerarToken(
+                User.withUsername("removido@pcp.com").password("x").build());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(tokenOrfao);
+
+        ResponseEntity<String> resposta = rest.exchange(BASE_ORDENS, HttpMethod.GET,
+                new HttpEntity<>(headers), String.class);
 
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
