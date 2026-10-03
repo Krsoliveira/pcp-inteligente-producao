@@ -62,25 +62,25 @@ export function DashboardPage() {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <Grid key={i} size={{ xs: 12, sm: 6, xl: 'auto' }} sx={{ flex: 1 }}>
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <Skeleton variant="rounded" height={100} />
             </Grid>
           ))
         ) : (
           <>
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 'auto' }} sx={{ flex: 1 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <KpiCard titulo="Total de Ordens" valor={total} Icone={FactoryIcon} cor="#1565c0" />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 'auto' }} sx={{ flex: 1 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <KpiCard titulo="Atrasadas" valor={atrasadas} Icone={WarningAmberIcon} cor={atrasadas > 0 ? '#d32f2f' : '#2e7d32'} subtitulo={atrasadas > 0 ? 'Requer atenção' : 'Sem atrasos'} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 'auto' }} sx={{ flex: 1 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <KpiCard titulo="Em Produção" valor={emProducao} Icone={BuildIcon} cor="#7b1fa2" />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 'auto' }} sx={{ flex: 1 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <KpiCard titulo="Concluídas" valor={concluidas} Icone={CheckCircleOutlineIcon} cor="#2e7d32" />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 'auto' }} sx={{ flex: 1 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <KpiCard titulo="Lotes Disponíveis" valor={lotesDisponiveis} Icone={AllInboxIcon} cor="#0288d1" />
             </Grid>
           </>
@@ -89,14 +89,14 @@ export function DashboardPage() {
 
       {/* Gráfico + Ordens recentes */}
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 5 }}>
+        <Grid size={{ xs: 12, xl: 5 }}>
           {isLoading ? (
             <Skeleton variant="rounded" height={360} />
           ) : (
             <StatusPieChart ordens={ordens} />
           )}
         </Grid>
-        <Grid size={{ xs: 12, md: 7 }}>
+        <Grid size={{ xs: 12, xl: 7 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>

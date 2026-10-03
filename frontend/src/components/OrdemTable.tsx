@@ -39,7 +39,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: O
   return (
     <TableContainer>
       <Table size="small">
-        <TableHead>
+        <TableHead sx={{ '& th': { whiteSpace: 'nowrap' } }}>
           <TableRow>
             <TableCell>Código</TableCell>
             <TableCell>Centro de Trabalho</TableCell>
@@ -48,7 +48,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: O
             <TableCell>Fim</TableCell>
             <TableCell>Status</TableCell>
             <TableCell align="center" sx={{ width: 40 }}></TableCell>
-            <TableCell align="center" sx={{ width: 80 }}>Ações</TableCell>
+            {mostrarAcoes && <TableCell align="center" sx={{ width: 80 }}>Ações</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -60,7 +60,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: O
               sx={{ cursor: 'pointer' }}
             >
               <TableCell>
-                <Typography variant="body2" fontWeight={600} color="primary">
+                <Typography variant="body2" fontWeight={600} color="primary" noWrap>
                   {ordem.codigo}
                 </Typography>
               </TableCell>
@@ -71,12 +71,12 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: O
                 <Typography variant="body2">{ordem.quantidade.toLocaleString('pt-BR')}</Typography>
               </TableCell>
               <TableCell>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" noWrap>
                   {formatarData(ordem.inicioPlanejado)}
                 </Typography>
               </TableCell>
               <TableCell>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" noWrap>
                   {formatarData(ordem.fimPlanejado)}
                 </Typography>
               </TableCell>
@@ -90,9 +90,10 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: O
                   </Tooltip>
                 )}
               </TableCell>
+              {mostrarAcoes && (
               <TableCell align="center" onClick={(e) => e.stopPropagation()}>
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                  {mostrarAcoes && !['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && (
+                  {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && (
                     <Tooltip title="Atualizar status">
                       <IconButton
                         size="small"
@@ -114,6 +115,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: O
                   </Tooltip>
                 </Box>
               </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
