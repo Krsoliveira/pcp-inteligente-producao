@@ -67,6 +67,42 @@ decisão. Proposta para quando for implementado:
   entrada de material, quem consulta a auditoria), aplicada no backend.
 - Tela para o Gerente atribuir perfis (substitui o item "promover usuários").
 
+## Futuro: etapa de qualidade após a produção
+
+Hoje o lote nasce `DISPONIVEL` ao concluir a ordem e já pode ser consumido. A proposta é
+incluir uma **inspeção de qualidade** entre a produção e o estoque:
+
+- O lote concluído nasce **em inspeção** (quarentena): aparece no estoque como
+  indisponível e não entra na sugestão FEFO.
+- **Plano de inspeção por material**: características a verificar (dimensão, dureza,
+  aspecto visual…), com valor nominal, tolerância e tamanho de amostra.
+- **Laudo de inspeção**: medições, quem inspecionou e quando. O resultado **aprova**
+  (lote fica disponível), **reprova** (retrabalho ou sucata, com motivo) ou **aprova
+  parcialmente** (separa a quantidade reprovada).
+- Trilha de auditoria para inspeções e decisões. O laudo fica visível no detalhe do lote
+  e entra na genealogia (o recall mostra também o laudo).
+- Indicadores: taxa de aprovação na primeira inspeção, refugo por material, por centro
+  de trabalho e por fornecedor.
+- Extensão natural: **inspeção de recebimento** para itens da nota fiscal (matéria-prima
+  em quarentena até aprovação).
+- Depende da etapa de perfis: inspetor e aprovador são papéis próprios.
+
+## Próximo passo de interface: visual com sombras e brilho (neon)
+
+Tornar a interface mais marcante, mantendo a legibilidade:
+
+- **Tema escuro com destaques neon** (ciano, magenta, verde-limão) como opção, mantendo o
+  tema claro. Alternância salva por usuário.
+- Sombras em camadas e **brilho** (`box-shadow` com glow) em cards, botões principais,
+  item ativo do menu e KPIs. Bordas finas luminosas e gradientes discretos.
+- Cores de status (disponível, vencendo, bloqueado) com glow suave, sem depender só da
+  cor (ícone ou texto junto).
+- Centralizado em **tokens do tema MUI** (`theme.ts`: paleta, sombras, raios), sem estilos
+  avulsos por tela. Os componentes atuais herdam o novo visual.
+- Acessibilidade: contraste WCAG AA nos dois temas, foco visível e animações desligadas
+  com `prefers-reduced-motion`.
+- Atualizar as imagens do README depois da mudança.
+
 ## Concluído nesta etapa
 
 1. **Correção da migração V7** — `TRUNCATE TABLE ordem_producao CASCADE`. Sem o
@@ -112,14 +148,16 @@ decisão. Proposta para quando for implementado:
 
 ## Próximos passos sugeridos
 
-1. **Fase 5c — módulo de IA**: previsão de demanda, análise de atrasos e
+1. **Interface com visual neon** (tema escuro, sombras e brilho), ver a seção acima.
+2. **Fase 5d — módulo de IA**: previsão de demanda, análise de atrasos e
    recomendações, usando o histórico do dataset sintético.
-2. **Deploy** — adiado por decisão: será feito em planos pagos (provedor a definir).
+3. **Deploy** — adiado por decisão: será feito em planos pagos (provedor a definir).
    Ver a seção [Deploy: preparação pendente](#deploy-preparação-pendente).
-3. **Migrações de versão principal** (fechadas no Dependabot, a fazer em PRs próprios):
+4. **Migrações de versão principal** (fechadas no Dependabot, a fazer em PRs próprios):
    Spring Boot 4 + springdoc 3, React 19, React Router 7, Vite 8 + plugin-react 6,
    ECharts 6.
-4. Depois:
+5. Depois:
+   - etapa de qualidade após a produção (inspeção e laudo do lote);
    - testes automatizados de frontend (Vitest);
    - carregar o ECharts sob demanda (bundle de ~1 MB).
 

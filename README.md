@@ -197,8 +197,10 @@ O `docker-compose.yml` também sobe Redis e RabbitMQ, reservados para as próxim
 | 5a | Material + lista técnica (BOM) versionada | ✅ |
 | 5b | Consumo de material, lotes, conclusão de ordem, dataset sintético, entrada de matéria-prima | ✅ |
 | 5b+ | Rastreabilidade (auditoria e genealogia de lotes) e suprimentos (entrada de notas e estoque) | ✅ |
-| 5c | **Módulo de IA** — previsão de demanda, análise de atrasos e recomendações | 🔜 |
-| 6 | Integrações simuladas (SAP, Power BI) e deploy (Render + Neon) | 🔜 |
+| 5c | **Interface** — tema escuro com visual neon (sombras e brilho) | 🔜 |
+| 5d | **Módulo de IA** — previsão de demanda, análise de atrasos e recomendações | 🔜 |
+| 6 | **Qualidade** — inspeção do lote após a produção (plano, laudo, aprovação ou reprova) | 🔜 |
+| 7 | Integrações simuladas (SAP, Power BI) e deploy (Render + Neon) | 🔜 |
 
 Planejado para as próximas fases: cache com Redis, eventos com RabbitMQ e testes de
 frontend (Vitest). Estado detalhado em [docs/proximos-passos.md](docs/proximos-passos.md).
