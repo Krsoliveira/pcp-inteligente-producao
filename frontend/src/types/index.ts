@@ -214,3 +214,63 @@ export interface ApiError {
   /** Erros de validação por campo (400). */
   erros?: Record<string, string>
 }
+
+// ---- Auditoria (ADR-0011) ----
+
+export type TipoEntidade =
+  | 'MATERIAL'
+  | 'LISTA_TECNICA'
+  | 'ORDEM_PRODUCAO'
+  | 'LOTE'
+  | 'TIPO_ORDEM'
+  | 'USUARIO'
+
+export type AcaoAuditoria =
+  | 'CRIADO'
+  | 'ALTERADO'
+  | 'STATUS_ALTERADO'
+  | 'ATIVADA'
+  | 'OBSOLETADA'
+  | 'CONSUMO_REGISTRADO'
+  | 'ORDEM_CONCLUIDA'
+  | 'LOTE_GERADO'
+  | 'ENTRADA_REGISTRADA'
+  | 'USUARIO_REGISTRADO'
+
+/** Mudança de valor registrada na trilha: {"de": ..., "para": ...}. */
+export interface MudancaAuditoria {
+  de: string | number | null
+  para: string | number | null
+}
+
+export interface EventoAuditoria {
+  id: string
+  tipoEntidade: TipoEntidade
+  entidadeId: string
+  referencia: string
+  acao: AcaoAuditoria
+  usuario: string
+  ocorridoEm: string
+  detalhes: Record<string, string | number | boolean | MudancaAuditoria>
+}
+
+export interface Pagina<T> {
+  itens: T[]
+  pagina: number
+  tamanho: number
+  total: number
+  totalPaginas: number
+}
+
+export interface FiltroEventosAuditoria {
+  tipoEntidade?: TipoEntidade
+  entidadeId?: string
+  usuario?: string
+  acao?: AcaoAuditoria
+  /** "YYYY-MM-DD", inclusivo. */
+  de?: string
+  /** "YYYY-MM-DD", inclusivo. */
+  ate?: string
+  pagina?: number
+  tamanho?: number
+}

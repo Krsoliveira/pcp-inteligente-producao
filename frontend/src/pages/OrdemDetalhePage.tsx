@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link as RouterLink } from 'react-router-dom'
+import Link from '@mui/material/Link'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -38,6 +39,9 @@ import { buscarMaterialPorId, listarMateriais } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { StatusOrdemBadge, StatusLoteBadge } from '../components/StatusBadge'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
+import { InfoRow } from '../components/InfoRow'
+import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
+import { formatarDataHora } from '../utils/formatacao'
 import type { ConsumoMaterial, ConcluirOrdemRequest, RegistrarConsumoRequest } from '../types'
 
 export function OrdemDetalhePage() {
@@ -175,6 +179,8 @@ export function OrdemDetalhePage() {
                     {ordem.atrasada && <Chip label="Atrasada" size="small" color="error" sx={{ height: 18, fontSize: '0.65rem' }} />}
                   </Box>
                 </InfoRow>
+                <InfoRow label="Criada por">{`${ordem.criadaPor} · ${formatarDataHora(ordem.criadaEm)}`}</InfoRow>
+                <InfoRow label="Última alteração">{`${ordem.atualizadaPor} · ${formatarDataHora(ordem.atualizadaEm)}`}</InfoRow>
               </Grid>
             </CardContent>
           </Card>
@@ -330,7 +336,9 @@ export function OrdemDetalhePage() {
                 {lotes.map((lote) => (
                   <Grid key={lote.id} container spacing={2}>
                     <InfoRow label="Número do Lote">
-                      <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>{lote.numeroLote}</Typography>
+                      <Link component={RouterLink} to={`/lotes/${lote.id}`} variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
+                        {lote.numeroLote}
+                      </Link>
                     </InfoRow>
                     <InfoRow label="Quantidade">{Number(lote.quantidade).toLocaleString('pt-BR')} {lote.unidadeDeMedida}</InfoRow>
                     <InfoRow label="Fabricação">{formatarData(lote.dataFabricacao)}</InfoRow>
@@ -342,6 +350,10 @@ export function OrdemDetalhePage() {
             </Card>
           </Grid>
         )}
+
+        <Grid size={12}>
+          <HistoricoAuditoria tipoEntidade="ORDEM_PRODUCAO" entidadeId={ordem.id} titulo="Histórico da ordem" />
+        </Grid>
       </Grid>
 
       {/* Dialog: Registrar consumo */}
@@ -366,24 +378,6 @@ export function OrdemDetalhePage() {
         onFechar={() => { setDialogStatus(false); invalidar() }}
       />
     </Box>
-  )
-}
-
-// ---- Helper: linha de informação ----
-function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <>
-      <Grid size={{ xs: 12, sm: 5 }}>
-        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          {label}
-        </Typography>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 7 }}>
-        {typeof children === 'string' ? (
-          <Typography variant="body2">{children}</Typography>
-        ) : children}
-      </Grid>
-    </>
   )
 }
 

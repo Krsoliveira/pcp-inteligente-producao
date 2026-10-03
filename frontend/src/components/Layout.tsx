@@ -263,6 +263,9 @@ export function Layout() {
         component="main"
         sx={{
           flexGrow: 1,
+          // Sem minWidth: 0, o conteúdo largo (tabelas) alarga a página no celular
+          // em vez de rolar dentro do próprio card.
+          minWidth: 0,
           minHeight: '100vh',
           bgcolor: 'background.default',
           mt: { xs: '56px', sm: 0 },
