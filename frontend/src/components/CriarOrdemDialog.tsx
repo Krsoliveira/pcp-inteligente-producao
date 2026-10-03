@@ -18,6 +18,7 @@ import { criarOrdem } from '../api/ordens'
 import { listarMateriais } from '../api/materiais'
 import { listarListasTecnicas } from '../api/listasTecnicas'
 import { listarTiposOrdem } from '../api/tiposOrdem'
+import { formatarCodigoMaterial } from '../utils/formatacao'
 import type { CriarOrdemRequest } from '../types'
 
 interface CriarOrdemDialogProps {
@@ -192,7 +193,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
                 {materiais.map((m) => (
                   <MenuItem key={m.id} value={m.id}>
                     <Box>
-                      <Typography variant="body2" fontWeight={500}>{m.codigo}</Typography>
+                      <Typography variant="body2" fontWeight={500}>{formatarCodigoMaterial(m.codigo)}</Typography>
                       <Typography variant="caption" color="text.secondary">{m.descricao}</Typography>
                     </Box>
                   </MenuItem>

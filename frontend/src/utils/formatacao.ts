@@ -35,3 +35,15 @@ export function diasAte(data: string): number {
   hoje.setHours(0, 0, 0, 0)
   return Math.round((alvo.getTime() - hoje.getTime()) / 86_400_000)
 }
+
+/** Código de material (9 dígitos) → "103.000.001"; outros formatos passam sem mudança. */
+export function formatarCodigoMaterial(codigo: string | null | undefined): string {
+  if (!codigo) return '—'
+  return /^\d{9}$/.test(codigo) ? `${codigo.slice(0, 3)}.${codigo.slice(3, 6)}.${codigo.slice(6)}` : codigo
+}
+
+/** Busca de material tolerante à máscara: "103.000.001", "103000001" e "000001" encontram o mesmo. */
+export function codigoMaterialCorresponde(codigo: string, termo: string): boolean {
+  const digitos = termo.replace(/\D/g, '')
+  return codigo.toLowerCase().includes(termo.toLowerCase()) || (digitos !== '' && codigo.includes(digitos))
+}

@@ -34,6 +34,7 @@ import { listarMateriais } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { StatusListaBadge } from '../components/StatusBadge'
+import { formatarCodigoMaterial } from '../utils/formatacao'
 import type { CadastrarListaTecnicaRequest, TipoMaterial } from '../types'
 
 export function ListasTecnicasPage() {
@@ -57,7 +58,7 @@ export function ListasTecnicasPage() {
 
   const getMaterialNome = (id: string) => {
     const m = materiais.find(m => m.id === id)
-    return m ? `${m.codigo} — ${m.descricao}` : id.substring(0, 8) + '…'
+    return m ? `${formatarCodigoMaterial(m.codigo)} — ${m.descricao}` : id.substring(0, 8) + '…'
   }
 
   return (
@@ -196,7 +197,7 @@ function CriarListaTecnicaDialog({ aberto, onFechar }: CriarListaTecnicaDialogPr
           <Grid size={{ xs: 12, sm: 8 }}>
             <TextField select label="Material *" value={materialId} onChange={(e) => setMaterialId(e.target.value)} fullWidth helperText="Produto acabado ou semiacabado que será fabricado.">
               {produtivos.map((m) => (
-                <MenuItem key={m.id} value={m.id}>{m.codigo} — {m.descricao}</MenuItem>
+                <MenuItem key={m.id} value={m.id}>{formatarCodigoMaterial(m.codigo)} — {m.descricao}</MenuItem>
               ))}
             </TextField>
           </Grid>
@@ -216,7 +217,7 @@ function CriarListaTecnicaDialog({ aberto, onFechar }: CriarListaTecnicaDialogPr
           <Box key={idx} sx={{ display: 'flex', gap: 1.5, mb: 1.5, alignItems: 'flex-start' }}>
             <TextField select label="Material componente" value={item.materialComponenteId} onChange={(e) => updateItem(idx, 'materialComponenteId', e.target.value)} sx={{ flex: 2 }}>
               {componentes.map((m) => (
-                <MenuItem key={m.id} value={m.id}>{m.codigo} — {m.descricao}</MenuItem>
+                <MenuItem key={m.id} value={m.id}>{formatarCodigoMaterial(m.codigo)} — {m.descricao}</MenuItem>
               ))}
             </TextField>
             <TextField label="Qtd" type="number" value={item.quantidadePlanejada} onChange={(e) => updateItem(idx, 'quantidadePlanejada', e.target.value)} sx={{ width: 90 }} inputProps={{ min: 0.0001, step: 0.0001 }} />

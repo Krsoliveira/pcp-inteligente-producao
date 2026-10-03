@@ -21,7 +21,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import { registrarConsumo } from '../../api/consumos'
 import { listarLotesDisponiveis } from '../../api/lotes'
-import { formatarData, formatarQuantidade } from '../../utils/formatacao'
+import { formatarCodigoMaterial, formatarData, formatarQuantidade } from '../../utils/formatacao'
 import { deUnidades, lerQuantidade, paraUnidades, sugerirFefo } from './alocacao'
 import type { ApiError, ConsumoMaterial, Lote, Material, RegistrarConsumoRequest } from '../../types'
 
@@ -104,7 +104,7 @@ export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, o
 
   return (
     <Dialog open={!!consumo} onClose={fechar} fullWidth maxWidth="sm">
-      <DialogTitle>Registrar Consumo{material ? ` — ${material.codigo}` : ''}</DialogTitle>
+      <DialogTitle>Registrar Consumo{material ? ` — ${formatarCodigoMaterial(material.codigo)}` : ''}</DialogTitle>
       <DialogContent dividers>
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         {consumo && (

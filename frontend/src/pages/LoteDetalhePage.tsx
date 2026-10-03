@@ -33,7 +33,7 @@ import { PageHeader } from '../components/PageHeader'
 import { InfoRow } from '../components/InfoRow'
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
 import { StatusLoteBadge, StatusOrdemBadge } from '../components/StatusBadge'
-import { diasAte, formatarData, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
+import { diasAte, formatarCodigoMaterial, formatarData, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import type { ConsumoMaterial, LoteOrigem, Lote, Material, RastreabilidadeLote } from '../types'
 
 /**
@@ -83,10 +83,11 @@ export function LoteDetalhePage() {
     <Box>
       <PageHeader
         titulo={lote.numeroLote}
-        subtitulo={lote.origem === 'COMPRA' ? 'Lote de compra (entrada de material)' : 'Lote de produção'}
+        subtitulo={lote.origem === 'COMPRA' ? 'Lote de compra (item de nota fiscal)' : 'Lote de produção'}
         breadcrumbs={[
-          { label: 'Produção' },
-          { label: 'Lotes', href: '/lotes' },
+          { label: 'Suprimentos' },
+          { label: 'Estoque', href: '/estoque' },
+          { label: material ? formatarCodigoMaterial(material.codigo) : 'Material', href: `/estoque/${lote.materialId}` },
           { label: lote.numeroLote },
         ]}
       />
@@ -146,7 +147,7 @@ function IdentificacaoCard({ lote, material }: { lote: Lote; material?: Material
     <CardSecao titulo="Identificação" icone={<InventoryIcon color="action" fontSize="small" />}>
       <Grid container spacing={1.5}>
         <InfoRow label="Status"><StatusLoteBadge status={lote.status} /></InfoRow>
-        <InfoRow label="Material">{material ? `${material.codigo} — ${material.descricao}` : '…'}</InfoRow>
+        <InfoRow label="Material">{material ? `${formatarCodigoMaterial(material.codigo)} — ${material.descricao}` : '…'}</InfoRow>
         <InfoRow label="Quantidade">{formatarQuantidade(lote.quantidade, lote.unidadeDeMedida)}</InfoRow>
         <InfoRow label="Saldo">
           <Box>
@@ -188,9 +189,16 @@ function OrigemCompraCard({ lote }: { lote: Lote }) {
       <Grid container spacing={1.5}>
         <InfoRow label="Fornecedor">{lote.fornecedor ?? '—'}</InfoRow>
         <InfoRow label="Nota fiscal">
-          <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
-            {lote.notaFiscal ?? '—'}
-          </Typography>
+          {lote.notaFiscalId ? (
+            <Link component={RouterLink} to={`/notas-fiscais/${lote.notaFiscalId}`} variant="body2" fontWeight={600}
+              sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
+              {lote.notaFiscal}
+            </Link>
+          ) : (
+            <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
+              {lote.notaFiscal ?? '—'}
+            </Typography>
+          )}
         </InfoRow>
         <InfoRow label="Emissão da NF">{formatarData(lote.dataEmissaoNf)}</InfoRow>
         <InfoRow label="Recebimento">{formatarData(lote.dataRecebimento)}</InfoRow>
@@ -300,7 +308,7 @@ function LinhaConsumo({ consumo: c, material, lotes }: { consumo: ConsumoMateria
     <TableRow>
       <TableCell>
         <Tooltip title={material?.descricao ?? ''}>
-          <Typography variant="body2" fontWeight={500}>{material?.codigo ?? '…'}</Typography>
+          <Typography variant="body2" fontWeight={500}>{material ? formatarCodigoMaterial(material.codigo) : '…'}</Typography>
         </Tooltip>
       </TableCell>
       <TableCell align="right">
@@ -412,7 +420,7 @@ function OndeFoiUsadoCard({ lote, rastreio, carregando, erro, materialPorId }: {
                       <Box sx={{ mt: 0.25 }}><StatusOrdemBadge status={d.ordemStatus} /></Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2">{materialPorId.get(d.materialProduzidoId)?.codigo ?? '…'}</Typography>
+                      <Typography variant="body2">{formatarCodigoMaterial(materialPorId.get(d.materialProduzidoId)?.codigo)}</Typography>
                     </TableCell>
                     <TableCell align="right">
                       <Typography variant="body2" noWrap>{formatarQuantidade(d.quantidade, d.unidadeDeMedida)}</Typography>
