@@ -19,6 +19,10 @@ spring:
       ddl-auto: validate
     open-in-view: false
 
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] [%X{requestId:--}] %-5level %logger{36} - %msg%n"
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
