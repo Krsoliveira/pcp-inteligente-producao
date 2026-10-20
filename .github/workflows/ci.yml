@@ -34,7 +34,15 @@ jobs:
       - name: OWASP Dependency-Check
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
-        run: mvn -B org.owasp:dependency-check-maven:check -DnvdApiKey=${{ secrets.NVD_API_KEY }}
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            echo "⚠️  NVD_API_KEY não configurada — OWASP Dependency-Check ignorado."
+            echo "Para habilitar, configure o secret NVD_API_KEY em Settings → Secrets."
+          else
+            mvn -B org.owasp:dependency-check-maven:check -DnvdApiKey="$NVD_API_KEY"
+          fi
 
   frontend:
     name: Frontend (React)
