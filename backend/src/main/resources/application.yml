@@ -23,6 +23,16 @@ logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] [%X{requestId:--}] %-5level %logger{36} - %msg%n"
 
+server:
+  # Limita o tamanho máximo de headers HTTP para prevenir ataques de header injection.
+  max-http-request-header-size: 8KB
+  tomcat:
+    # Limita o tamanho do corpo de requisições POST (formulários e JSON).
+    # Protege contra DoS por payload gigante. Ajuste se a API precisar aceitar
+    # uploads maiores no futuro.
+    max-http-form-post-size: 2MB
+    max-swallow-size: 2MB
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

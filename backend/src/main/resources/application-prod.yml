@@ -1,0 +1,27 @@
+# Perfil de produção — sobrescreve application.yml.
+# Variáveis obrigatórias que devem existir na plataforma de deploy:
+#   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+#   JWT_SECRET  (mínimo 32 caracteres)
+#   CORS_ORIGINS  (URL do frontend, ex.: https://pcp.railway.app)
+#   ADMIN_EMAIL, ADMIN_NOME, ADMIN_SENHA  (primeiro usuário GERENTE)
+
+spring:
+  jpa:
+    show-sql: false
+
+# Swagger e OpenAPI desabilitados em produção.
+# O endpoint /v3/api-docs expõe o mapa completo da API; em produção isso
+# representa superfície de ataque desnecessária. Para testar a API em prod,
+# use as credenciais JWT diretamente via curl ou Postman.
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+# Ajusta o nível de log para reduzir ruído em produção.
+logging:
+  level:
+    root: WARN
+    com.krsoliveira: INFO
+    org.flywaydb: INFO
