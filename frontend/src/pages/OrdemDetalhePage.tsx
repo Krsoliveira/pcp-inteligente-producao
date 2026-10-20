@@ -299,7 +299,7 @@ export function OrdemDetalhePage() {
                             <TableCell><Typography variant="body2" color="text.secondary">{c.unidadeDeMedida}</Typography></TableCell>
                             <TableCell>
                               {!c.registrado ? (
-                                <Chip label="Pendente" size="small" sx={{ bgcolor: '#fff3e0', color: '#e65100', fontSize: '0.65rem', height: 18, border: 'none' }} />
+                                <Chip label="Pendente" size="small" sx={{ bgcolor: 'rgba(217,119,6,0.10)', color: '#B45309', fontSize: '0.65rem', height: 18, border: 'none' }} />
                               ) : !c.justificado ? (
                                 <Tooltip title="Desvio sem justificativa"><Chip icon={<WarningAmberIcon sx={{ fontSize: '12px !important' }} />} label="Sem justif." size="small" color="error" sx={{ fontSize: '0.65rem', height: 18 }} /></Tooltip>
                               ) : (

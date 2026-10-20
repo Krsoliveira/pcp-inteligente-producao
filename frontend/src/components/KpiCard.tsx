@@ -12,7 +12,7 @@ interface KpiCardProps {
   cor?: string
 }
 
-export function KpiCard({ titulo, valor, subtitulo, Icone, cor = '#1565c0' }: KpiCardProps) {
+export function KpiCard({ titulo, valor, subtitulo, Icone, cor = '#4F46E5' }: KpiCardProps) {
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 3 }}>

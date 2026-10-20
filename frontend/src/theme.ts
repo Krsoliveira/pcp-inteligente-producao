@@ -5,36 +5,34 @@ export const theme = createTheme(
   {
     palette: {
       primary: {
-        main: '#1565c0',
-        dark: '#003c8f',
-        light: '#4f83cc',
+        main: '#4F46E5',
+        dark: '#3730A3',
+        light: '#818CF8',
       },
       secondary: {
-        main: '#e65100',
+        main: '#0F766E',
       },
       success: {
-        main: '#2e7d32',
-        light: '#4caf50',
+        main: '#059669',
       },
       warning: {
-        main: '#ed6c02',
-        light: '#ff9800',
+        main: '#D97706',
       },
       error: {
-        main: '#d32f2f',
-        light: '#ef5350',
+        main: '#DC2626',
       },
       info: {
-        main: '#0288d1',
+        main: '#2563EB',
       },
       background: {
-        default: '#f0f2f5',
+        default: '#F8FAFC',
         paper: '#ffffff',
       },
-      grey: {
-        50: '#f8f9fa',
-        100: '#f1f3f5',
+      text: {
+        primary: '#0F172A',
+        secondary: '#64748B',
       },
+      divider: 'rgba(0,0,0,0.07)',
     },
     typography: {
       fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
@@ -52,7 +50,14 @@ export const theme = createTheme(
         defaultProps: { elevation: 0 },
         styleOverrides: {
           root: {
-            border: '1px solid rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.07)',
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          outlined: {
+            borderColor: 'rgba(0,0,0,0.07)',
           },
         },
       },
@@ -72,11 +77,11 @@ export const theme = createTheme(
           root: {
             '& .MuiTableCell-head': {
               fontWeight: 600,
-              fontSize: '0.75rem',
+              fontSize: '0.70rem',
               textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: 'rgba(0,0,0,0.55)',
-              backgroundColor: '#f8f9fa',
+              letterSpacing: '0.06em',
+              color: '#64748B',
+              backgroundColor: '#F8FAFC',
               borderBottom: '1px solid rgba(0,0,0,0.08)',
               paddingTop: 10,
               paddingBottom: 10,
@@ -87,7 +92,7 @@ export const theme = createTheme(
       MuiTableRow: {
         styleOverrides: {
           root: {
-            '&:hover': { backgroundColor: alpha('#1565c0', 0.03) },
+            '&:hover': { backgroundColor: alpha('#4F46E5', 0.03) },
             '&:last-child td': { border: 0 },
           },
         },
@@ -95,7 +100,7 @@ export const theme = createTheme(
       MuiTableCell: {
         styleOverrides: {
           root: {
-            borderBottom: '1px solid rgba(0,0,0,0.06)',
+            borderBottom: '1px solid rgba(0,0,0,0.05)',
             paddingTop: 10,
             paddingBottom: 10,
           },

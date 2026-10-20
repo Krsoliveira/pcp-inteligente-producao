@@ -33,9 +33,9 @@ import { codigoMaterialCorresponde, formatarCodigoMaterial } from '../utils/form
 import { TIPO_MATERIAL_LABEL } from '../types'
 
 const TIPO_COR: Record<TipoMaterial, string> = {
-  PRODUTO_ACABADO: '#1565c0',
-  SEMIACABADO: '#7b1fa2',
-  MATERIA_PRIMA: '#2e7d32',
+  PRODUTO_ACABADO: '#4F46E5',
+  SEMIACABADO:     '#D97706',
+  MATERIA_PRIMA:   '#059669',
 }
 
 export function MateriaisPage() {

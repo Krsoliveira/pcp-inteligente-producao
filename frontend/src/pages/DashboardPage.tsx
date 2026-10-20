@@ -69,19 +69,19 @@ export function DashboardPage() {
         ) : (
           <>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Total de Ordens" valor={total} Icone={FactoryIcon} cor="#1565c0" />
+              <KpiCard titulo="Total de Ordens" valor={total} Icone={FactoryIcon} cor="#4F46E5" />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Atrasadas" valor={atrasadas} Icone={WarningAmberIcon} cor={atrasadas > 0 ? '#d32f2f' : '#2e7d32'} subtitulo={atrasadas > 0 ? 'Requer atenção' : 'Sem atrasos'} />
+              <KpiCard titulo="Atrasadas" valor={atrasadas} Icone={WarningAmberIcon} cor={atrasadas > 0 ? '#DC2626' : '#059669'} subtitulo={atrasadas > 0 ? 'Requer atenção' : 'Sem atrasos'} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Em Produção" valor={emProducao} Icone={BuildIcon} cor="#7b1fa2" />
+              <KpiCard titulo="Em Produção" valor={emProducao} Icone={BuildIcon} cor="#D97706" />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Concluídas" valor={concluidas} Icone={CheckCircleOutlineIcon} cor="#2e7d32" />
+              <KpiCard titulo="Concluídas" valor={concluidas} Icone={CheckCircleOutlineIcon} cor="#059669" />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Lotes Disponíveis" valor={lotesDisponiveis} Icone={AllInboxIcon} cor="#0288d1" />
+              <KpiCard titulo="Lotes Disponíveis" valor={lotesDisponiveis} Icone={AllInboxIcon} cor="#2563EB" />
             </Grid>
           </>
         )}

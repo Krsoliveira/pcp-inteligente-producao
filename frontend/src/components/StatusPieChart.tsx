@@ -5,19 +5,19 @@ import Typography from '@mui/material/Typography'
 import type { OrdemProducao, StatusOrdem } from '../types'
 
 const STATUS_CORES: Record<StatusOrdem, string> = {
-  PLANEJADA: '#1565c0',
-  LIBERADA: '#ed6c02',
-  EM_PRODUCAO: '#9c27b0',
-  CONCLUIDA: '#2e7d32',
-  CANCELADA: '#d32f2f',
+  PLANEJADA:   '#94A3B8',
+  LIBERADA:    '#2563EB',
+  EM_PRODUCAO: '#D97706',
+  CONCLUIDA:   '#059669',
+  CANCELADA:   '#DC2626',
 }
 
 const STATUS_LABELS: Record<StatusOrdem, string> = {
-  PLANEJADA: 'Planejada',
-  LIBERADA: 'Liberada',
+  PLANEJADA:   'Planejada',
+  LIBERADA:    'Liberada',
   EM_PRODUCAO: 'Em Produção',
-  CONCLUIDA: 'Concluída',
-  CANCELADA: 'Cancelada',
+  CONCLUIDA:   'Concluída',
+  CANCELADA:   'Cancelada',
 }
 
 interface StatusPieChartProps {
@@ -40,8 +40,6 @@ export function StatusPieChart({ ordens }: StatusPieChartProps) {
 
   const quantidadePorNome = Object.fromEntries(dados.map((d) => [d.name, d.value]))
 
-  // A rosca fica na parte de cima e o rodapé é reservado à legenda, que pode
-  // quebrar em duas linhas em cartões estreitos — assim as duas nunca se sobrepõem.
   const option = {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: {
