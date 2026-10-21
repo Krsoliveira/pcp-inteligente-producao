@@ -29,3 +29,6 @@ Thumbs.db
 
 # IntelliJ IDEA
 .idea/
+
+# Configuração local do agente (não versionada)
+.claude/settings.local.json
