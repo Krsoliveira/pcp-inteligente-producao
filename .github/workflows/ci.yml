@@ -5,11 +5,15 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
 
 jobs:
   backend:
     name: Backend (Java)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 21
@@ -25,15 +29,31 @@ jobs:
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
         run: mvn -B verify
-      # Cache ANTES do step que usa o banco — restore acontece aqui
-      - name: Cache OWASP NVD database
-        uses: actions/cache@v6
+
+  # A base da NVD (~400 mil CVEs) é lenta e instável: fica fora do job do backend
+  # para não travar o PR. Roda semanalmente e sob demanda.
+  dependency-check:
+    name: OWASP Dependency-Check
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Restaurar base NVD
+        id: nvd-cache
+        uses: actions/cache/restore@v6
         with:
           path: /tmp/owasp-nvd
           key: owasp-nvd-${{ runner.os }}-${{ github.run_id }}
           restore-keys: owasp-nvd-${{ runner.os }}-
       - name: OWASP Dependency-Check
-        if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
@@ -48,6 +68,13 @@ jobs:
               -DfailOnError=false \
               -DsuppressionFile=owasp-suppressions.xml
           fi
+      # always(): grava o cache parcial mesmo se o timeout cortar o job
+      - name: Salvar base NVD
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: /tmp/owasp-nvd
+          key: owasp-nvd-${{ runner.os }}-${{ github.run_id }}
 
   frontend:
     name: Frontend (React)
