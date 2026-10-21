@@ -24,14 +24,19 @@ logging:
     console: "%d{HH:mm:ss.SSS} [%thread] [%X{requestId:--}] %-5level %logger{36} - %msg%n"
 
 server:
-  # Limita o tamanho máximo de headers HTTP para prevenir ataques de header injection.
+  # Tamanho máximo dos headers (8KB já é o padrão do Tomcat; explícito para documentar).
   max-http-request-header-size: 8KB
   tomcat:
-    # Limita o tamanho do corpo de requisições POST (formulários e JSON).
-    # Protege contra DoS por payload gigante. Ajuste se a API precisar aceitar
-    # uploads maiores no futuro.
+    # Valem só para formulários (application/x-www-form-urlencoded) e para o corpo que o
+    # Tomcat descarta ao abortar uma requisição. NÃO limitam o corpo JSON da API: esse
+    # limite é do LimiteTamanhoCorpoFilter (pcp.seguranca.corpo-maximo-bytes).
     max-http-form-post-size: 2MB
     max-swallow-size: 2MB
+
+pcp:
+  seguranca:
+    # Corpo máximo aceito em POST/PUT/PATCH, em bytes (1 MB).
+    corpo-maximo-bytes: 1048576
 
 springdoc:
   swagger-ui:
