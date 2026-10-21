@@ -9,7 +9,8 @@ import InputAdornment from '@mui/material/InputAdornment'
 import EmailIcon from '@mui/icons-material/Email'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
-import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
+import { mensagemDeEspera, mensagemDeErroDaApi, segundosDeEspera } from '../utils/mensagensDeErro'
+import { useContagemRegressiva } from '../hooks/useContagemRegressiva'
 import { login } from '../api/auth'
 import { useAuthStore } from '../store/authStore'
 import { AuthLayout } from '../components/auth/AuthLayout'
@@ -21,6 +22,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<string | null>(null)
+  const { restante, iniciar } = useContagemRegressiva()
 
   const { mutate, isPending } = useMutation({
     mutationFn: login,
@@ -29,6 +31,11 @@ export function LoginPage() {
       navigate('/dashboard')
     },
     onError: (error: unknown) => {
+      const espera = segundosDeEspera(error)
+      if (espera !== null) {
+        iniciar(espera)
+        return
+      }
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         setErro('E-mail ou senha incorretos. Tente novamente.')
       } else {
@@ -39,6 +46,7 @@ export function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (restante > 0) return
     setErro(null)
     if (!email || !senha) {
       setErro('Preencha e-mail e senha.')
@@ -59,10 +67,16 @@ export function LoginPage() {
         </>
       }
     >
-      {erro && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErro(null)}>
-          {erro}
+      {restante > 0 ? (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {mensagemDeEspera(restante)}
         </Alert>
+      ) : (
+        erro && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErro(null)}>
+            {erro}
+          </Alert>
+        )
       )}
 
       <Box component="form" onSubmit={handleSubmit} noValidate>
@@ -96,7 +110,7 @@ export function LoginPage() {
           variant="contained"
           fullWidth
           size="large"
-          disabled={isPending}
+          disabled={isPending || restante > 0}
           sx={{ mt: 3, mb: 1 }}
         >
           {isPending ? 'Entrando…' : 'Entrar'}

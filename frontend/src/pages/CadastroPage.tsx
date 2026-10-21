@@ -10,7 +10,8 @@ import EmailIcon from '@mui/icons-material/Email'
 import PersonIcon from '@mui/icons-material/Person'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
-import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
+import { mensagemDeEspera, mensagemDeErroDaApi, segundosDeEspera } from '../utils/mensagensDeErro'
+import { useContagemRegressiva } from '../hooks/useContagemRegressiva'
 import { login, registrar } from '../api/auth'
 import { useAuthStore } from '../store/authStore'
 import { AuthLayout } from '../components/auth/AuthLayout'
@@ -47,6 +48,7 @@ export function CadastroPage() {
   const [confirmacao, setConfirmacao] = useState('')
   const [errosDeCampo, setErrosDeCampo] = useState<ErrosDeCampo>({})
   const [erro, setErro] = useState<string | null>(null)
+  const { restante, iniciar } = useContagemRegressiva()
   const [emailDuplicado, setEmailDuplicado] = useState(false)
 
   // Cadastro + login em sequência: o usuário cai direto no dashboard.
@@ -64,13 +66,18 @@ export function CadastroPage() {
         setErro(mensagemDeErroDaApi(error, ''))
         return
       }
+      const espera = segundosDeEspera(error)
+      if (espera !== null) {
+        iniciar(espera)
+        return
+      }
       const { status, data } = error.response
       if (status === 409) {
         setEmailDuplicado(true)
         setErrosDeCampo({ email: 'Este e-mail já está cadastrado.' })
       } else if (status === 400 && data?.erros) {
         setErrosDeCampo(data.erros as ErrosDeCampo)
-      } else if (status === 429 || status === 413 || status >= 500) {
+      } else if (status === 413 || status >= 500) {
         setErro(mensagemDeErroDaApi(error, ''))
       } else {
         setErro(data?.detail ?? 'Não foi possível concluir o cadastro. Tente novamente.')
@@ -85,6 +92,7 @@ export function CadastroPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (restante > 0) return
     setErro(null)
     setEmailDuplicado(false)
     const dados = { nome: nome.trim(), email: email.trim(), senha }
@@ -105,10 +113,16 @@ export function CadastroPage() {
         </>
       }
     >
-      {erro && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErro(null)}>
-          {erro}
+      {restante > 0 ? (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {mensagemDeEspera(restante)}
         </Alert>
+      ) : (
+        erro && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErro(null)}>
+            {erro}
+          </Alert>
+        )
       )}
       {emailDuplicado && (
         <Alert severity="info" sx={{ mb: 2 }}>
@@ -202,7 +216,7 @@ export function CadastroPage() {
           variant="contained"
           fullWidth
           size="large"
-          disabled={isPending}
+          disabled={isPending || restante > 0}
           sx={{ mt: 3, mb: 1 }}
         >
           {isPending ? 'Criando conta…' : 'Criar conta'}
