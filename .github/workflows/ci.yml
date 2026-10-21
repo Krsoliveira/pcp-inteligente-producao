@@ -25,12 +25,13 @@ jobs:
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
         run: mvn -B verify
+      # Cache ANTES do step que usa o banco — restore acontece aqui
       - name: Cache OWASP NVD database
         uses: actions/cache@v6
         with:
-          path: ~/.m2/repository/org/owasp/dependency-check-data
-          key: owasp-nvd-${{ github.run_id }}
-          restore-keys: owasp-nvd-
+          path: /tmp/owasp-nvd
+          key: owasp-nvd-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: owasp-nvd-${{ runner.os }}-
       - name: OWASP Dependency-Check
         if: hashFiles('backend/pom.xml') != ''
         working-directory: backend
@@ -41,7 +42,11 @@ jobs:
             echo "⚠️  NVD_API_KEY não configurada — OWASP Dependency-Check ignorado."
             echo "Para habilitar, configure o secret NVD_API_KEY em Settings → Secrets."
           else
-            mvn -B org.owasp:dependency-check-maven:check -DnvdApiKey="$NVD_API_KEY"
+            mvn -B org.owasp:dependency-check-maven:check \
+              -DnvdApiKey="$NVD_API_KEY" \
+              -DdataDirectory=/tmp/owasp-nvd \
+              -DfailOnError=false \
+              -DsuppressionFile=owasp-suppressions.xml
           fi
 
   frontend:

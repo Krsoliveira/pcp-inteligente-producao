@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+  <!--
+    DOMPurify embutido no swagger-ui (via springdoc-openapi-starter-webmvc-ui).
+    O Swagger UI está desabilitado em produção (springdoc.swagger-ui.enabled=false).
+    Risco residual: apenas ambientes de desenvolvimento.
+    Revisar ao atualizar springdoc-openapi para versão com swagger-ui >= 5.22.0.
+  -->
+  <suppress until="2027-01-01Z">
+    <notes>DOMPurify bundled in swagger-ui; Swagger disabled in production.</notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <cpe>cpe:/a:cure53:dompurify</cpe>
+  </suppress>
+</suppressions>
