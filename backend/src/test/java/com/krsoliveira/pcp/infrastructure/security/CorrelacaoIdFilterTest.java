@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.MDC;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -46,6 +48,33 @@ class CorrelacaoIdFilterTest {
         filter.doFilterInternal(request, response, chain);
 
         assertThat(response.getHeader(CorrelacaoIdFilter.HEADER)).isEqualTo("meu-id-externo");
+    }
+
+    @ParameterizedTest(name = "descarta X-Request-ID inválido: [{0}]")
+    @ValueSource(strings = {"id\r\nFORJADO: linha", "com espaço", "<script>", "ação", "   "})
+    @DisplayName("descarta X-Request-ID com caracteres inválidos e gera outro")
+    void descartaIdInvalido(String invalido) throws Exception {
+        var request  = new MockHttpServletRequest();
+        var response = new MockHttpServletResponse();
+        request.addHeader(CorrelacaoIdFilter.HEADER, invalido);
+
+        filter.doFilterInternal(request, response, new MockFilterChain());
+
+        assertThat(response.getHeader(CorrelacaoIdFilter.HEADER))
+                .isNotEqualTo(invalido)
+                .matches("[a-f0-9]{12}");
+    }
+
+    @Test
+    @DisplayName("descarta X-Request-ID acima de 64 caracteres")
+    void descartaIdLongoDemais() throws Exception {
+        var request  = new MockHttpServletRequest();
+        var response = new MockHttpServletResponse();
+        request.addHeader(CorrelacaoIdFilter.HEADER, "a".repeat(65));
+
+        filter.doFilterInternal(request, response, new MockFilterChain());
+
+        assertThat(response.getHeader(CorrelacaoIdFilter.HEADER)).hasSize(12);
     }
 
     @Test

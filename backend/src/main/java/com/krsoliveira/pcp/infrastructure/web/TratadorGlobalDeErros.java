@@ -14,6 +14,7 @@ import com.krsoliveira.pcp.application.ordem.NomeTipoOrdemJaUtilizadoException;
 import com.krsoliveira.pcp.application.ordem.OrdemProducaoNaoEncontradaException;
 import com.krsoliveira.pcp.application.ordem.TipoOrdemNaoEncontradoException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.infrastructure.security.CorpoGrandeDemaisException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -32,6 +33,7 @@ import java.util.Map;
  *  - 400: requisição malformada (falha de Bean Validation)
  *  - 404: recurso não encontrado
  *  - 409: conflito (código de ordem duplicado)
+ *  - 413: corpo da requisição acima do limite (lido sem Content-Length)
  *  - 422: regra de negócio violada
  */
 @RestControllerAdvice
@@ -146,6 +148,14 @@ public class TratadorGlobalDeErros {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         problema.setTitle("Credenciais inválidas");
         problema.setDetail("E-mail ou senha incorretos.");
+        return problema;
+    }
+
+    @ExceptionHandler(CorpoGrandeDemaisException.class)
+    public ProblemDetail corpoGrandeDemais(CorpoGrandeDemaisException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.PAYLOAD_TOO_LARGE);
+        problema.setTitle("Conteúdo grande demais");
+        problema.setDetail(ex.getMessage());
         return problema;
     }
 

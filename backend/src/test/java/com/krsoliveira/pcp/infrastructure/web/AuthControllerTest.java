@@ -16,7 +16,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,10 +25,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Cada teste é independente — não há estado compartilhado entre eles.
  * E-mails únicos por método evitam colisão no banco.
  *
- * O header X-Forwarded-For usa um IP sintético único por teste para não
- * esgotar o bucket de rate limiting compartilhado por todos os métodos.
+ * Todas as requisições saem do mesmo IP (loopback), então os limites de rate
+ * limiting são elevados aqui; o comportamento do limite tem teste próprio em
+ * {@link RateLimitingIntegracaoTest}.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                "pcp.seguranca.rate-limit.login=1000",
+                "pcp.seguranca.rate-limit.registrar=1000"
+        })
 @Testcontainers
 class AuthControllerTest {
 
@@ -39,9 +44,6 @@ class AuthControllerTest {
 
     @Autowired
     private TestRestTemplate rest;
-
-    /** Contador por instância: gera IPs únicos como 10.0.TEST_INDEX.COUNTER. */
-    private static final AtomicInteger IP_COUNTER = new AtomicInteger(1);
 
     // -------------------------------------------------------------------------
     // POST /api/v1/auth/registrar
@@ -62,12 +64,11 @@ class AuthControllerTest {
     @Test
     @DisplayName("registrar: e-mail duplicado retorna 409")
     void registrarEmailDuplicado() {
-        String ip = proximoIp();
         Map<String, Object> corpo = Map.of("nome", "Bob", "email", "bob@pcp.com", "senha", "Senha@123");
-        rest.postForEntity("/api/v1/auth/registrar", jsonComIp(corpo, ip), Void.class);
+        rest.postForEntity("/api/v1/auth/registrar", json(corpo), Void.class);
 
         ResponseEntity<Map> response = rest.postForEntity(
-                "/api/v1/auth/registrar", jsonComIp(corpo, proximoIp()), Map.class);
+                "/api/v1/auth/registrar", json(corpo), Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
     }
@@ -77,7 +78,7 @@ class AuthControllerTest {
     void registrarCampoAusente() {
         ResponseEntity<Map> response = rest.postForEntity(
                 "/api/v1/auth/registrar",
-                jsonComIp(Map.of("email", "sem-nome@pcp.com", "senha", "Senha@123"), proximoIp()),
+                json(Map.of("email", "sem-nome@pcp.com", "senha", "Senha@123")),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -88,7 +89,7 @@ class AuthControllerTest {
     void registrarSenhaCurta() {
         ResponseEntity<Map> response = rest.postForEntity(
                 "/api/v1/auth/registrar",
-                jsonComIp(Map.of("nome", "Carlos", "email", "carlos@pcp.com", "senha", "123"), proximoIp()),
+                json(Map.of("nome", "Carlos", "email", "carlos@pcp.com", "senha", "123")),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -99,7 +100,7 @@ class AuthControllerTest {
     void registrarEmailMalformado() {
         ResponseEntity<Map> response = rest.postForEntity(
                 "/api/v1/auth/registrar",
-                jsonComIp(Map.of("nome", "Diana", "email", "nao-e-email", "senha", "Senha@123"), proximoIp()),
+                json(Map.of("nome", "Diana", "email", "nao-e-email", "senha", "Senha@123")),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -112,14 +113,13 @@ class AuthControllerTest {
     @Test
     @DisplayName("login: credenciais corretas retornam 200 com token JWT")
     void loginCredenciaisCorretas() {
-        String ip = proximoIp();
         rest.postForEntity("/api/v1/auth/registrar",
-                jsonComIp(Map.of("nome", "Eva", "email", "eva@pcp.com", "senha", "Senha@123"), ip),
+                json(Map.of("nome", "Eva", "email", "eva@pcp.com", "senha", "Senha@123")),
                 Void.class);
 
         ResponseEntity<Map> response = rest.postForEntity(
                 "/api/v1/auth/login",
-                jsonComIp(Map.of("email", "eva@pcp.com", "senha", "Senha@123"), ip),
+                json(Map.of("email", "eva@pcp.com", "senha", "Senha@123")),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -130,14 +130,13 @@ class AuthControllerTest {
     @Test
     @DisplayName("login: senha incorreta retorna 401")
     void loginSenhaIncorreta() {
-        String ip = proximoIp();
         rest.postForEntity("/api/v1/auth/registrar",
-                jsonComIp(Map.of("nome", "Frank", "email", "frank@pcp.com", "senha", "Senha@123"), ip),
+                json(Map.of("nome", "Frank", "email", "frank@pcp.com", "senha", "Senha@123")),
                 Void.class);
 
         ResponseEntity<Map> response = rest.postForEntity(
                 "/api/v1/auth/login",
-                jsonComIp(Map.of("email", "frank@pcp.com", "senha", "SenhaErrada@1"), ip),
+                json(Map.of("email", "frank@pcp.com", "senha", "SenhaErrada@1")),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
@@ -148,7 +147,7 @@ class AuthControllerTest {
     void loginUsuarioInexistente() {
         ResponseEntity<Map> response = rest.postForEntity(
                 "/api/v1/auth/login",
-                jsonComIp(Map.of("email", "ninguem@pcp.com", "senha", "Senha@123"), proximoIp()),
+                json(Map.of("email", "ninguem@pcp.com", "senha", "Senha@123")),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
@@ -159,7 +158,7 @@ class AuthControllerTest {
     void loginCampoAusente() {
         ResponseEntity<Map> response = rest.postForEntity(
                 "/api/v1/auth/login",
-                jsonComIp(Map.of("email", "alguem@pcp.com"), proximoIp()),
+                json(Map.of("email", "alguem@pcp.com")),
                 Map.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -169,20 +168,9 @@ class AuthControllerTest {
     // Helpers
     // -------------------------------------------------------------------------
 
-    /** IP único por chamada — evita esgotamento de bucket de rate limiting entre testes. */
-    private static String proximoIp() {
-        int n = IP_COUNTER.getAndIncrement();
-        return "10.99." + (n / 255) + "." + (n % 255 + 1);
-    }
-
     private HttpEntity<Object> json(Object corpo) {
-        return jsonComIp(corpo, proximoIp());
-    }
-
-    private HttpEntity<Object> jsonComIp(Object corpo, String ip) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-Forwarded-For", ip);
         return new HttpEntity<>(corpo, headers);
     }
 }
