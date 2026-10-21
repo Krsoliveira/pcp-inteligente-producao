@@ -32,8 +32,10 @@ proxy, o que desliga o HSTS e faria todos os usuários dividirem um único bucke
 - Os buckets continuam em memória, mas os **ociosos são descartados** ao passar de
   10 mil chaves (bucket cheio equivale a um novo).
 - O 429 devolve `Retry-After` e `detail` (RFC 9457).
-- `LimiteTamanhoCorpoFilter` recusa corpo acima de 1 MB (413) e corpo sem
-  `Content-Length` (411) em POST/PUT/PATCH.
+- `LimiteTamanhoCorpoFilter` recusa corpo acima de 1 MB (413) em POST/PUT/PATCH:
+  pelo `Content-Length`, sem ler o corpo, ou, quando o cliente não o declara
+  (chunked), contando os bytes durante a leitura (`CorpoGrandeDemaisException`,
+  convertida em 413 pelo `TratadorGlobalDeErros`).
 - `X-Request-ID` só é aceito com até 64 caracteres `[A-Za-z0-9._-]`.
 
 ## Alternativas consideradas
@@ -44,7 +46,7 @@ proxy, o que desliga o HSTS e faria todos os usuários dividirem um único bucke
 | Caffeine para expirar buckets | Dependência nova para um problema que 10 linhas resolvem; reavaliar se o filtro crescer |
 | Bucket4j distribuído no Redis | Redis não tem consumidor no código (regra do projeto); só faz sentido com mais de uma instância |
 | Limitar no proxy/gateway | Não há gateway no deploy atual; não elimina a defesa em profundidade na aplicação |
-| Aceitar corpo chunked com contagem de bytes | Complexidade desnecessária: o frontend e o curl sempre enviam `Content-Length` |
+| Responder 411 a corpo sem `Content-Length` | Tentado e revertido: o cliente HTTP do Spring/Java envia JSON em chunked, e a regra quebrava clientes legítimos (11 testes de integração falharam) |
 
 ## Consequências
 
@@ -59,4 +61,5 @@ proxy, o que desliga o HSTS e faria todos os usuários dividirem um único bucke
     Se ela não estiver no padrão de `PROXIES_CONFIAVEIS`, o Tomcat ignora
     `X-Forwarded-*` e o IP visto passa a ser o do proxy. Conferir no deploy e
     ajustar a variável.
-  - Clientes que enviem corpo chunked recebem 411.
+  - Em chunked, o corpo é lido até o limite antes de ser recusado (no máximo 1 MB em memória por requisição).
+  - Clientes HTTP como o Apache HttpClient 5 repetem respostas 429 respeitando `Retry-After`; isso é desejável, mas deve ser lembrado ao escrever testes.
