@@ -1,8 +1,11 @@
 package com.krsoliveira.pcp.infrastructure.config;
 
 import com.krsoliveira.pcp.infrastructure.security.JwtAuthenticationFilter;
+import com.krsoliveira.pcp.infrastructure.security.LimiteTamanhoCorpoFilter;
+import com.krsoliveira.pcp.infrastructure.security.RateLimitingFilter;
 import com.krsoliveira.pcp.infrastructure.security.UsuarioDetailsService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -23,6 +26,7 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -59,14 +63,20 @@ public class ConfiguracaoSeguranca {
 
     private final UsuarioDetailsService usuarioDetailsService;
     private final JwtAuthenticationFilter jwtFilter;
+    private final LimiteTamanhoCorpoFilter limiteTamanhoCorpoFilter;
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Value("${CORS_ORIGINS:http://localhost:3000}")
     private String corsOriginsConfig;
 
     public ConfiguracaoSeguranca(UsuarioDetailsService usuarioDetailsService,
-                                 JwtAuthenticationFilter jwtFilter) {
+                                 JwtAuthenticationFilter jwtFilter,
+                                 LimiteTamanhoCorpoFilter limiteTamanhoCorpoFilter,
+                                 RateLimitingFilter rateLimitingFilter) {
         this.usuarioDetailsService = usuarioDetailsService;
         this.jwtFilter = jwtFilter;
+        this.limiteTamanhoCorpoFilter = limiteTamanhoCorpoFilter;
+        this.rateLimitingFilter = rateLimitingFilter;
     }
 
     @Bean
@@ -103,8 +113,31 @@ public class ConfiguracaoSeguranca {
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
                 .authenticationProvider(authenticationProvider())
+                // Limite de corpo e rate limiting ficam DEPOIS do CorsFilter: as respostas 413 e
+                // 429 também precisam dos cabeçalhos CORS, senão o navegador as descarta e o
+                // usuário vê "erro de conexão" em vez da mensagem real.
+                .addFilterAfter(limiteTamanhoCorpoFilter, CorsFilter.class)
+                .addFilterAfter(rateLimitingFilter, LimiteTamanhoCorpoFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    /**
+     * Como os filtros abaixo são beans, o Spring Boot os registraria também como filtros de
+     * servlet, antes do Spring Security (e do CORS). Aqui eles ficam só na cadeia de segurança.
+     */
+    @Bean
+    public FilterRegistrationBean<RateLimitingFilter> rateLimitingForaDoServlet(RateLimitingFilter filtro) {
+        FilterRegistrationBean<RateLimitingFilter> registro = new FilterRegistrationBean<>(filtro);
+        registro.setEnabled(false);
+        return registro;
+    }
+
+    @Bean
+    public FilterRegistrationBean<LimiteTamanhoCorpoFilter> limiteCorpoForaDoServlet(LimiteTamanhoCorpoFilter filtro) {
+        FilterRegistrationBean<LimiteTamanhoCorpoFilter> registro = new FilterRegistrationBean<>(filtro);
+        registro.setEnabled(false);
+        return registro;
     }
 
     /**

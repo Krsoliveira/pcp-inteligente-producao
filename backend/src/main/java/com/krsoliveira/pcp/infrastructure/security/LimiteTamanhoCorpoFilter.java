@@ -5,7 +5,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -29,7 +28,6 @@ import java.util.Set;
  * (RFC 9457).
  */
 @Component
-@Order(-250)
 public class LimiteTamanhoCorpoFilter extends OncePerRequestFilter {
 
     private static final Set<String> METODOS_COM_CORPO = Set.of("POST", "PUT", "PATCH");

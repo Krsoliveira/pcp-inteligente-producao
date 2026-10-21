@@ -36,6 +36,11 @@ proxy, o que desliga o HSTS e faria todos os usuários dividirem um único bucke
   pelo `Content-Length`, sem ler o corpo, ou, quando o cliente não o declara
   (chunked), contando os bytes durante a leitura (`CorpoGrandeDemaisException`,
   convertida em 413 pelo `TratadorGlobalDeErros`).
+- `LimiteTamanhoCorpoFilter` e `RateLimitingFilter` ficam **dentro da cadeia do Spring
+  Security, depois do `CorsFilter`**, e não como filtros de servlet. Como filtros de
+  servlet eles respondiam 413/429 antes do CORS, sem `Access-Control-Allow-Origin`; o
+  navegador descartava a resposta e o usuário via "erro de conexão". Um
+  `FilterRegistrationBean` desabilitado evita o registro duplicado.
 - `X-Request-ID` só é aceito com até 64 caracteres `[A-Za-z0-9._-]`.
 
 ## Alternativas consideradas
