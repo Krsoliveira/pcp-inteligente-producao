@@ -70,6 +70,8 @@ class RateLimitingIntegracaoTest {
         assertThat(bloqueada.statusCode()).isEqualTo(429);
         assertThat(bloqueada.headers().firstValue("Access-Control-Allow-Origin"))
                 .contains("http://localhost:3000");
+        assertThat(bloqueada.headers().firstValue("Access-Control-Expose-Headers"))
+                .hasValueSatisfying(expostos -> assertThat(expostos).contains("Retry-After"));
     }
 
     private HttpResponse<String> login(String forwardedFor) throws Exception {

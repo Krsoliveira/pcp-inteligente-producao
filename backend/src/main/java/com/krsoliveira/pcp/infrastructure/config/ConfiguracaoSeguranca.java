@@ -146,8 +146,8 @@ public class ConfiguracaoSeguranca {
      * <p>A variável {@code CORS_ORIGINS} aceita múltiplas origens separadas por
      * vírgula: {@code https://app.exemplo.com,https://preview.exemplo.com}.</p>
      *
-     * <p>O header {@code X-Request-ID} é exposto na response para permitir que
-     * o frontend correlacione logs com o backend.</p>
+     * <p>Os headers {@code X-Request-ID} (correlacionar logs com o backend) e
+     * {@code Retry-After} (tempo de espera do 429) são expostos ao frontend.</p>
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -160,7 +160,7 @@ public class ConfiguracaoSeguranca {
         config.setAllowedOrigins(origens);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-ID"));
-        config.setExposedHeaders(List.of("X-Request-ID"));
+        config.setExposedHeaders(List.of("X-Request-ID", "Retry-After"));
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
