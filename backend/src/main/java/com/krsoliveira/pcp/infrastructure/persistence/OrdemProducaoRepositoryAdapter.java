@@ -1,11 +1,25 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.ordem.FiltroOrdens;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
+import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,6 +57,50 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
         return springData.findAll().stream()
                 .map(OrdemProducaoJpaEntity::paraDominio)
                 .toList();
+    }
+
+    @Override
+    public Pagina<OrdemProducao> pesquisar(FiltroOrdens filtro, PedidoDePagina pedido) {
+        Specification<OrdemProducaoJpaEntity> criterios = (ordem, consulta, cb) -> {
+            List<Predicate> condicoes = new ArrayList<>();
+            if (filtro.status() != null) {
+                condicoes.add(cb.equal(ordem.get("status"), filtro.status()));
+            }
+            if (filtro.busca() != null) {
+                condicoes.add(cb.like(cb.lower(ordem.get("codigo")),
+                        "%" + escaparCuringas(filtro.busca().toLowerCase()) + "%", '\\'));
+            }
+            return cb.and(condicoes.toArray(new Predicate[0]));
+        };
+        Sort ordenacao = Sort.by(Sort.Order.desc("criadaEm"), Sort.Order.desc("codigo"));
+
+        Page<OrdemProducaoJpaEntity> pagina = springData.findAll(criterios,
+                PageRequest.of(pedido.pagina(), pedido.tamanho(), ordenacao));
+
+        return new Pagina<>(pagina.getContent().stream().map(OrdemProducaoJpaEntity::paraDominio).toList(),
+                pedido.pagina(), pedido.tamanho(), pagina.getTotalElements());
+    }
+
+    /** % e _ digitados pela pessoa são texto comum, não curingas do LIKE. */
+    private static String escaparCuringas(String texto) {
+        return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
+    @Override
+    public Map<StatusOrdemProducao, Long> contarPorStatus() {
+        Map<StatusOrdemProducao, Long> contagem = new EnumMap<>(StatusOrdemProducao.class);
+        for (Object[] linha : springData.contarAgrupadoPorStatus()) {
+            contagem.put((StatusOrdemProducao) linha[0], (Long) linha[1]);
+        }
+        return contagem;
+    }
+
+    @Override
+    public long contarAtrasadas(LocalDate hoje) {
+        List<StatusOrdemProducao> abertos = Arrays.stream(StatusOrdemProducao.values())
+                .filter(StatusOrdemProducao::estaAberta)
+                .toList();
+        return springData.countByStatusInAndFimPlanejadoBefore(abertos, hoje);
     }
 
     @Override

@@ -22,6 +22,7 @@ import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.AtualizarTipoOrdem;
+import com.krsoliveira.pcp.application.dashboard.ConsultarResumoProducao;
 import com.krsoliveira.pcp.application.ordem.CadastrarTipoOrdem;
 import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.ConsultarOrdensProducao;
@@ -138,6 +139,11 @@ public class ConfiguracaoCasosDeUso {
     @Bean
     ConsultarOrdensProducao consultarOrdensProducao(OrdemProducaoRepository repositorio) {
         return new ConsultarOrdensProducao(repositorio);
+    }
+
+    @Bean
+    ConsultarResumoProducao consultarResumoProducao(OrdemProducaoRepository ordens, LoteRepository lotes) {
+        return new ConsultarResumoProducao(ordens, lotes);
     }
 
     @Bean
