@@ -2,6 +2,7 @@ package com.krsoliveira.pcp.infrastructure.security;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.TimeMeter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,8 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * ({@code server.forward-headers-strategy=native}, perfil prod) que o aplica,
  * e só quando a requisição vem de um proxy confiável.
  *
- * Ao exceder o limite, retorna HTTP 429 com corpo no formato Problem Details
- * (RFC 9457). O bucket é reiniciado automaticamente após 1 minuto.
+ * Ao exceder o limite, retorna HTTP 429 com o header Retry-After (segundos) e corpo
+ * no formato Problem Details (RFC 9457), com {@code detail} para o frontend exibir.
+ * O bucket é reiniciado automaticamente após 1 minuto.
  *
  * Os buckets ficam em memória (uma instância da API). Para não crescer sem limite,
  * quando o mapa passa de {@code MAX_CHAVES} os buckets que já reabasteceram por
@@ -96,13 +98,18 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
         Limitador limitador = buckets.computeIfAbsent(chave, k -> new Limitador(criarBucket(limite), limite));
 
-        if (limitador.bucket().tryConsume(1)) {
+        ConsumptionProbe consumo = limitador.bucket().tryConsumeAndReturnRemaining(1);
+
+        if (consumo.isConsumed()) {
             chain.doFilter(request, response);
         } else {
+            long segundos = Math.max(1, Duration.ofNanos(consumo.getNanosToWaitForRefill()).toSeconds() + 1);
             response.setStatus(429);
+            response.setHeader("Retry-After", String.valueOf(segundos));
             response.setContentType("application/problem+json;charset=UTF-8");
             response.getWriter().write(
-                    "{\"status\":429,\"title\":\"Muitas tentativas. Aguarde um momento e tente novamente.\"}"
+                    "{\"type\":\"about:blank\",\"title\":\"Muitas requisições\",\"status\":429,"
+                            + "\"detail\":\"Muitas tentativas. Aguarde " + segundos + " segundos e tente novamente.\"}"
             );
         }
     }

@@ -42,7 +42,7 @@ class RateLimitingIntegracaoTest {
     private TestRestTemplate rest;
 
     @Test
-    @DisplayName("login: X-Forwarded-For forjado não burla o limite")
+    @DisplayName("login: X-Forwarded-For forjado não burla o limite e o 429 traz Retry-After")
     void loginComIpForjadoRecebe429() {
         for (int i = 0; i < 2; i++) {
             ResponseEntity<Map> tentativa = login("198.51.100." + i);
@@ -52,6 +52,7 @@ class RateLimitingIntegracaoTest {
         ResponseEntity<Map> bloqueada = login("198.51.100.250");
 
         assertThat(bloqueada.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(bloqueada.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isNotBlank();
     }
 
     private ResponseEntity<Map> login(String forwardedFor) {

@@ -52,6 +52,22 @@ class RateLimitingFilterTest {
     }
 
     @Test
+    @DisplayName("429 informa Retry-After em segundos e detail no corpo Problem Details")
+    void respostaBloqueadaTemRetryAfterEDetail() throws Exception {
+        for (int i = 0; i < LIMITE_LOGIN; i++) {
+            executar(RateLimitingFilter.ROTA_LOGIN, "10.0.0.9");
+        }
+
+        var response = executar(RateLimitingFilter.ROTA_LOGIN, "10.0.0.9");
+
+        int retryAfter = Integer.parseInt(response.getHeader("Retry-After"));
+        assertThat(retryAfter).isBetween(1, 61);
+        assertThat(response.getContentAsString())
+                .contains("\"status\":429")
+                .contains("\"detail\":\"Muitas tentativas. Aguarde " + retryAfter + " segundos");
+    }
+
+    @Test
     @DisplayName("login: IPs diferentes têm buckets independentes")
     void loginIpsDiferentesNaoCompartilhamBucket() throws Exception {
         for (int i = 0; i < LIMITE_LOGIN; i++) {
