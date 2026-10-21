@@ -2,7 +2,7 @@ import ReactECharts from 'echarts-for-react'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
-import type { OrdemProducao, StatusOrdem } from '../types'
+import type { StatusOrdem } from '../types'
 
 const STATUS_CORES: Record<StatusOrdem, string> = {
   PLANEJADA:   '#94A3B8',
@@ -21,22 +21,18 @@ const STATUS_LABELS: Record<StatusOrdem, string> = {
 }
 
 interface StatusPieChartProps {
-  ordens: OrdemProducao[]
+  /** Quantidade de ordens por status, vinda do resumo do servidor. */
+  contagem?: Partial<Record<StatusOrdem, number>>
 }
 
-export function StatusPieChart({ ordens }: StatusPieChartProps) {
-  const contagem = ordens.reduce<Partial<Record<StatusOrdem, number>>>(
-    (acc, o) => ({ ...acc, [o.status]: (acc[o.status] ?? 0) + 1 }),
-    {},
-  )
-
-  const dados = (Object.entries(contagem) as [StatusOrdem, number][]).map(
-    ([status, value]) => ({
+export function StatusPieChart({ contagem = {} }: StatusPieChartProps) {
+  const dados = (Object.entries(contagem) as [StatusOrdem, number][])
+    .filter(([, value]) => value > 0)
+    .map(([status, value]) => ({
       name: STATUS_LABELS[status],
       value,
       itemStyle: { color: STATUS_CORES[status] },
-    }),
-  )
+    }))
 
   const quantidadePorNome = Object.fromEntries(dados.map((d) => [d.name, d.value]))
 
@@ -68,7 +64,7 @@ export function StatusPieChart({ ordens }: StatusPieChartProps) {
         <Typography variant="subtitle1" fontWeight={600} gutterBottom>
           Ordens por Status
         </Typography>
-        {ordens.length === 0 ? (
+        {dados.length === 0 ? (
           <Typography color="text.secondary" sx={{ mt: 4, textAlign: 'center' }}>
             Nenhuma ordem cadastrada
           </Typography>
