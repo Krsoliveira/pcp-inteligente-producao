@@ -3,6 +3,7 @@ package com.krsoliveira.pcp.infrastructure.security;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import io.github.bucket4j.TimeMeter;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -111,6 +112,61 @@ class RateLimitingFilterTest {
         request.addHeader("X-Forwarded-For", "203.0.113.5, 10.0.0.1");
 
         assertThat(RateLimitingFilter.extrairIp(request)).isEqualTo("192.0.2.10");
+    }
+
+    // -------------------------------------------------------------------------
+    // Memória
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("descarta buckets ociosos ao atingir o teto, sem liberar IPs ainda limitados")
+    void descartaBucketsOciososAoAtingirTeto() throws Exception {
+        var relogio = new RelogioFalso();
+        filter = new RateLimitingFilter(LIMITE_LOGIN, LIMITE_REGISTRAR, 3, relogio);
+
+        executar(RateLimitingFilter.ROTA_LOGIN, "10.1.0.1");
+        executar(RateLimitingFilter.ROTA_LOGIN, "10.1.0.2");
+        executar(RateLimitingFilter.ROTA_LOGIN, "10.1.0.3");
+        assertThat(filter.quantidadeDeBuckets()).isEqualTo(3);
+
+        relogio.avancarSegundos(61);
+        executar(RateLimitingFilter.ROTA_LOGIN, "10.1.0.4");
+
+        assertThat(filter.quantidadeDeBuckets()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("ao atingir o teto, bucket ainda em uso não é descartado")
+    void naoDescartaBucketEmUso() throws Exception {
+        var relogio = new RelogioFalso();
+        filter = new RateLimitingFilter(LIMITE_LOGIN, LIMITE_REGISTRAR, 2, relogio);
+
+        for (int i = 0; i < LIMITE_LOGIN; i++) {
+            executar(RateLimitingFilter.ROTA_LOGIN, "10.2.0.1");
+        }
+        executar(RateLimitingFilter.ROTA_LOGIN, "10.2.0.2");
+        executar(RateLimitingFilter.ROTA_LOGIN, "10.2.0.3");
+
+        // 10.2.0.1 esgotou o limite e continua bloqueado mesmo com o teto atingido
+        assertThat(executar(RateLimitingFilter.ROTA_LOGIN, "10.2.0.1").getStatus()).isEqualTo(429);
+    }
+
+    private static final class RelogioFalso implements TimeMeter {
+        private long nanos;
+
+        void avancarSegundos(long segundos) {
+            nanos += segundos * 1_000_000_000L;
+        }
+
+        @Override
+        public long currentTimeNanos() {
+            return nanos;
+        }
+
+        @Override
+        public boolean isWallClockBased() {
+            return false;
+        }
     }
 
     // -------------------------------------------------------------------------
