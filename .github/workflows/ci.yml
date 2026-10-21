@@ -65,8 +65,7 @@ jobs:
             mvn -B org.owasp:dependency-check-maven:check \
               -DnvdApiKey="$NVD_API_KEY" \
               -DdataDirectory=/tmp/owasp-nvd \
-              -DfailOnError=false \
-              -DsuppressionFile=owasp-suppressions.xml
+              -DfailOnError=false
           fi
       # always(): grava o cache parcial mesmo se o timeout cortar o job
       - name: Salvar base NVD
