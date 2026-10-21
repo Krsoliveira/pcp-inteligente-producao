@@ -10,6 +10,7 @@ import EmailIcon from '@mui/icons-material/Email'
 import PersonIcon from '@mui/icons-material/Person'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import { login, registrar } from '../api/auth'
 import { useAuthStore } from '../store/authStore'
 import { AuthLayout } from '../components/auth/AuthLayout'
@@ -60,7 +61,7 @@ export function CadastroPage() {
     },
     onError: (error: unknown) => {
       if (!axios.isAxiosError<ApiError>(error) || !error.response) {
-        setErro('Erro ao conectar com o servidor. Verifique se o backend está rodando.')
+        setErro(mensagemDeErroDaApi(error, ''))
         return
       }
       const { status, data } = error.response
@@ -69,6 +70,8 @@ export function CadastroPage() {
         setErrosDeCampo({ email: 'Este e-mail já está cadastrado.' })
       } else if (status === 400 && data?.erros) {
         setErrosDeCampo(data.erros as ErrosDeCampo)
+      } else if (status === 429 || status === 413 || status >= 500) {
+        setErro(mensagemDeErroDaApi(error, ''))
       } else {
         setErro(data?.detail ?? 'Não foi possível concluir o cadastro. Tente novamente.')
       }

@@ -9,6 +9,7 @@ import InputAdornment from '@mui/material/InputAdornment'
 import EmailIcon from '@mui/icons-material/Email'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import { login } from '../api/auth'
 import { useAuthStore } from '../store/authStore'
 import { AuthLayout } from '../components/auth/AuthLayout'
@@ -31,7 +32,7 @@ export function LoginPage() {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         setErro('E-mail ou senha incorretos. Tente novamente.')
       } else {
-        setErro('Erro ao conectar com o servidor. Verifique se o backend está rodando.')
+        setErro(mensagemDeErroDaApi(error, 'Não foi possível entrar agora. Tente novamente.'))
       }
     },
   })
