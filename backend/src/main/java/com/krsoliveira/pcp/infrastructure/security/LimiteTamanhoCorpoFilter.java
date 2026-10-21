@@ -17,10 +17,11 @@ import java.util.Set;
  * protegendo a API contra payloads gigantes.
  *
  * <ul>
- *   <li>Content-Length acima do limite → HTTP 413.</li>
- *   <li>Corpo em Transfer-Encoding (sem tamanho declarado) → HTTP 411, pois o tamanho
- *       não pode ser conferido de antemão. O frontend e o curl sempre enviam
- *       Content-Length em JSON.</li>
+ *   <li>Content-Length acima do limite → HTTP 413, sem ler o corpo.</li>
+ *   <li>Sem Content-Length (Transfer-Encoding: chunked, comum em clientes Java) → o
+ *       corpo é lido por um stream que conta os bytes e lança
+ *       {@link CorpoGrandeDemaisException} ao passar do limite; o
+ *       {@code TratadorGlobalDeErros} responde 413.</li>
  * </ul>
  *
  * O limite do Tomcat para formulários ({@code max-http-form-post-size}) não cobre
@@ -48,12 +49,12 @@ public class LimiteTamanhoCorpoFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (request.getContentLengthLong() > limiteBytes) {
+        long declarado = request.getContentLengthLong();
+        if (declarado > limiteBytes) {
             recusar(response, 413, "Conteúdo grande demais",
                     "O corpo da requisição excede o limite de " + limiteBytes + " bytes.");
-        } else if (request.getContentLengthLong() < 0 && request.getHeader("Transfer-Encoding") != null) {
-            recusar(response, 411, "Tamanho obrigatório",
-                    "Informe o cabeçalho Content-Length; corpo sem tamanho declarado não é aceito.");
+        } else if (declarado < 0 && request.getHeader("Transfer-Encoding") != null) {
+            chain.doFilter(new RequisicaoComCorpoLimitado(request, limiteBytes), response);
         } else {
             chain.doFilter(request, response);
         }
