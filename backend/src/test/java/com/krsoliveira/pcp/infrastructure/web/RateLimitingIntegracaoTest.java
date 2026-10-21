@@ -2,20 +2,17 @@ package com.krsoliveira.pcp.infrastructure.web;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.Map;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,6 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Todas as chamadas saem do mesmo IP de conexão (loopback). Variar o header
  * X-Forwarded-For — que o cliente controla — não pode dar um bucket novo.
+ *
+ * Usa o HttpClient do JDK de propósito: o Apache HttpClient 5, que o
+ * TestRestTemplate escolhe quando está no classpath, repete respostas 429
+ * respeitando o Retry-After (60 s) e mascararia o resultado.
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -38,30 +39,31 @@ class RateLimitingIntegracaoTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Autowired
-    private TestRestTemplate rest;
+    @LocalServerPort
+    private int porta;
+
+    private final HttpClient cliente = HttpClient.newHttpClient();
 
     @Test
     @DisplayName("login: X-Forwarded-For forjado não burla o limite e o 429 traz Retry-After")
-    void loginComIpForjadoRecebe429() {
+    void loginComIpForjadoRecebe429() throws Exception {
         for (int i = 0; i < 2; i++) {
-            ResponseEntity<Map> tentativa = login("198.51.100." + i);
-            assertThat(tentativa.getStatusCode()).isNotEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(login("198.51.100." + i).statusCode()).isEqualTo(401);
         }
 
-        ResponseEntity<Map> bloqueada = login("198.51.100.250");
+        HttpResponse<String> bloqueada = login("198.51.100.250");
 
-        assertThat(bloqueada.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
-        assertThat(bloqueada.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isNotBlank();
+        assertThat(bloqueada.statusCode()).isEqualTo(429);
+        assertThat(bloqueada.headers().firstValue("Retry-After")).isPresent();
+        assertThat(bloqueada.body()).contains("\"status\":429").contains("\"detail\"");
     }
 
-    private ResponseEntity<Map> login(String forwardedFor) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-Forwarded-For", forwardedFor);
-        return rest.postForEntity(
-                "/api/v1/auth/login",
-                new HttpEntity<>(Map.of("email", "ninguem@pcp.com", "senha", "Senha@123"), headers),
-                Map.class);
+    private HttpResponse<String> login(String forwardedFor) throws Exception {
+        HttpRequest requisicao = HttpRequest.newBuilder(URI.create("http://localhost:" + porta + "/api/v1/auth/login"))
+                .header("Content-Type", "application/json")
+                .header("X-Forwarded-For", forwardedFor)
+                .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"ninguem@pcp.com\",\"senha\":\"Senha@123\"}"))
+                .build();
+        return cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
     }
 }
