@@ -13,13 +13,13 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Divider from '@mui/material/Divider'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { criarOrdem } from '../api/ordens'
 import { listarMateriais } from '../api/materiais'
 import { listarListasTecnicas } from '../api/listasTecnicas'
 import { listarTiposOrdem } from '../api/tiposOrdem'
 import { formatarCodigoMaterial } from '../utils/formatacao'
 import type { CriarOrdemRequest } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 interface CriarOrdemDialogProps {
   aberto: boolean
@@ -89,12 +89,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
       onFechar()
     },
     onError: (error: unknown) => {
-      if (axios.isAxiosError(error)) {
-        const detail = error.response?.data?.detail as string | undefined
-        setErro(detail ?? 'Erro ao criar ordem. Verifique os campos.')
-      } else {
-        setErro('Erro inesperado. Tente novamente.')
-      }
+      setErro(mensagemDeErroDaApi(error, 'Não foi possível criar a ordem. Confira os campos e tente novamente.'))
     },
   })
 

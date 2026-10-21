@@ -16,6 +16,7 @@ import { InfoRow } from '../components/InfoRow'
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
 import { TabelaLotes } from '../components/suprimentos/TabelaLotes'
 import { formatarData, formatarDataHora } from '../utils/formatacao'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 
 /** Detalhe da nota fiscal de entrada: cabeçalho, itens (lotes que trouxe) e histórico. */
 export function NotaFiscalDetalhePage() {
@@ -26,7 +27,7 @@ export function NotaFiscalDetalhePage() {
   const nota = notaQuery.data
 
   if (notaQuery.isLoading) return <Skeleton variant="rounded" height={320} />
-  if (notaQuery.isError || !nota) return <Alert severity="error">Nota fiscal não encontrada.</Alert>
+  if (notaQuery.isError || !nota) return <Alert severity="error">{mensagemDeErroAoCarregar(notaQuery.error, 'Nota fiscal não encontrada.')}</Alert>
 
   return (
     <Box>

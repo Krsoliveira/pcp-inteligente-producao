@@ -22,6 +22,7 @@ import { KpiCard } from '../components/KpiCard'
 import { TabelaLotes } from '../components/suprimentos/TabelaLotes'
 import { formatarCodigoMaterial, formatarData, formatarQuantidade } from '../utils/formatacao'
 import { TIPO_MATERIAL_LABEL, type StatusLote } from '../types'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 
 /** Estoque de um material: posição e todos os lotes (de compra e de produção). */
 export function EstoqueMaterialPage() {
@@ -43,7 +44,7 @@ export function EstoqueMaterialPage() {
       || (l.fornecedor ?? '').toLowerCase().includes(termo)))
 
   if (estoqueQuery.isLoading) return <Skeleton variant="rounded" height={320} />
-  if (estoqueQuery.isError || !posicao) return <Alert severity="error">Material não encontrado.</Alert>
+  if (estoqueQuery.isError || !posicao) return <Alert severity="error">{mensagemDeErroAoCarregar(estoqueQuery.error, 'Material não encontrado.')}</Alert>
 
   const codigo = formatarCodigoMaterial(posicao.codigo)
   const unidade = posicao.unidadeDeMedida

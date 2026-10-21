@@ -28,7 +28,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { listarListasTecnicas, cadastrarListaTecnica, ativarListaTecnica } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
@@ -36,6 +35,7 @@ import { EmptyState } from '../components/EmptyState'
 import { StatusListaBadge } from '../components/StatusBadge'
 import { formatarCodigoMaterial } from '../utils/formatacao'
 import type { CadastrarListaTecnicaRequest, TipoMaterial } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 export function ListasTecnicasPage() {
   const [dialogAberto, setDialogAberto] = useState(false)
@@ -159,8 +159,7 @@ function CriarListaTecnicaDialog({ aberto, onFechar }: CriarListaTecnicaDialogPr
       handleFechar()
     },
     onError: (err: unknown) => {
-      if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro ao cadastrar.')
-      else setErro('Erro inesperado.')
+      setErro(mensagemDeErroDaApi(err, 'Não foi possível cadastrar a lista técnica. Tente novamente.'))
     },
   })
 

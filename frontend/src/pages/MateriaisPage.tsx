@@ -24,13 +24,13 @@ import SearchIcon from '@mui/icons-material/Search'
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined'
 import InputAdornment from '@mui/material/InputAdornment'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { listarMateriais, cadastrarMaterial } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import type { TipoMaterial, CadastrarMaterialRequest } from '../types'
 import { codigoMaterialCorresponde, formatarCodigoMaterial } from '../utils/formatacao'
 import { TIPO_MATERIAL_LABEL } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 const TIPO_COR: Record<TipoMaterial, string> = {
   PRODUTO_ACABADO: '#4F46E5',
@@ -150,8 +150,7 @@ function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
       setForm(VAZIO); setErro(null); onFechar()
     },
     onError: (err: unknown) => {
-      if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro ao cadastrar.')
-      else setErro('Erro inesperado.')
+      setErro(mensagemDeErroDaApi(err, 'Não foi possível cadastrar o material. Tente novamente.'))
     },
   })
 
