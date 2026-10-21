@@ -2,8 +2,10 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Breadcrumbs from '@mui/material/Breadcrumbs'
 import Link from '@mui/material/Link'
+import Button from '@mui/material/Button'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import NavigateNextIcon from '@mui/icons-material/NavigateNext'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 
 interface Breadcrumb {
@@ -20,6 +22,16 @@ interface PageHeaderProps {
 
 export function PageHeader({ titulo, subtitulo, breadcrumbs, action }: PageHeaderProps) {
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Telas de detalhe têm um "pai" no breadcrumb (o penúltimo item, com link).
+  // Se a pessoa veio de outra tela do sistema, voltamos para ela; se abriu o
+  // endereço direto (sem histórico), vamos para o pai.
+  const pai = breadcrumbs && breadcrumbs.length >= 2 ? breadcrumbs[breadcrumbs.length - 2].href : undefined
+  const voltar = () => {
+    if (location.key !== 'default') navigate(-1)
+    else if (pai) navigate(pai)
+  }
 
   return (
     <Box
@@ -33,6 +45,17 @@ export function PageHeader({ titulo, subtitulo, breadcrumbs, action }: PageHeade
       }}
     >
       <Box>
+        {pai && (
+          <Button
+            size="small"
+            color="inherit"
+            startIcon={<ArrowBackIcon />}
+            onClick={voltar}
+            sx={{ mb: 0.5, ml: -1, color: 'text.secondary' }}
+          >
+            Voltar
+          </Button>
+        )}
         {breadcrumbs && breadcrumbs.length > 0 && (
           <Breadcrumbs
             separator={<NavigateNextIcon fontSize="inherit" />}
