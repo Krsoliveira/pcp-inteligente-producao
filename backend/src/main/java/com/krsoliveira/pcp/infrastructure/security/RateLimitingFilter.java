@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -19,13 +20,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * protegendo contra ataques de força bruta e enumeração de contas.
  *
  * Limites (por IP, por minuto):
- *   POST /api/v1/auth/login     → {@code limiteLogin} tentativas (padrão: 5)
- *   POST /api/v1/auth/registrar → {@code limiteRegistrar} tentativas (padrão: 3)
+ *   POST /api/v1/auth/login     → {@code pcp.seguranca.rate-limit.login} (padrão: 5)
+ *   POST /api/v1/auth/registrar → {@code pcp.seguranca.rate-limit.registrar} (padrão: 3)
+ *
+ * O IP é sempre o da conexão ({@code getRemoteAddr}). O header X-Forwarded-For
+ * é controlado pelo cliente e nunca é lido aqui: atrás de proxy, é o Tomcat
+ * ({@code server.forward-headers-strategy=native}, perfil prod) que o aplica,
+ * e só quando a requisição vem de um proxy confiável.
  *
  * Ao exceder o limite, retorna HTTP 429 com corpo no formato Problem Details
  * (RFC 9457). O bucket é reiniciado automaticamente após 1 minuto.
  *
- * Os limites são configuráveis via construtor para facilitar testes unitários.
+ * Os limites são configuráveis por propriedade e por construtor (testes).
  */
 @Component
 @Order(-200)
@@ -38,13 +44,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private final int limiteRegistrar;
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-    /** Construtor padrão usado pelo Spring — limites de produção. */
-    public RateLimitingFilter() {
-        this(5, 3);
-    }
-
-    /** Construtor para testes — permite definir limites menores. */
-    RateLimitingFilter(int limiteLogin, int limiteRegistrar) {
+    public RateLimitingFilter(@Value("${pcp.seguranca.rate-limit.login:5}") int limiteLogin,
+                              @Value("${pcp.seguranca.rate-limit.registrar:3}") int limiteRegistrar) {
         this.limiteLogin     = limiteLogin;
         this.limiteRegistrar = limiteRegistrar;
     }
@@ -87,10 +88,6 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     static String extrairIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
         return request.getRemoteAddr();
     }
 }

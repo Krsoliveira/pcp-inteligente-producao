@@ -92,19 +92,23 @@ class RateLimitingFilterTest {
     }
 
     @Test
-    @DisplayName("extrai IP do header X-Forwarded-For quando presente")
-    void extraiIpDoForwardedFor() {
-        var request = new MockHttpServletRequest();
-        request.addHeader("X-Forwarded-For", "203.0.113.5, 10.0.0.1");
+    @DisplayName("X-Forwarded-For forjado não burla o limite: vale o IP da conexão")
+    void forwardedForForjadoNaoBurlaLimite() throws Exception {
+        for (int i = 0; i < LIMITE_LOGIN; i++) {
+            executar(RateLimitingFilter.ROTA_LOGIN, "10.0.0.4", "198.51.100." + i);
+        }
 
-        assertThat(RateLimitingFilter.extrairIp(request)).isEqualTo("203.0.113.5");
+        var response = executar(RateLimitingFilter.ROTA_LOGIN, "10.0.0.4", "198.51.100.200");
+
+        assertThat(response.getStatus()).isEqualTo(429);
     }
 
     @Test
-    @DisplayName("usa remoteAddr quando X-Forwarded-For está ausente")
-    void usaRemoteAddrSemForwardedFor() {
+    @DisplayName("usa sempre o remoteAddr, ignorando X-Forwarded-For")
+    void usaRemoteAddrIgnorandoForwardedFor() {
         var request = new MockHttpServletRequest();
         request.setRemoteAddr("192.0.2.10");
+        request.addHeader("X-Forwarded-For", "203.0.113.5, 10.0.0.1");
 
         assertThat(RateLimitingFilter.extrairIp(request)).isEqualTo("192.0.2.10");
     }
@@ -114,9 +118,16 @@ class RateLimitingFilterTest {
     // -------------------------------------------------------------------------
 
     private MockHttpServletResponse executar(String uri, String ip) throws Exception {
+        return executar(uri, ip, null);
+    }
+
+    private MockHttpServletResponse executar(String uri, String ip, String forwardedFor) throws Exception {
         var request  = new MockHttpServletRequest("POST", uri);
         var response = new MockHttpServletResponse();
         request.setRemoteAddr(ip);
+        if (forwardedFor != null) {
+            request.addHeader("X-Forwarded-For", forwardedFor);
+        }
         filter.doFilterInternal(request, response, new MockFilterChain());
         return response;
     }
