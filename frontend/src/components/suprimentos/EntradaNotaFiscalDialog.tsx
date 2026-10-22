@@ -32,6 +32,7 @@ import {
   temErros,
   validarNotaFiscal,
 } from './notaFiscalFormulario'
+import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
 
 interface EntradaNotaFiscalDialogProps {
   aberto: boolean
@@ -75,13 +76,11 @@ export function EntradaNotaFiscalDialog({ aberto, onFechar, onRegistrada }: Entr
       onRegistrada(nota)
     },
     onError: (err: unknown) => {
-      if (!axios.isAxiosError<ApiError>(err) || !err.response) {
-        setErros({ ...SEM_ERROS, geral: 'Erro ao conectar com o servidor.' })
-        return
+      if (axios.isAxiosError<ApiError>(err) && err.response?.status === 400 && err.response.data?.erros) {
+        setErros(errosDoServidor(err.response.data.erros, itens))
+      } else {
+        setErros({ ...SEM_ERROS, geral: mensagemDeErroDaApi(err, 'Não foi possível registrar a nota fiscal. Tente novamente.') })
       }
-      const { status, data } = err.response
-      if (status === 400 && data?.erros) setErros(errosDoServidor(data.erros, itens))
-      else setErros({ ...SEM_ERROS, geral: data?.detail ?? 'Não foi possível registrar a nota fiscal.' })
     },
   })
 

@@ -35,6 +35,7 @@ import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
 import { StatusLoteBadge, StatusOrdemBadge } from '../components/StatusBadge'
 import { diasAte, formatarCodigoMaterial, formatarData, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import type { ConsumoMaterial, LoteOrigem, Lote, Material, RastreabilidadeLote } from '../types'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 
 /**
  * Detalhe de um lote: identificação e saldo, origem (nota fiscal ou ordem de produção),
@@ -74,7 +75,7 @@ export function LoteDetalhePage() {
   }
 
   if (loteQuery.isError || !lote) {
-    return <Alert severity="error">Lote não encontrado.</Alert>
+    return <Alert severity="error">{mensagemDeErroAoCarregar(loteQuery.error, 'Lote não encontrado.')}</Alert>
   }
 
   const material = materialPorId.get(lote.materialId)

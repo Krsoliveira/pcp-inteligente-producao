@@ -22,6 +22,8 @@ import { listarMateriais } from '../api/materiais'
 import { EntradaNotaFiscalDialog } from '../components/suprimentos/EntradaNotaFiscalDialog'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
+import { PaginacaoTabela } from '../components/PaginacaoTabela'
+import { usePaginacaoLocal } from '../hooks/usePaginacaoLocal'
 import { formatarCodigoMaterial, formatarData, formatarDataHora } from '../utils/formatacao'
 import type { NotaFiscal } from '../types'
 
@@ -52,6 +54,8 @@ export function NotasFiscaisPage() {
     || n.numero.toLowerCase().includes(termo)
     || n.fornecedor.toLowerCase().includes(termo)
     || n.itens.some((l) => l.numeroLote.toLowerCase().includes(termo)))
+
+  const paginacao = usePaginacaoLocal(filtradas)
 
   const resumoMateriais = (nota: NotaFiscal) => {
     const codigos = [...new Set(nota.itens.map((l) => formatarCodigoMaterial(materialPorId.get(l.materialId)?.codigo)))]
@@ -128,7 +132,7 @@ export function NotasFiscaisPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filtradas.map((nota) => (
+                {paginacao.visiveis.map((nota) => (
                   <TableRow key={nota.id} hover onClick={() => navigate(`/notas-fiscais/${nota.id}`)} sx={{ cursor: 'pointer' }}>
                     <TableCell>
                       <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>{nota.numero}</Typography>
@@ -146,6 +150,8 @@ export function NotasFiscaisPage() {
                 ))}
               </TableBody>
             </Table>
+            <PaginacaoTabela total={paginacao.total} pagina={paginacao.pagina} tamanho={paginacao.tamanho}
+              onPagina={paginacao.setPagina} onTamanho={paginacao.setTamanho} />
           </TableContainer>
         )}
       </Card>

@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -43,7 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Os limites são configuráveis por propriedade e por construtor (testes).
  */
 @Component
-@Order(-200)
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     static final String ROTA_LOGIN     = "/api/v1/auth/login";

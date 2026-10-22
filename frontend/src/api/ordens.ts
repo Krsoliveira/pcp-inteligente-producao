@@ -5,6 +5,8 @@ import type {
   ConcluirOrdemRequest,
   StatusOrdem,
   Lote,
+  FiltroOrdens,
+  PaginaDe,
 } from '../types'
 
 interface ConcluirOrdemResponse {
@@ -14,6 +16,12 @@ interface ConcluirOrdemResponse {
 
 export const listarOrdens = async (): Promise<OrdemProducao[]> => {
   const { data } = await apiClient.get<OrdemProducao[]>('/v1/ordens-producao')
+  return data
+}
+
+/** Uma página de ordens, já filtrada pelo servidor (das mais recentes para as mais antigas). */
+export const pesquisarOrdens = async (filtro: FiltroOrdens): Promise<PaginaDe<OrdemProducao>> => {
+  const { data } = await apiClient.get<PaginaDe<OrdemProducao>>('/v1/ordens-producao/pesquisa', { params: filtro })
   return data
 }
 

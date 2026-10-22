@@ -367,3 +367,43 @@ export interface FiltroEventosAuditoria {
   pagina?: number
   tamanho?: number
 }
+
+/** Página devolvida pelas pesquisas do servidor. `pagina` começa em 0. */
+export interface PaginaDe<T> {
+  itens: T[]
+  pagina: number
+  tamanho: number
+  total: number
+  totalPaginas: number
+}
+
+export interface FiltroOrdens {
+  /** Trecho do código da ordem. */
+  busca?: string
+  status?: StatusOrdem
+  pagina?: number
+  tamanho?: number
+}
+
+/** Totais do dashboard, calculados no servidor. */
+export interface ResumoProducao {
+  totalOrdens: number
+  ordensPorStatus: Record<StatusOrdem, number>
+  ordensAtrasadas: number
+  lotesDisponiveis: number
+}
+
+export interface FiltroMateriais {
+  /** Trecho da descrição ou do código (aceita 103.000.001). */
+  busca?: string
+  tipo?: TipoMaterial
+  pagina?: number
+  tamanho?: number
+}
+
+export interface FiltroListasTecnicas {
+  materialId?: string
+  status?: StatusListaTecnica
+  pagina?: number
+  tamanho?: number
+}

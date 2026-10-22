@@ -1,5 +1,8 @@
 package com.krsoliveira.pcp.domain.material;
 
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +20,9 @@ public interface MaterialRepository {
     Optional<Material> buscarPorCodigo(String codigo);
 
     List<Material> listarTodos();
+
+    /** Uma página de materiais que atendem ao filtro, dos cadastrados mais recentemente para os mais antigos. */
+    Pagina<Material> pesquisar(FiltroMateriais filtro, PedidoDePagina pedido);
 
     /**
      * Próximo código livre na faixa do tipo ({@link CodigoMaterial}). A implementação

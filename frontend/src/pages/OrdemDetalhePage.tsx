@@ -30,7 +30,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { buscarOrdemPorId, concluirOrdem } from '../api/ordens'
 import { listarConsumosPorOrdem } from '../api/consumos'
 import { listarLotesPorOrdem } from '../api/lotes'
@@ -44,6 +43,8 @@ import { RegistrarConsumoDialog } from '../components/consumo/RegistrarConsumoDi
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
 import { formatarCodigoMaterial, formatarDataHora } from '../utils/formatacao'
 import type { ConsumoMaterial, ConcluirOrdemRequest } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 
 export function OrdemDetalhePage() {
   const { id } = useParams<{ id: string }>()
@@ -128,7 +129,7 @@ export function OrdemDetalhePage() {
   }
 
   if (ordemQuery.isError || !ordem) {
-    return <Alert severity="error">Ordem não encontrada.</Alert>
+    return <Alert severity="error">{mensagemDeErroAoCarregar(ordemQuery.error, 'Ordem não encontrada.')}</Alert>
   }
 
   return (
@@ -404,7 +405,7 @@ function ConcluirOrdemDialog({ aberto, ordemId, onFechar, onSucesso }: ConcluirO
   const { mutate, isPending } = useMutation({
     mutationFn: (payload: ConcluirOrdemRequest) => concluirOrdem(ordemId, payload),
     onSuccess: () => { onSucesso(); setErro(null) },
-    onError: (err: unknown) => { if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro.'); else setErro('Erro inesperado.') },
+    onError: (err: unknown) => setErro(mensagemDeErroDaApi(err, 'Não foi possível concluir a ordem. Tente novamente.')),
   })
 
   const handleSubmit = () => {

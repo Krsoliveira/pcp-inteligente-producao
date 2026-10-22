@@ -23,12 +23,12 @@ import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { listarTiposOrdem, cadastrarTipoOrdem, atualizarTipoOrdem } from '../api/tiposOrdem'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { TipoOrdemBadge } from '../components/StatusBadge'
 import type { TipoOrdem, CadastrarTipoOrdemRequest } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 const CORES_SUGERIDAS = [
   '#4F46E5', '#2563EB', '#0F766E', '#059669',
@@ -149,8 +149,7 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
     mutationFn: cadastrarTipoOrdem,
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tipos-ordem'] }); onFechar(); setErro(null) },
     onError: (err: unknown) => {
-      if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro ao cadastrar.')
-      else setErro('Erro inesperado.')
+      setErro(mensagemDeErroDaApi(err, 'Não foi possível cadastrar o tipo de ordem. Tente novamente.'))
     },
   })
 
@@ -158,8 +157,7 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
     mutationFn: (payload: CadastrarTipoOrdemRequest) => atualizarTipoOrdem(tipoExistente!.id, payload),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tipos-ordem'] }); onFechar(); setErro(null) },
     onError: (err: unknown) => {
-      if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro ao atualizar.')
-      else setErro('Erro inesperado.')
+      setErro(mensagemDeErroDaApi(err, 'Não foi possível atualizar o tipo de ordem. Tente novamente.'))
     },
   })
 

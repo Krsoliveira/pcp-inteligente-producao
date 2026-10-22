@@ -12,38 +12,40 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import BuildIcon from '@mui/icons-material/Build'
 import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
 import { useQuery } from '@tanstack/react-query'
-import { listarOrdens } from '../api/ordens'
-import { listarLotes } from '../api/lotes'
+import { pesquisarOrdens } from '../api/ordens'
+import { consultarResumoProducao } from '../api/dashboard'
 import { KpiCard } from '../components/KpiCard'
 import { StatusPieChart } from '../components/StatusPieChart'
 import { OrdemTable } from '../components/OrdemTable'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { PageHeader } from '../components/PageHeader'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import type { OrdemProducao } from '../types'
 
 export function DashboardPage() {
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemProducao | null>(null)
 
-  const { data: ordens = [], isLoading, isError } = useQuery({
-    queryKey: ['ordens'],
-    queryFn: listarOrdens,
+  // Os totais vêm calculados do servidor; só as 5 ordens mais recentes são baixadas.
+  const resumoQuery = useQuery({
+    queryKey: ['ordens', 'resumo'],
+    queryFn: consultarResumoProducao,
+    refetchInterval: 30_000,
+  })
+  const recentesQuery = useQuery({
+    queryKey: ['ordens', 'recentes'],
+    queryFn: () => pesquisarOrdens({ pagina: 0, tamanho: 5 }),
     refetchInterval: 30_000,
   })
 
-  const { data: lotes = [] } = useQuery({
-    queryKey: ['lotes'],
-    queryFn: listarLotes,
-  })
-
-  const total = ordens.length
-  const atrasadas = ordens.filter((o) => o.atrasada).length
-  const emProducao = ordens.filter((o) => o.status === 'EM_PRODUCAO').length
-  const concluidas = ordens.filter((o) => o.status === 'CONCLUIDA').length
-  const lotesDisponiveis = lotes.filter((l) => l.status === 'DISPONIVEL').length
-
-  const recentes = [...ordens]
-    .sort((a, b) => new Date(b.criadaEm).getTime() - new Date(a.criadaEm).getTime())
-    .slice(0, 5)
+  const resumo = resumoQuery.data
+  const isLoading = resumoQuery.isLoading
+  const isError = resumoQuery.isError || recentesQuery.isError
+  const total = resumo?.totalOrdens ?? 0
+  const atrasadas = resumo?.ordensAtrasadas ?? 0
+  const emProducao = resumo?.ordensPorStatus.EM_PRODUCAO ?? 0
+  const concluidas = resumo?.ordensPorStatus.CONCLUIDA ?? 0
+  const lotesDisponiveis = resumo?.lotesDisponiveis ?? 0
+  const recentes = recentesQuery.data?.itens ?? []
 
   return (
     <Box>
@@ -54,7 +56,7 @@ export function DashboardPage() {
 
       {isError && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          Não foi possível carregar os dados. Verifique sua conexão.
+          {mensagemDeErroAoCarregar(resumoQuery.error ?? recentesQuery.error, 'Não foi possível carregar os dados do painel.')}
         </Alert>
       )}
 
@@ -93,7 +95,7 @@ export function DashboardPage() {
           {isLoading ? (
             <Skeleton variant="rounded" height={360} />
           ) : (
-            <StatusPieChart ordens={ordens} />
+            <StatusPieChart contagem={resumo?.ordensPorStatus} />
           )}
         </Grid>
         <Grid size={{ xs: 12, xl: 7 }}>

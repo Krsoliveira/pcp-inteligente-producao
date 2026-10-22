@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -15,6 +16,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +46,9 @@ class LimiteCorpoIntegracaoTest {
     @Autowired
     private TestRestTemplate rest;
 
+    @LocalServerPort
+    private int porta;
+
     @Test
     @DisplayName("corpo JSON acima do limite retorna 413 em Problem Details")
     void corpoAcimaDoLimiteRetorna413() {
@@ -56,6 +64,21 @@ class LimiteCorpoIntegracaoTest {
         ResponseEntity<Map> response = login("Senha@123");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    @DisplayName("o 413 por Content-Length também traz os cabeçalhos CORS")
+    void corpoDeclaradoGrandeTemCors() throws Exception {
+        HttpRequest requisicao = HttpRequest.newBuilder(URI.create("http://localhost:" + porta + "/api/v1/auth/login"))
+                .header("Content-Type", "application/json")
+                .header("Origin", "http://localhost:3000")
+                .POST(HttpRequest.BodyPublishers.ofString("{\"senha\":\"" + "x".repeat(1_000) + "\"}"))
+                .build();
+
+        HttpResponse<String> resposta = HttpClient.newHttpClient().send(requisicao, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(resposta.statusCode()).isEqualTo(413);
+        assertThat(resposta.headers().firstValue("Access-Control-Allow-Origin")).contains("http://localhost:3000");
     }
 
     private ResponseEntity<Map> login(String senha) {

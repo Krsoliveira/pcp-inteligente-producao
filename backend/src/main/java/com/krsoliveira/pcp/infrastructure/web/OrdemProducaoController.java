@@ -7,8 +7,12 @@ import com.krsoliveira.pcp.application.ordem.CriarOrdemProducao;
 import com.krsoliveira.pcp.infrastructure.web.dto.AtualizarStatusRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.ConcluirOrdemRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.ConcluirOrdemResponse;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.ordem.FiltroOrdens;
+import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 import com.krsoliveira.pcp.infrastructure.web.dto.CriarOrdemProducaoRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.OrdemProducaoResponse;
+import com.krsoliveira.pcp.infrastructure.web.dto.PaginaResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -67,6 +72,21 @@ public class OrdemProducaoController {
         return consultarOrdensProducao.listar().stream()
                 .map(OrdemProducaoResponse::de)
                 .toList();
+    }
+
+    @GetMapping("/pesquisa")
+    @Operation(summary = "Pesquisa ordens com filtro e paginação",
+            description = "Filtra no servidor por trecho do código (busca) e por status e devolve uma página, "
+                    + "das ordens mais recentes para as mais antigas. Tamanho padrão 25, máximo 100; "
+                    + "valores fora desses limites são corrigidos.")
+    public PaginaResponse<OrdemProducaoResponse> pesquisar(
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) StatusOrdemProducao status,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamanho) {
+        var resultado = consultarOrdensProducao.pesquisar(
+                new FiltroOrdens(busca, status), PedidoDePagina.de(pagina, tamanho));
+        return PaginaResponse.de(resultado, OrdemProducaoResponse::de);
     }
 
     @GetMapping("/{id}")

@@ -18,10 +18,13 @@ import { consultarEstoque } from '../api/estoque'
 import { listarLotesPorMaterial } from '../api/lotes'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
+import { PaginacaoTabela } from '../components/PaginacaoTabela'
+import { usePaginacaoLocal } from '../hooks/usePaginacaoLocal'
 import { KpiCard } from '../components/KpiCard'
 import { TabelaLotes } from '../components/suprimentos/TabelaLotes'
 import { formatarCodigoMaterial, formatarData, formatarQuantidade } from '../utils/formatacao'
 import { TIPO_MATERIAL_LABEL, type StatusLote } from '../types'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 
 /** Estoque de um material: posição e todos os lotes (de compra e de produção). */
 export function EstoqueMaterialPage() {
@@ -42,8 +45,10 @@ export function EstoqueMaterialPage() {
     && (termo === '' || l.numeroLote.toLowerCase().includes(termo) || (l.notaFiscal ?? '').toLowerCase().includes(termo)
       || (l.fornecedor ?? '').toLowerCase().includes(termo)))
 
+  const paginacao = usePaginacaoLocal(filtrados)
+
   if (estoqueQuery.isLoading) return <Skeleton variant="rounded" height={320} />
-  if (estoqueQuery.isError || !posicao) return <Alert severity="error">Material não encontrado.</Alert>
+  if (estoqueQuery.isError || !posicao) return <Alert severity="error">{mensagemDeErroAoCarregar(estoqueQuery.error, 'Material não encontrado.')}</Alert>
 
   const codigo = formatarCodigoMaterial(posicao.codigo)
   const unidade = posicao.unidadeDeMedida
@@ -97,8 +102,10 @@ export function EstoqueMaterialPage() {
             descricao={lotes.length > 0 ? 'Nenhum lote atende aos filtros.' : 'Este material ainda não teve entrada.'} />
         ) : (
           <>
-            <TabelaLotes lotes={filtrados} coluna="origem" />
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 2, py: 1 }}>
+            <TabelaLotes lotes={paginacao.visiveis} coluna="origem" />
+            <PaginacaoTabela total={paginacao.total} pagina={paginacao.pagina} tamanho={paginacao.tamanho}
+              onPagina={paginacao.setPagina} onTamanho={paginacao.setTamanho} />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 2, pb: 1 }}>
               {filtrados.length} de {lotes.length} lotes
             </Typography>
           </>

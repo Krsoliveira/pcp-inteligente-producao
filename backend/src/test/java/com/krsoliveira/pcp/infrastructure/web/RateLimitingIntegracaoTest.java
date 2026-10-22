@@ -58,10 +58,27 @@ class RateLimitingIntegracaoTest {
         assertThat(bloqueada.body()).contains("\"status\":429").contains("\"detail\"");
     }
 
+    @Test
+    @DisplayName("o 429 também traz os cabeçalhos CORS, senão o navegador o descarta")
+    void respostaBloqueadaTemCors() throws Exception {
+        for (int i = 0; i < 2; i++) {
+            login("198.51.100." + i);
+        }
+
+        HttpResponse<String> bloqueada = login("198.51.100.251");
+
+        assertThat(bloqueada.statusCode()).isEqualTo(429);
+        assertThat(bloqueada.headers().firstValue("Access-Control-Allow-Origin"))
+                .contains("http://localhost:3000");
+        assertThat(bloqueada.headers().firstValue("Access-Control-Expose-Headers"))
+                .hasValueSatisfying(expostos -> assertThat(expostos).contains("Retry-After"));
+    }
+
     private HttpResponse<String> login(String forwardedFor) throws Exception {
         HttpRequest requisicao = HttpRequest.newBuilder(URI.create("http://localhost:" + porta + "/api/v1/auth/login"))
                 .header("Content-Type", "application/json")
                 .header("X-Forwarded-For", forwardedFor)
+                .header("Origin", "http://localhost:3000")
                 .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"ninguem@pcp.com\",\"senha\":\"Senha@123\"}"))
                 .build();
         return cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());

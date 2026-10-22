@@ -1,12 +1,13 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { pesquisarListasTecnicas } from '../api/listasTecnicas'
+import { ListaTecnicaTable } from '../components/listas/ListaTecnicaTable'
+import { CamposFiltroListas, nomeDoMaterial } from '../components/listas/CamposFiltroListas'
+import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
+import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
+import { montarBusca } from '../utils/url'
 import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 import Skeleton from '@mui/material/Skeleton'
@@ -19,53 +20,54 @@ import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Grid from '@mui/material/Grid2'
 import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
 import Divider from '@mui/material/Divider'
-import Chip from '@mui/material/Chip'
 import AddIcon from '@mui/icons-material/Add'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
-import { listarListasTecnicas, cadastrarListaTecnica, ativarListaTecnica } from '../api/listasTecnicas'
+import { cadastrarListaTecnica, ativarListaTecnica } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
-import { StatusListaBadge } from '../components/StatusBadge'
 import { formatarCodigoMaterial } from '../utils/formatacao'
-import type { CadastrarListaTecnicaRequest, TipoMaterial } from '../types'
+import type { CadastrarListaTecnicaRequest, StatusListaTecnica, TipoMaterial } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
+/** Primeira etapa: escolher o que consultar (ou abrir uma das 10 listas mais recentes). */
 export function ListasTecnicasPage() {
-  const [dialogAberto, setDialogAberto] = useState(false)
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [dialogAberto, setDialogAberto] = useState(false)
+  const [materialId, setMaterialId] = useState('')
+  const [status, setStatus] = useState<StatusListaTecnica | 'TODOS'>('TODOS')
 
-  const { data: listas = [], isLoading, isError } = useQuery({
-    queryKey: ['listas-tecnicas-todas'],
-    queryFn: () => listarListasTecnicas(),
+  const recentes = useQuery({
+    queryKey: ['listas-tecnicas', 'recentes', 10],
+    queryFn: () => pesquisarListasTecnicas({ pagina: 0, tamanho: 10 }),
   })
-
-  const { data: materiais = [] } = useQuery({
-    queryKey: ['materiais'],
-    queryFn: listarMateriais,
-  })
-
-  const { mutate: ativar } = useMutation({
-    mutationFn: ativarListaTecnica,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['listas-tecnicas-todas'] }),
-  })
-
-  const getMaterialNome = (id: string) => {
-    const m = materiais.find(m => m.id === id)
-    return m ? `${formatarCodigoMaterial(m.codigo)} — ${m.descricao}` : id.substring(0, 8) + '…'
+  const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
+  const comLista = materiais.filter((m) => m.tipo !== 'MATERIA_PRIMA')
+  const nome = (id: string) => {
+    const m = materiais.find((x) => x.id === id)
+    return m ? nomeDoMaterial(m) : `${id.substring(0, 8)}…`
   }
+
+  const { mutate: ativar, error: erroAtivar } = useMutation({
+    mutationFn: ativarListaTecnica,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['listas-tecnicas'] }),
+  })
+
+  const verResultados = (filtros: Record<string, string | undefined> = {}) =>
+    navigate({ pathname: '/listas-tecnicas/resultados', search: montarBusca(filtros) })
+  const pesquisar = () => verResultados({ materialId: materialId || undefined, status: status === 'TODOS' ? undefined : status })
+  const limpar = () => { setMaterialId(''); setStatus('TODOS') }
 
   return (
     <Box>
       <PageHeader
         titulo="Listas Técnicas"
-        subtitulo={isLoading ? '…' : `${listas.length} versões cadastradas`}
+        subtitulo="Pesquise por material ou status, ou abra uma das mais recentes"
         breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas Técnicas' }]}
         action={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
@@ -74,12 +76,18 @@ export function ListasTecnicasPage() {
         }
       />
 
-      {isError && <Alert severity="error" sx={{ mb: 2 }}>Não foi possível carregar as listas técnicas.</Alert>}
+      <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
+        <CamposFiltroListas materiais={comLista} materialId={materialId} onMaterial={setMaterialId} status={status} onStatus={setStatus} />
+      </PainelDeConsulta>
 
-      <Card>
-        {isLoading ? (
+      {erroAtivar && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroDaApi(erroAtivar, 'Não foi possível ativar a lista técnica.')}</Alert>}
+
+      <CartaoDeRecentes titulo="10 listas técnicas mais recentes" onVerTodas={() => verResultados()}>
+        {recentes.isLoading ? (
           <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : listas.length === 0 ? (
+        ) : recentes.isError ? (
+          <Alert severity="error" sx={{ m: 2 }}>{mensagemDeErroAoCarregar(recentes.error, 'Não foi possível carregar as listas técnicas.')}</Alert>
+        ) : (recentes.data?.itens.length ?? 0) === 0 ? (
           <EmptyState
             Icone={AccountTreeIcon}
             titulo="Nenhuma lista técnica cadastrada"
@@ -88,53 +96,14 @@ export function ListasTecnicasPage() {
             onAcao={() => setDialogAberto(true)}
           />
         ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Material</TableCell>
-                  <TableCell>Versão</TableCell>
-                  <TableCell align="center">Componentes</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center" sx={{ width: 80 }}>Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {listas.map((l) => (
-                  <TableRow key={l.id} hover>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={500}>{getMaterialNome(l.materialId)}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={l.versao} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Typography variant="body2">{l.itens.length}</Typography>
-                    </TableCell>
-                    <TableCell><StatusListaBadge status={l.status} /></TableCell>
-                    <TableCell align="center">
-                      {l.status === 'EM_REVISAO' && (
-                        <Tooltip title="Ativar esta versão">
-                          <IconButton size="small" color="success" onClick={() => ativar(l.id)}>
-                            <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <ListaTecnicaTable listas={recentes.data!.itens} nomeDoMaterial={nome} onAtivar={ativar} />
         )}
-      </Card>
+      </CartaoDeRecentes>
 
       <CriarListaTecnicaDialog aberto={dialogAberto} onFechar={() => setDialogAberto(false)} />
     </Box>
   )
 }
-
-// ---- Dialog criar ----
 
 interface CriarListaTecnicaDialogProps { aberto: boolean; onFechar: () => void }
 
@@ -159,8 +128,7 @@ function CriarListaTecnicaDialog({ aberto, onFechar }: CriarListaTecnicaDialogPr
       handleFechar()
     },
     onError: (err: unknown) => {
-      if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro ao cadastrar.')
-      else setErro('Erro inesperado.')
+      setErro(mensagemDeErroDaApi(err, 'Não foi possível cadastrar a lista técnica. Tente novamente.'))
     },
   })
 
