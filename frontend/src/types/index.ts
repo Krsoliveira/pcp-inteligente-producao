@@ -407,3 +407,29 @@ export interface FiltroListasTecnicas {
   pagina?: number
   tamanho?: number
 }
+
+export interface FiltroNotasFiscais {
+  /** Trecho do número da nota, do fornecedor ou do número de um lote que ela trouxe. */
+  busca?: string
+  /** Recebida a partir desta data ("YYYY-MM-DD", inclusive). */
+  de?: string
+  ate?: string
+  pagina?: number
+  tamanho?: number
+}
+
+export interface FiltroEstoque {
+  /** Trecho do código (aceita 103.000.001) ou da descrição. */
+  busca?: string
+  tipo?: TipoMaterial
+  somenteComSaldo?: boolean
+  pagina?: number
+  tamanho?: number
+}
+
+/** Alertas do estoque, calculados sobre todos os materiais. */
+export interface ResumoEstoque {
+  totalMateriais: number
+  materiaisVencendo: number
+  materiasPrimasSemSaldo: number
+}

@@ -13,7 +13,7 @@ pode refinar o que já está na tela.
 
 ## Decisão
 
-Cada listagem de volume crescente (Ordens, Materiais, Listas Técnicas) tem duas telas:
+Cada listagem de volume crescente (Ordens, Materiais, Listas Técnicas, Notas Fiscais e Estoque) tem duas telas:
 
 1. **Consulta** (`/ordens`, `/materiais`, `/listas-tecnicas`): painel de filtros
    (Pesquisar/Limpar) e o cartão **"10 mais recentes"** com atalho "Ver todos". Quem só
@@ -29,9 +29,17 @@ Regras:
 - O subfiltro **não consulta o servidor**: ele só filtra as linhas já carregadas. Vira um
   texto livre sobre as colunas visíveis.
 - Telas com pouquíssimos dados (Tipos de Ordem) continuam mostrando tudo direto.
-- Novos endpoints `GET .../pesquisa` (materiais e listas técnicas), no mesmo padrão das
-  ordens: filtro opcional, `PedidoDePagina` que corrige valores fora do limite, `%`, `_` e
+- Novos endpoints `GET .../pesquisa` (materiais, listas técnicas, notas fiscais e estoque), no
+  mesmo padrão das ordens: filtro opcional, `PedidoDePagina` que corrige valores fora do limite, `%`, `_` e
   `\` como texto comum. Os endpoints de listagem completa continuam iguais.
+- **Notas fiscais:** a busca olha o número da nota, o fornecedor e o número do lote de qualquer
+  item (subconsulta `EXISTS`), mais o período de recebimento. Período invertido: 422 no servidor e
+  aviso na tela, sem consultar.
+- **Estoque:** a posição de um material é um agregado dos lotes (não há tabela de estoque, ADR-0012).
+  O servidor calcula as posições e aplica filtro, ordenação (entrada mais recente primeiro) e página
+  sobre elas; o banco continua agregando todos os materiais. O aviso de materiais vencendo e
+  matérias-primas sem saldo, que a tela calculava baixando tudo, vem de `GET /api/v1/estoque/resumo`.
+  Se o catálogo de materiais crescer para milhares, a agregação precisará de filtro em SQL.
 - A **lista técnica ganha tela de detalhe** (`/listas-tecnicas/:id`) com a "receita"
   (componentes, tipo e quantidade), os dados da versão e o botão de ativar.
 
@@ -51,6 +59,6 @@ Regras:
 - **Negativas / riscos**:
   - Um clique a mais para ver "tudo" (mitigado pelos 10 mais recentes e pelo "Ver todos").
   - O subfiltro só enxerga a página atual; é preciso dizer isso na tela (já diz).
-  - O frontend continua sem testes automáticos; o comportamento foi validado por build,
-    pelos testes de integração dos endpoints e manualmente.
-  - Notas fiscais, estoque e lotes ainda não seguem o padrão (ver `proximos-passos.md`).
+  - O comportamento de tela é coberto por testes de componente (ADR-0017), não por E2E.
+  - Os lotes de um material (dentro de Estoque) ainda baixam a lista do material e paginam só na
+    tela (ver `proximos-passos.md`).
