@@ -392,3 +392,18 @@ export interface ResumoProducao {
   ordensAtrasadas: number
   lotesDisponiveis: number
 }
+
+export interface FiltroMateriais {
+  /** Trecho da descrição ou do código (aceita 103.000.001). */
+  busca?: string
+  tipo?: TipoMaterial
+  pagina?: number
+  tamanho?: number
+}
+
+export interface FiltroListasTecnicas {
+  materialId?: string
+  status?: StatusListaTecnica
+  pagina?: number
+  tamanho?: number
+}
