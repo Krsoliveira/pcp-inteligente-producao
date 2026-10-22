@@ -1,17 +1,16 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { pesquisarMateriais } from '../api/materiais'
+import { MaterialTable } from '../components/materiais/MaterialTable'
+import { CamposFiltroMateriais } from '../components/materiais/CamposFiltroMateriais'
+import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
+import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
+import { montarBusca } from '../utils/url'
 import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
-import Typography from '@mui/material/Typography'
 import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
 import Dialog from '@mui/material/Dialog'
@@ -20,45 +19,37 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Grid from '@mui/material/Grid2'
 import AddIcon from '@mui/icons-material/Add'
-import SearchIcon from '@mui/icons-material/Search'
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined'
-import InputAdornment from '@mui/material/InputAdornment'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listarMateriais, cadastrarMaterial } from '../api/materiais'
+import { cadastrarMaterial } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import type { TipoMaterial, CadastrarMaterialRequest } from '../types'
-import { codigoMaterialCorresponde, formatarCodigoMaterial } from '../utils/formatacao'
 import { TIPO_MATERIAL_LABEL } from '../types'
 import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
-const TIPO_COR: Record<TipoMaterial, string> = {
-  PRODUTO_ACABADO: '#4F46E5',
-  SEMIACABADO:     '#D97706',
-  MATERIA_PRIMA:   '#059669',
-}
-
+/** Primeira etapa: escolher o que consultar (ou abrir um dos 10 materiais mais recentes). */
 export function MateriaisPage() {
+  const navigate = useNavigate()
   const [dialogAberto, setDialogAberto] = useState(false)
   const [busca, setBusca] = useState('')
-  const [filtroTipo, setFiltroTipo] = useState<TipoMaterial | 'TODOS'>('TODOS')
+  const [tipo, setTipo] = useState<TipoMaterial | 'TODOS'>('TODOS')
 
-  const { data: materiais = [], isLoading, isError } = useQuery({
-    queryKey: ['materiais-todos'],
-    queryFn: listarMateriais,
+  const recentes = useQuery({
+    queryKey: ['materiais', 'recentes', 10],
+    queryFn: () => pesquisarMateriais({ pagina: 0, tamanho: 10 }),
   })
 
-  const filtrados = materiais.filter((m) => {
-    const buscaOk = busca === '' || codigoMaterialCorresponde(m.codigo, busca.trim()) || m.descricao.toLowerCase().includes(busca.toLowerCase())
-    const tipoOk = filtroTipo === 'TODOS' || m.tipo === filtroTipo
-    return buscaOk && tipoOk
-  })
+  const verResultados = (filtros: Record<string, string | undefined> = {}) =>
+    navigate({ pathname: '/materiais/resultados', search: montarBusca(filtros) })
+  const pesquisar = () => verResultados({ busca: busca.trim(), tipo: tipo === 'TODOS' ? undefined : tipo })
+  const limpar = () => { setBusca(''); setTipo('TODOS') }
 
   return (
     <Box>
       <PageHeader
         titulo="Materiais"
-        subtitulo={isLoading ? '…' : `${materiais.length} materiais cadastrados`}
+        subtitulo="Pesquise por código, descrição ou tipo, ou veja os mais recentes"
         breadcrumbs={[{ label: 'Cadastros' }, { label: 'Materiais' }]}
         action={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
@@ -67,57 +58,21 @@ export function MateriaisPage() {
         }
       />
 
-      {isError && <Alert severity="error" sx={{ mb: 2 }}>Não foi possível carregar os materiais.</Alert>}
+      <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
+        <CamposFiltroMateriais busca={busca} onBusca={setBusca} tipo={tipo} onTipo={setTipo} />
+      </PainelDeConsulta>
 
-      <Card>
-        <Box sx={{ p: 2, display: 'flex', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <TextField
-            placeholder="Buscar por código (103.000.001) ou descrição…"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            sx={{ flex: 1, minWidth: 220 }}
-            slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" color="action" /></InputAdornment> } }}
-          />
-          <TextField select label="Tipo" value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value as TipoMaterial | 'TODOS')} sx={{ minWidth: 180 }}>
-            <MenuItem value="TODOS">Todos os tipos</MenuItem>
-            {(Object.keys(TIPO_MATERIAL_LABEL) as TipoMaterial[]).map((t) => (
-              <MenuItem key={t} value={t}>{TIPO_MATERIAL_LABEL[t]}</MenuItem>
-            ))}
-          </TextField>
-        </Box>
-
-        {isLoading ? (
+      <CartaoDeRecentes titulo="10 materiais mais recentes" onVerTodas={() => verResultados()}>
+        {recentes.isLoading ? (
           <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : filtrados.length === 0 ? (
-          <EmptyState Icone={InventoryIcon} titulo="Nenhum material encontrado" descricao="Cadastre materiais: produtos acabados, semiacabados e matérias-primas." acaoLabel="Novo Material" onAcao={() => setDialogAberto(true)} />
+        ) : recentes.isError ? (
+          <Alert severity="error" sx={{ m: 2 }}>{mensagemDeErroAoCarregar(recentes.error, 'Não foi possível carregar os materiais.')}</Alert>
+        ) : (recentes.data?.itens.length ?? 0) === 0 ? (
+          <EmptyState Icone={InventoryIcon} titulo="Nenhum material cadastrado" descricao="Cadastre materiais: produtos acabados, semiacabados e matérias-primas." acaoLabel="Novo Material" onAcao={() => setDialogAberto(true)} />
         ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Código</TableCell>
-                  <TableCell>Descrição</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Unidade</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filtrados.map((m) => (
-                  <TableRow key={m.id} hover>
-                    <TableCell><Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }} noWrap>{formatarCodigoMaterial(m.codigo)}</Typography></TableCell>
-                    <TableCell>{m.descricao}</TableCell>
-                    <TableCell>
-                      <Chip label={TIPO_MATERIAL_LABEL[m.tipo]} size="small"
-                        sx={{ bgcolor: `${TIPO_COR[m.tipo]}14`, color: TIPO_COR[m.tipo], fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
-                    </TableCell>
-                    <TableCell><Typography variant="body2" color="text.secondary">{m.unidadeDeMedida}</Typography></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <MaterialTable materiais={recentes.data!.itens} />
         )}
-      </Card>
+      </CartaoDeRecentes>
 
       <CriarMaterialDialog aberto={dialogAberto} onFechar={() => setDialogAberto(false)} />
     </Box>

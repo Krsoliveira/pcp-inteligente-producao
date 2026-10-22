@@ -1,5 +1,8 @@
 package com.krsoliveira.pcp.application.lista;
 
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.lista.FiltroListasTecnicas;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 
@@ -24,6 +27,10 @@ public class ConsultarListaTecnica {
 
     public List<ListaTecnica> listarTodas() {
         return listaTecnicaRepository.listarTodas();
+    }
+
+    public Pagina<ListaTecnica> pesquisar(FiltroListasTecnicas filtro, PedidoDePagina pedido) {
+        return listaTecnicaRepository.pesquisar(filtro, pedido);
     }
 
     public List<ListaTecnica> listarPorMaterial(UUID materialId) {

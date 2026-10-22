@@ -5,6 +5,10 @@ import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
 import com.krsoliveira.pcp.application.lista.ConsultarListaTecnica;
 import com.krsoliveira.pcp.infrastructure.web.dto.CadastrarListaTecnicaRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.ListaTecnicaResponse;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.lista.FiltroListasTecnicas;
+import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
+import com.krsoliveira.pcp.infrastructure.web.dto.PaginaResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -57,6 +61,20 @@ public class ListaTecnicaController {
     public ResponseEntity<Void> ativar(@PathVariable UUID id) {
         ativarListaTecnica.executar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/pesquisa")
+    @Operation(summary = "Pesquisa listas técnicas com filtro e paginação",
+            description = "Filtra no servidor por material e status, das criadas mais recentemente para as mais antigas. "
+                    + "Tamanho padrão 25, máximo 100.")
+    public PaginaResponse<ListaTecnicaResponse> pesquisar(
+            @RequestParam(required = false) UUID materialId,
+            @RequestParam(required = false) StatusListaTecnica status,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamanho) {
+        var resultado = consultarListaTecnica.pesquisar(
+                new FiltroListasTecnicas(materialId, status), PedidoDePagina.de(pagina, tamanho));
+        return PaginaResponse.de(resultado, ListaTecnicaResponse::de);
     }
 
     @GetMapping("/{id}")

@@ -4,6 +4,11 @@ import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.infrastructure.web.dto.CadastrarMaterialRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.MaterialResponse;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.material.FiltroMateriais;
+import com.krsoliveira.pcp.domain.material.TipoMaterial;
+import com.krsoliveira.pcp.infrastructure.web.dto.PaginaResponse;
+import org.springframework.web.bind.annotation.RequestParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -49,6 +54,20 @@ public class MaterialController {
         List<MaterialResponse> resposta = consultarMateriais.listarTodos()
                 .stream().map(MaterialResponse::de).toList();
         return ResponseEntity.ok(resposta);
+    }
+
+    @GetMapping("/pesquisa")
+    @Operation(summary = "Pesquisa materiais com filtro e paginação",
+            description = "Filtra no servidor por trecho da descrição ou do código (aceita 103.000.001) e por tipo. "
+                    + "Dos cadastrados mais recentemente para os mais antigos. Tamanho padrão 25, máximo 100.")
+    public PaginaResponse<MaterialResponse> pesquisar(
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) TipoMaterial tipo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamanho) {
+        var resultado = consultarMateriais.pesquisar(
+                new FiltroMateriais(busca, tipo), PedidoDePagina.de(pagina, tamanho));
+        return PaginaResponse.de(resultado, MaterialResponse::de);
     }
 
     @GetMapping("/{id}")

@@ -1,5 +1,8 @@
 package com.krsoliveira.pcp.application.material;
 
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.material.FiltroMateriais;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 
@@ -24,5 +27,9 @@ public class ConsultarMateriais {
 
     public List<Material> listarTodos() {
         return materialRepository.listarTodos();
+    }
+
+    public Pagina<Material> pesquisar(FiltroMateriais filtro, PedidoDePagina pedido) {
+        return materialRepository.pesquisar(filtro, pedido);
     }
 }

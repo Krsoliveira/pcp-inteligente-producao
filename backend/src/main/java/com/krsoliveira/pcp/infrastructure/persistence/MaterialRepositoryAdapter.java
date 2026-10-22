@@ -4,7 +4,17 @@ import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.CodigoMaterial;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.material.TipoMaterial;
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.material.FiltroMateriais;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
+
+import java.util.ArrayList;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +55,34 @@ public class MaterialRepositoryAdapter implements MaterialRepository {
         return springDataRepository.findAll().stream()
                 .map(MaterialJpaEntity::paraDominio)
                 .toList();
+    }
+
+    @Override
+    public Pagina<Material> pesquisar(FiltroMateriais filtro, PedidoDePagina pedido) {
+        Specification<MaterialJpaEntity> criterios = (material, consulta, cb) -> {
+            List<Predicate> condicoes = new ArrayList<>();
+            if (filtro.tipo() != null) {
+                condicoes.add(cb.equal(material.get("tipo"), filtro.tipo()));
+            }
+            if (filtro.busca() != null) {
+                List<Predicate> alternativas = new ArrayList<>();
+                alternativas.add(cb.like(cb.lower(material.get("descricao")),
+                        PesquisaJpa.contem(filtro.busca()), PesquisaJpa.ESCAPE));
+                if (filtro.digitosDoCodigo() != null) {
+                    // só dígitos: não há curingas a escapar
+                    alternativas.add(cb.like(material.get("codigo"), "%" + filtro.digitosDoCodigo() + "%"));
+                }
+                condicoes.add(cb.or(alternativas.toArray(new Predicate[0])));
+            }
+            return cb.and(condicoes.toArray(new Predicate[0]));
+        };
+        Sort ordenacao = Sort.by(Sort.Order.desc("criadoEm"), Sort.Order.desc("codigo"));
+
+        Page<MaterialJpaEntity> pagina = springDataRepository.findAll(criterios,
+                PageRequest.of(pedido.pagina(), pedido.tamanho(), ordenacao));
+
+        return new Pagina<>(pagina.getContent().stream().map(MaterialJpaEntity::paraDominio).toList(),
+                pedido.pagina(), pedido.tamanho(), pagina.getTotalElements());
     }
 
     /**

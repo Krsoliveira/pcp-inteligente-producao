@@ -1,0 +1,147 @@
+import { useParams } from 'react-router-dom'
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Chip from '@mui/material/Chip'
+import Divider from '@mui/material/Divider'
+import Grid from '@mui/material/Grid2'
+import Skeleton from '@mui/material/Skeleton'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import Typography from '@mui/material/Typography'
+import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ativarListaTecnica, buscarListaTecnicaPorId } from '../api/listasTecnicas'
+import { listarMateriais } from '../api/materiais'
+import { InfoRow } from '../components/InfoRow'
+import { PageHeader } from '../components/PageHeader'
+import { StatusListaBadge } from '../components/StatusBadge'
+import { TIPO_COR } from '../components/materiais/MaterialTable'
+import { formatarCodigoMaterial, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
+import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
+import { TIPO_MATERIAL_LABEL } from '../types'
+
+/** Detalhe da lista técnica: a "receita" (componentes e quantidades) de uma versão. */
+export function ListaTecnicaDetalhePage() {
+  const { id } = useParams<{ id: string }>()
+  const queryClient = useQueryClient()
+  const listaQuery = useQuery({ queryKey: ['listas-tecnicas', 'detalhe', id], queryFn: () => buscarListaTecnicaPorId(id!), enabled: !!id })
+  const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
+  const materialPorId = new Map(materiais.map((m) => [m.id, m]))
+  const lista = listaQuery.data
+
+  const { mutate: ativar, isPending: ativando, error: erroAtivar } = useMutation({
+    mutationFn: () => ativarListaTecnica(id!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['listas-tecnicas'] }),
+  })
+
+  if (listaQuery.isLoading) return <Skeleton variant="rounded" height={320} />
+  if (listaQuery.isError || !lista) {
+    return <Alert severity="error">{mensagemDeErroAoCarregar(listaQuery.error, 'Lista técnica não encontrada.')}</Alert>
+  }
+
+  const material = materialPorId.get(lista.materialId)
+  const codigo = material ? formatarCodigoMaterial(material.codigo) : '—'
+
+  return (
+    <Box>
+      <PageHeader
+        titulo={material?.descricao ?? 'Lista técnica'}
+        subtitulo={`${codigo} · versão ${lista.versao}`}
+        breadcrumbs={[
+          { label: 'Cadastros' },
+          { label: 'Listas Técnicas', href: '/listas-tecnicas' },
+          { label: `${codigo} · ${lista.versao}` },
+        ]}
+        action={lista.status === 'EM_REVISAO' ? (
+          <Button variant="contained" color="success" startIcon={<CheckCircleOutlineIcon />} onClick={() => ativar()} disabled={ativando}>
+            {ativando ? 'Ativando…' : 'Ativar esta versão'}
+          </Button>
+        ) : undefined}
+      />
+
+      {erroAtivar && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroDaApi(erroAtivar, 'Não foi possível ativar a lista técnica.')}</Alert>}
+
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <AccountTreeIcon color="action" fontSize="small" />
+                <Typography variant="subtitle2">Lista técnica</Typography>
+              </Box>
+              <Divider sx={{ mb: 2 }} />
+              <Grid container spacing={1.5}>
+                <InfoRow label="Material">{material ? `${codigo} — ${material.descricao}` : '—'}</InfoRow>
+                <InfoRow label="Versão">
+                  <Chip label={lista.versao} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} />
+                </InfoRow>
+                <InfoRow label="Status"><StatusListaBadge status={lista.status} /></InfoRow>
+                <InfoRow label="Componentes">{String(lista.itens.length)}</InfoRow>
+                <InfoRow label="Criada">
+                  <Typography variant="body2">{formatarDataHora(lista.criadaEm)}</Typography>
+                  <Typography variant="caption" color="text.secondary">{lista.criadaPor}</Typography>
+                </InfoRow>
+                <InfoRow label="Alterada">
+                  <Typography variant="body2">{formatarDataHora(lista.atualizadaEm)}</Typography>
+                  <Typography variant="caption" color="text.secondary">{lista.atualizadaPor}</Typography>
+                </InfoRow>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <Card sx={{ height: '100%' }}>
+            <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="subtitle2">Componentes</Typography>
+            </Box>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ width: 40 }}>#</TableCell>
+                    <TableCell>Código</TableCell>
+                    <TableCell>Descrição</TableCell>
+                    <TableCell>Tipo</TableCell>
+                    <TableCell align="right">Quantidade</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {lista.itens.map((item, i) => {
+                    const componente = materialPorId.get(item.materialComponenteId)
+                    return (
+                      <TableRow key={item.id} hover>
+                        <TableCell><Typography variant="body2" color="text.secondary">{i + 1}</Typography></TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }} noWrap>
+                            {componente ? formatarCodigoMaterial(componente.codigo) : '—'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>{componente?.descricao ?? `${item.materialComponenteId.substring(0, 8)}…`}</TableCell>
+                        <TableCell>
+                          {componente && (
+                            <Chip label={TIPO_MATERIAL_LABEL[componente.tipo]} size="small"
+                              sx={{ bgcolor: `${TIPO_COR[componente.tipo]}14`, color: TIPO_COR[componente.tipo], fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
+                          )}
+                        </TableCell>
+                        <TableCell align="right">{formatarQuantidade(item.quantidadePlanejada, item.unidadeDeMedida)}</TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+  )
+}

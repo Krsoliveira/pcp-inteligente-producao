@@ -1,71 +1,48 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import TextField from '@mui/material/TextField'
-import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 import Skeleton from '@mui/material/Skeleton'
-import Alert from '@mui/material/Alert'
-import InputAdornment from '@mui/material/InputAdornment'
 import AddIcon from '@mui/icons-material/Add'
-import SearchIcon from '@mui/icons-material/Search'
 import ListAltIcon from '@mui/icons-material/ListAlt'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { pesquisarOrdens } from '../api/ordens'
 import { OrdemTable } from '../components/OrdemTable'
 import { CriarOrdemDialog } from '../components/CriarOrdemDialog'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { PageHeader } from '../components/PageHeader'
-import { PaginacaoTabela } from '../components/PaginacaoTabela'
-import { useValorComAtraso } from '../hooks/useValorComAtraso'
 import { EmptyState } from '../components/EmptyState'
+import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
+import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
+import { CamposFiltroOrdens } from '../components/ordens/CamposFiltroOrdens'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
+import { montarBusca } from '../utils/url'
 import type { OrdemProducao, StatusOrdem } from '../types'
 
-const STATUS_OPCOES: Array<{ label: string; value: StatusOrdem | 'TODAS' }> = [
-  { label: 'Todos os status', value: 'TODAS' },
-  { label: 'Planejada', value: 'PLANEJADA' },
-  { label: 'Liberada', value: 'LIBERADA' },
-  { label: 'Em Produção', value: 'EM_PRODUCAO' },
-  { label: 'Concluída', value: 'CONCLUIDA' },
-  { label: 'Cancelada', value: 'CANCELADA' },
-]
-
+/** Primeira etapa: escolher o que consultar (ou abrir uma das 10 ordens mais recentes). */
 export function OrdensPage() {
+  const navigate = useNavigate()
   const [dialogCriarAberto, setDialogCriarAberto] = useState(false)
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemProducao | null>(null)
   const [busca, setBusca] = useState('')
-  const [filtroStatus, setFiltroStatus] = useState<StatusOrdem | 'TODAS'>('TODAS')
+  const [status, setStatus] = useState<StatusOrdem | 'TODAS'>('TODAS')
 
-  const [pagina, setPagina] = useState(0)
-  const [tamanho, setTamanho] = useState(25)
-  const buscaAplicada = useValorComAtraso(busca.trim())
-
-  const { data, isLoading, isError, isPlaceholderData } = useQuery({
-    queryKey: ['ordens', 'pesquisa', buscaAplicada, filtroStatus, pagina, tamanho],
-    queryFn: () => pesquisarOrdens({
-      busca: buscaAplicada || undefined,
-      status: filtroStatus === 'TODAS' ? undefined : filtroStatus,
-      pagina,
-      tamanho,
-    }),
-    placeholderData: keepPreviousData,
+  const recentes = useQuery({
+    queryKey: ['ordens', 'recentes', 10],
+    queryFn: () => pesquisarOrdens({ pagina: 0, tamanho: 10 }),
   })
-  const ordens = data?.itens ?? []
-  const total = data?.total ?? 0
-  const filtrando = busca !== '' || filtroStatus !== 'TODAS'
 
-  // Se a página pedida deixou de existir (ex.: uma ordem saiu do filtro), volta para a última.
-  useEffect(() => {
-    if (data && data.itens.length === 0 && data.total > 0 && pagina > 0) {
-      setPagina(Math.max(0, data.totalPaginas - 1))
-    }
-  }, [data, pagina])
+  const verResultados = (filtros: Record<string, string | undefined> = {}) =>
+    navigate({ pathname: '/ordens/resultados', search: montarBusca(filtros) })
+  const pesquisar = () => verResultados({ busca: busca.trim(), status: status === 'TODAS' ? undefined : status })
+  const limpar = () => { setBusca(''); setStatus('TODAS') }
 
   return (
     <Box>
       <PageHeader
         titulo="Ordens de Produção"
-        subtitulo={isLoading ? '…' : `${total} ${filtrando ? 'ordens encontradas' : 'ordens cadastradas'}`}
+        subtitulo="Pesquise por código ou status, ou abra uma das mais recentes"
         breadcrumbs={[{ label: 'Produção' }, { label: 'Ordens' }]}
         action={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogCriarAberto(true)}>
@@ -74,56 +51,21 @@ export function OrdensPage() {
         }
       />
 
-      {isError && <Alert severity="error" sx={{ mb: 2 }}>Não foi possível carregar as ordens.</Alert>}
+      <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
+        <CamposFiltroOrdens busca={busca} onBusca={setBusca} status={status} onStatus={setStatus} />
+      </PainelDeConsulta>
 
-      <Card>
-        <Box sx={{ p: 2, display: 'flex', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <TextField
-            placeholder="Buscar por código…"
-            value={busca}
-            onChange={(e) => { setBusca(e.target.value); setPagina(0) }}
-            sx={{ flex: 1, minWidth: 220 }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-          <TextField
-            select
-            label="Status"
-            value={filtroStatus}
-            onChange={(e) => { setFiltroStatus(e.target.value as StatusOrdem | 'TODAS'); setPagina(0) }}
-            sx={{ minWidth: 180 }}
-          >
-            {STATUS_OPCOES.map((op) => (
-              <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>
-            ))}
-          </TextField>
-        </Box>
-
-        {isLoading ? (
+      <CartaoDeRecentes titulo="10 ordens mais recentes" onVerTodas={() => verResultados()}>
+        {recentes.isLoading ? (
           <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : ordens.length === 0 ? (
-          <EmptyState
-            Icone={ListAltIcon}
-            titulo={filtrando ? 'Nenhuma ordem encontrada com os filtros' : 'Nenhuma ordem cadastrada'}
-            descricao={filtrando ? 'Tente ajustar os filtros de busca.' : undefined}
-            acaoLabel={!filtrando ? 'Criar primeira ordem' : undefined}
-            onAcao={!filtrando ? () => setDialogCriarAberto(true) : undefined}
-          />
+        ) : recentes.isError ? (
+          <Alert severity="error" sx={{ m: 2 }}>{mensagemDeErroAoCarregar(recentes.error, 'Não foi possível carregar as ordens.')}</Alert>
+        ) : (recentes.data?.itens.length ?? 0) === 0 ? (
+          <EmptyState Icone={ListAltIcon} titulo="Nenhuma ordem cadastrada" acaoLabel="Criar primeira ordem" onAcao={() => setDialogCriarAberto(true)} />
         ) : (
-          <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <OrdemTable ordens={ordens} onAtualizarStatus={setOrdemSelecionada} />
-            <PaginacaoTabela total={total} pagina={pagina} tamanho={tamanho} onPagina={setPagina}
-              onTamanho={(novoTamanho) => { setTamanho(novoTamanho); setPagina(0) }} />
-          </Box>
+          <OrdemTable ordens={recentes.data!.itens} onAtualizarStatus={setOrdemSelecionada} />
         )}
-      </Card>
+      </CartaoDeRecentes>
 
       <CriarOrdemDialog aberto={dialogCriarAberto} onFechar={() => setDialogCriarAberto(false)} />
       <AtualizarStatusDialog ordem={ordemSelecionada} onFechar={() => setOrdemSelecionada(null)} />
