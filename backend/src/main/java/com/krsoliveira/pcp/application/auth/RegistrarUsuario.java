@@ -1,38 +1,56 @@
 package com.krsoliveira.pcp.application.auth;
 
+import com.krsoliveira.pcp.application.comum.Detalhes;
+import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
+import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
+import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.usuario.CodificadorDeSenha;
 import com.krsoliveira.pcp.domain.usuario.Perfil;
 import com.krsoliveira.pcp.domain.usuario.Usuario;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
 
 /**
- * Caso de uso: registra um novo usuário na plataforma.
- * <p>
- * Sequência:
- * 1. Verifica unicidade do e-mail (falha rápido com 409 se já existe).
- * 2. Codifica a senha via port {@link CodificadorDeSenha} (BCrypt na infra).
- * 3. Cria a entidade de domínio e persiste via port {@link UsuarioRepository}.
- * <p>
- * Nenhum detalhe de framework aqui.
+ * Caso de uso: registrar um usuário. Como não há ninguém logado nesse momento, o
+ * responsável é informado explicitamente: a própria pessoa no autocadastro, ou um
+ * identificador de sistema na criação do administrador inicial.
  */
 public class RegistrarUsuario {
 
     private final UsuarioRepository usuarioRepository;
     private final CodificadorDeSenha codificadorDeSenha;
+    private final ExecucaoAuditada execucao;
 
     public RegistrarUsuario(UsuarioRepository usuarioRepository,
-                            CodificadorDeSenha codificadorDeSenha) {
+                            CodificadorDeSenha codificadorDeSenha,
+                            ExecucaoAuditada execucao) {
         this.usuarioRepository = usuarioRepository;
         this.codificadorDeSenha = codificadorDeSenha;
+        this.execucao = execucao;
     }
 
-    public Usuario executar(String nome, String email, String senhaPlana, Perfil perfil) {
-        String emailNormalizado = email.trim().toLowerCase();
-        if (usuarioRepository.porEmail(emailNormalizado).isPresent()) {
-            throw new EmailJaUtilizadoException(email);
-        }
-        String senhaHash = codificadorDeSenha.codificar(senhaPlana);
-        Usuario usuario = Usuario.criar(nome, emailNormalizado, senhaHash, perfil);
-        return usuarioRepository.salvar(usuario);
+    /** Autocadastro: a própria pessoa é a responsável pela criação da conta. */
+    public Usuario autocadastrar(String nome, String email, String senhaPlana, Perfil perfil) {
+        return executar(nome, email, senhaPlana, perfil, normalizar(email));
+    }
+
+    public Usuario executar(String nome, String email, String senhaPlana, Perfil perfil,
+                            String responsavel) {
+        return execucao.executarComo(responsavel, ctx -> {
+            String emailNormalizado = normalizar(email);
+            if (usuarioRepository.porEmail(emailNormalizado).isPresent()) {
+                throw new EmailJaUtilizadoException(email);
+            }
+            String senhaHash = codificadorDeSenha.codificar(senhaPlana);
+            Usuario usuario = usuarioRepository.salvar(
+                    Usuario.criar(nome, emailNormalizado, senhaHash, perfil));
+            ctx.registrar(TipoEntidade.USUARIO, usuario.getId(), usuario.getEmail(),
+                    AcaoAuditoria.USUARIO_REGISTRADO,
+                    Detalhes.com("email", usuario.getEmail()).e("perfil", usuario.getPerfil()));
+            return usuario;
+        });
+    }
+
+    private static String normalizar(String email) {
+        return email == null ? null : email.trim().toLowerCase();
     }
 }

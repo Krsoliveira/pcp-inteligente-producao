@@ -4,15 +4,17 @@ import com.krsoliveira.pcp.application.auth.EmailJaUtilizadoException;
 import com.krsoliveira.pcp.application.consumo.ConsumoMaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
 import com.krsoliveira.pcp.application.lista.VersaoListaTecnicaJaExisteException;
-import com.krsoliveira.pcp.application.lote.EntradaMaterialDuplicadaException;
+import com.krsoliveira.pcp.application.notafiscal.LoteDuplicadoException;
+import com.krsoliveira.pcp.application.notafiscal.NotaFiscalDuplicadaException;
+import com.krsoliveira.pcp.application.notafiscal.NotaFiscalNaoEncontradaException;
 import com.krsoliveira.pcp.application.lote.LoteNaoEncontradoException;
-import com.krsoliveira.pcp.application.material.CodigoMaterialJaUtilizadoException;
 import com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.ordem.CodigoJaUtilizadoException;
 import com.krsoliveira.pcp.application.ordem.NomeTipoOrdemJaUtilizadoException;
 import com.krsoliveira.pcp.application.ordem.OrdemProducaoNaoEncontradaException;
 import com.krsoliveira.pcp.application.ordem.TipoOrdemNaoEncontradoException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.infrastructure.security.CorpoGrandeDemaisException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -31,6 +33,7 @@ import java.util.Map;
  *  - 400: requisição malformada (falha de Bean Validation)
  *  - 404: recurso não encontrado
  *  - 409: conflito (código de ordem duplicado)
+ *  - 413: corpo da requisição acima do limite (lido sem Content-Length)
  *  - 422: regra de negócio violada
  */
 @RestControllerAdvice
@@ -84,18 +87,18 @@ public class TratadorGlobalDeErros {
         return problema;
     }
 
-    @ExceptionHandler(EntradaMaterialDuplicadaException.class)
-    public ProblemDetail entradaDuplicada(EntradaMaterialDuplicadaException ex) {
+    @ExceptionHandler({NotaFiscalDuplicadaException.class, LoteDuplicadoException.class})
+    public ProblemDetail entradaDuplicada(RuntimeException ex) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problema.setTitle("Conflito");
         problema.setDetail(ex.getMessage());
         return problema;
     }
 
-    @ExceptionHandler(CodigoMaterialJaUtilizadoException.class)
-    public ProblemDetail codigoMaterialDuplicado(CodigoMaterialJaUtilizadoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problema.setTitle("Conflito");
+    @ExceptionHandler(NotaFiscalNaoEncontradaException.class)
+    public ProblemDetail notaFiscalNaoEncontrada(NotaFiscalNaoEncontradaException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problema.setTitle("Recurso não encontrado");
         problema.setDetail(ex.getMessage());
         return problema;
     }
@@ -145,6 +148,14 @@ public class TratadorGlobalDeErros {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         problema.setTitle("Credenciais inválidas");
         problema.setDetail("E-mail ou senha incorretos.");
+        return problema;
+    }
+
+    @ExceptionHandler(CorpoGrandeDemaisException.class)
+    public ProblemDetail corpoGrandeDemais(CorpoGrandeDemaisException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.PAYLOAD_TOO_LARGE);
+        problema.setTitle("Conteúdo grande demais");
+        problema.setDetail(ex.getMessage());
         return problema;
     }
 

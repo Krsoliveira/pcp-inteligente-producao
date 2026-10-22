@@ -1,8 +1,11 @@
 package com.krsoliveira.pcp.application.ordem;
 
+import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
 import com.krsoliveira.pcp.application.consumo.ConsumoMaterialRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaRepositoryEmMemoria;
+import com.krsoliveira.pcp.application.material.MaterialRepositoryEmMemoria;
+import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.lista.ItemListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
@@ -16,6 +19,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import static com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria.USUARIO_TESTE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -27,6 +31,7 @@ class CriarOrdemProducaoTest {
     private OrdemProducaoRepositoryEmMemoria repositorio;
     private ListaTecnicaRepositoryEmMemoria listaTecnicaRepositorio;
     private ConsumoMaterialRepositoryEmMemoria consumoRepositorio;
+    private TrilhaDeAuditoriaEmMemoria trilha;
     private CriarOrdemProducao casoDeUso;
 
     private static final UUID MATERIAL_ID = UUID.randomUUID();
@@ -40,12 +45,14 @@ class CriarOrdemProducaoTest {
 
         ProjetarConsumoMaterial projetar = new ProjetarConsumoMaterial(
                 consumoRepositorio, listaTecnicaRepositorio);
-        casoDeUso = new CriarOrdemProducao(repositorio, projetar);
+        trilha = new TrilhaDeAuditoriaEmMemoria();
+        casoDeUso = new CriarOrdemProducao(repositorio, projetar, new MaterialRepositoryEmMemoria(),
+                listaTecnicaRepositorio, trilha.execucao());
 
         // Pré-cadastrar lista técnica com um componente
         ListaTecnica lista = ListaTecnica.criar(MATERIAL_ID, "v1",
                 List.of(ItemListaTecnica.criar(UUID.randomUUID(),
-                        new BigDecimal("5.00"), "kg")));
+                        new BigDecimal("5.00"), "kg")), USUARIO_TESTE);
         listaTecnicaRepositorio.salvar(lista);
         listaTecnicaId = lista.getId();
     }
@@ -63,6 +70,21 @@ class CriarOrdemProducaoTest {
         assertThat(ordem.getStatus()).isEqualTo(StatusOrdemProducao.PLANEJADA);
         assertThat(ordem.getCentroDeTrabalho()).isEqualTo("Usinagem CNC");
         assertThat(repositorio.buscarPorId(ordem.getId())).isPresent();
+    }
+
+    @Test
+    @DisplayName("assina ordem e consumos com o usuário logado e registra o evento CRIADO")
+    void assinaERegistraEvento() {
+        OrdemProducao ordem = casoDeUso.executar(comandoValido("OP-0003"));
+
+        assertThat(ordem.getAssinatura().criadoPor()).isEqualTo(USUARIO_TESTE);
+        assertThat(consumoRepositorio.listarPorOrdemProducao(ordem.getId()))
+                .allMatch(c -> USUARIO_TESTE.equals(c.getAssinatura().criadoPor()));
+        assertThat(trilha.eventos()).singleElement().satisfies(evento -> {
+            assertThat(evento.getAcao()).isEqualTo(AcaoAuditoria.CRIADO);
+            assertThat(evento.getReferencia()).isEqualTo("OP-0003");
+            assertThat(evento.getDetalhes()).containsEntry("versaoListaTecnica", "v1");
+        });
     }
 
     @Test

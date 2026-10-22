@@ -31,9 +31,9 @@ import { TipoOrdemBadge } from '../components/StatusBadge'
 import type { TipoOrdem, CadastrarTipoOrdemRequest } from '../types'
 
 const CORES_SUGERIDAS = [
-  '#1565c0', '#1976d2', '#0288d1', '#00897b',
-  '#2e7d32', '#558b2f', '#f57f17', '#e65100',
-  '#6a1b9a', '#ad1457', '#c62828', '#4e342e',
+  '#4F46E5', '#2563EB', '#0F766E', '#059669',
+  '#D97706', '#DC2626', '#9333EA', '#DB2777',
+  '#0284C7', '#64748B', '#B45309', '#7C3AED',
 ]
 
 export function TiposOrdemPage() {
@@ -132,7 +132,7 @@ interface TipoOrdemDialogProps {
 }
 
 function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogProps) {
-  const [form, setForm] = useState<CadastrarTipoOrdemRequest>({ nome: '', descricao: '', cor: '#1565c0' })
+  const [form, setForm] = useState<CadastrarTipoOrdemRequest>({ nome: '', descricao: '', cor: '#4F46E5' })
   const [erro, setErro] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
@@ -141,7 +141,7 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
     if (tipoExistente) {
       setForm({ nome: tipoExistente.nome, descricao: tipoExistente.descricao ?? '', cor: tipoExistente.cor })
     } else {
-      setForm({ nome: '', descricao: '', cor: '#1565c0' })
+      setForm({ nome: '', descricao: '', cor: '#4F46E5' })
     }
   })
 

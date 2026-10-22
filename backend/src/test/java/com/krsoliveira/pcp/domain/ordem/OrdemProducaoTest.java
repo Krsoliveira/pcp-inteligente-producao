@@ -18,13 +18,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class OrdemProducaoTest {
 
+    private static final String USUARIO = "teste@pcp";
+
     private static final LocalDate INICIO = LocalDate.of(2026, 8, 10);
     private static final LocalDate FIM = LocalDate.of(2026, 8, 20);
     private static final UUID MATERIAL_ID = UUID.randomUUID();
     private static final UUID LISTA_ID = UUID.randomUUID();
 
     private OrdemProducao ordemValida() {
-        return OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, null, "Usinagem CNC", 100, INICIO, FIM);
+        return OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, null, "Usinagem CNC", 100, INICIO, FIM, USUARIO);
     }
 
     @Nested
@@ -49,7 +51,7 @@ class OrdemProducaoTest {
         @DisplayName("rejeita quantidade zero ou negativa")
         void rejeitaQuantidadeInvalida() {
             assertThatThrownBy(() ->
-                    OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, null, "Montagem", 0, INICIO, FIM))
+                    OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, null, "Montagem", 0, INICIO, FIM, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("quantidade");
         }
@@ -58,7 +60,7 @@ class OrdemProducaoTest {
         @DisplayName("rejeita fim planejado anterior ao início")
         void rejeitaPeriodoInvalido() {
             assertThatThrownBy(() ->
-                    OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, null, "Montagem", 10, FIM, INICIO))
+                    OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, null, "Montagem", 10, FIM, INICIO, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("anterior");
         }
@@ -67,7 +69,7 @@ class OrdemProducaoTest {
         @DisplayName("rejeita código em branco")
         void rejeitaCodigoEmBranco() {
             assertThatThrownBy(() ->
-                    OrdemProducao.criar("  ", MATERIAL_ID, LISTA_ID, null, "Montagem", 10, INICIO, FIM))
+                    OrdemProducao.criar("  ", MATERIAL_ID, LISTA_ID, null, "Montagem", 10, INICIO, FIM, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("código");
         }
@@ -76,7 +78,7 @@ class OrdemProducaoTest {
         @DisplayName("rejeita centro de trabalho em branco")
         void rejeitaCentroDeTrabalhoEmBranco() {
             assertThatThrownBy(() ->
-                    OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, null, "  ", 10, INICIO, FIM))
+                    OrdemProducao.criar("OP-0001", MATERIAL_ID, LISTA_ID, null, "  ", 10, INICIO, FIM, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("centro de trabalho");
         }
@@ -85,7 +87,7 @@ class OrdemProducaoTest {
         @DisplayName("rejeita material nulo")
         void rejeitaMaterialNulo() {
             assertThatThrownBy(() ->
-                    OrdemProducao.criar("OP-0001", null, LISTA_ID, null, "Montagem", 10, INICIO, FIM))
+                    OrdemProducao.criar("OP-0001", null, LISTA_ID, null, "Montagem", 10, INICIO, FIM, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("material");
         }
@@ -94,7 +96,7 @@ class OrdemProducaoTest {
         @DisplayName("rejeita lista técnica nula")
         void rejeitaListaTecnicaNula() {
             assertThatThrownBy(() ->
-                    OrdemProducao.criar("OP-0001", MATERIAL_ID, null, null, "Montagem", 10, INICIO, FIM))
+                    OrdemProducao.criar("OP-0001", MATERIAL_ID, null, null, "Montagem", 10, INICIO, FIM, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("lista técnica");
         }
@@ -109,8 +111,8 @@ class OrdemProducaoTest {
         void fluxoNormalAteEmProducao() {
             OrdemProducao ordem = ordemValida();
 
-            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA);
-            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO);
+            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA, USUARIO);
+            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO, USUARIO);
 
             assertThat(ordem.getStatus()).isEqualTo(StatusOrdemProducao.EM_PRODUCAO);
         }
@@ -119,10 +121,10 @@ class OrdemProducaoTest {
         @DisplayName("não permite CONCLUIDA via alterarStatusPara — deve usar concluir()")
         void naoPermiteConcluirViaAlterarStatus() {
             OrdemProducao ordem = ordemValida();
-            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA);
-            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO);
+            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA, USUARIO);
+            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO, USUARIO);
 
-            assertThatThrownBy(() -> ordem.alterarStatusPara(StatusOrdemProducao.CONCLUIDA))
+            assertThatThrownBy(() -> ordem.alterarStatusPara(StatusOrdemProducao.CONCLUIDA, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("Transição de status inválida");
         }
@@ -132,7 +134,7 @@ class OrdemProducaoTest {
         void naoPermitePularEtapas() {
             OrdemProducao ordem = ordemValida();
 
-            assertThatThrownBy(() -> ordem.alterarStatusPara(StatusOrdemProducao.CONCLUIDA))
+            assertThatThrownBy(() -> ordem.alterarStatusPara(StatusOrdemProducao.CONCLUIDA, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("Transição de status inválida");
         }
@@ -141,9 +143,9 @@ class OrdemProducaoTest {
         @DisplayName("permite cancelar antes de concluir")
         void permiteCancelar() {
             OrdemProducao ordem = ordemValida();
-            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA);
+            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA, USUARIO);
 
-            ordem.alterarStatusPara(StatusOrdemProducao.CANCELADA);
+            ordem.alterarStatusPara(StatusOrdemProducao.CANCELADA, USUARIO);
 
             assertThat(ordem.getStatus()).isEqualTo(StatusOrdemProducao.CANCELADA);
         }
@@ -152,9 +154,9 @@ class OrdemProducaoTest {
         @DisplayName("não permite reabrir ordem cancelada")
         void naoPermiteReabrirCancelada() {
             OrdemProducao ordem = ordemValida();
-            ordem.alterarStatusPara(StatusOrdemProducao.CANCELADA);
+            ordem.alterarStatusPara(StatusOrdemProducao.CANCELADA, USUARIO);
 
-            assertThatThrownBy(() -> ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA))
+            assertThatThrownBy(() -> ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class);
         }
     }
@@ -167,10 +169,10 @@ class OrdemProducaoTest {
         @DisplayName("conclui ordem EM_PRODUCAO com quantidade produzida")
         void concluiOrdemEmProducao() {
             OrdemProducao ordem = ordemValida();
-            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA);
-            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO);
+            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA, USUARIO);
+            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO, USUARIO);
 
-            ordem.concluir(new BigDecimal("95"));
+            ordem.concluir(new BigDecimal("95"), USUARIO);
 
             assertThat(ordem.getStatus()).isEqualTo(StatusOrdemProducao.CONCLUIDA);
             assertThat(ordem.getQuantidadeProduzida()).isEqualByComparingTo(new BigDecimal("95"));
@@ -181,7 +183,7 @@ class OrdemProducaoTest {
         void rejeitaConclusaoForaDeEmProducao() {
             OrdemProducao ordem = ordemValida();
 
-            assertThatThrownBy(() -> ordem.concluir(new BigDecimal("100")))
+            assertThatThrownBy(() -> ordem.concluir(new BigDecimal("100"), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("EM_PRODUCAO");
         }
@@ -190,10 +192,10 @@ class OrdemProducaoTest {
         @DisplayName("rejeita quantidade produzida zero")
         void rejeitaQuantidadeProduzidaZero() {
             OrdemProducao ordem = ordemValida();
-            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA);
-            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO);
+            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA, USUARIO);
+            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO, USUARIO);
 
-            assertThatThrownBy(() -> ordem.concluir(BigDecimal.ZERO))
+            assertThatThrownBy(() -> ordem.concluir(BigDecimal.ZERO, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("quantidade produzida");
         }
@@ -202,10 +204,10 @@ class OrdemProducaoTest {
         @DisplayName("rejeita quantidade produzida nula")
         void rejeitaQuantidadeProduzidaNula() {
             OrdemProducao ordem = ordemValida();
-            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA);
-            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO);
+            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA, USUARIO);
+            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO, USUARIO);
 
-            assertThatThrownBy(() -> ordem.concluir(null))
+            assertThatThrownBy(() -> ordem.concluir(null, USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("quantidade produzida");
         }
@@ -235,9 +237,9 @@ class OrdemProducaoTest {
         @DisplayName("ordem concluída nunca conta como atrasada")
         void ordemConcluidaNaoContaComoAtrasada() {
             OrdemProducao ordem = ordemValida();
-            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA);
-            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO);
-            ordem.concluir(new BigDecimal("100"));
+            ordem.alterarStatusPara(StatusOrdemProducao.LIBERADA, USUARIO);
+            ordem.alterarStatusPara(StatusOrdemProducao.EM_PRODUCAO, USUARIO);
+            ordem.concluir(new BigDecimal("100"), USUARIO);
 
             assertThat(ordem.estaAtrasada(FIM.plusDays(30))).isFalse();
         }

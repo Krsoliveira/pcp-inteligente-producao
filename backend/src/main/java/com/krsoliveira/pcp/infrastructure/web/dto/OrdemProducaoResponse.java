@@ -29,7 +29,9 @@ public record OrdemProducaoResponse(UUID id,
                                     StatusOrdemProducao status,
                                     boolean atrasada,
                                     Instant criadaEm,
-                                    Instant atualizadaEm) {
+                                    Instant atualizadaEm,
+                                    String criadaPor,
+                                    String atualizadaPor) {
 
     public static OrdemProducaoResponse de(OrdemProducao ordem) {
         return new OrdemProducaoResponse(
@@ -46,6 +48,8 @@ public record OrdemProducaoResponse(UUID id,
                 ordem.getStatus(),
                 ordem.estaAtrasada(LocalDate.now()),
                 ordem.getCriadaEm(),
-                ordem.getAtualizadaEm());
+                ordem.getAtualizadaEm(),
+                ordem.getAssinatura().criadoPor(),
+                ordem.getAssinatura().alteradoPor());
     }
 }

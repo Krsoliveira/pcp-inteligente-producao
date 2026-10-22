@@ -8,10 +8,6 @@ import jakarta.validation.constraints.Size;
 
 public record CadastrarMaterialRequest(
 
-        @NotBlank(message = "O código do material é obrigatório.")
-        @Size(max = 30, message = "O código deve ter no máximo 30 caracteres.")
-        String codigo,
-
         @NotBlank(message = "A descrição do material é obrigatória.")
         @Size(max = 200, message = "A descrição deve ter no máximo 200 caracteres.")
         String descricao,
@@ -25,6 +21,6 @@ public record CadastrarMaterialRequest(
 
 ) {
     public CadastrarMaterial.Comando paraComando() {
-        return new CadastrarMaterial.Comando(codigo, descricao, tipo, unidadeDeMedida);
+        return new CadastrarMaterial.Comando(descricao, tipo, unidadeDeMedida);
     }
 }

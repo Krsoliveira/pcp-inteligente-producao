@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Objects;
+import java.util.Collection;
 
 public class ConsumoMaterialRepositoryEmMemoria implements ConsumoMaterialRepository {
 
@@ -29,6 +31,11 @@ public class ConsumoMaterialRepositoryEmMemoria implements ConsumoMaterialReposi
     @Override
     public Optional<ConsumoMaterial> buscarPorId(UUID id) {
         return Optional.ofNullable(dados.get(id));
+    }
+
+    @Override
+    public List<ConsumoMaterial> buscarPorIds(Collection<UUID> ids) {
+        return ids.stream().map(dados::get).filter(Objects::nonNull).toList();
     }
 
     @Override

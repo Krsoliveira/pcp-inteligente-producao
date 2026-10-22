@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.TipoMaterial;
 import jakarta.persistence.Column;
@@ -23,7 +24,7 @@ public class MaterialJpaEntity {
     @Id
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, unique = true, length = 9)
     private String codigo;
 
     @Column(nullable = false, length = 200)
@@ -42,6 +43,12 @@ public class MaterialJpaEntity {
     @Column(name = "atualizado_em", nullable = false)
     private Instant atualizadoEm;
 
+    @Column(name = "criado_por", nullable = false, length = 150)
+    private String criadoPor;
+
+    @Column(name = "atualizado_por", nullable = false, length = 150)
+    private String atualizadoPor;
+
     protected MaterialJpaEntity() {}
 
     public static MaterialJpaEntity deDominio(Material material) {
@@ -51,13 +58,16 @@ public class MaterialJpaEntity {
         entity.descricao = material.getDescricao();
         entity.tipo = material.getTipo();
         entity.unidadeDeMedida = material.getUnidadeDeMedida();
-        entity.criadoEm = material.getCriadoEm();
-        entity.atualizadoEm = material.getAtualizadoEm();
+        Assinatura a = material.getAssinatura();
+        entity.criadoEm = a.criadoEm();
+        entity.atualizadoEm = a.alteradoEm();
+        entity.criadoPor = a.criadoPor();
+        entity.atualizadoPor = a.alteradoPor();
         return entity;
     }
 
     public Material paraDominio() {
         return Material.reconstituir(id, codigo, descricao, tipo, unidadeDeMedida,
-                criadoEm, atualizadoEm);
+                new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm));
     }
 }

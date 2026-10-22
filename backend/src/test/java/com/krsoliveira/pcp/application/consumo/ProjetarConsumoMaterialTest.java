@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.application.consumo;
 
+import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaRepositoryEmMemoria;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
 import com.krsoliveira.pcp.domain.lista.ItemListaTecnica;
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+import static com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria.USUARIO_TESTE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ProjetarConsumoMaterialTest {
@@ -38,7 +40,7 @@ class ProjetarConsumoMaterialTest {
         ListaTecnica lista = criarListaTecnicaComDoisItens();
 
         List<ConsumoMaterial> consumos = casoDeUso.executar(
-                new ProjetarConsumoMaterial.Comando(ordemId, lista.getId(), 10));
+                new ProjetarConsumoMaterial.Comando(ordemId, lista.getId(), 10, USUARIO_TESTE));
 
         assertThat(consumos).hasSize(2);
         assertThat(consumos.get(0).getOrdemProducaoId()).isEqualTo(ordemId);
@@ -65,7 +67,7 @@ class ProjetarConsumoMaterialTest {
         UUID ordemId = UUID.randomUUID();
         ListaTecnica lista = criarListaTecnicaComDoisItens();
 
-        casoDeUso.executar(new ProjetarConsumoMaterial.Comando(ordemId, lista.getId(), 5));
+        casoDeUso.executar(new ProjetarConsumoMaterial.Comando(ordemId, lista.getId(), 5, USUARIO_TESTE));
 
         assertThat(consumoRepository.listarPorOrdemProducao(ordemId)).hasSize(2);
     }
@@ -74,7 +76,7 @@ class ProjetarConsumoMaterialTest {
         List<ItemListaTecnica> itens = List.of(
                 ItemListaTecnica.criar(MATERIAL_MP1_ID, new BigDecimal("2.5"), "kg"),
                 ItemListaTecnica.criar(MATERIAL_MP2_ID, new BigDecimal("0.5"), "kg"));
-        ListaTecnica lista = ListaTecnica.criar(MATERIAL_PA_ID, "v1", itens);
+        ListaTecnica lista = ListaTecnica.criar(MATERIAL_PA_ID, "v1", itens, USUARIO_TESTE);
         listaTecnicaRepository.salvar(lista);
         return lista;
     }

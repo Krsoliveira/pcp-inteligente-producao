@@ -1,6 +1,10 @@
 package com.krsoliveira.pcp.infrastructure.config;
 
+import com.krsoliveira.pcp.application.auditoria.ConsultarTrilhaDeAuditoria;
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
+import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
+import com.krsoliveira.pcp.application.comum.Transacao;
+import com.krsoliveira.pcp.application.comum.UsuarioAtual;
 import com.krsoliveira.pcp.application.consumo.ConsultarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.RegistrarConsumoMaterial;
@@ -8,7 +12,12 @@ import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
 import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
 import com.krsoliveira.pcp.application.lista.ConsultarListaTecnica;
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
-import com.krsoliveira.pcp.application.lote.RegistrarEntradaMaterial;
+import com.krsoliveira.pcp.application.lote.RastrearLote;
+import com.krsoliveira.pcp.application.estoque.ConsultarEstoque;
+import com.krsoliveira.pcp.application.notafiscal.ConsultarNotasFiscais;
+import com.krsoliveira.pcp.application.notafiscal.RegistrarEntradaNotaFiscal;
+import com.krsoliveira.pcp.domain.estoque.ConsultaEstoque;
+import com.krsoliveira.pcp.domain.notafiscal.NotaFiscalEntradaRepository;
 import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
@@ -18,8 +27,10 @@ import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.ConsultarOrdensProducao;
 import com.krsoliveira.pcp.application.ordem.ConsultarTiposOrdem;
 import com.krsoliveira.pcp.application.ordem.CriarOrdemProducao;
+import com.krsoliveira.pcp.domain.auditoria.TrilhaDeAuditoria;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterialRepository;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
+import com.krsoliveira.pcp.domain.lote.AlocacaoLoteRepository;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
@@ -28,6 +39,7 @@ import com.krsoliveira.pcp.domain.usuario.CodificadorDeSenha;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import java.time.Clock;
 
 /**
  * Registra os casos de uso como beans do Spring.
@@ -39,6 +51,19 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ConfiguracaoCasosDeUso {
 
+    // --- Auditoria ---
+
+    @Bean
+    ExecucaoAuditada execucaoAuditada(UsuarioAtual usuarioAtual, Transacao transacao,
+                                      TrilhaDeAuditoria trilha) {
+        return new ExecucaoAuditada(usuarioAtual, transacao, trilha);
+    }
+
+    @Bean
+    ConsultarTrilhaDeAuditoria consultarTrilhaDeAuditoria(TrilhaDeAuditoria trilha) {
+        return new ConsultarTrilhaDeAuditoria(trilha);
+    }
+
     // --- Consumo de Material ---
 
     @Bean
@@ -48,8 +73,14 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
-    RegistrarConsumoMaterial registrarConsumoMaterial(ConsumoMaterialRepository consumoRepository) {
-        return new RegistrarConsumoMaterial(consumoRepository);
+    RegistrarConsumoMaterial registrarConsumoMaterial(ConsumoMaterialRepository consumoRepository,
+                                                      OrdemProducaoRepository ordemRepository,
+                                                      MaterialRepository materialRepository,
+                                                      LoteRepository loteRepository,
+                                                      AlocacaoLoteRepository alocacaoRepository,
+                                                      ExecucaoAuditada execucao) {
+        return new RegistrarConsumoMaterial(consumoRepository, ordemRepository, materialRepository,
+                loteRepository, alocacaoRepository, execucao, Clock.systemDefaultZone());
     }
 
     @Bean
@@ -65,17 +96,43 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
-    RegistrarEntradaMaterial registrarEntradaMaterial(LoteRepository loteRepository,
-                                                      MaterialRepository materialRepository) {
-        return new RegistrarEntradaMaterial(loteRepository, materialRepository);
+    RastrearLote rastrearLote(LoteRepository loteRepository, AlocacaoLoteRepository alocacaoRepository,
+                              ConsumoMaterialRepository consumoRepository,
+                              OrdemProducaoRepository ordemRepository) {
+        return new RastrearLote(loteRepository, alocacaoRepository, consumoRepository, ordemRepository);
+    }
+
+    // --- Suprimentos: notas fiscais de entrada e estoque (ADR-0012) ---
+
+    @Bean
+    RegistrarEntradaNotaFiscal registrarEntradaNotaFiscal(NotaFiscalEntradaRepository notaRepository,
+                                                          LoteRepository loteRepository,
+                                                          MaterialRepository materialRepository,
+                                                          ExecucaoAuditada execucao) {
+        return new RegistrarEntradaNotaFiscal(notaRepository, loteRepository, materialRepository, execucao);
+    }
+
+    @Bean
+    ConsultarNotasFiscais consultarNotasFiscais(NotaFiscalEntradaRepository notaRepository,
+                                                LoteRepository loteRepository) {
+        return new ConsultarNotasFiscais(notaRepository, loteRepository);
+    }
+
+    @Bean
+    ConsultarEstoque consultarEstoque(ConsultaEstoque consultaEstoque, MaterialRepository materialRepository) {
+        return new ConsultarEstoque(consultaEstoque, materialRepository);
     }
 
     // --- Ordens de produção ---
 
     @Bean
     CriarOrdemProducao criarOrdemProducao(OrdemProducaoRepository ordemRepository,
-                                          ProjetarConsumoMaterial projetarConsumoMaterial) {
-        return new CriarOrdemProducao(ordemRepository, projetarConsumoMaterial);
+                                          ProjetarConsumoMaterial projetarConsumoMaterial,
+                                          MaterialRepository materialRepository,
+                                          ListaTecnicaRepository listaTecnicaRepository,
+                                          ExecucaoAuditada execucao) {
+        return new CriarOrdemProducao(ordemRepository, projetarConsumoMaterial, materialRepository,
+                listaTecnicaRepository, execucao);
     }
 
     @Bean
@@ -84,24 +141,27 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
-    AtualizarStatusOrdemProducao atualizarStatusOrdemProducao(OrdemProducaoRepository repositorio) {
-        return new AtualizarStatusOrdemProducao(repositorio);
+    AtualizarStatusOrdemProducao atualizarStatusOrdemProducao(OrdemProducaoRepository repositorio,
+                                                              ExecucaoAuditada execucao) {
+        return new AtualizarStatusOrdemProducao(repositorio, execucao);
     }
 
     @Bean
     ConcluirOrdemProducao concluirOrdemProducao(OrdemProducaoRepository ordemRepository,
                                                  ConsumoMaterialRepository consumoRepository,
                                                  LoteRepository loteRepository,
-                                                 MaterialRepository materialRepository) {
+                                                 MaterialRepository materialRepository,
+                                                 ExecucaoAuditada execucao) {
         return new ConcluirOrdemProducao(ordemRepository, consumoRepository,
-                loteRepository, materialRepository);
+                loteRepository, materialRepository, execucao);
     }
 
-    // --- Tipos de Ordem ---
+    // --- Tipos de ordem ---
 
     @Bean
-    CadastrarTipoOrdem cadastrarTipoOrdem(TipoOrdemRepository tipoOrdemRepository) {
-        return new CadastrarTipoOrdem(tipoOrdemRepository);
+    CadastrarTipoOrdem cadastrarTipoOrdem(TipoOrdemRepository tipoOrdemRepository,
+                                          ExecucaoAuditada execucao) {
+        return new CadastrarTipoOrdem(tipoOrdemRepository, execucao);
     }
 
     @Bean
@@ -110,15 +170,16 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
-    AtualizarTipoOrdem atualizarTipoOrdem(TipoOrdemRepository tipoOrdemRepository) {
-        return new AtualizarTipoOrdem(tipoOrdemRepository);
+    AtualizarTipoOrdem atualizarTipoOrdem(TipoOrdemRepository tipoOrdemRepository,
+                                          ExecucaoAuditada execucao) {
+        return new AtualizarTipoOrdem(tipoOrdemRepository, execucao);
     }
 
     // --- Materiais ---
 
     @Bean
-    CadastrarMaterial cadastrarMaterial(MaterialRepository materialRepository) {
-        return new CadastrarMaterial(materialRepository);
+    CadastrarMaterial cadastrarMaterial(MaterialRepository materialRepository, ExecucaoAuditada execucao) {
+        return new CadastrarMaterial(materialRepository, execucao);
     }
 
     @Bean
@@ -126,17 +187,20 @@ public class ConfiguracaoCasosDeUso {
         return new ConsultarMateriais(materialRepository);
     }
 
-    // --- Listas Técnicas ---
+    // --- Listas técnicas ---
 
     @Bean
     CadastrarListaTecnica cadastrarListaTecnica(ListaTecnicaRepository listaTecnicaRepository,
-                                                MaterialRepository materialRepository) {
-        return new CadastrarListaTecnica(listaTecnicaRepository, materialRepository);
+                                                MaterialRepository materialRepository,
+                                                ExecucaoAuditada execucao) {
+        return new CadastrarListaTecnica(listaTecnicaRepository, materialRepository, execucao);
     }
 
     @Bean
-    AtivarListaTecnica ativarListaTecnica(ListaTecnicaRepository listaTecnicaRepository) {
-        return new AtivarListaTecnica(listaTecnicaRepository);
+    AtivarListaTecnica ativarListaTecnica(ListaTecnicaRepository listaTecnicaRepository,
+                                          MaterialRepository materialRepository,
+                                          ExecucaoAuditada execucao) {
+        return new AtivarListaTecnica(listaTecnicaRepository, materialRepository, execucao);
     }
 
     @Bean
@@ -148,7 +212,8 @@ public class ConfiguracaoCasosDeUso {
 
     @Bean
     RegistrarUsuario registrarUsuario(UsuarioRepository usuarioRepository,
-                                      CodificadorDeSenha codificadorDeSenha) {
-        return new RegistrarUsuario(usuarioRepository, codificadorDeSenha);
+                                      CodificadorDeSenha codificadorDeSenha,
+                                      ExecucaoAuditada execucao) {
+        return new RegistrarUsuario(usuarioRepository, codificadorDeSenha, execucao);
     }
 }

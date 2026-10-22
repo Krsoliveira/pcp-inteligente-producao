@@ -4,12 +4,12 @@ import type { StatusOrdem } from '../types'
 
 // ---- Ordem de Produção ----
 
-const ORDEM_CONFIG: Record<StatusOrdem, { label: string; color: string; bg: string }> = {
-  PLANEJADA:   { label: 'Planejada',   color: '#1565c0', bg: '#e3f2fd' },
-  LIBERADA:    { label: 'Liberada',    color: '#ed6c02', bg: '#fff3e0' },
-  EM_PRODUCAO: { label: 'Em Produção', color: '#7b1fa2', bg: '#f3e5f5' },
-  CONCLUIDA:   { label: 'Concluída',   color: '#2e7d32', bg: '#e8f5e9' },
-  CANCELADA:   { label: 'Cancelada',   color: '#c62828', bg: '#ffebee' },
+const ORDEM_CONFIG: Record<StatusOrdem, { label: string; dot: string; bg: string; color: string }> = {
+  PLANEJADA:   { label: 'Planejada',   dot: '#94A3B8', bg: 'rgba(148,163,184,0.12)', color: '#475569' },
+  LIBERADA:    { label: 'Liberada',    dot: '#2563EB', bg: 'rgba(37,99,235,0.10)',   color: '#1D4ED8' },
+  EM_PRODUCAO: { label: 'Em Produção', dot: '#D97706', bg: 'rgba(217,119,6,0.10)',   color: '#B45309' },
+  CONCLUIDA:   { label: 'Concluída',   dot: '#059669', bg: 'rgba(5,150,105,0.10)',   color: '#047857' },
+  CANCELADA:   { label: 'Cancelada',   dot: '#DC2626', bg: 'rgba(220,38,38,0.10)',   color: '#B91C1C' },
 }
 
 interface StatusOrdemBadgeProps {
@@ -39,7 +39,7 @@ export function StatusOrdemBadge({ status, size = 'small' }: StatusOrdemBadgePro
     >
       <Box
         component="span"
-        sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: cfg.color, flexShrink: 0 }}
+        sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: cfg.dot, flexShrink: 0 }}
       />
       {cfg.label}
     </Box>
@@ -50,10 +50,10 @@ export function StatusOrdemBadge({ status, size = 'small' }: StatusOrdemBadgePro
 
 type StatusLista = 'EM_REVISAO' | 'ATIVA' | 'OBSOLETA'
 
-const LISTA_CONFIG: Record<StatusLista, { label: string; color: string; bg: string }> = {
-  EM_REVISAO: { label: 'Em Revisão', color: '#ed6c02', bg: '#fff3e0' },
-  ATIVA:      { label: 'Ativa',      color: '#2e7d32', bg: '#e8f5e9' },
-  OBSOLETA:   { label: 'Obsoleta',   color: '#757575', bg: '#f5f5f5' },
+const LISTA_CONFIG: Record<StatusLista, { label: string; dot: string; bg: string; color: string }> = {
+  EM_REVISAO: { label: 'Em Revisão', dot: '#D97706', bg: 'rgba(217,119,6,0.10)',  color: '#B45309' },
+  ATIVA:      { label: 'Ativa',      dot: '#059669', bg: 'rgba(5,150,105,0.10)', color: '#047857' },
+  OBSOLETA:   { label: 'Obsoleta',   dot: '#94A3B8', bg: 'rgba(148,163,184,0.12)', color: '#64748B' },
 }
 
 export function StatusListaBadge({ status }: { status: StatusLista }) {
@@ -62,7 +62,13 @@ export function StatusListaBadge({ status }: { status: StatusLista }) {
     <Chip
       label={cfg.label}
       size="small"
-      sx={{ bgcolor: cfg.bg, color: cfg.color, fontWeight: 600, border: 'none', fontSize: '0.72rem' }}
+      sx={{
+        bgcolor: cfg.bg,
+        color: cfg.color,
+        fontWeight: 600,
+        border: 'none',
+        fontSize: '0.72rem',
+      }}
     />
   )
 }
@@ -71,11 +77,11 @@ export function StatusListaBadge({ status }: { status: StatusLista }) {
 
 type StatusLote = 'DISPONIVEL' | 'BLOQUEADO' | 'CONSUMIDO' | 'VENCIDO'
 
-const LOTE_CONFIG: Record<StatusLote, { label: string; color: string; bg: string }> = {
-  DISPONIVEL: { label: 'Disponível', color: '#2e7d32', bg: '#e8f5e9' },
-  BLOQUEADO:  { label: 'Bloqueado',  color: '#ed6c02', bg: '#fff3e0' },
-  CONSUMIDO:  { label: 'Consumido',  color: '#757575', bg: '#f5f5f5' },
-  VENCIDO:    { label: 'Vencido',    color: '#c62828', bg: '#ffebee' },
+const LOTE_CONFIG: Record<StatusLote, { label: string; dot: string; bg: string; color: string }> = {
+  DISPONIVEL: { label: 'Disponível', dot: '#059669', bg: 'rgba(5,150,105,0.10)',   color: '#047857' },
+  BLOQUEADO:  { label: 'Bloqueado',  dot: '#D97706', bg: 'rgba(217,119,6,0.10)',   color: '#B45309' },
+  CONSUMIDO:  { label: 'Consumido',  dot: '#94A3B8', bg: 'rgba(148,163,184,0.12)', color: '#64748B' },
+  VENCIDO:    { label: 'Vencido',    dot: '#DC2626', bg: 'rgba(220,38,38,0.10)',   color: '#B91C1C' },
 }
 
 export function StatusLoteBadge({ status }: { status: StatusLote }) {
@@ -99,7 +105,7 @@ export function StatusLoteBadge({ status }: { status: StatusLote }) {
     >
       <Box
         component="span"
-        sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: cfg.color, flexShrink: 0 }}
+        sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: cfg.dot, flexShrink: 0 }}
       />
       {cfg.label}
     </Box>

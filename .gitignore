@@ -19,6 +19,9 @@ data/*.csv
 data/*.zip
 !data/.gitkeep
 
+# Instruções locais de agente (não versionadas)
+CLAUDE.md
+
 # IDE / OS
 .vscode/
 .DS_Store
@@ -26,3 +29,6 @@ Thumbs.db
 
 # IntelliJ IDEA
 .idea/
+
+# Configuração local do agente (não versionada)
+.claude/settings.local.json

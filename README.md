@@ -40,21 +40,31 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
 |---|---|
 | 🧱 **Clean Architecture + DDD** | Domínio em Java puro (sem Spring/JPA), portas e adaptadores, casos de uso explícitos. Regras de negócio vivem nas entidades — é impossível levar uma ordem a um estado inválido. |
 | 🔁 **Regras de negócio reais** | BOM multinível com versionamento (só uma versão ativa), conclusão de ordem bloqueada sem consumos registrados e justificados, lote com origem única (produção **ou** compra) garantida no banco. |
+| 🔎 **Auditoria** | Todo registro assinado (quem criou/alterou e quando) e trilha de eventos **imutável** — um trigger no PostgreSQL bloqueia `UPDATE`, `DELETE` e `TRUNCATE`. Ação e evento gravados na mesma transação. |
 | 🔐 **Segurança** | JWT stateless + BCrypt; autocadastro nunca concede privilégio (a regra está no backend, não só na tela); credenciais do administrador só em variáveis de ambiente; erros no padrão RFC 9457. |
 | 🧪 **Qualidade** | Mais de 100 testes de unidade + integração com **Testcontainers** (PostgreSQL real). Um teste carrega o dataset inteiro e valida as invariantes do domínio. |
 | 🛡️ **DevSecOps** | CI com CodeQL, Semgrep, Gitleaks, Trivy, OWASP Dependency-Check e `npm audit`; Dependabot semanal. |
 | 📊 **Engenharia de dados** | Gerador Python determinístico (pipeline load → transform → validate → export) com sazonalidade, gargalos e desvios — sinal real para a IA. Datas ancoradas no dia da carga. |
-| 📝 **Decisões documentadas** | [10 ADRs](docs/README.md#índice-de-adrs) registram o *porquê* de cada escolha de arquitetura. |
+| 📝 **Decisões documentadas** | [11 ADRs](docs/README.md#índice-de-adrs) registram o *porquê* de cada escolha de arquitetura. |
 
 ## Funcionalidades
 
-- **Materiais** — produto acabado, semiacabado e matéria-prima.
+- **Materiais** — produto acabado, semiacabado e matéria-prima, com código de 9 dígitos gerado na faixa do tipo (`103.000.001`, `105…`, `110…`).
 - **Listas técnicas (BOM)** — versionadas; ativar uma versão torna a anterior obsoleta.
 - **Ordens de produção** — ciclo `Planejada → Liberada → Em produção → Concluída`, com
   consumo projetado automaticamente a partir da BOM.
-- **Consumo de materiais** — planejado × consumido; todo desvio exige justificativa e responsável.
-- **Lotes rastreáveis** — gerados na conclusão da ordem ou na **entrada de matéria-prima**
-  (fornecedor e nota fiscal obrigatórios), com alerta de vencimento.
+- **Consumo de materiais** — planejado × consumido; todo desvio exige justificativa, registrada em nome do usuário logado.
+- **Entrada de notas** — nota fiscal de compra com vários itens; cada item vira um lote de
+  matéria-prima com o lote do fornecedor. A mesma nota ou o mesmo lote não entram duas vezes.
+- **Estoque** — posição por material calculada a partir dos lotes (disponível, indisponível,
+  próximo vencimento), com os lotes de cada material e alerta de vencimento.
+- **Lotes rastreáveis** — de compra (lote do fornecedor, ligado à nota) ou de produção
+  (`AAMMDD` + sequência do dia, ex.: `2610030001`), com saldo e validade.
+- **Genealogia de lotes** — todo consumo informa de quais lotes saiu (sugestão FEFO); do
+  produto acabado chega-se à nota fiscal da matéria-prima e, do lote comprado, a todas as
+  ordens e lotes que o usaram. Consumos simultâneos não ultrapassam o saldo (bloqueio de linha).
+- **Rastreabilidade** — cada registro mostra quem criou, quem alterou e quando; a trilha de
+  auditoria (`GET /api/v1/auditoria/eventos`) filtra por entidade, registro, usuário, ação e período.
 - **Dashboard** — total de ordens, atrasadas, em produção, concluídas e lotes disponíveis.
 - **Autenticação** — login, autocadastro (perfil Planejador) e administrador inicial (Gerente).
 
@@ -66,8 +76,8 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
     <td width="50%"><img src="docs/imagens/listas-tecnicas.png" alt="Listas técnicas versionadas"><br><sub><b>Listas técnicas</b> — versões ativas e obsoletas por material</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/imagens/entrada-material.png" alt="Entrada de matéria-prima"><br><sub><b>Entrada de material</b> — recebimento com fornecedor e nota fiscal</sub></td>
-    <td width="50%"><img src="docs/imagens/cadastro.png" alt="Tela de cadastro"><br><sub><b>Cadastro</b> — validação no cliente e no servidor</sub></td>
+    <td width="50%"><img src="docs/imagens/entrada-notas.png" alt="Entrada de nota fiscal com itens"><br><sub><b>Entrada de notas</b> — nota fiscal com vários itens; cada item vira um lote</sub></td>
+    <td width="50%"><img src="docs/imagens/estoque.png" alt="Estoque por material"><br><sub><b>Estoque</b> — saldo por material calculado a partir dos lotes</sub></td>
   </tr>
 </table>
 
@@ -87,7 +97,7 @@ flowchart LR
         JPA[infrastructure/persistence<br/>Adaptadores JPA] -. implementa .-> DOM
     end
     RQ -->|HTTPS · JSON · JWT| WEB
-    JPA --> DB[(PostgreSQL 16<br/>Flyway V1–V8)]
+    JPA --> DB[(PostgreSQL 16<br/>Flyway V1–V10)]
 ```
 
 ### Modelo de domínio
@@ -102,6 +112,8 @@ erDiagram
     ORDEM_PRODUCAO ||--|{ CONSUMO_MATERIAL : "consome"
     ORDEM_PRODUCAO ||--o| LOTE : "gera (produção)"
     MATERIAL ||--o{ LOTE : "rastreado em"
+    CONSUMO_MATERIAL ||--o{ ALOCACAO_LOTE : "saiu de"
+    LOTE ||--o{ ALOCACAO_LOTE : "usado em"
 ```
 
 Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
@@ -184,8 +196,11 @@ O `docker-compose.yml` também sobe Redis e RabbitMQ, reservados para as próxim
 | 0–4 | Fundação, API de ordens, autenticação JWT, dashboard, carga de dados | ✅ |
 | 5a | Material + lista técnica (BOM) versionada | ✅ |
 | 5b | Consumo de material, lotes, conclusão de ordem, dataset sintético, entrada de matéria-prima | ✅ |
-| 5c | **Módulo de IA** — previsão de demanda, análise de atrasos e recomendações | 🔜 |
-| 6 | Saldo de estoque, integrações simuladas (SAP, Power BI) e deploy (Render + Neon) | 🔜 |
+| 5b+ | Rastreabilidade (auditoria e genealogia de lotes) e suprimentos (entrada de notas e estoque) | ✅ |
+| 5c | **Interface** — tema escuro com visual neon (sombras e brilho) | 🔜 |
+| 5d | **Módulo de IA** — previsão de demanda, análise de atrasos e recomendações | 🔜 |
+| 6 | **Qualidade** — inspeção do lote após a produção (plano, laudo, aprovação ou reprova) | 🔜 |
+| 7 | Integrações simuladas (SAP, Power BI) e deploy (Render + Neon) | 🔜 |
 
 Planejado para as próximas fases: cache com Redis, eventos com RabbitMQ e testes de
 frontend (Vitest). Estado detalhado em [docs/proximos-passos.md](docs/proximos-passos.md).

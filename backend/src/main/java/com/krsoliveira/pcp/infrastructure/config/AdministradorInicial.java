@@ -29,6 +29,8 @@ public class AdministradorInicial implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(AdministradorInicial.class);
     private static final int SENHA_MINIMA = 8;
+    /** Responsável registrado na trilha de auditoria pela criação do administrador. */
+    static final String RESPONSAVEL = "sistema:administrador-inicial";
 
     private final UsuarioRepository usuarioRepository;
     private final RegistrarUsuario registrarUsuario;
@@ -66,7 +68,7 @@ public class AdministradorInicial implements ApplicationRunner {
             log.info("Administrador inicial: e-mail já cadastrado — nenhuma alteração feita.");
             return;
         }
-        registrarUsuario.executar(nome, emailNormalizado, senha, Perfil.GERENTE);
+        registrarUsuario.executar(nome, emailNormalizado, senha, Perfil.GERENTE, RESPONSAVEL);
         // Não registra e-mail nem senha no log (dados pessoais / segredo).
         log.info("Administrador inicial criado com perfil GERENTE.");
     }

@@ -13,7 +13,9 @@ public record MaterialResponse(
         TipoMaterial tipo,
         String unidadeDeMedida,
         Instant criadoEm,
-        Instant atualizadoEm
+        Instant atualizadoEm,
+        String criadoPor,
+        String atualizadoPor
 ) {
     public static MaterialResponse de(Material material) {
         return new MaterialResponse(
@@ -23,7 +25,9 @@ public record MaterialResponse(
                 material.getTipo(),
                 material.getUnidadeDeMedida(),
                 material.getCriadoEm(),
-                material.getAtualizadoEm()
+                material.getAtualizadoEm(),
+                material.getAssinatura().criadoPor(),
+                material.getAssinatura().alteradoPor()
         );
     }
 }

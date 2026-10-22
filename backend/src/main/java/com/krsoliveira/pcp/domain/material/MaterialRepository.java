@@ -18,5 +18,10 @@ public interface MaterialRepository {
 
     List<Material> listarTodos();
 
-    boolean existePorCodigo(String codigo);
+    /**
+     * Próximo código livre na faixa do tipo ({@link CodigoMaterial}). A implementação
+     * garante que dois cadastros simultâneos do mesmo tipo não recebam o mesmo código —
+     * deve ser chamada dentro da transação que grava o material.
+     */
+    String proximoCodigo(TipoMaterial tipo);
 }

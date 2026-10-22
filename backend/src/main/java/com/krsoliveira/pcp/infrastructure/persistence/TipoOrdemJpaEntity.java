@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 import com.krsoliveira.pcp.domain.ordem.TipoOrdem;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,6 +36,12 @@ public class TipoOrdemJpaEntity {
     @Column(name = "atualizado_em", nullable = false)
     private Instant atualizadoEm;
 
+    @Column(name = "criado_por", nullable = false, length = 150)
+    private String criadoPor;
+
+    @Column(name = "atualizado_por", nullable = false, length = 150)
+    private String atualizadoPor;
+
     protected TipoOrdemJpaEntity() {}
 
     public static TipoOrdemJpaEntity deDominio(TipoOrdem tipo) {
@@ -43,12 +50,16 @@ public class TipoOrdemJpaEntity {
         entity.nome = tipo.getNome();
         entity.descricao = tipo.getDescricao();
         entity.cor = tipo.getCor();
-        entity.criadoEm = tipo.getCriadoEm();
-        entity.atualizadoEm = tipo.getAtualizadoEm();
+        Assinatura a = tipo.getAssinatura();
+        entity.criadoEm = a.criadoEm();
+        entity.atualizadoEm = a.alteradoEm();
+        entity.criadoPor = a.criadoPor();
+        entity.atualizadoPor = a.alteradoPor();
         return entity;
     }
 
     public TipoOrdem paraDominio() {
-        return TipoOrdem.reconstituir(id, nome, descricao, cor, criadoEm, atualizadoEm);
+        return TipoOrdem.reconstituir(id, nome, descricao, cor,
+                new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm));
     }
 }

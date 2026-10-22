@@ -50,7 +50,9 @@ public class ConsumoMaterialController {
     @PatchMapping("/{consumoId}")
     @Operation(summary = "Registrar consumo real",
             description = "Informa a quantidade efetivamente consumida. "
-                    + "Se houver desvio em relação ao planejado, justificativa e responsável são obrigatórios.")
+                    + "Se houver desvio em relação ao planejado, a justificativa é obrigatória. "
+                    + "Informe em alocacoes de quais lotes saiu o material (a soma deve ser igual à "
+                    + "quantidade consumida). O responsável é o usuário logado.")
     public ResponseEntity<ConsumoMaterialResponse> registrar(@PathVariable UUID ordemId,
                                                               @PathVariable UUID consumoId,
                                                               @RequestBody @Valid RegistrarConsumoRequest request) {

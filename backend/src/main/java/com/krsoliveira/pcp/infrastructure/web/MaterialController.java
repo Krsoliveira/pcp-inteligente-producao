@@ -35,7 +35,7 @@ public class MaterialController {
     }
 
     @PostMapping
-    @Operation(summary = "Cadastrar material", description = "Registra um novo material (PA, SA ou MP) no sistema.")
+    @Operation(summary = "Cadastrar material", description = "Registra um novo material (PA, SA ou MP). O código de 9 dígitos é gerado na faixa do tipo: 103 (acabado), 105 (semiacabado), 110 (matéria-prima).")
     public ResponseEntity<Void> cadastrar(@RequestBody @Valid CadastrarMaterialRequest request) {
         UUID id = cadastrarMaterial.executar(request.paraComando());
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()

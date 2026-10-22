@@ -18,7 +18,8 @@ import ListAltIcon from '@mui/icons-material/ListAlt'
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined'
 import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined'
-import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLongOutlined'
+import WarehouseIcon from '@mui/icons-material/WarehouseOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
 import MenuIcon from '@mui/icons-material/Menu'
 import FactoryIcon from '@mui/icons-material/Factory'
@@ -26,10 +27,20 @@ import { useAuthStore } from '../store/authStore'
 
 const DRAWER_WIDTH = 248
 
+// Sidebar usa fundo escuro (#0F172A) — padrão de enterprise dashboards.
+const SIDEBAR_BG = '#0F172A'
+const SIDEBAR_TEXT = 'rgba(255,255,255,0.65)'
+const SIDEBAR_SUBHEADER = 'rgba(255,255,255,0.35)'
+const SIDEBAR_DIVIDER = 'rgba(255,255,255,0.08)'
+const SIDEBAR_ACTIVE_BG = '#4F46E5'
+const SIDEBAR_HOVER_BG = 'rgba(255,255,255,0.06)'
+
 interface NavItem {
   label: string
   icon: React.ReactNode
   rota: string
+  /** Outras rotas que também destacam o item (ex.: telas de detalhe). */
+  ativoTambem?: string[]
 }
 
 interface NavSection {
@@ -53,10 +64,16 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    titulo: 'Suprimentos',
+    itens: [
+      { label: 'Entrada de notas', icon: <ReceiptLongIcon fontSize="small" />, rota: '/notas-fiscais' },
+      { label: 'Estoque', icon: <WarehouseIcon fontSize="small" />, rota: '/estoque', ativoTambem: ['/lotes'] },
+    ],
+  },
+  {
     titulo: 'Produção',
     itens: [
       { label: 'Ordens', icon: <ListAltIcon fontSize="small" />, rota: '/ordens' },
-      { label: 'Lotes', icon: <AllInboxIcon fontSize="small" />, rota: '/lotes' },
     ],
   },
 ]
@@ -72,13 +89,13 @@ export function Layout() {
     navigate('/login')
   }
 
-  const isAtivo = (rota: string) =>
+  const isAtivo = ({ rota, ativoTambem = [] }: NavItem) =>
     rota === '/dashboard'
       ? location.pathname === rota
-      : location.pathname.startsWith(rota)
+      : [rota, ...ativoTambem].some((r) => location.pathname.startsWith(r))
 
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: SIDEBAR_BG }}>
       {/* Logo */}
       <Box sx={{ px: 2.5, py: 2.5, display: 'flex', alignItems: 'center', gap: 1.25 }}>
         <Box
@@ -86,7 +103,7 @@ export function Layout() {
             width: 34,
             height: 34,
             borderRadius: 2,
-            bgcolor: 'primary.main',
+            bgcolor: SIDEBAR_ACTIVE_BG,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -98,32 +115,46 @@ export function Layout() {
         <Box>
           <Typography
             variant="subtitle2"
-            sx={{ lineHeight: 1.2, color: 'text.primary', fontSize: '0.85rem' }}
+            sx={{ lineHeight: 1.2, color: 'white', fontSize: '0.85rem', fontWeight: 600 }}
           >
             PCP Inteligente
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
+          <Typography sx={{ fontSize: '0.68rem', color: SIDEBAR_SUBHEADER }}>
             Plataforma de Produção
           </Typography>
         </Box>
       </Box>
 
-      <Divider />
+      <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
 
       {/* Seções de navegação */}
       <Box sx={{ flexGrow: 1, overflow: 'auto', py: 1 }}>
         {NAV_SECTIONS.map((section, sIdx) => (
           <Box key={section.titulo}>
-            {sIdx > 0 && <Divider sx={{ my: 0.5, mx: 2, opacity: 0.5 }} />}
+            {sIdx > 0 && <Divider sx={{ my: 0.5, mx: 2, borderColor: SIDEBAR_DIVIDER }} />}
             <List
               dense
               subheader={
-                <ListSubheader disableSticky>{section.titulo}</ListSubheader>
+                <ListSubheader
+                  disableSticky
+                  sx={{
+                    bgcolor: 'transparent',
+                    color: SIDEBAR_SUBHEADER,
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    lineHeight: '2rem',
+                    px: 2,
+                  }}
+                >
+                  {section.titulo}
+                </ListSubheader>
               }
               sx={{ px: 1, pb: 0 }}
             >
               {section.itens.map((item) => {
-                const ativo = isAtivo(item.rota)
+                const ativo = isAtivo(item)
                 return (
                   <ListItemButton
                     key={item.rota}
@@ -138,17 +169,23 @@ export function Layout() {
                       px: 1.5,
                       py: 0.75,
                       '&.Mui-selected': {
-                        bgcolor: 'primary.main',
+                        bgcolor: SIDEBAR_ACTIVE_BG,
                         color: 'white',
                         '& .MuiListItemIcon-root': { color: 'white' },
-                        '&:hover': { bgcolor: 'primary.dark' },
+                        '&:hover': { bgcolor: SIDEBAR_ACTIVE_BG },
+                      },
+                      '&:not(.Mui-selected)': {
+                        color: SIDEBAR_TEXT,
+                        '& .MuiListItemIcon-root': { color: SIDEBAR_TEXT },
                       },
                       '&:not(.Mui-selected):hover': {
-                        bgcolor: 'rgba(21,101,192,0.06)',
+                        bgcolor: SIDEBAR_HOVER_BG,
+                        color: 'white',
+                        '& .MuiListItemIcon-root': { color: 'white' },
                       },
                     }}
                   >
-                    <ListItemIcon sx={{ minWidth: 32, color: ativo ? 'white' : 'text.secondary' }}>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
                       {item.icon}
                     </ListItemIcon>
                     <ListItemText
@@ -167,15 +204,29 @@ export function Layout() {
       </Box>
 
       {/* Logout */}
-      <Divider />
+      <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
       <List sx={{ px: 1, py: 0.5 }}>
-        <ListItemButton onClick={handleLogout} sx={{ borderRadius: 1.5, px: 1.5, py: 0.75 }}>
-          <ListItemIcon sx={{ minWidth: 32, color: 'text.secondary' }}>
+        <ListItemButton
+          onClick={handleLogout}
+          sx={{
+            borderRadius: 1.5,
+            px: 1.5,
+            py: 0.75,
+            color: SIDEBAR_TEXT,
+            '& .MuiListItemIcon-root': { color: SIDEBAR_TEXT },
+            '&:hover': {
+              bgcolor: SIDEBAR_HOVER_BG,
+              color: 'white',
+              '& .MuiListItemIcon-root': { color: 'white' },
+            },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 32 }}>
             <LogoutIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText
             primary="Sair"
-            primaryTypographyProps={{ fontSize: '0.825rem', color: 'text.secondary' }}
+            primaryTypographyProps={{ fontSize: '0.825rem' }}
           />
         </ListItemButton>
       </List>
@@ -184,7 +235,7 @@ export function Layout() {
 
   return (
     <Box sx={{ display: 'flex' }}>
-      {/* AppBar (mobile) */}
+      {/* AppBar (mobile) — mantém fundo claro para contraste com o conteúdo */}
       <AppBar
         position="fixed"
         elevation={0}
@@ -235,7 +286,12 @@ export function Layout() {
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
+          '& .MuiDrawer-paper': {
+            width: DRAWER_WIDTH,
+            boxSizing: 'border-box',
+            bgcolor: SIDEBAR_BG,
+            borderRight: 'none',
+          },
         }}
       >
         {drawerContent}
@@ -249,8 +305,8 @@ export function Layout() {
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
             boxSizing: 'border-box',
-            borderRight: '1px solid',
-            borderColor: 'divider',
+            bgcolor: SIDEBAR_BG,
+            borderRight: 'none',
           },
         }}
         open
@@ -263,6 +319,7 @@ export function Layout() {
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0,
           minHeight: '100vh',
           bgcolor: 'background.default',
           mt: { xs: '56px', sm: 0 },

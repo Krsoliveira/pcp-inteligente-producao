@@ -1,5 +1,7 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
+import com.krsoliveira.pcp.domain.lote.OrigemCompra;
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.StatusLote;
 import jakarta.persistence.Column;
@@ -25,7 +27,7 @@ public class LoteJpaEntity {
     @Id
     private UUID id;
 
-    @Column(name = "numero_lote", nullable = false, unique = true, length = 40)
+    @Column(name = "numero_lote", nullable = false, length = 20)
     private String numeroLote;
 
     @Column(name = "material_id", nullable = false)
@@ -34,14 +36,26 @@ public class LoteJpaEntity {
     @Column(name = "ordem_producao_id")
     private UUID ordemProducaoId;
 
+    @Column(name = "nota_fiscal_entrada_id")
+    private UUID notaFiscalId;
+
     @Column(length = 150)
     private String fornecedor;
 
     @Column(name = "nota_fiscal", length = 44)
     private String notaFiscal;
 
+    @Column(name = "data_emissao_nf")
+    private LocalDate dataEmissaoNf;
+
+    @Column(name = "data_recebimento")
+    private LocalDate dataRecebimento;
+
     @Column(nullable = false, precision = 12, scale = 4)
     private BigDecimal quantidade;
+
+    @Column(nullable = false, precision = 12, scale = 4)
+    private BigDecimal saldo;
 
     @Column(name = "unidade_de_medida", nullable = false, length = 10)
     private String unidadeDeMedida;
@@ -59,6 +73,15 @@ public class LoteJpaEntity {
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
+    @Column(name = "atualizado_em", nullable = false)
+    private Instant atualizadoEm;
+
+    @Column(name = "criado_por", nullable = false, length = 150)
+    private String criadoPor;
+
+    @Column(name = "atualizado_por", nullable = false, length = 150)
+    private String atualizadoPor;
+
     protected LoteJpaEntity() {}
 
     public static LoteJpaEntity deDominio(Lote lote) {
@@ -67,20 +90,34 @@ public class LoteJpaEntity {
         entity.numeroLote = lote.getNumeroLote();
         entity.materialId = lote.getMaterialId();
         entity.ordemProducaoId = lote.getOrdemProducaoId();
-        entity.fornecedor = lote.getFornecedor();
-        entity.notaFiscal = lote.getNotaFiscal();
+        entity.notaFiscalId = lote.getNotaFiscalId();
+        OrigemCompra origem = lote.getOrigemCompra();
+        if (origem != null) {
+            entity.fornecedor = origem.fornecedor();
+            entity.notaFiscal = origem.notaFiscal();
+            entity.dataEmissaoNf = origem.dataEmissaoNf();
+            entity.dataRecebimento = origem.dataRecebimento();
+        }
         entity.quantidade = lote.getQuantidade();
+        entity.saldo = lote.getSaldo();
         entity.unidadeDeMedida = lote.getUnidadeDeMedida();
         entity.dataFabricacao = lote.getDataFabricacao();
         entity.dataValidade = lote.getDataValidade();
         entity.status = lote.getStatus();
-        entity.criadoEm = lote.getCriadoEm();
+        Assinatura a = lote.getAssinatura();
+        entity.criadoEm = a.criadoEm();
+        entity.atualizadoEm = a.alteradoEm();
+        entity.criadoPor = a.criadoPor();
+        entity.atualizadoPor = a.alteradoPor();
         return entity;
     }
 
     public Lote paraDominio() {
         return Lote.reconstituir(id, numeroLote, materialId, ordemProducaoId,
-                fornecedor, notaFiscal, quantidade, unidadeDeMedida, dataFabricacao, dataValidade,
-                status, criadoEm);
+                notaFiscal == null ? null
+                        : new OrigemCompra(fornecedor, notaFiscal, dataEmissaoNf, dataRecebimento),
+                notaFiscalId,
+                quantidade, saldo, unidadeDeMedida, dataFabricacao, dataValidade, status,
+                new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm));
     }
 }

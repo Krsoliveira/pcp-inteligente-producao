@@ -5,19 +5,19 @@ import Typography from '@mui/material/Typography'
 import type { OrdemProducao, StatusOrdem } from '../types'
 
 const STATUS_CORES: Record<StatusOrdem, string> = {
-  PLANEJADA: '#1565c0',
-  LIBERADA: '#ed6c02',
-  EM_PRODUCAO: '#9c27b0',
-  CONCLUIDA: '#2e7d32',
-  CANCELADA: '#d32f2f',
+  PLANEJADA:   '#94A3B8',
+  LIBERADA:    '#2563EB',
+  EM_PRODUCAO: '#D97706',
+  CONCLUIDA:   '#059669',
+  CANCELADA:   '#DC2626',
 }
 
 const STATUS_LABELS: Record<StatusOrdem, string> = {
-  PLANEJADA: 'Planejada',
-  LIBERADA: 'Liberada',
+  PLANEJADA:   'Planejada',
+  LIBERADA:    'Liberada',
   EM_PRODUCAO: 'Em Produção',
-  CONCLUIDA: 'Concluída',
-  CANCELADA: 'Cancelada',
+  CONCLUIDA:   'Concluída',
+  CANCELADA:   'Cancelada',
 }
 
 interface StatusPieChartProps {
@@ -38,13 +38,22 @@ export function StatusPieChart({ ordens }: StatusPieChartProps) {
     }),
   )
 
+  const quantidadePorNome = Object.fromEntries(dados.map((d) => [d.name, d.value]))
+
   const option = {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { bottom: '2%', left: 'center' },
+    legend: {
+      bottom: 0,
+      left: 'center',
+      icon: 'circle',
+      itemGap: 16,
+      formatter: (nome: string) => `${nome} (${quantidadePorNome[nome] ?? 0})`,
+    },
     series: [
       {
         type: 'pie',
-        radius: ['42%', '70%'],
+        center: ['50%', '40%'],
+        radius: ['36%', '58%'],
         avoidLabelOverlap: false,
         label: { show: false },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
@@ -64,7 +73,7 @@ export function StatusPieChart({ ordens }: StatusPieChartProps) {
             Nenhuma ordem cadastrada
           </Typography>
         ) : (
-          <ReactECharts option={option} style={{ height: 280 }} />
+          <ReactECharts option={option} style={{ height: 340 }} />
         )}
       </CardContent>
     </Card>

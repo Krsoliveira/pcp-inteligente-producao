@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.domain.lista;
 
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,18 +29,16 @@ public class ListaTecnica {
     private final String versao;
     private StatusListaTecnica status;
     private final List<ItemListaTecnica> itens;
-    private final Instant criadaEm;
-    private Instant atualizadaEm;
+    private Assinatura assinatura;
 
     private ListaTecnica(UUID id, UUID materialId, String versao, StatusListaTecnica status,
-                         List<ItemListaTecnica> itens, Instant criadaEm, Instant atualizadaEm) {
+                         List<ItemListaTecnica> itens, Assinatura assinatura) {
         this.id = id;
         this.materialId = materialId;
         this.versao = versao;
         this.status = status;
         this.itens = new ArrayList<>(itens);
-        this.criadaEm = criadaEm;
-        this.atualizadaEm = atualizadaEm;
+        this.assinatura = assinatura;
     }
 
     /**
@@ -48,7 +47,7 @@ public class ListaTecnica {
      * do use case, que tem acesso ao repositório de materiais.
      */
     public static ListaTecnica criar(UUID materialId, String versao,
-                                     List<ItemListaTecnica> itens) {
+                                     List<ItemListaTecnica> itens, String usuario) {
         if (materialId == null) {
             throw new RegraDeNegocioException("O material da lista técnica é obrigatório.");
         }
@@ -59,9 +58,8 @@ public class ListaTecnica {
             throw new RegraDeNegocioException(
                     "A lista técnica deve ter ao menos um componente.");
         }
-        Instant agora = Instant.now();
         return new ListaTecnica(UUID.randomUUID(), materialId, versao.trim(),
-                StatusListaTecnica.EM_REVISAO, itens, agora, agora);
+                StatusListaTecnica.EM_REVISAO, itens, Assinatura.nova(usuario));
     }
 
     /**
@@ -70,33 +68,35 @@ public class ListaTecnica {
     public static ListaTecnica reconstituir(UUID id, UUID materialId, String versao,
                                             StatusListaTecnica status,
                                             List<ItemListaTecnica> itens,
-                                            Instant criadaEm, Instant atualizadaEm) {
-        return new ListaTecnica(id, materialId, versao, status, itens, criadaEm, atualizadaEm);
+                                            Assinatura assinatura) {
+        return new ListaTecnica(id, materialId, versao, status, itens, assinatura);
     }
 
     /**
      * Ativa esta lista. Só é possível se estiver EM_REVISAO.
      * Cabe ao use case garantir que a lista atualmente ATIVA seja obsoletada antes.
      */
-    public void ativar() {
+    public void ativar(String usuario) {
+        Assinatura alterada = assinatura.alterada(usuario);
         if (!status.podeSerAtivada()) {
             throw new RegraDeNegocioException(
                     "Apenas listas em revisão podem ser ativadas. Status atual: %s.".formatted(status));
         }
         this.status = StatusListaTecnica.ATIVA;
-        this.atualizadaEm = Instant.now();
+        this.assinatura = alterada;
     }
 
     /**
      * Marca esta lista como OBSOLETA. Chamado pelo use case ao ativar uma versão mais nova.
      */
-    public void obsoleter() {
+    public void obsoleter(String usuario) {
+        Assinatura alterada = assinatura.alterada(usuario);
         if (!status.podeSerObsoletada()) {
             throw new RegraDeNegocioException(
                     "Apenas listas ativas podem ser obsoletadas. Status atual: %s.".formatted(status));
         }
         this.status = StatusListaTecnica.OBSOLETA;
-        this.atualizadaEm = Instant.now();
+        this.assinatura = alterada;
     }
 
     public UUID getId() { return id; }
@@ -104,6 +104,7 @@ public class ListaTecnica {
     public String getVersao() { return versao; }
     public StatusListaTecnica getStatus() { return status; }
     public List<ItemListaTecnica> getItens() { return Collections.unmodifiableList(itens); }
-    public Instant getCriadaEm() { return criadaEm; }
-    public Instant getAtualizadaEm() { return atualizadaEm; }
+    public Assinatura getAssinatura() { return assinatura; }
+    public Instant getCriadaEm() { return assinatura.criadoEm(); }
+    public Instant getAtualizadaEm() { return assinatura.alteradoEm(); }
 }

@@ -1,52 +1,86 @@
 package com.krsoliveira.pcp.application.ordem;
 
+import com.krsoliveira.pcp.application.comum.Detalhes;
+import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
 import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
+import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
+import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
+import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
+import com.krsoliveira.pcp.domain.lista.ListaTecnica;
+import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
+import com.krsoliveira.pcp.domain.material.Material;
+import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Caso de uso: criar uma nova ordem de produção.
- *
- * Responsabilidades desta camada: verificar unicidade do código (regra que
- * exige consultar o repositório) e delegar as invariantes ao domínio.
- * Classe sem anotações Spring — é registrada como bean em
- * {@code infrastructure/config/ConfiguracaoCasosDeUso}.
+ * Caso de uso: criar uma ordem de produção. A ordem e seus consumos projetados pela
+ * lista técnica são gravados juntos (atomicamente), com o usuário responsável.
  */
 public class CriarOrdemProducao {
 
     private final OrdemProducaoRepository repositorio;
     private final ProjetarConsumoMaterial projetarConsumoMaterial;
+    private final MaterialRepository materialRepository;
+    private final ListaTecnicaRepository listaTecnicaRepository;
+    private final ExecucaoAuditada execucao;
 
     public CriarOrdemProducao(OrdemProducaoRepository repositorio,
-                               ProjetarConsumoMaterial projetarConsumoMaterial) {
+                              ProjetarConsumoMaterial projetarConsumoMaterial,
+                              MaterialRepository materialRepository,
+                              ListaTecnicaRepository listaTecnicaRepository,
+                              ExecucaoAuditada execucao) {
         this.repositorio = repositorio;
         this.projetarConsumoMaterial = projetarConsumoMaterial;
+        this.materialRepository = materialRepository;
+        this.listaTecnicaRepository = listaTecnicaRepository;
+        this.execucao = execucao;
     }
 
     public OrdemProducao executar(Comando comando) {
-        if (repositorio.existePorCodigo(comando.codigo())) {
-            throw new CodigoJaUtilizadoException(comando.codigo());
-        }
-        OrdemProducao ordem = OrdemProducao.criar(
-                comando.codigo(),
-                comando.materialId(),
-                comando.listaTecnicaId(),
-                comando.tipoOrdemId(),
-                comando.centroDeTrabalho(),
-                comando.quantidade(),
-                comando.inicioPlanejado(),
-                comando.fimPlanejado());
-        OrdemProducao ordemSalva = repositorio.salvar(ordem);
+        return execucao.executar(ctx -> {
+            if (repositorio.existePorCodigo(comando.codigo())) {
+                throw new CodigoJaUtilizadoException(comando.codigo());
+            }
+            OrdemProducao ordem = OrdemProducao.criar(
+                    comando.codigo(),
+                    comando.materialId(),
+                    comando.listaTecnicaId(),
+                    comando.tipoOrdemId(),
+                    comando.centroDeTrabalho(),
+                    comando.quantidade(),
+                    comando.inicioPlanejado(),
+                    comando.fimPlanejado(),
+                    ctx.usuario());
+            OrdemProducao ordemSalva = repositorio.salvar(ordem);
 
-        projetarConsumoMaterial.executar(new ProjetarConsumoMaterial.Comando(
-                ordemSalva.getId(),
-                ordemSalva.getListaTecnicaId(),
-                ordemSalva.getQuantidade()));
+            List<ConsumoMaterial> consumos = projetarConsumoMaterial.executar(
+                    new ProjetarConsumoMaterial.Comando(
+                            ordemSalva.getId(),
+                            ordemSalva.getListaTecnicaId(),
+                            ordemSalva.getQuantidade(),
+                            ctx.usuario()));
 
-        return ordemSalva;
+            ctx.registrar(TipoEntidade.ORDEM_PRODUCAO, ordemSalva.getId(), ordemSalva.getCodigo(),
+                    AcaoAuditoria.CRIADO,
+                    Detalhes.com("codigo", ordemSalva.getCodigo())
+                            .e("material", materialRepository.buscarPorId(ordemSalva.getMaterialId())
+                                    .map(Material::getCodigo).orElse(null))
+                            .e("versaoListaTecnica", listaTecnicaRepository
+                                    .buscarPorId(ordemSalva.getListaTecnicaId())
+                                    .map(ListaTecnica::getVersao).orElse(null))
+                            .e("centroDeTrabalho", ordemSalva.getCentroDeTrabalho())
+                            .e("quantidade", ordemSalva.getQuantidade())
+                            .e("inicioPlanejado", ordemSalva.getInicioPlanejado())
+                            .e("fimPlanejado", ordemSalva.getFimPlanejado())
+                            .e("status", ordemSalva.getStatus())
+                            .e("consumosProjetados", consumos.size()));
+            return ordemSalva;
+        });
     }
 
     /**
