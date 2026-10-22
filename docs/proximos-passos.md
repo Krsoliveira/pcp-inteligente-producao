@@ -133,6 +133,28 @@ Tornar a interface mais marcante, mantendo a legibilidade:
 
 ## Pendências
 
+### Para 2026-10-22 (feedback do teste manual de 21/10)
+
+- [ ] **Redesenhar os filtros das listagens** (Ordens, Materiais, Listas Técnicas, Notas Fiscais,
+      Estoque). O desenho atual ficou pouco intuitivo: os campos parecem filtros das colunas da
+      tabela. A direção pedida:
+      1. **Primeiro filtro (vai ao banco):** poucos critérios simples e óbvios, só para **reduzir a
+         quantidade de dados** buscados (ex.: período, status, tipo). Definir, tela a tela, quais.
+      2. **Segundo filtro (só dentro da página já carregada):** em vez de um campo de texto livre
+         sobre as colunas, oferecer ao usuário **classificar** (ordenar) os dados da página, por
+         exemplo clicando no cabeçalho da coluna.
+      Pontos a decidir: critérios de cada tela; se a classificação vale só para a página ou também
+      passa a ser feita no servidor; o que fazer com o subfiltro de texto atual (`SubfiltroTabela`).
+- [ ] **Atualizar o README do projeto** (telas e fluxo de consulta em duas etapas, novos
+      endpoints `/pesquisa` e `/resumo`, testes do frontend com Vitest, ADRs 0014 a 0017,
+      estado do deploy).
+- [x] Notas Fiscais e Estoque mostravam "Não foi possível carregar...": era o backend de
+      desenvolvimento rodando sem os endpoints novos (iniciado antes do commit). Após reiniciar
+      (`mvn spring-boot:run "-Dspring-boot.run.profiles=dev,seed"`), os endpoints respondem 200.
+      Conferir de novo na tela.
+
+### Gerais
+
 _Testes do frontend (Vitest) e correção do script `lint`: concluídos, ver ADR-0017._
 
 - [ ] **Versionamento de listas técnicas e rastreio de alterações** (decisão de 2026-10-21):
