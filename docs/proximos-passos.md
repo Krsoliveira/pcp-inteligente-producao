@@ -133,6 +133,8 @@ Tornar a interface mais marcante, mantendo a legibilidade:
 
 ## Pendências
 
+_Testes do frontend (Vitest) e correção do script `lint`: concluídos, ver ADR-0017._
+
 - [ ] **Versionamento de listas técnicas e rastreio de alterações** (decisão de 2026-10-21):
       a lista técnica passou a ter tela de detalhe com URL própria (`/listas-tecnicas/:id`)
       justamente para receber isso. Falta definir como versionar (nova versão a partir de
@@ -140,14 +142,11 @@ Tornar a interface mais marcante, mantendo a legibilidade:
       **"caminho de migalhas" de alterações**: linha do tempo de quem mudou o quê e quando,
       navegável a partir do registro. A trilha de auditoria (ADR-0011) e o componente
       `HistoricoAuditoria` já existem em ordem e lote e são o ponto de partida. Exige ADR.
+- [ ] Subir o Node do CI para 22+ (o Node 20 saiu de suporte) e atualizar Vitest, jsdom e
+      jest-dom, que hoje estão presos a versões compatíveis com Node 20 (ADR-0017).
 - [ ] Notas fiscais, estoque e lotes ainda baixam a lista completa e paginam só na tela;
       migrar para consulta em duas etapas com pesquisa no servidor se passarem de ~1000
       registros (ADR-0015, ADR-0016).
-- [ ] O script `npm run lint` (`tsc --noEmit` na raiz) não verifica nada, porque o
-      `tsconfig.json` raiz só tem referências; a checagem real de tipos é a do
-      `npm run build` (`tsc -b`). Corrigir o script ou removê-lo da definição de pronto.
-- [ ] Testes automáticos no frontend (hoje só `build`): decidir por Vitest + Testing Library,
-      com ADR.
 
 - [ ] Apagar as branches já mescladas `claude/laughing-cannon-a62pda` e
       `feature/dataset-sintetico` no GitHub.
