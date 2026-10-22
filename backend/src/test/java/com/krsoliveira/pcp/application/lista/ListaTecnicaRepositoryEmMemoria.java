@@ -6,6 +6,11 @@ import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.lista.FiltroListasTecnicas;
+
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,5 +55,17 @@ public class ListaTecnicaRepositoryEmMemoria implements ListaTecnicaRepository {
         return dados.values().stream()
                 .anyMatch(l -> materialId.equals(l.getMaterialId())
                         && l.getVersao().equals(versao));
+    }
+
+    @Override
+    public Pagina<ListaTecnica> pesquisar(FiltroListasTecnicas filtro, PedidoDePagina pedido) {
+        List<ListaTecnica> filtradas = listarTodas().stream()
+                .filter(l -> filtro.materialId() == null || l.getMaterialId().equals(filtro.materialId()))
+                .filter(l -> filtro.status() == null || l.getStatus() == filtro.status())
+                .sorted(Comparator.comparing(ListaTecnica::getCriadaEm).thenComparing(ListaTecnica::getVersao).reversed())
+                .toList();
+        int de = (int) Math.min(pedido.deslocamento(), filtradas.size());
+        int ate = Math.min(de + pedido.tamanho(), filtradas.size());
+        return new Pagina<>(filtradas.subList(de, ate), pedido.pagina(), pedido.tamanho(), filtradas.size());
     }
 }

@@ -1,5 +1,8 @@
 package com.krsoliveira.pcp.domain.lista;
 
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +18,9 @@ public interface ListaTecnicaRepository {
     Optional<ListaTecnica> buscarPorId(UUID id);
 
     List<ListaTecnica> listarTodas();
+
+    /** Uma página de listas que atendem ao filtro, das criadas mais recentemente para as mais antigas. */
+    Pagina<ListaTecnica> pesquisar(FiltroListasTecnicas filtro, PedidoDePagina pedido);
 
     List<ListaTecnica> listarPorMaterial(UUID materialId);
 

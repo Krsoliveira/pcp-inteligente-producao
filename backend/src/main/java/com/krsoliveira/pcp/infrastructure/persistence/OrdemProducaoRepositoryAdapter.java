@@ -68,7 +68,7 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
             }
             if (filtro.busca() != null) {
                 condicoes.add(cb.like(cb.lower(ordem.get("codigo")),
-                        "%" + escaparCuringas(filtro.busca().toLowerCase()) + "%", '\\'));
+                        PesquisaJpa.contem(filtro.busca()), PesquisaJpa.ESCAPE));
             }
             return cb.and(condicoes.toArray(new Predicate[0]));
         };
@@ -79,11 +79,6 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
 
         return new Pagina<>(pagina.getContent().stream().map(OrdemProducaoJpaEntity::paraDominio).toList(),
                 pedido.pagina(), pedido.tamanho(), pagina.getTotalElements());
-    }
-
-    /** % e _ digitados pela pessoa são texto comum, não curingas do LIKE. */
-    private static String escaparCuringas(String texto) {
-        return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
     @Override
