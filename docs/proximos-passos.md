@@ -133,6 +133,22 @@ Tornar a interface mais marcante, mantendo a legibilidade:
 
 ## Pendências
 
+- [ ] **Versionamento de listas técnicas e rastreio de alterações** (decisão de 2026-10-21):
+      a lista técnica passou a ter tela de detalhe com URL própria (`/listas-tecnicas/:id`)
+      justamente para receber isso. Falta definir como versionar (nova versão a partir de
+      uma existente, comparação entre versões, o que acontece com ordens abertas) e um
+      **"caminho de migalhas" de alterações**: linha do tempo de quem mudou o quê e quando,
+      navegável a partir do registro. A trilha de auditoria (ADR-0011) e o componente
+      `HistoricoAuditoria` já existem em ordem e lote e são o ponto de partida. Exige ADR.
+- [ ] Notas fiscais, estoque e lotes ainda baixam a lista completa e paginam só na tela;
+      migrar para consulta em duas etapas com pesquisa no servidor se passarem de ~1000
+      registros (ADR-0015, ADR-0016).
+- [ ] O script `npm run lint` (`tsc --noEmit` na raiz) não verifica nada, porque o
+      `tsconfig.json` raiz só tem referências; a checagem real de tipos é a do
+      `npm run build` (`tsc -b`). Corrigir o script ou removê-lo da definição de pronto.
+- [ ] Testes automáticos no frontend (hoje só `build`): decidir por Vitest + Testing Library,
+      com ADR.
+
 - [ ] Apagar as branches já mescladas `claude/laughing-cannon-a62pda` e
       `feature/dataset-sintetico` no GitHub.
 - [ ] Preencher descrição e tópicos do repositório (⚙️ ao lado de **About**) e fixá-lo
