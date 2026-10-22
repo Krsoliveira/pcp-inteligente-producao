@@ -66,6 +66,12 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
             if (filtro.status() != null) {
                 condicoes.add(cb.equal(ordem.get("status"), filtro.status()));
             }
+            if (filtro.de() != null) {
+                condicoes.add(cb.greaterThanOrEqualTo(ordem.get("inicioPlanejado"), filtro.de()));
+            }
+            if (filtro.ate() != null) {
+                condicoes.add(cb.lessThanOrEqualTo(ordem.get("inicioPlanejado"), filtro.ate()));
+            }
             if (filtro.busca() != null) {
                 condicoes.add(cb.like(cb.lower(ordem.get("codigo")),
                         PesquisaJpa.contem(filtro.busca()), PesquisaJpa.ESCAPE));
