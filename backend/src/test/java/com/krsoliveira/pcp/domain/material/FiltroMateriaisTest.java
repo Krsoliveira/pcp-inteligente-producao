@@ -47,4 +47,27 @@ class FiltroMateriaisTest {
     void semBusca() {
         assertThat(FiltroMateriais.semFiltro().digitosDoCodigo()).isNull();
     }
+
+    @Test
+    @DisplayName("aceita: busca na descrição sem diferenciar maiúsculas, no código formatado e no tipo")
+    void aceitaMaterial() {
+        var viga = Material.criar("103000001", "Viga metálica", TipoMaterial.PRODUTO_ACABADO, "un", "t");
+
+        assertThat(FiltroMateriais.semFiltro().aceita(viga)).isTrue();
+        assertThat(new FiltroMateriais("VIGA", null).aceita(viga)).isTrue();
+        assertThat(new FiltroMateriais("103.000.001", null).aceita(viga)).isTrue();
+        assertThat(new FiltroMateriais("000001", null).aceita(viga)).isTrue();
+        assertThat(new FiltroMateriais(null, TipoMaterial.PRODUTO_ACABADO).aceita(viga)).isTrue();
+    }
+
+    @Test
+    @DisplayName("aceita: recusa quando a busca ou o tipo não correspondem")
+    void recusaMaterial() {
+        var viga = Material.criar("103000001", "Viga metálica", TipoMaterial.PRODUTO_ACABADO, "un", "t");
+
+        assertThat(new FiltroMateriais("chapa", null).aceita(viga)).isFalse();
+        assertThat(new FiltroMateriais("999", null).aceita(viga)).isFalse();
+        assertThat(new FiltroMateriais(null, TipoMaterial.MATERIA_PRIMA).aceita(viga)).isFalse();
+        assertThat(new FiltroMateriais("viga", TipoMaterial.MATERIA_PRIMA).aceita(viga)).isFalse();
+    }
 }

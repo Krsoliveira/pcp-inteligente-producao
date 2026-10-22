@@ -25,6 +25,19 @@ public record FiltroMateriais(String busca, TipoMaterial tipo) {
         return new FiltroMateriais(null, null);
     }
 
+    /** O material atende ao filtro? (mesma regra da pesquisa no banco, para listas montadas em memória) */
+    public boolean aceita(Material material) {
+        if (tipo != null && material.getTipo() != tipo) {
+            return false;
+        }
+        if (busca == null) {
+            return true;
+        }
+        String digitos = digitosDoCodigo();
+        return material.getDescricao().toLowerCase().contains(busca.toLowerCase())
+                || (digitos != null && material.getCodigo().contains(digitos));
+    }
+
     /**
      * A busca sem pontos e espaços, quando ela é só dígitos ("103.000.001" -> "103000001");
      * senão {@code null}. É o trecho a procurar no código do material.
