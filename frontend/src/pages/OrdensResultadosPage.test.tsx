@@ -84,17 +84,79 @@ describe('OrdensResultadosPage', () => {
     expect(screen.getByLabelText('Código da ordem')).toHaveValue('')
   })
 
-  it('o subfiltro refina as linhas da página sem consultar o servidor de novo', async () => {
+  it('ordena pelo título da coluna, sem consultar o servidor de novo', async () => {
     montar()
     await screen.findByText('OP-2026-0003')
     const consultasAntes = pesquisarMock.mock.calls.length
 
-    await userEvent.type(screen.getByPlaceholderText(/filtrar nas linhas desta página/i), 'soldagem')
+    await userEvent.click(screen.getByRole('button', { name: 'Ordenar Código' }))
+
+    expect(screen.getAllByText(/OP-2026-000\d/).map((c) => c.textContent)).toEqual(['OP-2026-0001', 'OP-2026-0002', 'OP-2026-0003'])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ordenar Código' }))
+
+    expect(screen.getAllByText(/OP-2026-000\d/).map((c) => c.textContent)).toEqual(['OP-2026-0003', 'OP-2026-0002', 'OP-2026-0001'])
+    expect(pesquisarMock.mock.calls.length).toBe(consultasAntes)
+  })
+
+  it('filtra pelo campo da coluna só nas linhas já consultadas', async () => {
+    montar()
+    await screen.findByText('OP-2026-0003')
+    const consultasAntes = pesquisarMock.mock.calls.length
+
+    await userEvent.click(screen.getByRole('button', { name: 'Filtrar Centro de Trabalho' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Texto do filtro de Centro de Trabalho' }), 'soldagem')
+    await userEvent.keyboard('{Escape}')
 
     expect(screen.getByText('OP-2026-0002')).toBeInTheDocument()
     expect(screen.queryByText('OP-2026-0003')).not.toBeInTheDocument()
-    expect(screen.getByText('Mostrando 1 de 3 linhas desta página')).toBeInTheDocument()
     expect(pesquisarMock.mock.calls.length).toBe(consultasAntes)
+  })
+
+  it('consulta o servidor com o período do início planejado que está na URL', async () => {
+    montar(`${ROTA}?de=2026-09-01&ate=2026-09-30`)
+
+    await screen.findByText('OP-2026-0003')
+
+    expect(pesquisarMock).toHaveBeenCalledWith(expect.objectContaining({ de: '2026-09-01', ate: '2026-09-30' }))
+    expect(screen.getByText('3 ordens encontradas')).toBeInTheDocument()
+  })
+
+  it('ignora datas inválidas na URL', async () => {
+    montar(`${ROTA}?de=ontem&ate=amanha`)
+
+    await screen.findByText('OP-2026-0003')
+
+    expect(pesquisarMock).toHaveBeenCalledWith(expect.objectContaining({ de: undefined, ate: undefined }))
+  })
+
+  it('não consulta o servidor quando o período da URL está invertido e avisa', async () => {
+    montar(`${ROTA}?de=2026-09-30&ate=2026-09-01`)
+
+    expect(await screen.findByText('O fim do período não pode ser anterior ao início.')).toBeInTheDocument()
+    expect(pesquisarMock).not.toHaveBeenCalled()
+  })
+
+  it('pesquisar com período atualiza a URL e volta para a primeira página', async () => {
+    montar(`${ROTA}?pagina=2`)
+    await screen.findByText('OP-2026-0003')
+
+    await userEvent.type(screen.getByLabelText('Início de'), '2026-09-01')
+    await userEvent.click(screen.getByRole('button', { name: 'Pesquisar' }))
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(`${ROTA}?de=2026-09-01`))
+  })
+
+  it('não pesquisa com o período invertido nos campos e mostra o erro do campo', async () => {
+    montar()
+    await screen.findByText('OP-2026-0003')
+
+    await userEvent.type(screen.getByLabelText('Início de'), '2026-09-30')
+    await userEvent.type(screen.getByLabelText('até'), '2026-09-01')
+    await userEvent.click(screen.getByRole('button', { name: 'Pesquisar' }))
+
+    expect(screen.getByText('Anterior ao início.')).toBeInTheDocument()
+    expect(screen.getByTestId('rota')).not.toHaveTextContent('de=')
   })
 
   it('mostra uma mensagem quando nenhuma ordem atende aos filtros', async () => {

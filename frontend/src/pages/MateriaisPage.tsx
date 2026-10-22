@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pesquisarMateriais } from '../api/materiais'
-import { MaterialTable } from '../components/materiais/MaterialTable'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
+import { MaterialTable, colunasDeMateriais } from '../components/materiais/MaterialTable'
 import { CamposFiltroMateriais } from '../components/materiais/CamposFiltroMateriais'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
 import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
@@ -40,6 +41,9 @@ export function MateriaisPage() {
     queryFn: () => pesquisarMateriais({ pagina: 0, tamanho: 10 }),
   })
 
+  const itensRecentes = recentes.data?.itens ?? []
+  const tabela = useTabelaInterativa(itensRecentes, colunasDeMateriais)
+
   const verResultados = (filtros: Record<string, string | undefined> = {}) =>
     navigate({ pathname: '/materiais/resultados', search: montarBusca(filtros) })
   const pesquisar = () => verResultados({ busca: busca.trim(), tipo: tipo === 'TODOS' ? undefined : tipo })
@@ -70,7 +74,10 @@ export function MateriaisPage() {
         ) : (recentes.data?.itens.length ?? 0) === 0 ? (
           <EmptyState Icone={InventoryIcon} titulo="Nenhum material cadastrado" descricao="Cadastre materiais: produtos acabados, semiacabados e matérias-primas." acaoLabel="Novo Material" onAcao={() => setDialogAberto(true)} />
         ) : (
-          <MaterialTable materiais={recentes.data!.itens} />
+          <>
+          <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+          <MaterialTable materiais={tabela.linhas} controle={tabela.controle} />
+          </>
         )}
       </CartaoDeRecentes>
 

@@ -6,19 +6,18 @@ import Skeleton from '@mui/material/Skeleton'
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { pesquisarMateriais } from '../api/materiais'
-import { MaterialTable } from '../components/materiais/MaterialTable'
+import { MaterialTable, colunasDeMateriais } from '../components/materiais/MaterialTable'
 import { CamposFiltroMateriais, TIPOS_VALIDOS } from '../components/materiais/CamposFiltroMateriais'
 import { PageHeader } from '../components/PageHeader'
 import { PaginacaoTabela } from '../components/PaginacaoTabela'
 import { EmptyState } from '../components/EmptyState'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
-import { SubfiltroTabela, useSubfiltro } from '../components/consulta/SubfiltroTabela'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
-import { formatarCodigoMaterial } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
-import { TIPO_MATERIAL_LABEL, type TipoMaterial } from '../types'
+import { type TipoMaterial } from '../types'
 
-/** Segunda etapa: o resultado da consulta de materiais, paginado no servidor, com subfiltro na página. */
+/** Segunda etapa: o resultado da consulta de materiais, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function MateriaisResultadosPage() {
   const url = useParametrosDaUrl()
   const buscaAplicada = url.texto('busca')
@@ -38,8 +37,7 @@ export function MateriaisResultadosPage() {
   })
   const materiais = data?.itens ?? []
   const total = data?.total ?? 0
-  const subfiltro = useSubfiltro(materiais, (m) =>
-    `${formatarCodigoMaterial(m.codigo)} ${m.descricao} ${TIPO_MATERIAL_LABEL[m.tipo]} ${m.unidadeDeMedida}`)
+  const tabela = useTabelaInterativa(materiais, colunasDeMateriais)
   const filtrando = buscaAplicada !== '' || tipoAplicado !== undefined
 
   useEffect(() => {
@@ -76,8 +74,8 @@ export function MateriaisResultadosPage() {
           />
         ) : (
           <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <SubfiltroTabela valor={subfiltro.texto} onChange={subfiltro.setTexto} exibidas={subfiltro.filtrados.length} naPagina={materiais.length} />
-            <MaterialTable materiais={subfiltro.filtrados} />
+            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={materiais.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+            <MaterialTable materiais={tabela.linhas} controle={tabela.controle} />
             <PaginacaoTabela
               total={total}
               pagina={pagina}

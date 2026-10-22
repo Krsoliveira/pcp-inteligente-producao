@@ -10,17 +10,31 @@ import TableRow from '@mui/material/TableRow'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
-import { StatusListaBadge } from '../StatusBadge'
+import { StatusListaBadge, rotuloDoStatusDeLista } from '../StatusBadge'
+import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
+
 import type { ListaTecnica } from '../../types'
 
 interface ListaTecnicaTableProps {
   listas: ListaTecnica[]
   nomeDoMaterial: (materialId: string) => string
   onAtivar: (id: string) => void
+  /** Quando informado, o cabeçalho ordena e filtra por coluna (tela de resultados). */
+  controle?: ControleDaTabela<ListaTecnica>
+}
+
+/** Colunas que a tela de resultados ordena e filtra; o texto é o que aparece na célula. */
+export function colunasDeListas(nomeDoMaterial: (materialId: string) => string): Coluna<ListaTecnica>[] {
+  return [
+    { chave: 'material', rotulo: 'Material', valor: (l) => nomeDoMaterial(l.materialId) },
+    { chave: 'versao', rotulo: 'Versão', valor: (l) => l.versao },
+    { chave: 'componentes', rotulo: 'Componentes', valor: (l) => l.itens.length },
+    { chave: 'status', rotulo: 'Status', valor: (l) => rotuloDoStatusDeLista(l.status) },
+  ]
 }
 
 /** Linha clicável: abre o detalhe da lista técnica (/listas-tecnicas/:id). */
-export function ListaTecnicaTable({ listas, nomeDoMaterial, onAtivar }: ListaTecnicaTableProps) {
+export function ListaTecnicaTable({ listas, nomeDoMaterial, onAtivar, controle }: ListaTecnicaTableProps) {
   const navigate = useNavigate()
 
   return (
@@ -28,10 +42,10 @@ export function ListaTecnicaTable({ listas, nomeDoMaterial, onAtivar }: ListaTec
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Material</TableCell>
-            <TableCell>Versão</TableCell>
-            <TableCell align="center">Componentes</TableCell>
-            <TableCell>Status</TableCell>
+            <CelulaDeCabecalho chave="material" rotulo="Material" controle={controle} />
+            <CelulaDeCabecalho chave="versao" rotulo="Versão" controle={controle} />
+            <CelulaDeCabecalho chave="componentes" rotulo="Componentes" controle={controle} align="center" />
+            <CelulaDeCabecalho chave="status" rotulo="Status" controle={controle} />
             <TableCell align="center" sx={{ width: 80 }}>Ações</TableCell>
           </TableRow>
         </TableHead>

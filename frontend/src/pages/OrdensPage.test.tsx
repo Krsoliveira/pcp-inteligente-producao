@@ -36,6 +36,21 @@ describe('OrdensPage (consulta)', () => {
     expect(screen.getByText('10 ordens mais recentes')).toBeInTheDocument()
   })
 
+  it('a lista das mais recentes também ordena e filtra por coluna, sem nova consulta', async () => {
+    montar()
+    await screen.findByText('OP-2026-0002')
+    const consultasAntes = pesquisarMock.mock.calls.length
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ordenar Código' }))
+    expect(screen.getAllByText(/OP-2026-000\d/).map((c) => c.textContent)).toEqual(['OP-2026-0001', 'OP-2026-0002'])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Filtrar Código' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Texto do filtro de Código' }), '0002')
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByText('OP-2026-0001')).not.toBeInTheDocument()
+    expect(pesquisarMock.mock.calls.length).toBe(consultasAntes)
+  })
+
   it('leva à tela de resultados com os filtros escolhidos', async () => {
     montar()
     await screen.findByText('OP-2026-0002')
@@ -44,6 +59,28 @@ describe('OrdensPage (consulta)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pesquisar' }))
 
     await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent('/ordens/resultados?busca=OP-2026'))
+  })
+
+  it('leva o período do início planejado para a tela de resultados', async () => {
+    montar()
+    await screen.findByText('OP-2026-0002')
+
+    await userEvent.type(screen.getByLabelText('Início de'), '2026-09-01')
+    await userEvent.type(screen.getByLabelText('até'), '2026-09-30')
+    await userEvent.click(screen.getByRole('button', { name: 'Pesquisar' }))
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent('/ordens/resultados?de=2026-09-01&ate=2026-09-30'))
+  })
+
+  it('não sai da tela com o período invertido', async () => {
+    montar()
+    await screen.findByText('OP-2026-0002')
+
+    await userEvent.type(screen.getByLabelText('Início de'), '2026-09-30')
+    await userEvent.type(screen.getByLabelText('até'), '2026-09-01')
+    await userEvent.click(screen.getByRole('button', { name: 'Pesquisar' }))
+
+    expect(screen.getByTestId('rota')).toHaveTextContent(/^\/ordens$/)
   })
 
   it('"Ver todos" abre os resultados sem filtro', async () => {

@@ -6,43 +6,52 @@ import Skeleton from '@mui/material/Skeleton'
 import ListAltIcon from '@mui/icons-material/ListAlt'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { pesquisarOrdens } from '../api/ordens'
-import { OrdemTable } from '../components/OrdemTable'
+import { OrdemTable, colunasDeOrdens } from '../components/OrdemTable'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { PageHeader } from '../components/PageHeader'
 import { PaginacaoTabela } from '../components/PaginacaoTabela'
 import { EmptyState } from '../components/EmptyState'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
-import { SubfiltroTabela, useSubfiltro } from '../components/consulta/SubfiltroTabela'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
 import { CamposFiltroOrdens, STATUS_VALIDOS } from '../components/ordens/CamposFiltroOrdens'
+import { ehDataIso, periodoInvertido } from '../components/consulta/CamposDePeriodo'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import type { OrdemProducao, StatusOrdem } from '../types'
 
-/** Segunda etapa: o resultado da consulta, paginado no servidor, com subfiltro na página. */
+/** Segunda etapa: o resultado da consulta, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function OrdensResultadosPage() {
   const url = useParametrosDaUrl()
   const buscaAplicada = url.texto('busca')
   const statusBruto = url.texto('status') as StatusOrdem
   const statusAplicado = STATUS_VALIDOS.includes(statusBruto) ? statusBruto : undefined
+  const deAplicado = ehDataIso(url.texto('de')) ? url.texto('de') : ''
+  const ateAplicado = ehDataIso(url.texto('ate')) ? url.texto('ate') : ''
+  const periodoValido = !periodoInvertido(deAplicado, ateAplicado)
   const pagina = url.numero('pagina', 0)
   const tamanho = url.numero('tamanho', 25)
 
   // Os campos editam um rascunho; a consulta só muda ao clicar em Pesquisar.
   const [busca, setBusca] = useState(buscaAplicada)
   const [status, setStatus] = useState<StatusOrdem | 'TODAS'>(statusAplicado ?? 'TODAS')
-  useEffect(() => { setBusca(buscaAplicada); setStatus(statusAplicado ?? 'TODAS') }, [buscaAplicada, statusAplicado])
+  const [de, setDe] = useState(deAplicado)
+  const [ate, setAte] = useState(ateAplicado)
+  useEffect(() => {
+    setBusca(buscaAplicada); setStatus(statusAplicado ?? 'TODAS'); setDe(deAplicado); setAte(ateAplicado)
+  }, [buscaAplicada, statusAplicado, deAplicado, ateAplicado])
 
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemProducao | null>(null)
 
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
-    queryKey: ['ordens', 'pesquisa', buscaAplicada, statusAplicado, pagina, tamanho],
-    queryFn: () => pesquisarOrdens({ busca: buscaAplicada || undefined, status: statusAplicado, pagina, tamanho }),
+    queryKey: ['ordens', 'pesquisa', buscaAplicada, statusAplicado, deAplicado, ateAplicado, pagina, tamanho],
+    queryFn: () => pesquisarOrdens({ busca: buscaAplicada || undefined, status: statusAplicado, de: deAplicado || undefined, ate: ateAplicado || undefined, pagina, tamanho }),
+    enabled: periodoValido,
     placeholderData: keepPreviousData,
   })
   const ordens = data?.itens ?? []
   const total = data?.total ?? 0
-  const subfiltro = useSubfiltro(ordens, (o) => `${o.codigo} ${o.centroDeTrabalho}`)
-  const filtrando = buscaAplicada !== '' || statusAplicado !== undefined
+  const tabela = useTabelaInterativa(ordens, colunasDeOrdens)
+  const filtrando = buscaAplicada !== '' || statusAplicado !== undefined || deAplicado !== '' || ateAplicado !== ''
 
   // Se a página pedida deixou de existir (ex.: uma ordem saiu do filtro), volta para a última.
   useEffect(() => {
@@ -51,8 +60,14 @@ export function OrdensResultadosPage() {
     }
   }, [data, pagina]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const pesquisar = () => url.atualizar({ busca: busca.trim(), status: status === 'TODAS' ? undefined : status, pagina: undefined })
-  const limpar = () => { setBusca(''); setStatus('TODAS'); url.atualizar({ busca: undefined, status: undefined, pagina: undefined }) }
+  const pesquisar = () => {
+    if (periodoInvertido(de, ate)) return
+    url.atualizar({ busca: busca.trim(), status: status === 'TODAS' ? undefined : status, de, ate, pagina: undefined })
+  }
+  const limpar = () => {
+    setBusca(''); setStatus('TODAS'); setDe(''); setAte('')
+    url.atualizar({ busca: undefined, status: undefined, de: undefined, ate: undefined, pagina: undefined })
+  }
 
   return (
     <Box>
@@ -63,13 +78,14 @@ export function OrdensResultadosPage() {
       />
 
       <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
-        <CamposFiltroOrdens busca={busca} onBusca={setBusca} status={status} onStatus={setStatus} />
+        <CamposFiltroOrdens busca={busca} onBusca={setBusca} status={status} onStatus={setStatus} de={de} onDe={setDe} ate={ate} onAte={setAte} />
       </PainelDeConsulta>
 
+      {!periodoValido && <Alert severity="warning" sx={{ mb: 2 }}>O fim do período não pode ser anterior ao início.</Alert>}
       {isError && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(error, 'Não foi possível carregar as ordens.')}</Alert>}
 
       <Card>
-        {isLoading ? (
+        {isLoading && periodoValido ? (
           <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
         ) : ordens.length === 0 ? (
           <EmptyState
@@ -79,8 +95,8 @@ export function OrdensResultadosPage() {
           />
         ) : (
           <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <SubfiltroTabela valor={subfiltro.texto} onChange={subfiltro.setTexto} exibidas={subfiltro.filtrados.length} naPagina={ordens.length} />
-            <OrdemTable ordens={subfiltro.filtrados} onAtualizarStatus={setOrdemSelecionada} />
+            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={ordens.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+            <OrdemTable ordens={tabela.linhas} onAtualizarStatus={setOrdemSelecionada} controle={tabela.controle} />
             <PaginacaoTabela
               total={total}
               pagina={pagina}

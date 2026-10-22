@@ -16,9 +16,28 @@ import {
   formatarDataHora,
   formatarQuantidade,
 } from '../../utils/formatacao'
+import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
+
+/** Colunas que a tela de resultados ordena e filtra; o texto é o que aparece na célula. */
+export const colunasDeEstoque: Coluna<PosicaoEstoque>[] = [
+  { chave: 'codigo', rotulo: 'Código', valor: (p) => p.codigo, texto: (p) => formatarCodigoMaterial(p.codigo) },
+  { chave: 'descricao', rotulo: 'Descrição', valor: (p) => p.descricao },
+  { chave: 'tipo', rotulo: 'Tipo', valor: (p) => TIPO_MATERIAL_LABEL[p.tipo] },
+  { chave: 'disponivel', rotulo: 'Disponível', valor: (p) => p.saldoDisponivel, texto: (p) => formatarQuantidade(p.saldoDisponivel, p.unidadeDeMedida) },
+  { chave: 'lotes', rotulo: 'Lotes', valor: (p) => p.lotesDisponiveis },
+  { chave: 'indisponivel', rotulo: 'Indisponível', valor: (p) => p.saldoIndisponivel, texto: (p) => formatarQuantidade(p.saldoIndisponivel, p.unidadeDeMedida) },
+  { chave: 'vencimento', rotulo: 'Próx. vencimento', valor: (p) => p.proximoVencimento, texto: (p) => (p.proximoVencimento ? formatarData(p.proximoVencimento) : '') },
+  { chave: 'entrada', rotulo: 'Última entrada', valor: (p) => p.ultimaEntrada, texto: (p) => (p.ultimaEntrada ? formatarDataHora(p.ultimaEntrada) : '') },
+]
+
+interface EstoqueTableProps {
+  posicoes: PosicaoEstoque[]
+  /** Quando informado, o cabeçalho ordena e filtra por coluna (tela de resultados). */
+  controle?: ControleDaTabela<PosicaoEstoque>
+}
 
 /** Linha clicável: abre o estoque do material (/estoque/:materialId). */
-export function EstoqueTable({ posicoes }: { posicoes: PosicaoEstoque[] }) {
+export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
   const navigate = useNavigate()
 
   return (
@@ -26,14 +45,14 @@ export function EstoqueTable({ posicoes }: { posicoes: PosicaoEstoque[] }) {
       <Table size="small" sx={{ '& th': { whiteSpace: 'nowrap' } }}>
         <TableHead>
           <TableRow>
-            <TableCell>Código</TableCell>
-            <TableCell>Descrição</TableCell>
-            <TableCell>Tipo</TableCell>
-            <TableCell align="right">Disponível</TableCell>
-            <TableCell align="center">Lotes</TableCell>
-            <TableCell align="right">Indisponível</TableCell>
-            <TableCell>Próx. vencimento</TableCell>
-            <TableCell>Última entrada</TableCell>
+            <CelulaDeCabecalho chave="codigo" rotulo="Código" controle={controle} />
+            <CelulaDeCabecalho chave="descricao" rotulo="Descrição" controle={controle} />
+            <CelulaDeCabecalho chave="tipo" rotulo="Tipo" controle={controle} />
+            <CelulaDeCabecalho chave="disponivel" rotulo="Disponível" controle={controle} align="right" />
+            <CelulaDeCabecalho chave="lotes" rotulo="Lotes" controle={controle} align="center" />
+            <CelulaDeCabecalho chave="indisponivel" rotulo="Indisponível" controle={controle} align="right" />
+            <CelulaDeCabecalho chave="vencimento" rotulo="Próx. vencimento" controle={controle} />
+            <CelulaDeCabecalho chave="entrada" rotulo="Última entrada" controle={controle} />
           </TableRow>
         </TableHead>
         <TableBody>

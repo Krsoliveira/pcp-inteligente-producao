@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pesquisarListasTecnicas } from '../api/listasTecnicas'
-import { ListaTecnicaTable } from '../components/listas/ListaTecnicaTable'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
+import { ListaTecnicaTable, colunasDeListas } from '../components/listas/ListaTecnicaTable'
 import { CamposFiltroListas, nomeDoMaterial } from '../components/listas/CamposFiltroListas'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
 import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
@@ -58,6 +59,9 @@ export function ListasTecnicasPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['listas-tecnicas'] }),
   })
 
+  const itensRecentes = recentes.data?.itens ?? []
+  const tabela = useTabelaInterativa(itensRecentes, colunasDeListas(nome))
+
   const verResultados = (filtros: Record<string, string | undefined> = {}) =>
     navigate({ pathname: '/listas-tecnicas/resultados', search: montarBusca(filtros) })
   const pesquisar = () => verResultados({ materialId: materialId || undefined, status: status === 'TODOS' ? undefined : status })
@@ -96,7 +100,10 @@ export function ListasTecnicasPage() {
             onAcao={() => setDialogAberto(true)}
           />
         ) : (
-          <ListaTecnicaTable listas={recentes.data!.itens} nomeDoMaterial={nome} onAtivar={ativar} />
+          <>
+          <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+          <ListaTecnicaTable listas={tabela.linhas} nomeDoMaterial={nome} onAtivar={ativar} controle={tabela.controle} />
+          </>
         )}
       </CartaoDeRecentes>
 

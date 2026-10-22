@@ -8,7 +8,8 @@ import { useQuery } from '@tanstack/react-query'
 import { pesquisarEstoque } from '../api/estoque'
 import { AlertaDeEstoque } from '../components/suprimentos/AlertaDeEstoque'
 import { CamposFiltroEstoque } from '../components/suprimentos/CamposFiltroEstoque'
-import { EstoqueTable } from '../components/suprimentos/EstoqueTable'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
+import { EstoqueTable, colunasDeEstoque } from '../components/suprimentos/EstoqueTable'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
 import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
 import { PageHeader } from '../components/PageHeader'
@@ -28,6 +29,9 @@ export function EstoquePage() {
     queryKey: ['estoque', 'recentes', 10],
     queryFn: () => pesquisarEstoque({ pagina: 0, tamanho: 10 }),
   })
+
+  const itensRecentes = recentes.data?.itens ?? []
+  const tabela = useTabelaInterativa(itensRecentes, colunasDeEstoque)
 
   const verResultados = (filtros: Record<string, string | undefined> = {}) =>
     navigate({ pathname: '/estoque/resultados', search: montarBusca(filtros) })
@@ -65,7 +69,10 @@ export function EstoquePage() {
             descricao="O estoque nasce das entradas de notas fiscais e das ordens de produção concluídas."
           />
         ) : (
-          <EstoqueTable posicoes={recentes.data!.itens} />
+          <>
+          <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+          <EstoqueTable posicoes={tabela.linhas} controle={tabela.controle} />
+          </>
         )}
       </CartaoDeRecentes>
     </Box>
