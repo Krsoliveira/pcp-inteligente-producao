@@ -1,4 +1,4 @@
-import type { ListaTecnica, Material, OrdemProducao, PaginaDe } from '../types'
+import type { ListaTecnica, Lote, Material, NotaFiscal, OrdemProducao, PaginaDe, PosicaoEstoque } from '../types'
 
 export function ordem(sobrescritas: Partial<OrdemProducao> = {}): OrdemProducao {
   return {
@@ -54,4 +54,61 @@ export function listaTecnica(sobrescritas: Partial<ListaTecnica> = {}): ListaTec
 
 export function pagina<T>(itens: T[], extras: Partial<PaginaDe<T>> = {}): PaginaDe<T> {
   return { itens, pagina: 0, tamanho: 25, total: itens.length, totalPaginas: 1, ...extras }
+}
+
+export function lote(sobrescritas: Partial<Lote> = {}): Lote {
+  return {
+    id: 'lt-1',
+    numeroLote: 'LOTE-A1',
+    materialId: 'm-2',
+    ordemProducaoId: null,
+    origem: 'COMPRA',
+    notaFiscalId: 'nf-1',
+    fornecedor: 'Aços Brasil',
+    notaFiscal: 'NF-001',
+    quantidade: 250,
+    unidadeDeMedida: 'kg',
+    dataFabricacao: '2026-08-01',
+    dataValidade: '2031-08-01',
+    status: 'DISPONIVEL',
+    saldo: 250,
+    dataEmissaoNf: '2026-09-01',
+    dataRecebimento: '2026-09-02',
+    criadoEm: '2026-09-02T10:00:00Z',
+    criadoPor: 'teste@pcp.com',
+    atualizadoEm: '2026-09-02T10:00:00Z',
+    atualizadoPor: 'teste@pcp.com',
+    ...sobrescritas,
+  }
+}
+
+export function notaFiscal(sobrescritas: Partial<NotaFiscal> = {}): NotaFiscal {
+  return {
+    id: 'nf-1',
+    fornecedor: 'Aços Brasil',
+    numero: 'NF-001',
+    dataEmissao: '2026-09-01',
+    dataRecebimento: '2026-09-02',
+    registradaPor: 'teste@pcp.com',
+    registradaEm: '2026-09-02T10:00:00Z',
+    quantidadeItens: 1,
+    itens: [lote()],
+    ...sobrescritas,
+  }
+}
+
+export function posicaoEstoque(sobrescritas: Partial<PosicaoEstoque> = {}): PosicaoEstoque {
+  return {
+    materialId: 'm-2',
+    codigo: '110000001',
+    descricao: 'Aço inox',
+    tipo: 'MATERIA_PRIMA',
+    unidadeDeMedida: 'kg',
+    saldoDisponivel: 750,
+    lotesDisponiveis: 3,
+    saldoIndisponivel: 0,
+    proximoVencimento: null,
+    ultimaEntrada: '2026-10-05T10:00:00Z',
+    ...sobrescritas,
+  }
 }

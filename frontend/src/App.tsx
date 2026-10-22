@@ -15,8 +15,10 @@ import { ListaTecnicaDetalhePage } from './pages/ListaTecnicaDetalhePage'
 import { TiposOrdemPage } from './pages/TiposOrdemPage'
 import { LoteDetalhePage } from './pages/LoteDetalhePage'
 import { NotasFiscaisPage } from './pages/NotasFiscaisPage'
+import { NotasFiscaisResultadosPage } from './pages/NotasFiscaisResultadosPage'
 import { NotaFiscalDetalhePage } from './pages/NotaFiscalDetalhePage'
 import { EstoquePage } from './pages/EstoquePage'
+import { EstoqueResultadosPage } from './pages/EstoqueResultadosPage'
 import { EstoqueMaterialPage } from './pages/EstoqueMaterialPage'
 
 const router = createBrowserRouter([
@@ -41,8 +43,10 @@ const router = createBrowserRouter([
           { path: '/ordens/:id', element: <OrdemDetalhePage /> },
           // Suprimentos (ADR-0012)
           { path: '/notas-fiscais', element: <NotasFiscaisPage /> },
+          { path: '/notas-fiscais/resultados', element: <NotasFiscaisResultadosPage /> },
           { path: '/notas-fiscais/:id', element: <NotaFiscalDetalhePage /> },
           { path: '/estoque', element: <EstoquePage /> },
+          { path: '/estoque/resultados', element: <EstoqueResultadosPage /> },
           { path: '/estoque/:materialId', element: <EstoqueMaterialPage /> },
           { path: '/lotes/:id', element: <LoteDetalhePage /> },
           // A lista de lotes virou o estoque por material.

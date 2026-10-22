@@ -1,6 +1,9 @@
 package com.krsoliveira.pcp.application.notafiscal;
 
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.notafiscal.FiltroNotasFiscais;
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
 import com.krsoliveira.pcp.domain.notafiscal.NotaFiscalEntrada;
@@ -41,6 +44,18 @@ public class ConsultarNotasFiscais {
         return notas.stream()
                 .map(n -> new NotaComItens(n, lotesPorNota.getOrDefault(n.getId(), List.of())))
                 .toList();
+    }
+
+    /** Uma página de notas já com seus itens (lotes buscados de uma vez, sem N+1). */
+    public Pagina<NotaComItens> pesquisar(FiltroNotasFiscais filtro, PedidoDePagina pedido) {
+        Pagina<NotaFiscalEntrada> pagina = notaRepository.pesquisar(filtro, pedido);
+        Map<UUID, List<Lote>> lotesPorNota = loteRepository
+                .listarPorNotasFiscais(pagina.itens().stream().map(NotaFiscalEntrada::getId).toList()).stream()
+                .collect(Collectors.groupingBy(Lote::getNotaFiscalId));
+        List<NotaComItens> itens = pagina.itens().stream()
+                .map(n -> new NotaComItens(n, lotesPorNota.getOrDefault(n.getId(), List.of())))
+                .toList();
+        return new Pagina<>(itens, pagina.pagina(), pagina.tamanho(), pagina.total());
     }
 
     public NotaComItens porId(UUID id) {

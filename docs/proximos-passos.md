@@ -144,8 +144,9 @@ _Testes do frontend (Vitest) e correção do script `lint`: concluídos, ver ADR
       `HistoricoAuditoria` já existem em ordem e lote e são o ponto de partida. Exige ADR.
 - [ ] Subir o Node do CI para 22+ (o Node 20 saiu de suporte) e atualizar Vitest, jsdom e
       jest-dom, que hoje estão presos a versões compatíveis com Node 20 (ADR-0017).
-- [ ] Notas fiscais, estoque e lotes ainda baixam a lista completa e paginam só na tela;
-      migrar para consulta em duas etapas com pesquisa no servidor se passarem de ~1000
+- [ ] Os lotes de um material (tela de estoque do material) e a posição de estoque ainda
+      baixam o conjunto inteiro: lotes por material paginam só na tela, e a agregação do estoque
+      roda sobre todos os materiais. Migrar para pesquisa/filtro em SQL se passarem de ~1000
       registros (ADR-0015, ADR-0016).
 
 - [ ] Apagar as branches já mescladas `claude/laughing-cannon-a62pda` e

@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -8,7 +9,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-public interface NotaFiscalEntradaSpringDataRepository extends JpaRepository<NotaFiscalEntradaJpaEntity, UUID> {
+public interface NotaFiscalEntradaSpringDataRepository
+        extends JpaRepository<NotaFiscalEntradaJpaEntity, UUID>, JpaSpecificationExecutor<NotaFiscalEntradaJpaEntity> {
 
     @Query("SELECT COUNT(n) > 0 FROM NotaFiscalEntradaJpaEntity n "
             + "WHERE LOWER(n.fornecedor) = LOWER(:fornecedor) AND n.numero = :numero")
