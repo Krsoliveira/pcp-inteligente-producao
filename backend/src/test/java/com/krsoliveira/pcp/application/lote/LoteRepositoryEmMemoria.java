@@ -57,6 +57,11 @@ public class LoteRepositoryEmMemoria implements LoteRepository {
     }
 
     @Override
+    public long contarPorStatus(StatusLote status) {
+        return dados.values().stream().filter(l -> l.getStatus() == status).count();
+    }
+
+    @Override
     public List<Lote> listarTodos() {
         return new ArrayList<>(dados.values());
     }

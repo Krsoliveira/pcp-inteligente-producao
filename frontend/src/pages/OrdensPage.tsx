@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import TextField from '@mui/material/TextField'
@@ -10,12 +10,14 @@ import InputAdornment from '@mui/material/InputAdornment'
 import AddIcon from '@mui/icons-material/Add'
 import SearchIcon from '@mui/icons-material/Search'
 import ListAltIcon from '@mui/icons-material/ListAlt'
-import { useQuery } from '@tanstack/react-query'
-import { listarOrdens } from '../api/ordens'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { pesquisarOrdens } from '../api/ordens'
 import { OrdemTable } from '../components/OrdemTable'
 import { CriarOrdemDialog } from '../components/CriarOrdemDialog'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { PageHeader } from '../components/PageHeader'
+import { PaginacaoTabela } from '../components/PaginacaoTabela'
+import { useValorComAtraso } from '../hooks/useValorComAtraso'
 import { EmptyState } from '../components/EmptyState'
 import type { OrdemProducao, StatusOrdem } from '../types'
 
@@ -34,22 +36,36 @@ export function OrdensPage() {
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState<StatusOrdem | 'TODAS'>('TODAS')
 
-  const { data: ordens = [], isLoading, isError } = useQuery({
-    queryKey: ['ordens'],
-    queryFn: listarOrdens,
-  })
+  const [pagina, setPagina] = useState(0)
+  const [tamanho, setTamanho] = useState(25)
+  const buscaAplicada = useValorComAtraso(busca.trim())
 
-  const ordensFiltradas = ordens.filter((o) => {
-    const buscaMatch = busca === '' || o.codigo.toLowerCase().includes(busca.toLowerCase())
-    const statusMatch = filtroStatus === 'TODAS' || o.status === filtroStatus
-    return buscaMatch && statusMatch
+  const { data, isLoading, isError, isPlaceholderData } = useQuery({
+    queryKey: ['ordens', 'pesquisa', buscaAplicada, filtroStatus, pagina, tamanho],
+    queryFn: () => pesquisarOrdens({
+      busca: buscaAplicada || undefined,
+      status: filtroStatus === 'TODAS' ? undefined : filtroStatus,
+      pagina,
+      tamanho,
+    }),
+    placeholderData: keepPreviousData,
   })
+  const ordens = data?.itens ?? []
+  const total = data?.total ?? 0
+  const filtrando = busca !== '' || filtroStatus !== 'TODAS'
+
+  // Se a página pedida deixou de existir (ex.: uma ordem saiu do filtro), volta para a última.
+  useEffect(() => {
+    if (data && data.itens.length === 0 && data.total > 0 && pagina > 0) {
+      setPagina(Math.max(0, data.totalPaginas - 1))
+    }
+  }, [data, pagina])
 
   return (
     <Box>
       <PageHeader
         titulo="Ordens de Produção"
-        subtitulo={isLoading ? '…' : `${ordens.length} ordens cadastradas`}
+        subtitulo={isLoading ? '…' : `${total} ${filtrando ? 'ordens encontradas' : 'ordens cadastradas'}`}
         breadcrumbs={[{ label: 'Produção' }, { label: 'Ordens' }]}
         action={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogCriarAberto(true)}>
@@ -65,7 +81,7 @@ export function OrdensPage() {
           <TextField
             placeholder="Buscar por código…"
             value={busca}
-            onChange={(e) => setBusca(e.target.value)}
+            onChange={(e) => { setBusca(e.target.value); setPagina(0) }}
             sx={{ flex: 1, minWidth: 220 }}
             slotProps={{
               input: {
@@ -81,7 +97,7 @@ export function OrdensPage() {
             select
             label="Status"
             value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value as StatusOrdem | 'TODAS')}
+            onChange={(e) => { setFiltroStatus(e.target.value as StatusOrdem | 'TODAS'); setPagina(0) }}
             sx={{ minWidth: 180 }}
           >
             {STATUS_OPCOES.map((op) => (
@@ -92,16 +108,20 @@ export function OrdensPage() {
 
         {isLoading ? (
           <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : ordensFiltradas.length === 0 ? (
+        ) : ordens.length === 0 ? (
           <EmptyState
             Icone={ListAltIcon}
-            titulo={busca || filtroStatus !== 'TODAS' ? 'Nenhuma ordem encontrada com os filtros' : 'Nenhuma ordem cadastrada'}
-            descricao={busca || filtroStatus !== 'TODAS' ? 'Tente ajustar os filtros de busca.' : undefined}
-            acaoLabel={!busca && filtroStatus === 'TODAS' ? 'Criar primeira ordem' : undefined}
-            onAcao={!busca && filtroStatus === 'TODAS' ? () => setDialogCriarAberto(true) : undefined}
+            titulo={filtrando ? 'Nenhuma ordem encontrada com os filtros' : 'Nenhuma ordem cadastrada'}
+            descricao={filtrando ? 'Tente ajustar os filtros de busca.' : undefined}
+            acaoLabel={!filtrando ? 'Criar primeira ordem' : undefined}
+            onAcao={!filtrando ? () => setDialogCriarAberto(true) : undefined}
           />
         ) : (
-          <OrdemTable ordens={ordensFiltradas} onAtualizarStatus={setOrdemSelecionada} />
+          <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
+            <OrdemTable ordens={ordens} onAtualizarStatus={setOrdemSelecionada} />
+            <PaginacaoTabela total={total} pagina={pagina} tamanho={tamanho} onPagina={setPagina}
+              onTamanho={(novoTamanho) => { setTamanho(novoTamanho); setPagina(0) }} />
+          </Box>
         )}
       </Card>
 

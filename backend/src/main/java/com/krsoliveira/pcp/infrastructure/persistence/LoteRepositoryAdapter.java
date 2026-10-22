@@ -2,6 +2,7 @@ package com.krsoliveira.pcp.infrastructure.persistence;
 
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
+import com.krsoliveira.pcp.domain.lote.StatusLote;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -57,6 +58,11 @@ public class LoteRepositoryAdapter implements LoteRepository {
     public List<Lote> listarDisponiveisPorMaterial(UUID materialId) {
         return springData.disponiveisPorMaterial(materialId).stream()
                 .map(LoteJpaEntity::paraDominio).toList();
+    }
+
+    @Override
+    public long contarPorStatus(StatusLote status) {
+        return springData.countByStatus(status);
     }
 
     @Override
