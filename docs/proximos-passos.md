@@ -156,6 +156,14 @@ Tornar a interface mais marcante, mantendo a legibilidade:
 ### Gerais
 
 _Testes do frontend (Vitest) e correção do script `lint`: concluídos, ver ADR-0017._
+_Filtro e ordenação por coluna no cabeçalho (estilo planilha) nas 5 listagens e período do início planejado em Ordens: concluídos, ver ADR-0018._
+
+- [ ] **Filtros das listagens, o que sobrou** (decisão de 2026-10-22): decidir se Materiais, Ordens e
+      Estoque também tiram a busca por texto do primeiro filtro (hoje é o único meio de achar um item
+      entre várias páginas) e se vale ordenar o resultado inteiro no servidor, não só a página.
+- [ ] **README**: atualizar com as telas, a consulta em duas etapas, os endpoints `/pesquisa` e
+      `/resumo`, o Vitest, os ADRs 0014–0018 e o estado do deploy.
+- [ ] Conferir no navegador, por inteiro, as telas de Notas Fiscais e Estoque.
 
 - [ ] **Versionamento de listas técnicas e rastreio de alterações** (decisão de 2026-10-21):
       a lista técnica passou a ter tela de detalhe com URL própria (`/listas-tecnicas/:id`)
