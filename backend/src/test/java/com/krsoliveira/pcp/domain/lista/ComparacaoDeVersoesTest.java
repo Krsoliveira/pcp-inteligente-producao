@@ -30,6 +30,22 @@ class ComparacaoDeVersoesTest {
     }
 
     @Test
+    @DisplayName("bases diferentes: 2 kg para 1 un é o mesmo que 200 kg para 100 un (igual); 250 kg para 100 un é alteração")
+    void comparaPorUnidadeProduzida() {
+        ListaTecnica porUnidade = ListaTecnica.criarVersao(MATERIAL, LISTA, "v1", new BigDecimal("1"),
+                List.of(item(ACO, "2", "kg"), item(PARAFUSO, "8", "un")), "teste");
+        ListaTecnica porCem = ListaTecnica.criarVersao(MATERIAL, LISTA, "v2", new BigDecimal("100"),
+                List.of(item(ACO, "200", "kg"), item(PARAFUSO, "850", "un")), "teste");
+
+        ComparacaoDeVersoes comparacao = ComparacaoDeVersoes.de(porUnidade, porCem);
+
+        assertThat(comparacao.iguais()).extracting(ComparacaoDeVersoes.ItemComparado::materialComponenteId).containsExactly(ACO);
+        assertThat(comparacao.alterados()).extracting(ComparacaoDeVersoes.ItemComparado::materialComponenteId).containsExactly(PARAFUSO);
+        assertThat(comparacao.alterados().get(0).quantidadeB()).isEqualByComparingTo("850"); // mostra o valor da própria versão
+        assertThat(comparacao.temDiferencas()).isTrue();
+    }
+
+    @Test
     @DisplayName("separa componentes adicionados, removidos, alterados e iguais")
     void classificaAsDiferencas() {
         ListaTecnica v1 = versao("v1", item(ACO, "2.5", "kg"), item(TINTA, "1", "l"), item(PARAFUSO, "8", "un"));

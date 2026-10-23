@@ -15,6 +15,7 @@ import java.util.UUID;
 
 import static com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria.USUARIO_TESTE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ProjetarConsumoMaterialTest {
 
@@ -31,6 +32,47 @@ class ProjetarConsumoMaterialTest {
         listaTecnicaRepository = new ListaTecnicaRepositoryEmMemoria();
         consumoRepository = new ConsumoMaterialRepositoryEmMemoria();
         casoDeUso = new ProjetarConsumoMaterial(consumoRepository, listaTecnicaRepository);
+    }
+
+    private ListaTecnica listaComBase(String base, String quantidadeDoItem) {
+        ListaTecnica lista = ListaTecnica.criar(MATERIAL_PA_ID, "v1", new BigDecimal(base),
+                List.of(ItemListaTecnica.criar(MATERIAL_MP1_ID, new BigDecimal(quantidadeDoItem), "kg")), USUARIO_TESTE);
+        listaTecnicaRepository.salvar(lista);
+        return lista;
+    }
+
+    @Test
+    @DisplayName("com base 100, planeja quantidade do item ÷ base × quantidade da ordem (200 kg por 100 un, ordem de 50 = 100 kg)")
+    void projetaComBase() {
+        ListaTecnica lista = listaComBase("100", "200");
+
+        List<ConsumoMaterial> consumos = casoDeUso.executar(
+                new ProjetarConsumoMaterial.Comando(UUID.randomUUID(), lista.getId(), 50, USUARIO_TESTE));
+
+        assertThat(consumos).singleElement().satisfies(c -> assertThat(c.getQuantidadePlanejada()).isEqualByComparingTo("100"));
+    }
+
+    @Test
+    @DisplayName("a divisão arredonda para 4 casas")
+    void arredondaAProjecao() {
+        ListaTecnica lista = listaComBase("3", "1");
+
+        List<ConsumoMaterial> consumos = casoDeUso.executar(
+                new ProjetarConsumoMaterial.Comando(UUID.randomUUID(), lista.getId(), 1, USUARIO_TESTE));
+
+        assertThat(consumos.get(0).getQuantidadePlanejada()).isEqualByComparingTo("0.3333");
+    }
+
+    @Test
+    @DisplayName("componente que arredonda para zero numa ordem pequena é recusado com uma mensagem clara")
+    void arredondaParaZero() {
+        ListaTecnica lista = listaComBase("1000000", "0.001");
+
+        assertThatThrownBy(() -> casoDeUso.executar(
+                new ProjetarConsumoMaterial.Comando(UUID.randomUUID(), lista.getId(), 1, USUARIO_TESTE)))
+                .isInstanceOf(com.krsoliveira.pcp.domain.RegraDeNegocioException.class)
+                .hasMessageContaining("arredonda para zero").hasMessageContaining("aumente a quantidade da ordem");
+        assertThat(consumoRepository.listarPorOrdemProducao(UUID.randomUUID())).isEmpty();
     }
 
     @Test

@@ -38,7 +38,13 @@ public class CadastrarListaTecnica {
     public record ItemComando(UUID materialComponenteId, BigDecimal quantidadePlanejada,
                               String unidadeDeMedida) {}
 
-    public record Comando(UUID materialId, String versao, List<ItemComando> itens) {}
+    /** @param quantidadeBase para quantas unidades (ou kg) do material valem os componentes; {@code null} é 1 */
+    public record Comando(UUID materialId, String versao, BigDecimal quantidadeBase, List<ItemComando> itens) {
+
+        public Comando(UUID materialId, String versao, List<ItemComando> itens) {
+            this(materialId, versao, null, itens);
+        }
+    }
 
     public UUID executar(Comando comando) {
         return execucao.executar(ctx -> {
@@ -69,12 +75,14 @@ public class CadastrarListaTecnica {
                             i.unidadeDeMedida()))
                     .toList();
 
+            BigDecimal base = comando.quantidadeBase() == null ? BigDecimal.ONE : comando.quantidadeBase();
+
             // Cada material tem uma lista; a nova versão entra nela (ou abre a lista, se for a primeira).
             ListaTecnica lista = listaTecnicaRepository.listarPorMaterial(comando.materialId()).stream()
                     .findFirst()
                     .map(existente -> ListaTecnica.criarVersao(comando.materialId(), existente.getListaId(),
-                            comando.versao(), itens, ctx.usuario()))
-                    .orElseGet(() -> ListaTecnica.criar(comando.materialId(), comando.versao(), itens,
+                            comando.versao(), base, itens, ctx.usuario()))
+                    .orElseGet(() -> ListaTecnica.criar(comando.materialId(), comando.versao(), base, itens,
                             ctx.usuario()));
             listaTecnicaRepository.salvar(lista);
 
@@ -84,7 +92,8 @@ public class CadastrarListaTecnica {
                             .e("listaId", lista.getListaId())
                             .e("versao", lista.getVersao())
                             .e("status", lista.getStatus())
-                            .e("componentes", itens.size()));
+                            .e("componentes", itens.size())
+                            .e("quantidadeBase", base));
             return lista.getId();
         });
     }

@@ -64,6 +64,26 @@ class CadastrarListaTecnicaTest {
     }
 
     @Test
+    @DisplayName("sem quantidade base a lista nasce com base 1; com base, ela é gravada")
+    void quantidadeBase() {
+        UUID semBase = useCase.executar(comando(materialId, componenteId));
+        UUID comBase = useCase.executar(new CadastrarListaTecnica.Comando(materialId, "v2", new BigDecimal("100"),
+                List.of(new CadastrarListaTecnica.ItemComando(componenteId, new BigDecimal("200"), "KG"))));
+
+        assertThat(busca(semBase).getQuantidadeBase()).isEqualByComparingTo("1");
+        assertThat(busca(comBase).getQuantidadeBase()).isEqualByComparingTo("100");
+    }
+
+    @Test
+    @DisplayName("base inválida é recusada e nada é salvo")
+    void quantidadeBaseInvalida() {
+        assertThatThrownBy(() -> useCase.executar(new CadastrarListaTecnica.Comando(materialId, "v1", BigDecimal.ZERO,
+                List.of(new CadastrarListaTecnica.ItemComando(componenteId, BigDecimal.ONE, "KG")))))
+                .isInstanceOf(com.krsoliveira.pcp.domain.RegraDeNegocioException.class).hasMessageContaining("quantidade base");
+        assertThat(listaTecnicaRepository.listarPorMaterial(materialId)).isEmpty();
+    }
+
+    @Test
     @DisplayName("lista de produto acabado não aceita produto acabado como componente (regra inegociável, ADR-0024)")
     void produtoAcabadoNaoConsomeAcabado() {
         assertThatThrownBy(() -> useCase.executar(comando(materialId, acabadoComoComponenteId)))
