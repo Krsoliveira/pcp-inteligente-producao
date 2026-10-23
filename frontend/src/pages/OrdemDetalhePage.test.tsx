@@ -23,7 +23,7 @@ const consumosMock = vi.mocked(listarConsumosPorOrdem)
 function consumo(sobrescritas: Partial<ConsumoMaterial> = {}): ConsumoMaterial {
   return {
     id: 'c-1', ordemProducaoId: 'o-1', materialId: 'm-2', quantidadePlanejada: 10, quantidadeConsumida: 10, desvio: 0,
-    unidadeDeMedida: 'kg', registrado: true, justificado: true, justificativa: null, justificadoPor: null, justificadoEm: null,
+    unidadeDeMedida: 'kg', registrado: true, justificado: true, naoPlanejado: false, justificativa: null, justificadoPor: null, justificadoEm: null,
     criadoEm: '2026-10-01T10:00:00Z', criadoPor: 'teste', atualizadoEm: '2026-10-01T10:00:00Z', atualizadoPor: 'teste',
     ...sobrescritas,
   }
@@ -127,3 +127,31 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
     expect(screen.queryByRole('button', { name: 'Registrar consumo' })).not.toBeInTheDocument()
   })
 })
+
+describe('OrdemDetalhePage: item não planejado (ADR-0025)', () => {
+  beforeEach(() => {
+    vi.mocked(buscarOrdemPorId).mockReset().mockResolvedValue(ordem({ id: 'o-1', codigo: 'OP-1', status: 'EM_PRODUCAO' }))
+    vi.mocked(listarLotesPorOrdem).mockReset().mockResolvedValue([])
+  })
+
+  it('a linha adicionada fora da lista aparece com o selo "Não planejado"; as da lista não', async () => {
+    consumosMock.mockReset().mockResolvedValue([
+      consumo({ id: 'c-1', materialId: 'm-2' }),
+      consumo({ id: 'c-2', materialId: 'm-3', quantidadePlanejada: 0, quantidadeConsumida: 4, desvio: 4, naoPlanejado: true, justificativa: 'Faltou na lista' }),
+    ])
+    montar()
+
+    expect(await screen.findByText('Não planejado')).toBeInTheDocument()
+    expect(screen.getAllByText('Não planejado')).toHaveLength(1)
+  })
+
+  it('sem item adicionado, nenhum selo', async () => {
+    consumosMock.mockReset().mockResolvedValue([consumo()])
+    montar()
+
+    await screen.findByText(/Consumo de Materiais/)
+
+    expect(screen.queryByText('Não planejado')).not.toBeInTheDocument()
+  })
+})
+

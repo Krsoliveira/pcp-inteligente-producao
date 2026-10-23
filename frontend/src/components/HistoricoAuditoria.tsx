@@ -21,6 +21,7 @@ const ACAO_LABEL: Record<AcaoAuditoria, string> = {
   ATIVADA: 'Versão ativada',
   OBSOLETADA: 'Versão obsoletada',
   CONSUMO_REGISTRADO: 'Consumo registrado',
+  CONSUMO_ADICIONADO: 'Item adicionado ao consumo',
   ORDEM_CONCLUIDA: 'Ordem concluída',
   LOTE_GERADO: 'Lote gerado',
   LOTE_ALOCADO: 'Lote alocado em consumo',

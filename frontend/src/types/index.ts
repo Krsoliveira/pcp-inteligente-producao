@@ -245,6 +245,8 @@ export interface ConsumoMaterial {
   unidadeDeMedida: string
   registrado: boolean
   justificado: boolean
+  /** Item adicionado ao lançar o consumo, fora da lista técnica (planejado 0). */
+  naoPlanejado: boolean
   justificativa: string | null
   justificadoPor: string | null
   justificadoEm: string | null
@@ -358,6 +360,7 @@ export type AcaoAuditoria =
   | 'ATIVADA'
   | 'OBSOLETADA'
   | 'CONSUMO_REGISTRADO'
+  | 'CONSUMO_ADICIONADO'
   | 'ORDEM_CONCLUIDA'
   | 'LOTE_GERADO'
   | 'LOTE_ALOCADO'
@@ -532,7 +535,7 @@ export type Permissao =
   | 'LISTA_VISUALIZAR_ATIVAS' | 'LISTA_VISUALIZAR_TODAS' | 'LISTA_COMPARAR' | 'LISTA_CADASTRAR'
   | 'LISTA_ATIVAR' | 'LISTA_RETIRAR_DE_USO'
   | 'ORDEM_VISUALIZAR' | 'ORDEM_CRIAR' | 'ORDEM_ATUALIZAR_STATUS' | 'ORDEM_CONCLUIR'
-  | 'CONSUMO_VISUALIZAR' | 'CONSUMO_REGISTRAR'
+  | 'CONSUMO_VISUALIZAR' | 'CONSUMO_REGISTRAR' | 'CONSUMO_ADICIONAR_ITEM'
   | 'TIPO_ORDEM_VISUALIZAR' | 'TIPO_ORDEM_GERENCIAR'
   | 'NOTA_FISCAL_VISUALIZAR' | 'NOTA_FISCAL_REGISTRAR'
   | 'ESTOQUE_VISUALIZAR'
