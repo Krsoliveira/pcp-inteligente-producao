@@ -146,9 +146,14 @@ ADR-0021._
 - [ ] **Dashboard acionável, fase 3** (ADR-0022; as fases 1 e 2 estão entregues): painel "precisa de atenção"
       (ordens mais atrasadas, lotes perto do vencimento, consumos com desvio). Os cartões de indicador do Estoque
       ainda usam ícones coloridos.
+- [ ] **Regra do produto acabado (ADR-0024)**: entregue (tipo de ordem Conversão, V15). Falta reaplicá-la às linhas
+      adicionadas no lançamento de consumo (abaixo).
 - [ ] **Tela de lançamento de consumo por ordem**: hoje o consumo é lançado um componente por vez, numa caixa aberta
       pelo ícone na ordem em produção. A decisão é uma tela por ordem com todos os componentes (consumo, lotes e
-      justificativa de cada um) confirmada de uma vez, reaproveitando a regra e a sugestão FEFO atuais.
+      justificativa de cada um) confirmada de uma vez (tudo ou nada, numa transação), reaproveitando a regra e a
+      sugestão FEFO atuais. Inclui "adicionar item" para material que não está na lista (planejado 0, justificativa
+      obrigatória, ordem em produção, permissão nova `CONSUMO_ADICIONAR_ITEM`, V16 relaxando
+      `ck_consumo_planejada`); produto acabado só em ordem do tipo Conversão.
 - [ ] **Quantidade base da lista técnica** (ALTO RISCO: migração e mudança de cálculo; aguardando aprovação do
       desenho): a lista passaria a dizer "para produzir N unidades (ou kg)"; o consumo planejado vira
       item ÷ base × quantidade da ordem. Padrão 1 para não alterar as listas existentes. Exige ADR próprio.
