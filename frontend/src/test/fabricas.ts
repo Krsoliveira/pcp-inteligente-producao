@@ -1,4 +1,28 @@
-import type { ListaTecnica, Lote, Material, NotaFiscal, OrdemProducao, PaginaDe, PosicaoEstoque } from '../types'
+import type { ListaTecnica, Lote, Material, NotaFiscal, OrdemProducao, PaginaDe, Permissao, PosicaoEstoque, UsuarioLogado } from '../types'
+
+/** Todas as permissões do catálogo: o usuário de teste padrão (administrador) pode tudo. */
+export const TODAS_AS_PERMISSOES: Permissao[] = [
+  'DASHBOARD_VISUALIZAR',
+  'MATERIAL_VISUALIZAR', 'MATERIAL_CADASTRAR',
+  'LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS', 'LISTA_COMPARAR', 'LISTA_CADASTRAR', 'LISTA_ATIVAR', 'LISTA_RETIRAR_DE_USO',
+  'ORDEM_VISUALIZAR', 'ORDEM_CRIAR', 'ORDEM_ATUALIZAR_STATUS', 'ORDEM_CONCLUIR',
+  'CONSUMO_VISUALIZAR', 'CONSUMO_REGISTRAR',
+  'TIPO_ORDEM_VISUALIZAR', 'TIPO_ORDEM_GERENCIAR',
+  'NOTA_FISCAL_VISUALIZAR', 'NOTA_FISCAL_REGISTRAR',
+  'ESTOQUE_VISUALIZAR',
+  'AUDITORIA_VISUALIZAR',
+  'ACESSO_VISUALIZAR', 'PERFIL_GERENCIAR', 'USUARIO_GERENCIAR',
+]
+
+export function usuarioLogado(sobrescritas: Partial<UsuarioLogado> = {}): UsuarioLogado {
+  return {
+    nome: 'Ana Teste',
+    email: 'ana@pcp.com',
+    perfil: { id: 'perfil-1', nome: 'Administrador' },
+    permissoes: TODAS_AS_PERMISSOES,
+    ...sobrescritas,
+  }
+}
 
 export function ordem(sobrescritas: Partial<OrdemProducao> = {}): OrdemProducao {
   return {
