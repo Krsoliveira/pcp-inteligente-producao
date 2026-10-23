@@ -250,6 +250,7 @@ public class DataLoader implements CommandLineRunner {
         }
 
         Map<String, ListaTecnica> listas = new LinkedHashMap<>();
+        Map<UUID, UUID> listaDoMaterial = new HashMap<>();
         for (var linha : LeitorCsv.ler(DIRETORIO + "listas_tecnicas.csv")) {
             Material material = buscar(materiais, linha.get("material_codigo"), "material");
             if (material.getTipo() == TipoMaterial.MATERIA_PRIMA) {
@@ -257,7 +258,8 @@ public class DataLoader implements CommandLineRunner {
                         "Matéria-prima não pode ter lista técnica: " + material.getCodigo());
             }
             String chave = chaveLista(material.getCodigo(), linha.get("versao"));
-            ListaTecnica criada = ListaTecnica.criar(material.getId(), linha.get("versao"),
+            UUID listaId = listaDoMaterial.computeIfAbsent(material.getId(), id -> UUID.randomUUID());
+            ListaTecnica criada = ListaTecnica.criarVersao(material.getId(), listaId, linha.get("versao"),
                     itensPorLista.getOrDefault(chave, List.of()), RESPONSAVEL);
             switch (linha.get("status")) {
                 case "ATIVA" -> criada.ativar(RESPONSAVEL);
@@ -268,7 +270,7 @@ public class DataLoader implements CommandLineRunner {
                 case "EM_REVISAO" -> { /* estado inicial de criar() */ }
                 default -> throw new IllegalStateException("Status de lista inválido: " + linha.get("status"));
             }
-            ListaTecnica lista = ListaTecnica.reconstituir(criada.getId(), criada.getMaterialId(),
+            ListaTecnica lista = ListaTecnica.reconstituir(criada.getId(), criada.getListaId(), criada.getMaterialId(),
                     criada.getVersao(), criada.getStatus(), criada.getItens(),
                     assinatura(cadastradoEm, cadastradoEm));
             listaTecnicaRepository.salvar(lista);

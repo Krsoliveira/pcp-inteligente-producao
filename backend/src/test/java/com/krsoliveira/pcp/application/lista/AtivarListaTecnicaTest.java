@@ -31,6 +31,7 @@ class AtivarListaTecnicaTest {
     private AtivarListaTecnica useCase;
 
     private UUID materialId;
+    private UUID listaId;
     private UUID componenteId;
 
     @BeforeEach
@@ -42,6 +43,7 @@ class AtivarListaTecnicaTest {
 
         // Material acabado (PA-000001) + componente (MP-000001) — reconstruídos para pular validação de código
         materialId   = UUID.randomUUID();
+        listaId      = UUID.randomUUID();
         componenteId = UUID.randomUUID();
         Material material = Material.reconstituir(materialId, "PA-000001", "Produto Teste",
                 TipoMaterial.PRODUTO_ACABADO, "UN", Assinatura.nova(USUARIO));
@@ -54,7 +56,7 @@ class AtivarListaTecnicaTest {
 
     private ListaTecnica criarListaEmRevisao(String versao) {
         ItemListaTecnica item = ItemListaTecnica.criar(componenteId, BigDecimal.ONE, "UN");
-        ListaTecnica lista = ListaTecnica.criar(materialId, versao, List.of(item), USUARIO);
+        ListaTecnica lista = ListaTecnica.criarVersao(materialId, listaId, versao, List.of(item), USUARIO);
         listaTecnicaRepository.salvar(lista);
         return lista;
     }
@@ -63,7 +65,7 @@ class AtivarListaTecnicaTest {
         ItemListaTecnica item = ItemListaTecnica.criar(componenteId, BigDecimal.ONE, "UN");
         // Reconstrói diretamente como ATIVA (simula lista já ativada no passado)
         ListaTecnica lista = ListaTecnica.reconstituir(
-                UUID.randomUUID(), materialId, versao, StatusListaTecnica.ATIVA,
+                UUID.randomUUID(), listaId, materialId, versao, StatusListaTecnica.ATIVA,
                 List.of(item), Assinatura.nova(USUARIO));
         listaTecnicaRepository.salvar(lista);
         return lista;
@@ -89,8 +91,8 @@ class AtivarListaTecnicaTest {
     }
 
     @Test
-    @DisplayName("obsoleta a versão ativa anterior ao ativar uma nova")
-    void obsoletaVersaoAtivaAnterior() {
+    @DisplayName("ativar uma nova versão mantém as outras versões ativas (várias em uso, ADR-0019)")
+    void mantemVersoesAtivasAnteriores() {
         ListaTecnica listaAntiga = criarListaAtiva("v1");
         ListaTecnica listaNova   = criarListaEmRevisao("v2");
 
@@ -98,7 +100,7 @@ class AtivarListaTecnicaTest {
 
         assertThat(listaTecnicaRepository.buscarPorId(listaAntiga.getId())
                 .map(ListaTecnica::getStatus).orElseThrow())
-                .isEqualTo(StatusListaTecnica.OBSOLETA);
+                .isEqualTo(StatusListaTecnica.ATIVA);
 
         assertThat(listaTecnicaRepository.buscarPorId(listaNova.getId())
                 .map(ListaTecnica::getStatus).orElseThrow())
@@ -106,19 +108,19 @@ class AtivarListaTecnicaTest {
     }
 
     @Test
-    @DisplayName("ao ativar nova versão registra eventos OBSOLETADA e ATIVADA na trilha")
-    void registraEventosObsoletadaEAtivada() {
+    @DisplayName("ao ativar nova versão registra só ATIVADA; nada é obsoletado por efeito colateral")
+    void registraSoAtivada() {
         criarListaAtiva("v1");
         ListaTecnica listaNova = criarListaEmRevisao("v2");
 
         useCase.executar(listaNova.getId());
 
-        assertThat(trilha.eventos(AcaoAuditoria.OBSOLETADA)).hasSize(1);
+        assertThat(trilha.eventos(AcaoAuditoria.OBSOLETADA)).isEmpty();
         assertThat(trilha.eventos(AcaoAuditoria.ATIVADA)).hasSize(1);
     }
 
     @Test
-    @DisplayName("ativar lista sem versão ativa anterior não produz evento OBSOLETADA")
+    @DisplayName("ativar a primeira versão não produz evento OBSOLETADA")
     void semVersaoAtivaAnteriorNaoObsoleta() {
         ListaTecnica lista = criarListaEmRevisao("v1");
 

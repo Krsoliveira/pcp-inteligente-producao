@@ -2,8 +2,11 @@ package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
 import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
+import com.krsoliveira.pcp.application.lista.CompararListasTecnicas;
 import com.krsoliveira.pcp.application.lista.ConsultarListaTecnica;
+import com.krsoliveira.pcp.application.lista.RetirarListaTecnicaDeUso;
 import com.krsoliveira.pcp.infrastructure.web.dto.CadastrarListaTecnicaRequest;
+import com.krsoliveira.pcp.infrastructure.web.dto.ComparacaoDeVersoesResponse;
 import com.krsoliveira.pcp.infrastructure.web.dto.ListaTecnicaResponse;
 import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 import com.krsoliveira.pcp.domain.lista.FiltroListasTecnicas;
@@ -34,13 +37,19 @@ public class ListaTecnicaController {
 
     private final CadastrarListaTecnica cadastrarListaTecnica;
     private final AtivarListaTecnica ativarListaTecnica;
+    private final RetirarListaTecnicaDeUso retirarListaTecnicaDeUso;
+    private final CompararListasTecnicas compararListasTecnicas;
     private final ConsultarListaTecnica consultarListaTecnica;
 
     public ListaTecnicaController(CadastrarListaTecnica cadastrarListaTecnica,
                                   AtivarListaTecnica ativarListaTecnica,
+                                  RetirarListaTecnicaDeUso retirarListaTecnicaDeUso,
+                                  CompararListasTecnicas compararListasTecnicas,
                                   ConsultarListaTecnica consultarListaTecnica) {
         this.cadastrarListaTecnica = cadastrarListaTecnica;
         this.ativarListaTecnica = ativarListaTecnica;
+        this.retirarListaTecnicaDeUso = retirarListaTecnicaDeUso;
+        this.compararListasTecnicas = compararListasTecnicas;
         this.consultarListaTecnica = consultarListaTecnica;
     }
 
@@ -57,9 +66,19 @@ public class ListaTecnicaController {
 
     @PatchMapping("/{id}/ativar")
     @Operation(summary = "Ativar lista técnica",
-               description = "Ativa uma lista em revisão. A versão ATIVA atual (se houver) é obsoletada.")
+               description = "Ativa uma versão em revisão. Não afeta as outras versões do material: várias "
+                       + "podem estar ativas ao mesmo tempo (ADR-0019).")
     public ResponseEntity<Void> ativar(@PathVariable UUID id) {
         ativarListaTecnica.executar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/retirar-de-uso")
+    @Operation(summary = "Retirar lista técnica de uso",
+               description = "Torna OBSOLETA uma versão ATIVA. É decisão do usuário: ativar outra versão não "
+                       + "retira nenhuma.")
+    public ResponseEntity<Void> retirarDeUso(@PathVariable UUID id) {
+        retirarListaTecnicaDeUso.executar(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -75,6 +94,15 @@ public class ListaTecnicaController {
         var resultado = consultarListaTecnica.pesquisar(
                 new FiltroListasTecnicas(materialId, status), PedidoDePagina.de(pagina, tamanho));
         return PaginaResponse.de(resultado, ListaTecnicaResponse::de);
+    }
+
+    @GetMapping("/comparar")
+    @Operation(summary = "Compara duas versões da mesma lista técnica",
+            description = "Devolve os componentes adicionados, removidos, alterados (quantidade ou unidade) e "
+                    + "iguais entre as versões a e b. Versões de listas diferentes ou a mesma versão duas vezes "
+                    + "devolvem 422. Acesso liberado a qualquer usuário autenticado por ora (ADR-0019).")
+    public ComparacaoDeVersoesResponse comparar(@RequestParam UUID a, @RequestParam UUID b) {
+        return ComparacaoDeVersoesResponse.de(compararListasTecnicas.executar(a, b));
     }
 
     @GetMapping("/{id}")

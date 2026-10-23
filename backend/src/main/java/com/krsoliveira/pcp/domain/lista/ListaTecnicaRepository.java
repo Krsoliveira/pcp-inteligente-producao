@@ -24,7 +24,5 @@ public interface ListaTecnicaRepository {
 
     List<ListaTecnica> listarPorMaterial(UUID materialId);
 
-    Optional<ListaTecnica> buscarAtivaParaMaterial(UUID materialId);
-
     boolean existeVersaoParaMaterial(UUID materialId, String versao);
 }

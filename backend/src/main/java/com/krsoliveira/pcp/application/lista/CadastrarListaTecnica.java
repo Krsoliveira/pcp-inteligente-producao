@@ -62,13 +62,19 @@ public class CadastrarListaTecnica {
                             i.unidadeDeMedida()))
                     .toList();
 
-            ListaTecnica lista = ListaTecnica.criar(comando.materialId(), comando.versao(), itens,
-                    ctx.usuario());
+            // Cada material tem uma lista; a nova versão entra nela (ou abre a lista, se for a primeira).
+            ListaTecnica lista = listaTecnicaRepository.listarPorMaterial(comando.materialId()).stream()
+                    .findFirst()
+                    .map(existente -> ListaTecnica.criarVersao(comando.materialId(), existente.getListaId(),
+                            comando.versao(), itens, ctx.usuario()))
+                    .orElseGet(() -> ListaTecnica.criar(comando.materialId(), comando.versao(), itens,
+                            ctx.usuario()));
             listaTecnicaRepository.salvar(lista);
 
             ctx.registrar(TipoEntidade.LISTA_TECNICA, lista.getId(),
                     material.getCodigo() + " " + lista.getVersao(), AcaoAuditoria.CRIADO,
                     Detalhes.com("material", material.getCodigo())
+                            .e("listaId", lista.getListaId())
                             .e("versao", lista.getVersao())
                             .e("status", lista.getStatus())
                             .e("componentes", itens.size()));

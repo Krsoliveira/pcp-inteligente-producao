@@ -9,12 +9,12 @@ import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 
-import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Caso de uso: ativar uma versão de lista técnica. A versão ativa anterior do mesmo
- * material passa a OBSOLETA — as duas mudanças são atômicas e auditadas.
+ * Caso de uso: ativar uma versão de lista técnica. Não afeta as outras versões do material:
+ * várias podem estar ativas ao mesmo tempo, e retirar uma de uso é decisão do usuário
+ * ({@link RetirarListaTecnicaDeUso}, ADR-0019).
  */
 public class AtivarListaTecnica {
 
@@ -37,24 +37,11 @@ public class AtivarListaTecnica {
             String codigoMaterial = materialRepository.buscarPorId(lista.getMaterialId())
                     .map(Material::getCodigo).orElse("?");
 
-            Optional<ListaTecnica> ativaAtual =
-                    listaTecnicaRepository.buscarAtivaParaMaterial(lista.getMaterialId());
-
-            ativaAtual.ifPresent(ativa -> {
-                ativa.obsoleter(ctx.usuario());
-                listaTecnicaRepository.salvar(ativa);
-                ctx.registrar(TipoEntidade.LISTA_TECNICA, ativa.getId(),
-                        codigoMaterial + " " + ativa.getVersao(), AcaoAuditoria.OBSOLETADA,
-                        Detalhes.com("versao", ativa.getVersao())
-                                .e("substituidaPor", lista.getVersao()));
-            });
-
             lista.ativar(ctx.usuario());
             listaTecnicaRepository.salvar(lista);
             ctx.registrar(TipoEntidade.LISTA_TECNICA, lista.getId(),
                     codigoMaterial + " " + lista.getVersao(), AcaoAuditoria.ATIVADA,
-                    Detalhes.com("versao", lista.getVersao())
-                            .e("versaoAnterior", ativaAtual.map(ListaTecnica::getVersao).orElse(null)));
+                    Detalhes.com("versao", lista.getVersao()));
             return null;
         });
     }
