@@ -3,6 +3,8 @@ package com.krsoliveira.pcp.domain.lista;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,20 +26,24 @@ import java.util.UUID;
  */
 public class ListaTecnica {
 
+    private static final BigDecimal LIMITE_DA_QUANTIDADE_BASE = new BigDecimal("100000000");
+
     private final UUID id;
     private final UUID listaId;
     private final UUID materialId;
     private final String versao;
+    private final BigDecimal quantidadeBase;
     private StatusListaTecnica status;
     private final List<ItemListaTecnica> itens;
     private Assinatura assinatura;
 
-    private ListaTecnica(UUID id, UUID listaId, UUID materialId, String versao, StatusListaTecnica status,
-                         List<ItemListaTecnica> itens, Assinatura assinatura) {
+    private ListaTecnica(UUID id, UUID listaId, UUID materialId, String versao, BigDecimal quantidadeBase,
+                         StatusListaTecnica status, List<ItemListaTecnica> itens, Assinatura assinatura) {
         this.id = id;
         this.listaId = listaId;
         this.materialId = materialId;
         this.versao = versao;
+        this.quantidadeBase = quantidadeBase;
         this.status = status;
         this.itens = new ArrayList<>(itens);
         this.assinatura = assinatura;
@@ -50,7 +56,13 @@ public class ListaTecnica {
      */
     public static ListaTecnica criar(UUID materialId, String versao,
                                      List<ItemListaTecnica> itens, String usuario) {
-        return criarVersao(materialId, UUID.randomUUID(), versao, itens, usuario);
+        return criar(materialId, versao, BigDecimal.ONE, itens, usuario);
+    }
+
+    /** Primeira versão de um material, dizendo para quantas unidades (ou kg) do material valem os componentes. */
+    public static ListaTecnica criar(UUID materialId, String versao, BigDecimal quantidadeBase,
+                                     List<ItemListaTecnica> itens, String usuario) {
+        return criarVersao(materialId, UUID.randomUUID(), versao, quantidadeBase, itens, usuario);
     }
 
     /**
@@ -59,6 +71,13 @@ public class ListaTecnica {
      */
     public static ListaTecnica criarVersao(UUID materialId, UUID listaId, String versao,
                                            List<ItemListaTecnica> itens, String usuario) {
+        return criarVersao(materialId, listaId, versao, BigDecimal.ONE, itens, usuario);
+    }
+
+    /** Versão de uma lista que já existe, com a quantidade base (ADR-0027). */
+    public static ListaTecnica criarVersao(UUID materialId, UUID listaId, String versao, BigDecimal quantidadeBase,
+                                           List<ItemListaTecnica> itens, String usuario) {
+        validarQuantidadeBase(quantidadeBase);
         if (listaId == null) {
             throw new RegraDeNegocioException("A lista técnica da versão é obrigatória.");
         }
@@ -72,7 +91,7 @@ public class ListaTecnica {
             throw new RegraDeNegocioException(
                     "A lista técnica deve ter ao menos um componente.");
         }
-        return new ListaTecnica(UUID.randomUUID(), listaId, materialId, versao.trim(),
+        return new ListaTecnica(UUID.randomUUID(), listaId, materialId, versao.trim(), quantidadeBase,
                 StatusListaTecnica.EM_REVISAO, itens, Assinatura.nova(usuario));
     }
 
@@ -83,7 +102,36 @@ public class ListaTecnica {
                                             StatusListaTecnica status,
                                             List<ItemListaTecnica> itens,
                                             Assinatura assinatura) {
-        return new ListaTecnica(id, listaId, materialId, versao, status, itens, assinatura);
+        return reconstituir(id, listaId, materialId, versao, BigDecimal.ONE, status, itens, assinatura);
+    }
+
+    /** Reconstrói uma lista existente com a quantidade base gravada. */
+    public static ListaTecnica reconstituir(UUID id, UUID listaId, UUID materialId, String versao,
+                                            BigDecimal quantidadeBase, StatusListaTecnica status,
+                                            List<ItemListaTecnica> itens, Assinatura assinatura) {
+        return new ListaTecnica(id, listaId, materialId, versao, quantidadeBase, status, itens, assinatura);
+    }
+
+    private static void validarQuantidadeBase(BigDecimal quantidadeBase) {
+        if (quantidadeBase == null || quantidadeBase.signum() <= 0) {
+            throw new RegraDeNegocioException("A quantidade base da lista técnica deve ser maior que zero.");
+        }
+        if (quantidadeBase.stripTrailingZeros().scale() > 4) {
+            throw new RegraDeNegocioException("A quantidade base aceita no máximo 4 casas decimais.");
+        }
+        if (quantidadeBase.compareTo(LIMITE_DA_QUANTIDADE_BASE) >= 0) {
+            throw new RegraDeNegocioException("A quantidade base deve ser menor que 100.000.000.");
+        }
+    }
+
+    /**
+     * Quanto de um componente a ordem precisa: quantidade do item ÷ quantidade base × quantidade da ordem, com 4 casas
+     * (como o banco). Com a base 1 é a conta de sempre, "por unidade".
+     */
+    public BigDecimal quantidadeNecessaria(ItemListaTecnica item, int quantidadeDaOrdem) {
+        return item.getQuantidadePlanejada()
+                .multiply(BigDecimal.valueOf(quantidadeDaOrdem))
+                .divide(quantidadeBase, 4, RoundingMode.HALF_UP);
     }
 
     /**
@@ -117,6 +165,8 @@ public class ListaTecnica {
     public UUID getListaId() { return listaId; }
     public UUID getMaterialId() { return materialId; }
     public String getVersao() { return versao; }
+    /** Para quantas unidades (ou kg) do material produzido valem as quantidades dos componentes. */
+    public BigDecimal getQuantidadeBase() { return quantidadeBase; }
     public StatusListaTecnica getStatus() { return status; }
     public List<ItemListaTecnica> getItens() { return Collections.unmodifiableList(itens); }
     public Assinatura getAssinatura() { return assinatura; }

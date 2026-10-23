@@ -93,6 +93,7 @@ describe('CriarListaTecnicaDialog', () => {
       expect(cadastrarMock.mock.calls[0][0]).toEqual({
         materialId: 'm-1',
         versao: 'v3',
+        quantidadeBase: 1,
         itens: [
           { materialComponenteId: 'm-2', quantidadePlanejada: 3, unidadeDeMedida: 'kg' },
           { materialComponenteId: 'm-3', quantidadePlanejada: 8, unidadeDeMedida: 'un' },
@@ -192,6 +193,77 @@ describe('CriarListaTecnicaDialog: produto acabado como componente (ADR-0024)', 
     await escolherDono(/Viga pronta/)
 
     await waitFor(() => expect(screen.getAllByRole('combobox', { name: /Material componente/ })[0]).not.toHaveTextContent('Peça pronta Z'))
+  })
+})
+
+describe('CriarListaTecnicaDialog: quantidade base (ADR-0027)', () => {
+  beforeEach(() => {
+    cadastrarMock.mockReset()
+    vi.mocked(listarMateriais).mockResolvedValue([
+      material({ id: 'm-1', codigo: '103000001', descricao: 'Viga metálica', unidadeDeMedida: 'un' }),
+      material({ id: 'm-6', codigo: '105000002', descricao: 'Tinta preparada', tipo: 'SEMIACABADO', unidadeDeMedida: 'kg' }),
+      material({ id: 'm-2', codigo: '110000001', descricao: 'Aço inox', tipo: 'MATERIA_PRIMA', unidadeDeMedida: 'kg' }),
+    ])
+  })
+
+  async function preencherEEnviar(base: string | null) {
+    await userEvent.click(await screen.findByRole('combobox', { name: /^Material \*/ }))
+    await userEvent.click(await screen.findByRole('option', { name: /Tinta preparada/ }))
+    await userEvent.type(screen.getByLabelText(/^Versão/), 'v1')
+    if (base !== null) {
+      await userEvent.clear(screen.getByLabelText(/^Quantidade base/))
+      await userEvent.type(screen.getByLabelText(/^Quantidade base/), base)
+    }
+    await userEvent.click(screen.getAllByRole('combobox', { name: /Material componente/ })[0])
+    await userEvent.click(await screen.findByRole('option', { name: /Aço inox/ }))
+    await userEvent.type(screen.getByLabelText('Qtd'), '200')
+    await userEvent.click(screen.getByRole('button', { name: 'Criar Lista' }))
+  }
+
+  it('a base começa em 1 e a ajuda diz para quantas unidades do material os componentes valem', async () => {
+    montar()
+    await screen.findByText('Nova Lista Técnica (BOM)')
+
+    expect(screen.getByLabelText(/^Quantidade base/)).toHaveValue('1')
+    expect(screen.getByText('Os componentes valem para produzir 1 un.')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('combobox', { name: /^Material \*/ }))
+    await userEvent.click(await screen.findByRole('option', { name: /Tinta preparada/ }))
+
+    expect(screen.getByText('Os componentes valem para produzir 1 kg.')).toBeInTheDocument() // a unidade é a do material produzido
+  })
+
+  it('envia a base informada (aceita vírgula)', async () => {
+    cadastrarMock.mockResolvedValue()
+    montar()
+
+    await preencherEEnviar('100,5')
+
+    await waitFor(() => expect(cadastrarMock).toHaveBeenCalled())
+    expect(cadastrarMock.mock.calls[0][0]).toMatchObject({ materialId: 'm-6', quantidadeBase: 100.5 })
+  })
+
+  it.each(['0', '-3', 'abc', '1,00001', '123456789'])('base inválida (%s) não é enviada', async (invalida) => {
+    montar()
+
+    await preencherEEnviar(invalida)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/quantidade base/i)
+    expect(cadastrarMock).not.toHaveBeenCalled()
+  })
+
+  it('uma nova versão copiada traz a base da versão de origem', async () => {
+    const modeloComBase = listaTecnica({ id: 'l-9', versao: 'v1', quantidadeBase: 100, materialId: 'm-1',
+      itens: [{ id: 'i-1', materialComponenteId: 'm-2', quantidadePlanejada: 200, unidadeDeMedida: 'kg' }] })
+    cadastrarMock.mockResolvedValue()
+    montar({ modelo: modeloComBase, versoesExistentes: ['v1'] })
+    await screen.findByText('Nova versão a partir da v1')
+
+    expect(screen.getByLabelText(/^Quantidade base/)).toHaveValue('100')
+    await userEvent.click(screen.getByRole('button', { name: 'Criar versão' }))
+
+    await waitFor(() => expect(cadastrarMock).toHaveBeenCalled())
+    expect(cadastrarMock.mock.calls[0][0]).toMatchObject({ quantidadeBase: 100, versao: 'v2' })
   })
 })
 

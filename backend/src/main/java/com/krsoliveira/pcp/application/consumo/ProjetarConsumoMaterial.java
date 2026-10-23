@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.application.consumo;
 
 import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
+import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterialRepository;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
@@ -38,14 +39,20 @@ public class ProjetarConsumoMaterial {
         ListaTecnica lista = listaTecnicaRepository.buscarPorId(comando.listaTecnicaId())
                 .orElseThrow(() -> new ListaTecnicaNaoEncontradaException(comando.listaTecnicaId()));
 
+        // quantidade do item ÷ base da lista × quantidade da ordem (ADR-0027)
         List<ConsumoMaterial> consumos = lista.getItens().stream()
-                .map(item -> ConsumoMaterial.projetar(
-                        comando.ordemProducaoId(),
-                        item.getMaterialComponenteId(),
-                        item.getQuantidadePlanejada()
-                                .multiply(BigDecimal.valueOf(comando.quantidadeOrdem())),
-                        item.getUnidadeDeMedida(),
-                        comando.usuario()))
+                .map(item -> {
+                    BigDecimal necessaria = lista.quantidadeNecessaria(item, comando.quantidadeOrdem());
+                    if (necessaria.signum() <= 0) {
+                        throw new RegraDeNegocioException(
+                                ("Um componente da lista (base %s) arredonda para zero numa ordem de %d: "
+                                        + "aumente a quantidade da ordem.")
+                                        .formatted(lista.getQuantidadeBase().stripTrailingZeros().toPlainString(),
+                                                comando.quantidadeOrdem()));
+                    }
+                    return ConsumoMaterial.projetar(comando.ordemProducaoId(), item.getMaterialComponenteId(),
+                            necessaria, item.getUnidadeDeMedida(), comando.usuario());
+                })
                 .toList();
 
         return consumoRepository.salvarTodos(consumos);

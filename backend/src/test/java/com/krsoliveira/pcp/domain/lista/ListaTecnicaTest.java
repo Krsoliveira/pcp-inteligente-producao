@@ -31,6 +31,76 @@ class ListaTecnicaTest {
     }
 
     @Nested
+    @DisplayName("Quantidade base (ADR-0027)")
+    class QuantidadeBase {
+
+        private ListaTecnica comBase(String base) {
+            return ListaTecnica.criar(MATERIAL_ID, "v1", new BigDecimal(base), itensValidos(), USUARIO);
+        }
+
+        @Test
+        @DisplayName("sem informar, a base é 1: as listas continuam significando 'por 1 unidade'")
+        void padraoEhUm() {
+            assertThat(listaValida().getQuantidadeBase()).isEqualByComparingTo("1");
+            assertThat(ListaTecnica.criarVersao(MATERIAL_ID, UUID.randomUUID(), "v2", itensValidos(), USUARIO).getQuantidadeBase())
+                    .isEqualByComparingTo("1");
+        }
+
+        @Test
+        @DisplayName("aceita uma base maior que 1, fracionária e com até 4 casas")
+        void aceitaBases() {
+            assertThat(comBase("100").getQuantidadeBase()).isEqualByComparingTo("100");
+            assertThat(comBase("0.5").getQuantidadeBase()).isEqualByComparingTo("0.5");
+            assertThat(comBase("2.5000").getQuantidadeBase()).isEqualByComparingTo("2.5");
+            assertThat(comBase("0.0001").getQuantidadeBase()).isEqualByComparingTo("0.0001");
+        }
+
+        @Test
+        @DisplayName("recusa base zero, negativa, nula, com mais de 4 casas ou de 100 milhões para cima")
+        void recusaBasesInvalidas() {
+            assertThatThrownBy(() -> comBase("0")).isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("maior que zero");
+            assertThatThrownBy(() -> comBase("-1")).isInstanceOf(RegraDeNegocioException.class);
+            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, "v1", (BigDecimal) null, itensValidos(), USUARIO))
+                    .isInstanceOf(RegraDeNegocioException.class);
+            assertThatThrownBy(() -> comBase("1.00001")).isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("4 casas");
+            assertThatThrownBy(() -> comBase("100000000")).isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("menor que");
+        }
+
+        @Test
+        @DisplayName("quantidade necessária = quantidade do item ÷ base × quantidade da ordem")
+        void quantidadeNecessaria() {
+            ItemListaTecnica item = ItemListaTecnica.criar(COMPONENTE_ID, new BigDecimal("200"), "kg");
+
+            assertThat(comBase("100").quantidadeNecessaria(item, 50)).isEqualByComparingTo("100"); // 200 kg por 100 un, ordem de 50
+            assertThat(comBase("1").quantidadeNecessaria(item, 50)).isEqualByComparingTo("10000"); // a conta de sempre
+            assertThat(comBase("100").quantidadeNecessaria(item, 1)).isEqualByComparingTo("2");
+        }
+
+        @Test
+        @DisplayName("arredonda a quantidade necessária para 4 casas (meio para cima)")
+        void arredonda() {
+            ItemListaTecnica um = ItemListaTecnica.criar(COMPONENTE_ID, BigDecimal.ONE, "kg");
+
+            assertThat(comBase("3").quantidadeNecessaria(um, 1)).isEqualByComparingTo("0.3333");
+            assertThat(comBase("3").quantidadeNecessaria(um, 2)).isEqualByComparingTo("0.6667");
+        }
+
+        @Test
+        @DisplayName("reconstituir mantém a base gravada, e sem informar assume 1")
+        void reconstituir() {
+            ListaTecnica base = comBase("100");
+
+            ListaTecnica igual = ListaTecnica.reconstituir(base.getId(), base.getListaId(), MATERIAL_ID, "v1", new BigDecimal("100"),
+                    base.getStatus(), itensValidos(), base.getAssinatura());
+            ListaTecnica antiga = ListaTecnica.reconstituir(base.getId(), base.getListaId(), MATERIAL_ID, "v1",
+                    base.getStatus(), itensValidos(), base.getAssinatura());
+
+            assertThat(igual.getQuantidadeBase()).isEqualByComparingTo("100");
+            assertThat(antiga.getQuantidadeBase()).isEqualByComparingTo("1");
+        }
+    }
+
+    @Nested
     @DisplayName("Criação")
     class Criacao {
 
