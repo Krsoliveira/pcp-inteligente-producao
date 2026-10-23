@@ -63,8 +63,12 @@ senha é trocada. A resposta 403 desse caso leva o código `TROCAR_SENHA` para a
   recuperado por um gestor; a regra vale mesmo chamando a API direto.
 - **Negativas / riscos**:
   - O gestor continua conhecendo a senha provisória até o primeiro acesso (inevitável sem e-mail).
-  - Se o usuário perder a provisória, só um gestor com alcance sobre o perfil dele a redefine; o último
-    Administrador que esquecer a senha só se recupera pelo ambiente (`ADMIN_*` não recria quem já existe).
+  - Se o usuário perder a provisória, só um gestor com alcance sobre o perfil dele a redefine.
+  - **Recuperação do último Administrador** (verificada em teste e no ambiente de dev): `ADMIN_*` com um
+    e-mail que já existe não altera nada (nem a senha); com um e-mail **novo** cria um segundo Administrador,
+    que redefine a senha do primeiro pela tela de Usuários (o primeiro troca a provisória ao entrar). Exige
+    acesso ao ambiente de deploy; `ADMIN_EMAIL` sem `ADMIN_SENHA` impede a aplicação de subir. Depois da
+    recuperação, remover o Administrador extra se não for mais necessário.
   - Bloqueio por autoridades faz o 403 aparecer em todos os endpoints; o código `TROCAR_SENHA` evita que
     pareça falta de permissão.
 - **Rollback**: a V14 só adiciona uma coluna. Desfazer é uma migração nova que a remove e voltar o código; sem

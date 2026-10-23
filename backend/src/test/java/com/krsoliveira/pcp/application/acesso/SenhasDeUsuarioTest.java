@@ -181,6 +181,19 @@ class SenhasDeUsuarioTest {
         }
 
         @Test
+        @DisplayName("recuperação: um Administrador redefine a senha de outro Administrador, que precisa trocá-la ao entrar")
+        void administradorRedefineOutroAdministrador() {
+            Usuario primeiro = outro("admin@pcp.com", PerfilAcessoRepositoryEmMemoria.ID_ADMINISTRADOR);
+
+            redefinir.executar(primeiro.getId(), "provisoriaRec1");
+
+            Usuario depois = usuarios.porId(primeiro.getId()).orElseThrow();
+            assertThat(depois.getSenhaHash()).isEqualTo("hash:provisoriaRec1");
+            assertThat(depois.isDeveTrocarSenha()).isTrue();
+            assertThat(trilha.eventos(AcaoAuditoria.SENHA_REDEFINIDA)).hasSize(1);
+        }
+
+        @Test
         @DisplayName("senha provisória fora da regra e usuário inexistente são recusados")
         void invalidos() {
             Usuario ana = outro("ana@pcp.com", PerfilAcessoRepositoryEmMemoria.ID_VISUALIZADOR);
