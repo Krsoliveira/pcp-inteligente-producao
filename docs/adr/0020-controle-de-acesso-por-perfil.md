@@ -67,10 +67,10 @@ O Administrador cria o perfil Gerente (e o que mais precisar); o gerente cria o 
 - **Por objeto** nas listas técnicas: quem só tem `LISTA_VISUALIZAR_ATIVAS` enxerga apenas versões ativas (as
   demais aparecem como inexistentes, 404, sem revelar que existem); a comparação exige `LISTA_COMPARAR` **e**
   que as duas versões sejam visíveis para quem pede.
-- Novo `GET /api/v1/auth/eu` devolve o usuário logado, o perfil e as permissões, para o frontend mostrar ou
-  esconder telas e botões. O frontend nunca é a única barreira.
+- Novo `GET /api/v1/acessos/eu` (fora de `/auth/**`, que é público) devolve o usuário logado, o perfil e as
+  permissões, para o frontend mostrar ou esconder telas e botões. O frontend nunca é a única barreira.
 
-**Gestão (API nova, contrato só cresce).** `GET /api/v1/acessos/permissoes`, `GET|POST /api/v1/acessos/perfis`,
+**Gestão (API nova, contrato só cresce).** `GET /api/v1/acessos/eu`, `GET /api/v1/acessos/permissoes`, `GET|POST /api/v1/acessos/perfis`,
 `GET|PUT|DELETE /api/v1/acessos/perfis/{id}`, `GET|POST /api/v1/acessos/usuarios`,
 `PATCH /api/v1/acessos/usuarios/{id}/perfil`. O gerente define a senha provisória do usuário que cria (não há
 envio de e-mail; troca obrigatória no primeiro acesso fica como pendência).
@@ -109,5 +109,8 @@ troca é segura e a coluna antiga é removida na mesma migração.
 - **Rollback**: migrações não se editam; desfazer exige uma migração que volte `usuario.perfil` e remova as
   tabelas novas, além de voltar o código. Os usuários apagados não voltam: **backup antes de aplicar em
   qualquer ambiente com dados reais**. Em desenvolvimento, `docker compose down -v` recria o banco.
+- **Validação antes da autorização**: a validação do corpo (400) roda antes da segurança por método (403),
+  porque os argumentos são resolvidos antes da chamada do método. Quem não tem permissão e manda um corpo
+  inválido recebe 400. Não vaza dado nem permite agir; os testes usam corpos válidos para provar o 403.
 - **Pendências**: troca de senha obrigatória no primeiro acesso; exceções de permissão por usuário; vários
   perfis por usuário, se o uso pedir.
