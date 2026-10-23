@@ -30,7 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "pcp.seguranca.rate-limit.login=2",
-                "pcp.seguranca.rate-limit.registrar=1000"
+                "pcp.seguranca.rate-limit.registrar=1000",
+                "pcp.seguranca.rate-limit.trocar-senha=2"
         })
 @Testcontainers
 class RateLimitingIntegracaoTest {
@@ -59,6 +60,19 @@ class RateLimitingIntegracaoTest {
     }
 
     @Test
+    @DisplayName("troca de senha: tem limite por IP e X-Forwarded-For forjado não o burla")
+    void trocaDeSenhaComIpForjadoRecebe429() throws Exception {
+        for (int i = 0; i < 2; i++) {
+            assertThat(trocarSenha("203.0.113." + i).statusCode()).isEqualTo(401);
+        }
+
+        HttpResponse<String> bloqueada = trocarSenha("203.0.113.250");
+
+        assertThat(bloqueada.statusCode()).isEqualTo(429);
+        assertThat(bloqueada.headers().firstValue("Retry-After")).isPresent();
+    }
+
+    @Test
     @DisplayName("o 429 também traz os cabeçalhos CORS, senão o navegador o descarta")
     void respostaBloqueadaTemCors() throws Exception {
         for (int i = 0; i < 2; i++) {
@@ -72,6 +86,15 @@ class RateLimitingIntegracaoTest {
                 .contains("http://localhost:3000");
         assertThat(bloqueada.headers().firstValue("Access-Control-Expose-Headers"))
                 .hasValueSatisfying(expostos -> assertThat(expostos).contains("Retry-After"));
+    }
+
+    private HttpResponse<String> trocarSenha(String forwardedFor) throws Exception {
+        HttpRequest requisicao = HttpRequest.newBuilder(URI.create("http://localhost:" + porta + "/api/v1/acessos/minha-senha"))
+                .header("Content-Type", "application/json")
+                .header("X-Forwarded-For", forwardedFor)
+                .PUT(HttpRequest.BodyPublishers.ofString("{\"senhaAtual\":\"qualquer123\",\"novaSenha\":\"outraSenha123\"}"))
+                .build();
+        return cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> login(String forwardedFor) throws Exception {
