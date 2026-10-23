@@ -50,6 +50,9 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
 
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais, enabled: aberto })
   const produtivos = materiais.filter((m) => (m.tipo as TipoMaterial) !== 'MATERIA_PRIMA')
+  // Regra inegociável (ADR-0024): produto acabado só é componente de lista de semiacabado (a conversão).
+  const donoEhSemiacabado = materiais.find((m) => m.id === materialId)?.tipo === 'SEMIACABADO'
+  const componentesPermitidos = donoEhSemiacabado ? materiais : materiais.filter((m) => m.tipo !== 'PRODUTO_ACABADO')
 
   // Cada abertura recomeça: vazio, ou preenchido a partir do modelo.
   useEffect(() => {
@@ -117,7 +120,15 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
         <Grid container spacing={2} sx={{ mt: 0 }}>
           <Grid size={{ xs: 12, sm: 8 }}>
             <TextField
-              select label="Material *" value={materialId} onChange={(e) => setMaterialId(e.target.value)} fullWidth
+              select label="Material *" fullWidth value={materialId}
+              onChange={(e) => {
+                const novo = materiais.find((m) => m.id === e.target.value)
+                setMaterialId(e.target.value)
+                // Trocar para um material que não é semiacabado tira os produtos acabados que já estavam escolhidos.
+                if (novo?.tipo !== 'SEMIACABADO') {
+                  setItens((prev) => prev.map((i) => (materiais.find((m) => m.id === i.materialComponenteId)?.tipo === 'PRODUTO_ACABADO' ? { ...i, materialComponenteId: '' } : i)))
+                }
+              }}
               disabled={!!modelo}
               helperText={modelo ? 'A nova versão entra na lista deste material.' : 'Produto acabado ou semiacabado que será fabricado.'}
             >
@@ -134,14 +145,21 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
         <Divider sx={{ my: 2.5 }} />
 
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-          <Typography variant="subtitle2">Componentes</Typography>
+          <Box>
+            <Typography variant="subtitle2">Componentes</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {donoEhSemiacabado
+                ? 'Esta lista pode consumir produto acabado (conversão); a ordem precisará ser do tipo Conversão.'
+                : 'Matéria-prima e semiacabado. Produto acabado só entra em lista de semiacabado (conversão).'}
+            </Typography>
+          </Box>
           <Button size="small" startIcon={<AddCircleOutlineIcon />} onClick={addItem}>Adicionar</Button>
         </Box>
 
         {itens.map((item, idx) => (
           <Box key={idx} sx={{ display: 'flex', gap: 1.5, mb: 1.5, alignItems: 'flex-start' }}>
             <TextField select label="Material componente" value={item.materialComponenteId} onChange={(e) => updateItem(idx, 'materialComponenteId', e.target.value)} sx={{ flex: 2 }}>
-              {materiais.map((m) => (
+              {componentesPermitidos.map((m) => (
                 <MenuItem key={m.id} value={m.id}>{formatarCodigoMaterial(m.codigo)} — {m.descricao}</MenuItem>
               ))}
             </TextField>

@@ -128,3 +128,70 @@ describe('CriarListaTecnicaDialog', () => {
     })
   })
 })
+
+describe('CriarListaTecnicaDialog: produto acabado como componente (ADR-0024)', () => {
+  beforeEach(() => {
+    cadastrarMock.mockReset()
+    vi.mocked(listarMateriais).mockResolvedValue([
+      material({ id: 'm-1', codigo: '103000001', descricao: 'Viga pronta', tipo: 'PRODUTO_ACABADO' }),
+      material({ id: 'm-5', codigo: '103000009', descricao: 'Peça pronta Z', tipo: 'PRODUTO_ACABADO' }),
+      material({ id: 'm-4', codigo: '105000001', descricao: 'Viga cortada', tipo: 'SEMIACABADO' }),
+      material({ id: 'm-2', codigo: '110000001', descricao: 'Aço inox', tipo: 'MATERIA_PRIMA', unidadeDeMedida: 'kg' }),
+    ])
+  })
+
+  async function escolherDono(descricao: RegExp) {
+    await userEvent.click(await screen.findByRole('combobox', { name: /^Material \*/ }))
+    await userEvent.click(await screen.findByRole('option', { name: descricao }))
+  }
+
+  async function componentesOferecidos() {
+    await userEvent.click(screen.getAllByRole('combobox', { name: /Material componente/ })[0])
+    const opcoes = screen.getAllByRole('option').map((o) => o.textContent ?? '')
+    await userEvent.keyboard('{Escape}')
+    return opcoes
+  }
+
+  it('lista de produto acabado oferece matéria-prima e semiacabado, e não produto acabado', async () => {
+    montar()
+    await escolherDono(/Viga pronta/)
+
+    const opcoes = (await componentesOferecidos()).join(' | ')
+
+    expect(opcoes).toContain('Aço inox')
+    expect(opcoes).toContain('Viga cortada')
+    expect(opcoes).not.toContain('Peça pronta Z')
+    expect(screen.getByText(/Produto acabado só entra em lista de semiacabado/)).toBeInTheDocument()
+  })
+
+  it('lista de semiacabado também oferece produto acabado (a conversão) e avisa do tipo de ordem', async () => {
+    montar()
+    await escolherDono(/Viga cortada/)
+
+    const opcoes = (await componentesOferecidos()).join(' | ')
+
+    expect(opcoes).toContain('Peça pronta Z')
+    expect(screen.getByText(/a ordem precisará ser do tipo Conversão/)).toBeInTheDocument()
+  })
+
+  it('sem material escolhido ainda não oferece produto acabado como componente', async () => {
+    montar()
+
+    const opcoes = (await componentesOferecidos()).join(' | ')
+
+    expect(opcoes).not.toContain('Peça pronta Z')
+  })
+
+  it('trocar o material para um que não é semiacabado tira o produto acabado já escolhido como componente', async () => {
+    montar()
+    await escolherDono(/Viga cortada/)
+    await userEvent.click(screen.getAllByRole('combobox', { name: /Material componente/ })[0])
+    await userEvent.click(await screen.findByRole('option', { name: /Peça pronta Z/ }))
+    expect(screen.getAllByRole('combobox', { name: /Material componente/ })[0]).toHaveTextContent('Peça pronta Z')
+
+    await escolherDono(/Viga pronta/)
+
+    await waitFor(() => expect(screen.getAllByRole('combobox', { name: /Material componente/ })[0]).not.toHaveTextContent('Peça pronta Z'))
+  })
+})
+
