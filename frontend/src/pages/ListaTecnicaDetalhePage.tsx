@@ -120,6 +120,12 @@ export function ListaTecnicaDetalhePage() {
                 <InfoRow label="Versão">
                   <Chip label={lista.versao} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} />
                 </InfoRow>
+                <InfoRow label="Quantidade base">
+                  {`${formatarQuantidade(lista.quantidadeBase, material?.unidadeDeMedida)}`}
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    Os componentes valem para produzir essa quantidade.
+                  </Typography>
+                </InfoRow>
                 <InfoRow label="Status"><StatusListaBadge status={lista.status} /></InfoRow>
                 <InfoRow label="Componentes">{String(lista.itens.length)}</InfoRow>
                 <InfoRow label="Criada">

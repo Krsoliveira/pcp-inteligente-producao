@@ -111,6 +111,14 @@ export function ListaTecnicaComparacaoPage() {
             <Chip size="small" label={contagem(comparacao.iguais.length, 'igual', 'iguais')} />
           </Box>
 
+          {comparacao.versaoA.quantidadeBase !== comparacao.versaoB.quantidadeBase && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              As versões usam bases diferentes: a {comparacao.versaoA.versao} vale para {comparacao.versaoA.quantidadeBase.toLocaleString('pt-BR')} e a{' '}
+              {comparacao.versaoB.versao} para {comparacao.versaoB.quantidadeBase.toLocaleString('pt-BR')}. A comparação é por unidade produzida; as
+              quantidades abaixo são as de cada versão.
+            </Alert>
+          )}
+
           {!comparacao.temDiferencas && (
             <Alert severity="success" sx={{ mb: 2 }}>
               As versões {comparacao.versaoA.versao} e {comparacao.versaoB.versao} têm os mesmos componentes e quantidades.

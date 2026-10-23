@@ -69,6 +69,7 @@ export function listaTecnica(sobrescritas: Partial<ListaTecnica> = {}): ListaTec
     listaId: 'lista-1',
     materialId: 'm-1',
     versao: 'v1',
+    quantidadeBase: 1,
     status: 'EM_REVISAO',
     itens: [{ id: 'i-1', materialComponenteId: 'm-2', quantidadePlanejada: 2.5, unidadeDeMedida: 'kg' }],
     criadaEm: '2026-10-01T10:00:00Z',

@@ -44,6 +44,7 @@ interface CriarListaTecnicaDialogProps {
 export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExistentes = [], onCriada }: CriarListaTecnicaDialogProps) {
   const [materialId, setMaterialId] = useState('')
   const [versao, setVersao] = useState('')
+  const [base, setBase] = useState('1')
   const [itens, setItens] = useState<ItemForm[]>([ITEM_VAZIO])
   const [erro, setErro] = useState<string | null>(null)
   const queryClient = useQueryClient()
@@ -52,6 +53,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
   const produtivos = materiais.filter((m) => (m.tipo as TipoMaterial) !== 'MATERIA_PRIMA')
   // Regra inegociável (ADR-0024): produto acabado só é componente de lista de semiacabado (a conversão).
   const donoEhSemiacabado = materiais.find((m) => m.id === materialId)?.tipo === 'SEMIACABADO'
+  const donoUnidade = materiais.find((m) => m.id === materialId)?.unidadeDeMedida ?? 'un'
   const componentesPermitidos = donoEhSemiacabado ? materiais : materiais.filter((m) => m.tipo !== 'PRODUTO_ACABADO')
 
   // Cada abertura recomeça: vazio, ou preenchido a partir do modelo.
@@ -61,6 +63,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
     if (modelo) {
       setMaterialId(modelo.materialId)
       setVersao(sugerirProximaVersao(versoesExistentes))
+      setBase(String(modelo.quantidadeBase ?? 1))
       setItens(modelo.itens.map((i) => ({
         materialComponenteId: i.materialComponenteId,
         quantidadePlanejada: String(i.quantidadePlanejada),
@@ -69,6 +72,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
     } else {
       setMaterialId('')
       setVersao('')
+      setBase('1')
       setItens([ITEM_VAZIO])
     }
   }, [aberto, modelo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -88,11 +92,15 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
 
   const handleSubmit = () => {
     if (!materialId || !versao.trim()) { setErro('Material e versão são obrigatórios.'); return }
+    const quantidadeBase = Number(base.trim().replace(',', '.'))
+    if (!Number.isFinite(quantidadeBase) || quantidadeBase <= 0) { setErro('Informe a quantidade base: um número maior que zero.'); return }
+    if (!/^\d{1,8}([.,]\d{1,4})?$/.test(base.trim())) { setErro('A quantidade base aceita até 8 dígitos inteiros e 4 casas decimais.'); return }
     const itensValidos = itens.filter((i) => i.materialComponenteId && i.quantidadePlanejada)
     if (itensValidos.length === 0) { setErro('Adicione ao menos um componente.'); return }
     mutate({
       materialId,
       versao: versao.trim(),
+      quantidadeBase,
       itens: itensValidos.map((i) => ({
         materialComponenteId: i.materialComponenteId,
         quantidadePlanejada: Number(i.quantidadePlanejada),
@@ -136,6 +144,11 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
                 <MenuItem key={m.id} value={m.id}>{formatarCodigoMaterial(m.codigo)} — {m.descricao}</MenuItem>
               ))}
             </TextField>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <TextField label="Quantidade base *" value={base} onChange={(e) => setBase(e.target.value)} fullWidth
+              slotProps={{ htmlInput: { inputMode: 'decimal' } }}
+              helperText={`Os componentes valem para produzir ${base.trim() || '…'} ${donoUnidade}.`} />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField label="Versão *" value={versao} onChange={(e) => setVersao(e.target.value)} fullWidth placeholder="v1, v2-rev-a…" inputProps={{ maxLength: 50 }} />
