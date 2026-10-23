@@ -423,6 +423,12 @@ export interface FiltroOrdens {
   ate?: string
   /** `true`: só as ordens abertas depois do fim planejado (as mesmas que o dashboard conta). */
   atrasadas?: boolean
+  /** Nome exato do centro de trabalho. */
+  centro?: string
+  /** Fim planejado a partir desta data (AAAA-MM-DD, inclusive). */
+  fimDe?: string
+  /** Fim planejado até esta data (AAAA-MM-DD, inclusive). */
+  fimAte?: string
   pagina?: number
   tamanho?: number
 }
@@ -433,6 +439,22 @@ export interface ResumoProducao {
   ordensPorStatus: Record<StatusOrdem, number>
   ordensAtrasadas: number
   lotesDisponiveis: number
+}
+
+/** Como terminaram as ordens cujo fim planejado cai no mês (`mes` no formato AAAA-MM); canceladas ficam de fora. */
+export interface EntregasDoMes {
+  mes: string
+  noPrazo: number
+  comAtraso: number
+  abertasAtrasadas: number
+  abertasNoPrazo: number
+}
+
+/** Ordens atrasadas de um centro de trabalho e há quantos dias a mais antiga passou do fim planejado. */
+export interface AtrasoDoCentro {
+  centroDeTrabalho: string
+  ordensAtrasadas: number
+  diasDeAtrasoDaMaisAntiga: number
 }
 
 export interface FiltroMateriais {
