@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Limites (por IP, por minuto):
  *   POST /api/v1/auth/login     → {@code pcp.seguranca.rate-limit.login} (padrão: 5)
  *   POST /api/v1/auth/registrar → {@code pcp.seguranca.rate-limit.registrar} (padrão: 3)
+ *   PUT  /api/v1/acessos/minha-senha → {@code pcp.seguranca.rate-limit.trocar-senha} (padrão: 5)
  *
  * O IP é sempre o da conexão ({@code getRemoteAddr}). O header X-Forwarded-For
  * é controlado pelo cliente e nunca é lido aqui: atrás de proxy, é o Tomcat
@@ -46,9 +47,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     static final String ROTA_LOGIN     = "/api/v1/auth/login";
     static final String ROTA_REGISTRAR = "/api/v1/auth/registrar";
+    /** Autenticada, mas aceita adivinhar a senha atual com um token roubado (ADR-0021). */
+    static final String ROTA_TROCAR_SENHA = "/api/v1/acessos/minha-senha";
 
     private final int limiteLogin;
     private final int limiteRegistrar;
+    private final int limiteTrocarSenha;
     static final int MAX_CHAVES = 10_000;
 
     /** Bucket e sua capacidade, para saber quando ele voltou a ficar cheio. */
@@ -64,14 +68,25 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     @Autowired
     public RateLimitingFilter(@Value("${pcp.seguranca.rate-limit.login:5}") int limiteLogin,
-                              @Value("${pcp.seguranca.rate-limit.registrar:3}") int limiteRegistrar) {
-        this(limiteLogin, limiteRegistrar, MAX_CHAVES, TimeMeter.SYSTEM_MILLISECONDS);
+                              @Value("${pcp.seguranca.rate-limit.registrar:3}") int limiteRegistrar,
+                              @Value("${pcp.seguranca.rate-limit.trocar-senha:5}") int limiteTrocarSenha) {
+        this(limiteLogin, limiteRegistrar, limiteTrocarSenha, MAX_CHAVES, TimeMeter.SYSTEM_MILLISECONDS);
+    }
+
+    /** Construtor para testes, com o limite da troca de senha igual ao do login. */
+    RateLimitingFilter(int limiteLogin, int limiteRegistrar) {
+        this(limiteLogin, limiteRegistrar, limiteLogin, MAX_CHAVES, TimeMeter.SYSTEM_MILLISECONDS);
     }
 
     /** Construtor para testes — permite definir o teto de chaves e o relógio. */
     RateLimitingFilter(int limiteLogin, int limiteRegistrar, int maxChaves, TimeMeter relogio) {
-        this.limiteLogin     = limiteLogin;
-        this.limiteRegistrar = limiteRegistrar;
+        this(limiteLogin, limiteRegistrar, limiteLogin, maxChaves, relogio);
+    }
+
+    RateLimitingFilter(int limiteLogin, int limiteRegistrar, int limiteTrocarSenha, int maxChaves, TimeMeter relogio) {
+        this.limiteLogin       = limiteLogin;
+        this.limiteRegistrar   = limiteRegistrar;
+        this.limiteTrocarSenha = limiteTrocarSenha;
         this.maxChaves       = maxChaves;
         this.relogio         = relogio;
     }
@@ -82,12 +97,13 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
         String uri = request.getRequestURI();
 
-        if (!ROTA_LOGIN.equals(uri) && !ROTA_REGISTRAR.equals(uri)) {
+        if (!ROTA_LOGIN.equals(uri) && !ROTA_REGISTRAR.equals(uri) && !ROTA_TROCAR_SENHA.equals(uri)) {
             chain.doFilter(request, response);
             return;
         }
 
-        int limite = ROTA_LOGIN.equals(uri) ? limiteLogin : limiteRegistrar;
+        int limite = ROTA_LOGIN.equals(uri) ? limiteLogin
+                : ROTA_REGISTRAR.equals(uri) ? limiteRegistrar : limiteTrocarSenha;
         String ip    = extrairIp(request);
         String chave = ip + ":" + uri;
 

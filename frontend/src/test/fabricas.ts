@@ -20,6 +20,7 @@ export function usuarioLogado(sobrescritas: Partial<UsuarioLogado> = {}): Usuari
     email: 'ana@pcp.com',
     perfil: { id: 'perfil-1', nome: 'Administrador' },
     permissoes: TODAS_AS_PERMISSOES,
+    deveTrocarSenha: false,
     ...sobrescritas,
   }
 }

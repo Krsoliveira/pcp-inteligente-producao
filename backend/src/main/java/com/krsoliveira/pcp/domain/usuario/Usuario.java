@@ -12,17 +12,19 @@ public class Usuario {
     private final UUID id;
     private final String nome;
     private final String email;
-    private final String senhaHash;
+    private String senhaHash;
     private UUID perfilId;
+    private boolean deveTrocarSenha;
     private final Instant criadoEm;
 
     private Usuario(UUID id, String nome, String email, String senhaHash,
-                    UUID perfilId, Instant criadoEm) {
+                    UUID perfilId, boolean deveTrocarSenha, Instant criadoEm) {
         this.id = id;
         this.nome = nome;
         this.email = email;
         this.senhaHash = senhaHash;
         this.perfilId = perfilId;
+        this.deveTrocarSenha = deveTrocarSenha;
         this.criadoEm = criadoEm;
     }
 
@@ -44,7 +46,17 @@ public class Usuario {
             throw new IllegalArgumentException("Perfil é obrigatório.");
         }
         return new Usuario(UUID.randomUUID(), nome.trim(), email.trim().toLowerCase(),
-                senhaHash, perfilId, Instant.now());
+                senhaHash, perfilId, false, Instant.now());
+    }
+
+    /**
+     * Usuário criado por um gestor: a senha é provisória (o gestor a conhece), então a troca no primeiro
+     * acesso é obrigatória (ADR-0021).
+     */
+    public static Usuario criarComSenhaProvisoria(String nome, String email, String senhaHash, UUID perfilId) {
+        Usuario usuario = criar(nome, email, senhaHash, perfilId);
+        usuario.deveTrocarSenha = true;
+        return usuario;
     }
 
     /**
@@ -52,8 +64,28 @@ public class Usuario {
      * Não revalida invariantes: os dados já passaram por {@link #criar}.
      */
     public static Usuario reconstituir(UUID id, String nome, String email, String senhaHash,
-                                       UUID perfilId, Instant criadoEm) {
-        return new Usuario(id, nome, email, senhaHash, perfilId, criadoEm);
+                                       UUID perfilId, boolean deveTrocarSenha, Instant criadoEm) {
+        return new Usuario(id, nome, email, senhaHash, perfilId, deveTrocarSenha, criadoEm);
+    }
+
+    /** O próprio usuário definiu uma senha nova: a troca obrigatória, se havia, deixa de valer. */
+    public void trocarSenha(String novoHash) {
+        exigirHash(novoHash);
+        this.senhaHash = novoHash;
+        this.deveTrocarSenha = false;
+    }
+
+    /** Um gestor definiu uma senha provisória nova: o usuário precisa trocá-la no próximo acesso. */
+    public void redefinirSenha(String novoHash) {
+        exigirHash(novoHash);
+        this.senhaHash = novoHash;
+        this.deveTrocarSenha = true;
+    }
+
+    private static void exigirHash(String hash) {
+        if (hash == null || hash.isBlank()) {
+            throw new IllegalArgumentException("Senha é obrigatória.");
+        }
     }
 
     /** Muda o perfil de acesso do usuário. Quem pode fazer isso é decidido pelo caso de uso. */
@@ -69,5 +101,6 @@ public class Usuario {
     public String getEmail() { return email; }
     public String getSenhaHash() { return senhaHash; }
     public UUID getPerfilId() { return perfilId; }
+    public boolean isDeveTrocarSenha() { return deveTrocarSenha; }
     public Instant getCriadoEm() { return criadoEm; }
 }

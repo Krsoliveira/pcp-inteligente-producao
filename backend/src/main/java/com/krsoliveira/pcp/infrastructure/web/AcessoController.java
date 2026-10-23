@@ -7,6 +7,8 @@ import com.krsoliveira.pcp.application.acesso.ConsultarUsuarioLogado;
 import com.krsoliveira.pcp.application.acesso.CriarPerfilAcesso;
 import com.krsoliveira.pcp.application.acesso.CriarUsuarioPorGestor;
 import com.krsoliveira.pcp.application.acesso.ExcluirPerfilAcesso;
+import com.krsoliveira.pcp.application.acesso.RedefinirSenhaDoUsuario;
+import com.krsoliveira.pcp.application.acesso.TrocarMinhaSenha;
 import com.krsoliveira.pcp.domain.acesso.PerfilAcesso;
 import com.krsoliveira.pcp.domain.usuario.Usuario;
 import com.krsoliveira.pcp.infrastructure.web.dto.AtribuirPerfilRequest;
@@ -14,6 +16,8 @@ import com.krsoliveira.pcp.infrastructure.web.dto.CriarUsuarioRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.PerfilAcessoRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.PerfilAcessoResponse;
 import com.krsoliveira.pcp.infrastructure.web.dto.PermissaoResponse;
+import com.krsoliveira.pcp.infrastructure.web.dto.RedefinirSenhaRequest;
+import com.krsoliveira.pcp.infrastructure.web.dto.TrocarSenhaRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.UsuarioAcessoResponse;
 import com.krsoliveira.pcp.infrastructure.web.dto.UsuarioLogadoResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,11 +56,14 @@ public class AcessoController {
     private final ExcluirPerfilAcesso excluirPerfil;
     private final CriarUsuarioPorGestor criarUsuario;
     private final AtribuirPerfilAoUsuario atribuirPerfil;
+    private final TrocarMinhaSenha trocarMinhaSenha;
+    private final RedefinirSenhaDoUsuario redefinirSenha;
 
     public AcessoController(ConsultarAcessos consultarAcessos, ConsultarUsuarioLogado consultarUsuarioLogado,
                             CriarPerfilAcesso criarPerfil, AtualizarPerfilAcesso atualizarPerfil,
                             ExcluirPerfilAcesso excluirPerfil, CriarUsuarioPorGestor criarUsuario,
-                            AtribuirPerfilAoUsuario atribuirPerfil) {
+                            AtribuirPerfilAoUsuario atribuirPerfil, TrocarMinhaSenha trocarMinhaSenha,
+                            RedefinirSenhaDoUsuario redefinirSenha) {
         this.consultarAcessos = consultarAcessos;
         this.consultarUsuarioLogado = consultarUsuarioLogado;
         this.criarPerfil = criarPerfil;
@@ -64,6 +71,8 @@ public class AcessoController {
         this.excluirPerfil = excluirPerfil;
         this.criarUsuario = criarUsuario;
         this.atribuirPerfil = atribuirPerfil;
+        this.trocarMinhaSenha = trocarMinhaSenha;
+        this.redefinirSenha = redefinirSenha;
     }
 
     @GetMapping("/eu")
@@ -72,6 +81,16 @@ public class AcessoController {
                     + "telas e botões; a barreira de verdade é o servidor, em cada endpoint.")
     public UsuarioLogadoResponse eu() {
         return UsuarioLogadoResponse.de(consultarUsuarioLogado.executar());
+    }
+
+    @PutMapping("/minha-senha")
+    @Operation(summary = "Troca a senha de quem está logado",
+            description = "Exige a senha atual (422 se não conferir). Serve ao primeiro acesso, quando a senha provisória "
+                    + "precisa ser trocada, e a qualquer momento. A nova senha tem de 8 a 72 caracteres e ser diferente da "
+                    + "atual. Funciona mesmo com a troca pendente, que bloqueia todo o resto (ADR-0021).")
+    public ResponseEntity<Void> trocarMinhaSenha(@Valid @RequestBody TrocarSenhaRequest request) {
+        trocarMinhaSenha.executar(request.senhaAtual(), request.novaSenha());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/permissoes")
@@ -141,6 +160,16 @@ public class AcessoController {
         return ResponseEntity.created(local).body(
                 UsuarioAcessoResponse.de(new ConsultarAcessos.UsuarioComPerfil(criado,
                         consultarAcessos.buscarPerfil(criado.getPerfilId()).perfil())));
+    }
+
+    @PostMapping("/usuarios/{id}/redefinir-senha")
+    @PreAuthorize("hasAuthority('USUARIO_GERENCIAR')")
+    @Operation(summary = "Redefine a senha de um usuário",
+            description = "O gestor define uma senha provisória nova e o usuário precisa trocá-la no próximo acesso. Só "
+                    + "alcança quem tem perfil ao alcance do gestor (403) e nunca a própria senha (403).")
+    public ResponseEntity<Void> redefinirSenha(@PathVariable UUID id, @Valid @RequestBody RedefinirSenhaRequest request) {
+        redefinirSenha.executar(id, request.senhaProvisoria());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/usuarios/{id}/perfil")

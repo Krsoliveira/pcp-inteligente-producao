@@ -45,14 +45,29 @@ public class RegistrarUsuario {
 
     public Usuario executar(String nome, String email, String senhaPlana, PerfilAcesso perfil,
                             String responsavel) {
+        return registrar(nome, email, senhaPlana, perfil, responsavel, false);
+    }
+
+    /**
+     * Cria o usuário com uma senha provisória (um gestor a definiu): ele precisa trocá-la no primeiro acesso
+     * (ADR-0021).
+     */
+    public Usuario executarComSenhaProvisoria(String nome, String email, String senhaPlana, PerfilAcesso perfil,
+                                              String responsavel) {
+        return registrar(nome, email, senhaPlana, perfil, responsavel, true);
+    }
+
+    private Usuario registrar(String nome, String email, String senhaPlana, PerfilAcesso perfil,
+                              String responsavel, boolean senhaProvisoria) {
         return execucao.executarComo(responsavel, ctx -> {
             String emailNormalizado = normalizar(email);
             if (usuarioRepository.porEmail(emailNormalizado).isPresent()) {
                 throw new EmailJaUtilizadoException(email);
             }
             String senhaHash = codificadorDeSenha.codificar(senhaPlana);
-            Usuario usuario = usuarioRepository.salvar(
-                    Usuario.criar(nome, emailNormalizado, senhaHash, perfil.getId()));
+            Usuario usuario = usuarioRepository.salvar(senhaProvisoria
+                    ? Usuario.criarComSenhaProvisoria(nome, emailNormalizado, senhaHash, perfil.getId())
+                    : Usuario.criar(nome, emailNormalizado, senhaHash, perfil.getId()));
             ctx.registrar(TipoEntidade.USUARIO, usuario.getId(), usuario.getEmail(),
                     AcaoAuditoria.USUARIO_REGISTRADO,
                     Detalhes.com("email", usuario.getEmail()).e("perfil", perfil.getNome()));

@@ -363,6 +363,8 @@ export type AcaoAuditoria =
   | 'USUARIO_REGISTRADO'
   | 'EXCLUIDO'
   | 'PERFIL_ATRIBUIDO'
+  | 'SENHA_ALTERADA'
+  | 'SENHA_REDEFINIDA'
 
 /** Mudança de valor registrada na trilha: {"de": ..., "para": ...}. */
 export interface MudancaAuditoria {
@@ -494,6 +496,8 @@ export interface UsuarioLogado {
   email: string
   perfil: { id: string; nome: string }
   permissoes: Permissao[]
+  /** A senha é provisória: até trocá-la o servidor só aceita consultar quem sou eu e a troca (ADR-0021). */
+  deveTrocarSenha: boolean
 }
 
 /** Uma "caixinha" do catálogo, com a área em que aparece. */

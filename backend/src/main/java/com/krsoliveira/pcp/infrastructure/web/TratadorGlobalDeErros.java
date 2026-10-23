@@ -19,10 +19,12 @@ import com.krsoliveira.pcp.application.ordem.TipoOrdemNaoEncontradoException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.acesso.AcessoNegadoException;
 import com.krsoliveira.pcp.infrastructure.security.CorpoGrandeDemaisException;
+import com.krsoliveira.pcp.infrastructure.security.UsuarioDetailsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -57,10 +59,22 @@ public class TratadorGlobalDeErros {
     public ProblemDetail acessoNegado(RuntimeException ex) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
         problema.setTitle("Acesso negado");
+        if (senhaProvisoriaPendente()) {
+            problema.setDetail("Defina uma nova senha para continuar.");
+            problema.setProperty("codigo", "TROCAR_SENHA");
+            return problema;
+        }
         problema.setDetail(ex instanceof AcessoNegadoException
                 ? ex.getMessage()
                 : "Você não tem permissão para fazer isso.");
         return problema;
+    }
+
+    /** O usuário logado ainda precisa trocar a senha provisória (ADR-0021)? */
+    private static boolean senhaProvisoriaPendente() {
+        var autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        return autenticacao != null && autenticacao.getAuthorities().stream()
+                .anyMatch(a -> UsuarioDetailsService.SENHA_PROVISORIA.equals(a.getAuthority()));
     }
 
     @ExceptionHandler({PerfilNaoEncontradoException.class, UsuarioNaoEncontradoException.class})

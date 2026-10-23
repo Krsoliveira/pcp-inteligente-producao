@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { atribuirPerfil, criarUsuario, listarPerfis, listarUsuarios } from '../api/acessos'
+import { atribuirPerfil, criarUsuario, listarPerfis, listarUsuarios, redefinirSenha } from '../api/acessos'
 import { erroHttp } from '../test/erros'
 import { TODAS_AS_PERMISSOES } from '../test/fabricas'
 import { renderizarTela } from '../test/renderizar'
@@ -13,6 +13,7 @@ vi.mock('../api/acessos', () => ({
   listarPerfis: vi.fn(),
   criarUsuario: vi.fn(),
   atribuirPerfil: vi.fn(),
+  redefinirSenha: vi.fn(),
 }))
 
 function perfil(sobrescritas: Partial<PerfilAcesso>): PerfilAcesso {
@@ -53,6 +54,7 @@ describe('UsuariosAcessoPage', () => {
     vi.mocked(listarPerfis).mockReset().mockResolvedValue(PERFIS)
     vi.mocked(criarUsuario).mockReset()
     vi.mocked(atribuirPerfil).mockReset()
+    vi.mocked(redefinirSenha).mockReset()
   })
 
   it('lista os usuários com o perfil de cada um', async () => {
@@ -155,11 +157,55 @@ describe('UsuariosAcessoPage', () => {
     expect(await screen.findByText('E-mail já cadastrado: carla@pcp.com')).toBeInTheDocument()
   })
 
+  it('redefine a senha de quem está no alcance do gestor, sem permitir a própria nem a de Administrador', async () => {
+    vi.mocked(redefinirSenha).mockResolvedValue()
+    montar()
+    await screen.findByText('Bia')
+
+    expect(screen.queryByRole('button', { name: 'Redefinir a senha de Ana Teste' })).not.toBeInTheDocument() // a própria
+    expect(screen.queryByRole('button', { name: 'Redefinir a senha de Chefe' })).not.toBeInTheDocument() // acima do alcance
+
+    await userEvent.click(screen.getByRole('button', { name: 'Redefinir a senha de Bia' }))
+    await userEvent.type(await screen.findByLabelText('Senha provisória nova'), 'outraProvisoria')
+    await userEvent.click(screen.getByRole('button', { name: 'Redefinir senha' }))
+
+    await waitFor(() => expect(redefinirSenha).toHaveBeenCalled())
+    expect(vi.mocked(redefinirSenha).mock.calls[0].slice(0, 2)).toEqual(['u-bia', 'outraProvisoria'])
+    await waitFor(() => expect(screen.queryByLabelText('Senha provisória nova')).not.toBeInTheDocument())
+  })
+
+  it('a redefinição valida o tamanho da senha provisória antes de enviar', async () => {
+    montar()
+    await userEvent.click(await screen.findByRole('button', { name: 'Redefinir a senha de Bia' }))
+
+    await userEvent.type(await screen.findByLabelText('Senha provisória nova'), 'curta')
+    await userEvent.click(screen.getByRole('button', { name: 'Redefinir senha' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/no mínimo 8 caracteres/i)
+
+    await userEvent.clear(screen.getByLabelText('Senha provisória nova'))
+    await userEvent.type(screen.getByLabelText('Senha provisória nova'), 'é'.repeat(37))
+    await userEvent.click(screen.getByRole('button', { name: 'Redefinir senha' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/longa demais/i)
+    expect(redefinirSenha).not.toHaveBeenCalled()
+  })
+
+  it('mostra o motivo do servidor quando a redefinição é recusada', async () => {
+    vi.mocked(redefinirSenha).mockRejectedValue(erroHttp(403, { detail: 'Você não pode redefinir a senha deste usuário.' }))
+    montar()
+    await userEvent.click(await screen.findByRole('button', { name: 'Redefinir a senha de Bia' }))
+    await userEvent.type(await screen.findByLabelText('Senha provisória nova'), 'outraProvisoria')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Redefinir senha' }))
+
+    expect(await screen.findByText('Você não pode redefinir a senha deste usuário.')).toBeInTheDocument()
+  })
+
   it('sem USUARIO_GERENCIAR só consulta: sem "Novo usuário" e sem trocar perfil', async () => {
     montar(['ACESSO_VISUALIZAR'])
     await screen.findByText('Bia')
 
     expect(screen.queryByRole('button', { name: 'Novo usuário' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Alterar o perfil de/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Redefinir a senha de/ })).not.toBeInTheDocument()
   })
 })
