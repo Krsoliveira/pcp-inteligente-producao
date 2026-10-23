@@ -113,14 +113,14 @@ export function CelulaDeCabecalho<T>({ chave, controle, rotulo, align }: CelulaD
         {rotulo}
         {!coluna.semOrdenacao && (
           <Tooltip title={ativa ? (controle.crescente ? 'Crescente — clique para inverter' : 'Decrescente — clique para remover') : 'Ordenar'}>
-            <IconButton size="small" aria-label={`Ordenar ${rotulo}`} color={ativa ? 'primary' : 'default'} onClick={() => controle.alternarOrdem(chave)}>
+            <IconButton size="small" sx={{ p: 0.25 }} aria-label={`Ordenar ${rotulo}`} color={ativa ? 'primary' : 'default'} onClick={() => controle.alternarOrdem(chave)}>
               <IconeDeOrdem sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
         )}
         {!coluna.semFiltro && (
           <Tooltip title="Filtrar">
-            <IconButton size="small" aria-label={`Filtrar ${rotulo}`} color={filtroAtivo ? 'primary' : 'default'} onClick={(e) => setAncora(e.currentTarget)}>
+            <IconButton size="small" sx={{ p: 0.25 }} aria-label={`Filtrar ${rotulo}`} color={filtroAtivo ? 'primary' : 'default'} onClick={(e) => setAncora(e.currentTarget)}>
               {filtroAtivo ? <FilterAltIcon sx={{ fontSize: 16 }} /> : <FilterAltOutlinedIcon sx={{ fontSize: 16 }} />}
             </IconButton>
           </Tooltip>

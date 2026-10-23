@@ -103,6 +103,10 @@ export const theme = createTheme(
             borderBottom: '1px solid rgba(0,0,0,0.05)',
             paddingTop: 10,
             paddingBottom: 10,
+            // 12 px (e não os 16 do MUI): com os ícones de ordenar e filtrar no título, tabelas de
+            // 8 colunas, como a de Estoque, passavam da largura da tela.
+            paddingLeft: 12,
+            paddingRight: 12,
           },
         },
       },
