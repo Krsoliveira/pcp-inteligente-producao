@@ -55,3 +55,4 @@ Regras dos ADRs deste projeto:
 | [0020](adr/0020-controle-de-acesso-por-perfil.md) | Controle de acesso por perfis de permissões | Aceito |
 | [0021](adr/0021-troca-de-senha-no-primeiro-acesso.md) | Troca de senha no primeiro acesso e redefinição pelo gestor | Aceito |
 | [0022](adr/0022-dashboard-acionavel.md) | Dashboard acionável: indicadores que abrem a consulta e gráficos que dizem algo | Aceito |
+| [0023](adr/0023-relatorios-consumo-de-ordens.md) | Relatórios: primeiro, o consumo de ordens por componente | Aceito |
