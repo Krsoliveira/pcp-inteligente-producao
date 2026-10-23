@@ -127,6 +127,24 @@ class ConsultarOrdensProducaoTest {
         assertThat(pagina.itens()).extracting(OrdemProducao::getCodigo).containsExactly("OP-D-001");
     }
 
+    @Test
+    @DisplayName("atrasadas: só as abertas depois do fim planejado; no próprio dia do fim ainda não está atrasada")
+    void filtroPorAtrasadas() {
+        var cancelada = ordem("OP-E-001");
+        cancelada.alterarStatusPara(StatusOrdemProducao.CANCELADA, "teste");
+        repositorio.salvar(cancelada);
+        LocalDate fim = LocalDate.of(2026, 1, 10); // fim planejado das ordens do cenário
+
+        var noDiaDoFim = casoDeUso.pesquisar(
+                new FiltroOrdens(null, null, null, null, fim), PedidoDePagina.de(0, 25));
+        var umDiaDepois = casoDeUso.pesquisar(
+                new FiltroOrdens(null, null, null, null, fim.plusDays(1)), PedidoDePagina.de(0, 25));
+
+        assertThat(noDiaDoFim.total()).isZero();
+        assertThat(umDiaDepois.total()).isEqualTo(8); // as 8 abertas; a cancelada não conta
+        assertThat(umDiaDepois.itens()).extracting(OrdemProducao::getCodigo).doesNotContain("OP-E-001");
+    }
+
     private static OrdemProducao ordemComInicio(String codigo, LocalDate inicio) {
         return OrdemProducao.criar(codigo, UUID.randomUUID(), UUID.randomUUID(), null, "Usinagem", 10,
                 inicio, inicio.plusDays(5), "teste");

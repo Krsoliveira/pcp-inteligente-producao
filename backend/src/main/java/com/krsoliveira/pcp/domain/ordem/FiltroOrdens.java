@@ -11,8 +11,10 @@ import java.time.LocalDate;
  * @param status somente ordens neste status
  * @param de     início planejado a partir desta data (inclusive)
  * @param ate    início planejado até esta data (inclusive)
+ * @param atrasadasEm quando informado, somente ordens abertas cujo fim planejado é anterior a este dia
+ *                    (a mesma regra de {@link OrdemProducao#estaAtrasada}); {@code null} não filtra
  */
-public record FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate de, LocalDate ate) {
+public record FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate de, LocalDate ate, LocalDate atrasadasEm) {
 
     /** Código tem no máximo 30 caracteres; mais que isso nunca casa, então não vale processar. */
     static final int TAMANHO_MAXIMO_DA_BUSCA = 100;
@@ -31,12 +33,17 @@ public record FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate d
         }
     }
 
+    /** Pesquisa sem o filtro de atrasadas. */
+    public FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate de, LocalDate ate) {
+        this(busca, status, de, ate, null);
+    }
+
     /** Pesquisa sem período. */
     public FiltroOrdens(String busca, StatusOrdemProducao status) {
-        this(busca, status, null, null);
+        this(busca, status, null, null, null);
     }
 
     public static FiltroOrdens semFiltro() {
-        return new FiltroOrdens(null, null, null, null);
+        return new FiltroOrdens(null, null, null, null, null);
     }
 }
