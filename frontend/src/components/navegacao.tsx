@@ -8,6 +8,7 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLongOutlined'
 import WarehouseIcon from '@mui/icons-material/WarehouseOutlined'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import GroupsIcon from '@mui/icons-material/GroupsOutlined'
+import AssessmentIcon from '@mui/icons-material/AssessmentOutlined'
 import type { Permissao } from '../types'
 
 export interface NavItem {
@@ -57,6 +58,15 @@ export const NAV_SECTIONS: NavSection[] = [
     titulo: 'Produção',
     itens: [
       { label: 'Ordens', icon: <ListAltIcon fontSize="small" />, rota: '/ordens', permissoes: ['ORDEM_VISUALIZAR'] },
+    ],
+  },
+  {
+    titulo: 'Relatórios',
+    itens: [
+      {
+        label: 'Consumo de ordens', icon: <AssessmentIcon fontSize="small" />, rota: '/relatorios/consumo-de-ordens',
+        permissoes: ['RELATORIO_CONSUMO_VISUALIZAR'],
+      },
     ],
   },
   {

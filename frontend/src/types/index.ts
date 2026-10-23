@@ -433,6 +433,29 @@ export interface FiltroOrdens {
   tamanho?: number
 }
 
+/** Consumo total de um componente numa ordem concluída (soma dos lotes); `desvio` = consumido − planejado. */
+export interface LinhaDeConsumoDeOrdem {
+  ordemId: string
+  ordemCodigo: string
+  fimPlanejado: string
+  produtoCodigo: string
+  produtoDescricao: string
+  componenteCodigo: string
+  componenteDescricao: string
+  unidadeDeMedida: string
+  quantidadePlanejada: number
+  quantidadeConsumida: number | null
+  desvio: number | null
+}
+
+/** Relatório de consumo de ordens concluídas com fim planejado entre `de` e `ate`. */
+export interface RelatorioConsumoDeOrdens {
+  de: string
+  ate: string
+  totalDeOrdens: number
+  linhas: LinhaDeConsumoDeOrdem[]
+}
+
 /** Totais do dashboard, calculados no servidor. */
 export interface ResumoProducao {
   totalOrdens: number
@@ -512,6 +535,7 @@ export type Permissao =
   | 'NOTA_FISCAL_VISUALIZAR' | 'NOTA_FISCAL_REGISTRAR'
   | 'ESTOQUE_VISUALIZAR'
   | 'AUDITORIA_VISUALIZAR'
+  | 'RELATORIO_CONSUMO_VISUALIZAR'
   | 'ACESSO_VISUALIZAR' | 'PERFIL_GERENCIAR' | 'USUARIO_GERENCIAR'
 
 /** Quem está logado e o que pode fazer (GET /acessos/eu). */
