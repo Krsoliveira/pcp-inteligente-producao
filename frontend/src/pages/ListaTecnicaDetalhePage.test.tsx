@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ativarListaTecnica, buscarListaTecnicaPorId, listarListasTecnicas, retirarListaTecnicaDeUso } from '../api/listasTecnicas'
+import { ativarListaTecnica, buscarListaTecnicaPorId, cadastrarListaTecnica, listarListasTecnicas, retirarListaTecnicaDeUso } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
 import { erroDeRede, erroHttp } from '../test/erros'
 import { listaTecnica, material } from '../test/fabricas'
@@ -13,6 +13,7 @@ vi.mock('../api/listasTecnicas', () => ({
   ativarListaTecnica: vi.fn(),
   retirarListaTecnicaDeUso: vi.fn(),
   listarListasTecnicas: vi.fn(),
+  cadastrarListaTecnica: vi.fn(),
 }))
 vi.mock('../api/materiais', () => ({ listarMateriais: vi.fn() }))
 
@@ -20,6 +21,7 @@ const buscarMock = vi.mocked(buscarListaTecnicaPorId)
 const ativarMock = vi.mocked(ativarListaTecnica)
 const retirarMock = vi.mocked(retirarListaTecnicaDeUso)
 const versoesMock = vi.mocked(listarListasTecnicas)
+const cadastrarMock = vi.mocked(cadastrarListaTecnica)
 const materiaisMock = vi.mocked(listarMateriais)
 
 const PADRAO = '/listas-tecnicas/:id'
@@ -34,6 +36,7 @@ describe('ListaTecnicaDetalhePage', () => {
     ativarMock.mockReset()
     retirarMock.mockReset()
     versoesMock.mockReset()
+    cadastrarMock.mockReset()
     versoesMock.mockResolvedValue([listaTecnica()])
     materiaisMock.mockReset()
     materiaisMock.mockResolvedValue([
@@ -122,6 +125,42 @@ describe('ListaTecnicaDetalhePage', () => {
     await screen.findByRole('heading', { name: 'Viga metálica' })
 
     expect(screen.queryByText('Outras versões desta lista')).not.toBeInTheDocument()
+  })
+
+  it('oferece criar uma nova versão a partir da que está aberta, em qualquer status', async () => {
+    buscarMock.mockResolvedValue(listaTecnica({ status: 'OBSOLETA' }))
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Nova versão a partir desta' }))
+
+    expect(await screen.findByText('Nova versão a partir da v1')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Versão/)).toHaveValue('v2')
+  })
+
+  it('sem LISTA_CADASTRAR não oferece criar uma nova versão', async () => {
+    renderizarTela(<ListaTecnicaDetalhePage />, {
+      rotas: ['/listas-tecnicas/l-1'], padrao: PADRAO, permissoes: ['LISTA_VISUALIZAR_TODAS', 'LISTA_ATIVAR'],
+    })
+
+    await screen.findByRole('heading', { name: 'Viga metálica' })
+
+    expect(screen.queryByRole('button', { name: 'Nova versão a partir desta' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ativar esta versão' })).toBeInTheDocument()
+  })
+
+  it('depois de criar a versão nova, abre o detalhe dela', async () => {
+    const v1 = listaTecnica({ id: 'l-1', versao: 'v1' })
+    const v2 = listaTecnica({ id: 'l-9', versao: 'v2' })
+    let criada = false
+    versoesMock.mockImplementation(async () => (criada ? [v1, v2] : [v1]))
+    cadastrarMock.mockImplementation(async () => { criada = true })
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Nova versão a partir desta' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Criar versão' }))
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent('/listas-tecnicas/l-9'))
+    expect(cadastrarMock.mock.calls[0][0]).toMatchObject({ materialId: 'm-1', versao: 'v2' })
   })
 
   it('diz "não encontrada" apenas quando o sistema responde 404', async () => {
