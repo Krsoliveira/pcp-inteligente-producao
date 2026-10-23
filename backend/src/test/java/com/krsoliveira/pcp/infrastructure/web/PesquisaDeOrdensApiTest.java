@@ -150,6 +150,51 @@ class PesquisaDeOrdensApiTest {
     }
 
     @Test
+    @DisplayName("filtra pelo centro de trabalho (nome exato) e pelo período do fim planejado")
+    void filtroPorCentroEFim() {
+        assertThat(pesquisar("?centro=Usinagem").getBody()).containsEntry("total", 7);
+        assertThat(pesquisar("?centro=Soldagem").getBody()).containsEntry("total", 0);
+        assertThat(pesquisar("?centro=usinagem").getBody()).containsEntry("total", 0); // nome exato, não "contém"
+        assertThat(pesquisar("?centro=").getBody()).containsEntry("total", 7); // em branco não filtra
+        assertThat(pesquisar("?centro=Usinagem&atrasadas=true").getBody()).containsEntry("total", 5);
+        assertThat(pesquisar("?fimDe=2999-01-10").getBody()).containsEntry("total", 2);
+        assertThat(pesquisar("?fimAte=2020-01-09").getBody()).containsEntry("total", 0);
+        assertThat(pesquisar("?fimDe=2020-01-01&fimAte=2020-01-31").getBody()).containsEntry("total", 5);
+        assertThat(pesquisar("?fimDe=2020-02-01&fimAte=2020-01-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    @Test
+    @DisplayName("atrasos por centro: só centros com ordens abertas depois do fim planejado, com os dias da mais antiga")
+    @SuppressWarnings("unchecked")
+    void atrasosPorCentro() {
+        ResponseEntity<List> resposta = rest.exchange("/api/v1/dashboard/atrasos-por-centro", HttpMethod.GET, comAuth(null), List.class);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
+        List<Map<String, Object>> centros = resposta.getBody();
+        assertThat(centros).hasSize(1);
+        assertThat(centros.get(0)).containsEntry("centroDeTrabalho", "Usinagem").containsEntry("ordensAtrasadas", 5);
+        assertThat(((Number) centros.get(0).get("diasDeAtrasoDaMaisAntiga")).longValue()).isGreaterThan(365);
+    }
+
+    @Test
+    @DisplayName("entregas por mês: um item por mês em ordem, no formato AAAA-MM, e a quantidade de meses é limitada")
+    @SuppressWarnings("unchecked")
+    void entregasPorMes() {
+        List<Map<String, Object>> padrao = rest.exchange("/api/v1/dashboard/entregas-por-mes", HttpMethod.GET, comAuth(null), List.class).getBody();
+        List<Map<String, Object>> tres = rest.exchange("/api/v1/dashboard/entregas-por-mes?meses=3", HttpMethod.GET, comAuth(null), List.class).getBody();
+        List<Map<String, Object>> exagero = rest.exchange("/api/v1/dashboard/entregas-por-mes?meses=999", HttpMethod.GET, comAuth(null), List.class).getBody();
+
+        assertThat(padrao).hasSize(12);
+        assertThat(tres).hasSize(3);
+        assertThat(exagero).hasSize(24);
+        assertThat(padrao).extracting(m -> (String) m.get("mes")).allSatisfy(mes -> assertThat(mes).matches("\\d{4}-\\d{2}"))
+                .isSorted();
+        assertThat(padrao.get(0)).containsKeys("noPrazo", "comAtraso", "abertasAtrasadas", "abertasNoPrazo");
+        // as ordens da massa têm fim em 2020 e em 2999: fora da janela, a série vem zerada
+        assertThat(padrao).allSatisfy(m -> assertThat(m).containsEntry("noPrazo", 0).containsEntry("abertasAtrasadas", 0));
+    }
+
+    @Test
     @DisplayName("período invertido devolve 422 e data inválida devolve 400")
     void periodoInvalido() {
         assertThat(pesquisar("?de=2026-09-30&ate=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
@@ -182,6 +227,8 @@ class PesquisaDeOrdensApiTest {
     void exigeAutenticacao() {
         assertThat(rest.getForEntity(ORDENS + "/pesquisa", Map.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(rest.getForEntity("/api/v1/dashboard/resumo", Map.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(rest.getForEntity("/api/v1/dashboard/entregas-por-mes", List.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(rest.getForEntity("/api/v1/dashboard/atrasos-por-centro", List.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test

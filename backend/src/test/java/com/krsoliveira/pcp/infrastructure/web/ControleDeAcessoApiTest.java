@@ -131,6 +131,8 @@ class ControleDeAcessoApiTest {
         assertThat(chamar(token, HttpMethod.GET, "/api/v1/ordens-producao/pesquisa", null).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(chamar(token, HttpMethod.GET, "/api/v1/materiais/pesquisa", null).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(chamar(token, HttpMethod.GET, "/api/v1/dashboard/resumo", null).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(lista(token, "/api/v1/dashboard/entregas-por-mes")).hasSize(12); // lista() já confere o 200
+        lista(token, "/api/v1/dashboard/atrasos-por-centro");
 
         Map<String, Map<String, Object>> proibidos = Map.of(
                 "POST /api/v1/materiais", Map.of("descricao", "X", "tipo", "MATERIA_PRIMA", "unidadeDeMedida", "kg"),

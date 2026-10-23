@@ -2,6 +2,7 @@ package com.krsoliveira.pcp.infrastructure.persistence;
 
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.ordem.AtrasoPorCentro;
 import com.krsoliveira.pcp.domain.ordem.FiltroOrdens;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
@@ -76,6 +77,15 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
                 condicoes.add(ordem.get("status").in(statusAbertos()));
                 condicoes.add(cb.lessThan(ordem.get("fimPlanejado"), filtro.atrasadasEm()));
             }
+            if (filtro.centroDeTrabalho() != null) {
+                condicoes.add(cb.equal(ordem.get("centroDeTrabalho"), filtro.centroDeTrabalho()));
+            }
+            if (filtro.fimDe() != null) {
+                condicoes.add(cb.greaterThanOrEqualTo(ordem.get("fimPlanejado"), filtro.fimDe()));
+            }
+            if (filtro.fimAte() != null) {
+                condicoes.add(cb.lessThanOrEqualTo(ordem.get("fimPlanejado"), filtro.fimAte()));
+            }
             if (filtro.busca() != null) {
                 condicoes.add(cb.like(cb.lower(ordem.get("codigo")),
                         PesquisaJpa.contem(filtro.busca()), PesquisaJpa.ESCAPE));
@@ -108,6 +118,20 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
     private static List<StatusOrdemProducao> statusAbertos() {
         return Arrays.stream(StatusOrdemProducao.values())
                 .filter(StatusOrdemProducao::estaAberta)
+                .toList();
+    }
+
+    @Override
+    public List<OrdemProducao> listarComFimPlanejadoEntre(LocalDate de, LocalDate ate) {
+        return springData.findByFimPlanejadoBetween(de, ate).stream()
+                .map(OrdemProducaoJpaEntity::paraDominio)
+                .toList();
+    }
+
+    @Override
+    public List<AtrasoPorCentro> atrasadasPorCentro(LocalDate hoje) {
+        return springData.atrasadasAgrupadasPorCentro(statusAbertos(), hoje).stream()
+                .map(linha -> new AtrasoPorCentro((String) linha[0], (Long) linha[1], (LocalDate) linha[2]))
                 .toList();
     }
 
