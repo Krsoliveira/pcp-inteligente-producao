@@ -23,6 +23,7 @@ import { EstoquePage } from './pages/EstoquePage'
 import { EstoqueResultadosPage } from './pages/EstoqueResultadosPage'
 import { EstoqueMaterialPage } from './pages/EstoqueMaterialPage'
 import { PerfisAcessoPage } from './pages/PerfisAcessoPage'
+import { TrocarSenhaPage } from './pages/TrocarSenhaPage'
 import { UsuariosAcessoPage } from './pages/UsuariosAcessoPage'
 
 const router = createBrowserRouter([
@@ -40,6 +41,8 @@ const router = createBrowserRouter([
       {
         element: <Layout />,
         children: [
+          // Troca de senha: obrigatória no primeiro acesso (ADR-0021) e voluntária depois; não exige permissão.
+          { path: '/minha-senha', element: <TrocarSenhaPage /> },
           // Cada grupo exige a permissão da área (conforto; o servidor confere de novo em cada endpoint).
           // O painel é a entrada do sistema: sem acesso a ele, leva para a primeira tela permitida.
           {
