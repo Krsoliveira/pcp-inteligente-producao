@@ -114,6 +114,13 @@ export const theme = createTheme(
           root: { fontSize: '0.875rem' },
         },
       },
+      // O vão do contorno (notch) é calculado com a fonte do campo; com o rótulo maior que o texto
+      // (1rem x 0,875rem) a borda cortava o fim do rótulo, como no asterisco de "Emissão *".
+      MuiInputLabel: {
+        styleOverrides: {
+          root: { fontSize: '0.875rem' },
+        },
+      },
       MuiListSubheader: {
         styleOverrides: {
           root: {
