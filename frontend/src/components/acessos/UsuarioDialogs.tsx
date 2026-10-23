@@ -9,7 +9,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import MenuItem from '@mui/material/MenuItem'
 import TextField from '@mui/material/TextField'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { atribuirPerfil, criarUsuario } from '../../api/acessos'
+import { atribuirPerfil, criarUsuario, redefinirSenha } from '../../api/acessos'
 import type { PerfilAcesso, Permissao, UsuarioAcesso } from '../../types'
 import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
 
@@ -52,6 +52,7 @@ export function NovoUsuarioDialog({ aberto, onFechar, perfis, permissoesDoUsuari
   const salvar = () => {
     if (!nome.trim() || !email.trim() || !perfilId) { setErro('Preencha o nome, o e-mail e o perfil.'); return }
     if (senha.length < 8) { setErro('A senha provisória deve ter no mínimo 8 caracteres.'); return }
+    if (new TextEncoder().encode(senha).length > 72) { setErro('A senha provisória é longa demais. Use uma mais curta.'); return }
     mutate()
   }
 
@@ -65,7 +66,8 @@ export function NovoUsuarioDialog({ aberto, onFechar, perfis, permissoesDoUsuari
         <TextField label="E-mail *" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth sx={{ mb: 2 }}
           slotProps={{ htmlInput: { maxLength: 150 } }} />
         <TextField label="Senha provisória *" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} fullWidth sx={{ mb: 2 }}
-          autoComplete="new-password" helperText="Mínimo de 8 caracteres. Informe-a ao usuário por um canal seguro." />
+          autoComplete="new-password"
+          helperText="Mínimo de 8 caracteres. Informe-a ao usuário por um canal seguro: ele terá de trocá-la no primeiro acesso." />
         <TextField select label="Perfil *" value={perfilId} onChange={(e) => setPerfilId(e.target.value)} fullWidth
           helperText={concediveis.length < perfis.length ? 'Só aparecem os perfis que você pode conceder (os que não passam do seu acesso).' : undefined}>
           {concediveis.map((p) => <MenuItem key={p.id} value={p.id}>{p.nome}</MenuItem>)}
@@ -124,6 +126,56 @@ export function TrocarPerfilDialog({ usuario, onFechar, perfis, permissoesDoUsua
         <Button onClick={onFechar} disabled={isPending}>Cancelar</Button>
         <Button variant="contained" onClick={() => mutate()} disabled={isPending || !perfilId || perfilId === usuario?.perfilId}>
           {isPending ? 'Salvando…' : 'Salvar'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+interface RedefinirSenhaDialogProps {
+  /** Usuário cuja senha será redefinida; `null` mantém o diálogo fechado. */
+  usuario: UsuarioAcesso | null
+  onFechar: () => void
+}
+
+/** O gestor define uma senha provisória nova (quem esqueceu a senha); o usuário a troca no próximo acesso. */
+export function RedefinirSenhaDialog({ usuario, onFechar }: RedefinirSenhaDialogProps) {
+  const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
+
+  useEffect(() => {
+    setSenha('')
+    setErro(null)
+  }, [usuario?.id])
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => redefinirSenha(usuario!.id, senha),
+    onSuccess: onFechar,
+    onError: (e: unknown) => setErro(mensagemDeErroDaApi(e, 'Não foi possível redefinir a senha.')),
+  })
+
+  const salvar = () => {
+    if (senha.length < 8) { setErro('A senha provisória deve ter no mínimo 8 caracteres.'); return }
+    if (new TextEncoder().encode(senha).length > 72) { setErro('A senha provisória é longa demais. Use uma mais curta.'); return }
+    mutate()
+  }
+
+  return (
+    <Dialog open={usuario !== null} onClose={isPending ? undefined : onFechar} fullWidth maxWidth="xs">
+      <DialogTitle>Redefinir a senha de {usuario?.nome}</DialogTitle>
+      <DialogContent>
+        {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
+        <DialogContentText sx={{ mb: 2 }}>
+          {usuario?.email}. A senha atual deixa de valer agora, e a nova é provisória: o usuário precisa trocá-la ao
+          entrar. A redefinição fica registrada no histórico.
+        </DialogContentText>
+        <TextField label="Senha provisória nova" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} fullWidth
+          autoComplete="new-password" helperText="Mínimo de 8 caracteres. Informe-a ao usuário por um canal seguro." />
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onFechar} disabled={isPending}>Cancelar</Button>
+        <Button color="warning" variant="contained" onClick={salvar} disabled={isPending}>
+          {isPending ? 'Redefinindo…' : 'Redefinir senha'}
         </Button>
       </DialogActions>
     </Dialog>

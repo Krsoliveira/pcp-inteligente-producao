@@ -28,6 +28,8 @@ const ACAO_LABEL: Record<AcaoAuditoria, string> = {
   USUARIO_REGISTRADO: 'Usuário registrado',
   EXCLUIDO: 'Excluído',
   PERFIL_ATRIBUIDO: 'Perfil atribuído',
+  SENHA_ALTERADA: 'Senha alterada',
+  SENHA_REDEFINIDA: 'Senha redefinida',
 }
 
 const CAMPO_LABEL: Record<string, string> = {
@@ -71,6 +73,7 @@ const CAMPO_LABEL: Record<string, string> = {
   permissoes: 'Permissões',
   permissoesAdicionadas: 'Permissões adicionadas',
   permissoesRemovidas: 'Permissões removidas',
+  eraProvisoria: 'Era provisória',
 }
 
 /** Rótulos de status e tipos (os eventos guardam as constantes do backend). */
@@ -118,6 +121,7 @@ const constanteLegivel = (constante: string) => {
 
 function formatarValor(campo: string, valor: unknown): string {
   if (valor == null || valor === '') return '—'
+  if (typeof valor === 'boolean') return valor ? 'Sim' : 'Não'
   const texto = String(valor)
   if (CAMPOS_DE_PERMISSOES.has(campo)) return texto.split(',').map((p) => constanteLegivel(p.trim())).join(', ')
   if (CAMPOS_NUMERICOS.has(campo) && !Number.isNaN(Number(texto))) {

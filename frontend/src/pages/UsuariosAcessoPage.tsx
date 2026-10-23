@@ -15,10 +15,11 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import GroupsIcon from '@mui/icons-material/GroupsOutlined'
+import LockResetIcon from '@mui/icons-material/LockReset'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import { useQuery } from '@tanstack/react-query'
 import { listarPerfis, listarUsuarios } from '../api/acessos'
-import { NovoUsuarioDialog, TrocarPerfilDialog } from '../components/acessos/UsuarioDialogs'
+import { NovoUsuarioDialog, RedefinirSenhaDialog, TrocarPerfilDialog } from '../components/acessos/UsuarioDialogs'
 import { CelulaDeCabecalho, ResumoDaTabela, useTabelaInterativa, type Coluna } from '../components/consulta/TabelaInterativa'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
@@ -40,6 +41,7 @@ export function UsuariosAcessoPage() {
   const { usuario: eu, permissoes, tem } = usePermissoes()
   const [novoAberto, setNovoAberto] = useState(false)
   const [trocando, setTrocando] = useState<UsuarioAcesso | null>(null)
+  const [redefinindo, setRedefinindo] = useState<UsuarioAcesso | null>(null)
 
   const usuariosQuery = useQuery({ queryKey: ['acessos', 'usuarios'], queryFn: listarUsuarios })
   const perfisQuery = useQuery({ queryKey: ['acessos', 'perfis'], queryFn: listarPerfis })
@@ -85,7 +87,7 @@ export function UsuariosAcessoPage() {
                 <TableHead>
                   <TableRow>
                     {COLUNAS.map((c) => <CelulaDeCabecalho key={c.chave} chave={c.chave} rotulo={c.rotulo} controle={tabela.controle} />)}
-                    <TableCell align="center" sx={{ width: 90 }}>Ações</TableCell>
+                    <TableCell align="center" sx={{ width: 110 }}>Ações</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -97,11 +99,18 @@ export function UsuariosAcessoPage() {
                       <TableCell><Typography variant="body2" noWrap>{formatarDataHora(u.criadoEm)}</Typography></TableCell>
                       <TableCell align="center">
                         {podeTrocar(u) && (
-                          <Tooltip title="Alterar perfil">
-                            <IconButton size="small" aria-label={`Alterar o perfil de ${u.nome}`} onClick={() => setTrocando(u)}>
-                              <SwapHorizIcon sx={{ fontSize: 18 }} />
-                            </IconButton>
-                          </Tooltip>
+                          <>
+                            <Tooltip title="Alterar perfil">
+                              <IconButton size="small" aria-label={`Alterar o perfil de ${u.nome}`} onClick={() => setTrocando(u)}>
+                                <SwapHorizIcon sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Redefinir senha">
+                              <IconButton size="small" aria-label={`Redefinir a senha de ${u.nome}`} onClick={() => setRedefinindo(u)}>
+                                <LockResetIcon sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </>
                         )}
                       </TableCell>
                     </TableRow>
@@ -114,6 +123,7 @@ export function UsuariosAcessoPage() {
       </Card>
 
       <NovoUsuarioDialog aberto={novoAberto} onFechar={() => setNovoAberto(false)} perfis={perfis} permissoesDoUsuario={permissoes} />
+      <RedefinirSenhaDialog usuario={redefinindo} onFechar={() => setRedefinindo(null)} />
       <TrocarPerfilDialog usuario={trocando} onFechar={() => setTrocando(null)} perfis={perfis} permissoesDoUsuario={permissoes} />
     </Box>
   )
