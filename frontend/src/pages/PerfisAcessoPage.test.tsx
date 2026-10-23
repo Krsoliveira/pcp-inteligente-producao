@@ -17,6 +17,7 @@ vi.mock('../api/acessos', () => ({
 }))
 
 const CATALOGO: PermissaoDoCatalogo[] = [
+  { permissao: 'MATERIAL_VISUALIZAR', area: 'Materiais', descricao: 'Consultar materiais' },
   { permissao: 'ORDEM_VISUALIZAR', area: 'Ordens de produção', descricao: 'Consultar ordens' },
   { permissao: 'ORDEM_CRIAR', area: 'Ordens de produção', descricao: 'Criar ordens' },
   { permissao: 'LISTA_ATIVAR', area: 'Listas técnicas', descricao: 'Ativar uma versão' },
@@ -186,6 +187,28 @@ describe('PerfisAcessoPage', () => {
     expect(screen.queryByRole('button', { name: /^Editar perfil/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Excluir perfil/ })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Ver perfil Operador' })).toBeInTheDocument()
+  })
+
+  it('avisa que sem "Consultar materiais" as telas mostram só códigos internos, e some ao marcar', async () => {
+    montar()
+    await userEvent.click(await screen.findByRole('button', { name: 'Novo perfil' }))
+    await screen.findByLabelText('Consultar ordens')
+    expect(screen.queryByText(/só códigos internos/i)).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByLabelText('Consultar ordens'))
+    expect(await screen.findByText(/só códigos internos/i)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByLabelText('Consultar materiais'))
+    await waitFor(() => expect(screen.queryByText(/só códigos internos/i)).not.toBeInTheDocument())
+  })
+
+  it('não avisa quando o perfil não tem nada que dependa dos nomes dos materiais', async () => {
+    montar()
+    await userEvent.click(await screen.findByRole('button', { name: 'Novo perfil' }))
+
+    await userEvent.click(await screen.findByLabelText('Ativar uma versão'))
+
+    expect(screen.queryByText(/só códigos internos/i)).not.toBeInTheDocument()
   })
 
   it('mostra o motivo quando não consegue carregar os perfis', async () => {

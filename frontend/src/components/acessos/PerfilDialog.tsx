@@ -33,6 +33,15 @@ interface PerfilDialogProps {
   podeVerHistorico: boolean
 }
 
+/**
+ * Permissões cujas telas mostram o código e o nome do material a partir do catálogo de materiais. Sem
+ * `MATERIAL_VISUALIZAR` elas continuam funcionando, mas só com códigos internos no lugar dos nomes.
+ */
+const PRECISAM_DOS_NOMES_DOS_MATERIAIS: Permissao[] = [
+  'LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS', 'LISTA_COMPARAR', 'LISTA_CADASTRAR',
+  'ORDEM_VISUALIZAR', 'ORDEM_CRIAR', 'CONSUMO_VISUALIZAR', 'NOTA_FISCAL_VISUALIZAR', 'NOTA_FISCAL_REGISTRAR',
+]
+
 /** Agrupa o catálogo por área, mantendo a ordem em que o servidor o devolve. */
 function porArea(catalogo: PermissaoDoCatalogo[]): Array<[string, PermissaoDoCatalogo[]]> {
   const grupos = new Map<string, PermissaoDoCatalogo[]>()
@@ -97,6 +106,9 @@ export function PerfilDialog({ aberto, onFechar, perfil, catalogo, permissoesDoU
     mutate()
   }
 
+  const faltaConsultarMateriais = !somenteLeitura && !marcadas.has('MATERIAL_VISUALIZAR')
+    && PRECISAM_DOS_NOMES_DOS_MATERIAIS.some((p) => marcadas.has(p))
+
   const titulo = !perfil ? 'Novo perfil de acesso' : somenteLeitura ? `Perfil ${perfil.nome}` : `Editar perfil ${perfil.nome}`
 
   return (
@@ -117,6 +129,13 @@ export function PerfilDialog({ aberto, onFechar, perfil, catalogo, permissoesDoU
         {perfil?.padraoDoAutocadastro && (
           <Alert severity="info" sx={{ mb: 2 }}>
             É o perfil de quem se cadastra sozinho. Ele não pode ser excluído; as permissões podem ser ajustadas.
+          </Alert>
+        )}
+
+        {faltaConsultarMateriais && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Sem a permissão <strong>Consultar materiais</strong>, as telas de listas técnicas, ordens, consumos e notas
+            mostram só códigos internos no lugar dos nomes dos materiais. Considere marcá-la também.
           </Alert>
         )}
 
