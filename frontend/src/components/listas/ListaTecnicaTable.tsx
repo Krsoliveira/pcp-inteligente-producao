@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { usePermissoes } from '../../hooks/usePermissoes'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import Table from '@mui/material/Table'
@@ -44,6 +45,7 @@ export function colunasDeListas(materialPorId: Map<string, Material>): Coluna<Li
 /** Linha clicável: abre o detalhe da lista técnica (/listas-tecnicas/:id). */
 export function ListaTecnicaTable({ listas, materialPorId, onAtivar, onRetirarDeUso, controle }: ListaTecnicaTableProps) {
   const navigate = useNavigate()
+  const { tem } = usePermissoes()
 
   return (
     <TableContainer>
@@ -75,7 +77,7 @@ export function ListaTecnicaTable({ listas, materialPorId, onAtivar, onRetirarDe
                 <TableCell align="center"><Typography variant="body2">{l.itens.length}</Typography></TableCell>
                 <TableCell><StatusListaBadge status={l.status} /></TableCell>
                 <TableCell align="center">
-                  {l.status === 'EM_REVISAO' && (
+                  {l.status === 'EM_REVISAO' && tem('LISTA_ATIVAR') && (
                     <Tooltip title="Ativar esta versão">
                       <IconButton size="small" color="success" aria-label={`Ativar versão ${l.versao}`}
                         onClick={(e) => { e.stopPropagation(); onAtivar(l.id) }}>
@@ -83,7 +85,7 @@ export function ListaTecnicaTable({ listas, materialPorId, onAtivar, onRetirarDe
                       </IconButton>
                     </Tooltip>
                   )}
-                  {l.status === 'ATIVA' && (
+                  {l.status === 'ATIVA' && tem('LISTA_RETIRAR_DE_USO') && (
                     <Tooltip title="Retirar de uso">
                       <IconButton size="small" color="warning" aria-label={`Retirar versão ${l.versao} de uso`}
                         onClick={(e) => { e.stopPropagation(); onRetirarDeUso(l) }}>

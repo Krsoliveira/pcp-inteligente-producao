@@ -1,27 +1,25 @@
-import { render, screen, within } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { listaTecnica, material } from '../../test/fabricas'
-import { SondaDeRota } from '../../test/renderizar'
+import { renderizarTela } from '../../test/renderizar'
+import type { Permissao } from '../../types'
 import { ListaTecnicaTable } from './ListaTecnicaTable'
 
 const materialPorId = new Map([['m-1', material({ id: 'm-1', codigo: '103000001', descricao: 'Viga metálica' })]])
 
-function montar(props: Partial<React.ComponentProps<typeof ListaTecnicaTable>> = {}) {
+function montar(props: Partial<React.ComponentProps<typeof ListaTecnicaTable>> = {}, permissoes?: Permissao[]) {
   const onAtivar = vi.fn()
   const onRetirarDeUso = vi.fn()
-  render(
-    <MemoryRouter>
-      <ListaTecnicaTable
-        listas={[listaTecnica({ id: 'l-1', versao: 'v1', status: 'ATIVA' })]}
-        materialPorId={materialPorId}
-        onAtivar={onAtivar}
-        onRetirarDeUso={onRetirarDeUso}
-        {...props}
-      />
-      <SondaDeRota />
-    </MemoryRouter>,
+  renderizarTela(
+    <ListaTecnicaTable
+      listas={[listaTecnica({ id: 'l-1', versao: 'v1', status: 'ATIVA' })]}
+      materialPorId={materialPorId}
+      onAtivar={onAtivar}
+      onRetirarDeUso={onRetirarDeUso}
+      {...props}
+    />,
+    { permissoes },
   )
   return { onAtivar, onRetirarDeUso }
 }
@@ -71,5 +69,29 @@ describe('ListaTecnicaTable', () => {
     expect(screen.getByTestId('rota')).toHaveTextContent(/^\/$/)
     await userEvent.click(screen.getByText('Viga metálica'))
     expect(screen.getByTestId('rota')).toHaveTextContent('/listas-tecnicas/l-1')
+  })
+
+  describe('conforme as permissões do perfil', () => {
+    const ativa = [listaTecnica({ id: 'l-1', versao: 'v1', status: 'ATIVA' })]
+    const emRevisao = [listaTecnica({ id: 'l-2', versao: 'v2', status: 'EM_REVISAO' })]
+
+    it('sem LISTA_RETIRAR_DE_USO não mostra o botão de retirar uma versão ativa', () => {
+      montar({ listas: ativa }, ['LISTA_VISUALIZAR_ATIVAS', 'LISTA_ATIVAR'])
+
+      expect(screen.queryByRole('button', { name: 'Retirar versão v1 de uso' })).not.toBeInTheDocument()
+    })
+
+    it('sem LISTA_ATIVAR não mostra o botão de ativar uma versão em revisão', () => {
+      montar({ listas: emRevisao }, ['LISTA_VISUALIZAR_ATIVAS', 'LISTA_RETIRAR_DE_USO'])
+
+      expect(screen.queryByRole('button', { name: 'Ativar versão v2' })).not.toBeInTheDocument()
+    })
+
+    it('com as permissões certas mostra cada botão', () => {
+      montar({ listas: [...ativa, ...emRevisao] }, ['LISTA_VISUALIZAR_TODAS', 'LISTA_ATIVAR', 'LISTA_RETIRAR_DE_USO'])
+
+      expect(screen.getByRole('button', { name: 'Retirar versão v1 de uso' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Ativar versão v2' })).toBeInTheDocument()
+    })
   })
 })

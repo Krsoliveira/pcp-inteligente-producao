@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { SePermitido } from '../components/SePermitido'
+import { usePermissoes } from '../hooks/usePermissoes'
 import { useNavigate } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -24,6 +26,7 @@ import type { OrdemProducao, StatusOrdem } from '../types'
 
 /** Primeira etapa: escolher o que consultar (ou abrir uma das 10 ordens mais recentes). */
 export function OrdensPage() {
+  const { tem } = usePermissoes()
   const navigate = useNavigate()
   const [dialogCriarAberto, setDialogCriarAberto] = useState(false)
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemProducao | null>(null)
@@ -55,9 +58,11 @@ export function OrdensPage() {
         subtitulo="Pesquise por código, status ou período de início, ou abra uma das mais recentes"
         breadcrumbs={[{ label: 'Produção' }, { label: 'Ordens' }]}
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogCriarAberto(true)}>
-            Nova Ordem
-          </Button>
+          <SePermitido qualquer={['ORDEM_CRIAR']}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogCriarAberto(true)}>
+              Nova Ordem
+            </Button>
+          </SePermitido>
         }
       />
 
@@ -71,7 +76,7 @@ export function OrdensPage() {
         ) : recentes.isError ? (
           <Alert severity="error" sx={{ m: 2 }}>{mensagemDeErroAoCarregar(recentes.error, 'Não foi possível carregar as ordens.')}</Alert>
         ) : (recentes.data?.itens.length ?? 0) === 0 ? (
-          <EmptyState Icone={ListAltIcon} titulo="Nenhuma ordem cadastrada" acaoLabel="Criar primeira ordem" onAcao={() => setDialogCriarAberto(true)} />
+          <EmptyState Icone={ListAltIcon} titulo="Nenhuma ordem cadastrada" acaoLabel={tem('ORDEM_CRIAR') ? 'Criar primeira ordem' : undefined} onAcao={() => setDialogCriarAberto(true)} />
         ) : (
           <>
           <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />

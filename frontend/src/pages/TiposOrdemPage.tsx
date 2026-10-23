@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { SePermitido } from '../components/SePermitido'
+import { usePermissoes } from '../hooks/usePermissoes'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Table from '@mui/material/Table'
@@ -37,6 +39,7 @@ const CORES_SUGERIDAS = [
 ]
 
 export function TiposOrdemPage() {
+  const { tem } = usePermissoes()
   const [dialogAberto, setDialogAberto] = useState(false)
   const [editando, setEditando] = useState<TipoOrdem | null>(null)
 
@@ -52,9 +55,11 @@ export function TiposOrdemPage() {
         subtitulo="Categorias para classificar ordens de produção"
         breadcrumbs={[{ label: 'Cadastros' }, { label: 'Tipos de Ordem' }]}
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
-            Novo Tipo
-          </Button>
+          <SePermitido qualquer={['TIPO_ORDEM_GERENCIAR']}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
+              Novo Tipo
+            </Button>
+          </SePermitido>
         }
       />
 
@@ -68,7 +73,7 @@ export function TiposOrdemPage() {
             Icone={LabelOutlinedIcon}
             titulo="Nenhum tipo de ordem cadastrado"
             descricao="Crie categorias como Produção Normal, Manutenção, Revenda ou Retrabalho para classificar suas ordens."
-            acaoLabel="Criar primeiro tipo"
+            acaoLabel={tem('TIPO_ORDEM_GERENCIAR') ? 'Criar primeiro tipo' : undefined}
             onAcao={() => setDialogAberto(true)}
           />
         ) : (
@@ -100,11 +105,13 @@ export function TiposOrdemPage() {
                       </Box>
                     </TableCell>
                     <TableCell align="center">
-                      <Tooltip title="Editar">
-                        <IconButton size="small" onClick={() => setEditando(t)}>
-                          <EditIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
+                      <SePermitido qualquer={['TIPO_ORDEM_GERENCIAR']}>
+                        <Tooltip title="Editar">
+                          <IconButton size="small" onClick={() => setEditando(t)}>
+                            <EditIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </SePermitido>
                     </TableCell>
                   </TableRow>
                 ))}

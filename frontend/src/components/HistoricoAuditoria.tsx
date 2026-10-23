@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePermissoes } from '../hooks/usePermissoes'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
@@ -25,6 +26,8 @@ const ACAO_LABEL: Record<AcaoAuditoria, string> = {
   LOTE_ALOCADO: 'Lote alocado em consumo',
   ENTRADA_REGISTRADA: 'Entrada registrada',
   USUARIO_REGISTRADO: 'Usuário registrado',
+  EXCLUIDO: 'Excluído',
+  PERFIL_ATRIBUIDO: 'Perfil atribuído',
 }
 
 const CAMPO_LABEL: Record<string, string> = {
@@ -64,6 +67,10 @@ const CAMPO_LABEL: Record<string, string> = {
   cor: 'Cor',
   perfil: 'Perfil',
   motivo: 'Motivo',
+  email: 'E-mail',
+  permissoes: 'Permissões',
+  permissoesAdicionadas: 'Permissões adicionadas',
+  permissoesRemovidas: 'Permissões removidas',
 }
 
 /** Rótulos de status e tipos (os eventos guardam as constantes do backend). */
@@ -83,8 +90,6 @@ const VALOR_LABEL: Record<string, string> = {
   PRODUTO_ACABADO: 'Produto acabado',
   SEMIACABADO: 'Semiacabado',
   MATERIA_PRIMA: 'Matéria-prima',
-  PLANEJADOR: 'Planejador',
-  GERENTE: 'Gerente',
 }
 
 /** Campos numéricos: exibidos no padrão brasileiro (vírgula decimal). */
@@ -103,9 +108,18 @@ const ehMudanca = (v: unknown): v is MudancaAuditoria =>
   typeof v === 'object' && v !== null && 'de' in v && 'para' in v
 
 /** Datas ISO viram DD/MM/YYYY; números e constantes (EM_PRODUCAO) viram texto legível. */
+const CAMPOS_DE_PERMISSOES = new Set(['permissoes', 'permissoesAdicionadas', 'permissoesRemovidas'])
+
+/** "ORDEM_CRIAR" vira "Ordem criar". */
+const constanteLegivel = (constante: string) => {
+  const texto = constante.replace(/_/g, ' ').toLowerCase()
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
 function formatarValor(campo: string, valor: unknown): string {
   if (valor == null || valor === '') return '—'
   const texto = String(valor)
+  if (CAMPOS_DE_PERMISSOES.has(campo)) return texto.split(',').map((p) => constanteLegivel(p.trim())).join(', ')
   if (CAMPOS_NUMERICOS.has(campo) && !Number.isNaN(Number(texto))) {
     return Number(texto).toLocaleString('pt-BR', { maximumFractionDigits: 4 })
   }
@@ -151,14 +165,19 @@ interface HistoricoAuditoriaProps {
  * o que aconteceu, quem fez, quando e o que mudou.
  */
 export function HistoricoAuditoria({ tipoEntidade, entidadeId, titulo = 'Histórico' }: HistoricoAuditoriaProps) {
+  const { tem } = usePermissoes()
   const [tamanho, setTamanho] = useState(TAMANHO_PAGINA)
 
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['auditoria', tipoEntidade, entidadeId, tamanho],
     queryFn: () => consultarEventosAuditoria({ tipoEntidade, entidadeId, tamanho }),
     placeholderData: keepPreviousData,
+    enabled: tem('AUDITORIA_VISUALIZAR'),
   })
   const eventos = data?.itens ?? []
+
+  // Sem a permissão o servidor recusa a consulta (403); o bloco nem aparece.
+  if (!tem('AUDITORIA_VISUALIZAR')) return null
 
   return (
     <Card>

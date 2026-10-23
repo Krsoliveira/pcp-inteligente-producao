@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { SePermitido } from '../components/SePermitido'
+import { usePermissoes } from '../hooks/usePermissoes'
 import { useNavigate } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -28,6 +30,7 @@ import type { NotaFiscal } from '../types'
  * notas recebidas mais recentemente) e lançar novas. Cada item lançado vira um lote no estoque.
  */
 export function NotasFiscaisPage() {
+  const { tem } = usePermissoes()
   const navigate = useNavigate()
   const [de, setDe] = useState('')
   const [ate, setAte] = useState('')
@@ -59,9 +62,11 @@ export function NotasFiscaisPage() {
         subtitulo="Escolha o período de recebimento, ou abra uma das mais recentes"
         breadcrumbs={[{ label: 'Suprimentos' }, { label: 'Entrada de notas' }]}
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
-            Nova entrada
-          </Button>
+          <SePermitido qualquer={['NOTA_FISCAL_REGISTRAR']}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
+              Nova entrada
+            </Button>
+          </SePermitido>
         }
       />
 
@@ -79,7 +84,7 @@ export function NotasFiscaisPage() {
             Icone={ReceiptLongIcon}
             titulo="Nenhuma nota fiscal registrada"
             descricao="Lance a primeira nota de compra: cada item vira um lote de matéria-prima no estoque."
-            acaoLabel="Nova entrada"
+            acaoLabel={tem('NOTA_FISCAL_REGISTRAR') ? 'Nova entrada' : undefined}
             onAcao={() => setDialogAberto(true)}
           />
         ) : (

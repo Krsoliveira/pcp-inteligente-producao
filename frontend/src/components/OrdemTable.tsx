@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { usePermissoes } from '../hooks/usePermissoes'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
@@ -39,6 +40,7 @@ export const colunasDeOrdens: Coluna<OrdemProducao>[] = [
 
 export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, controle }: OrdemTableProps) {
   const navigate = useNavigate()
+  const { tem } = usePermissoes()
 
   if (ordens.length === 0) {
     return (
@@ -107,7 +109,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
               {mostrarAcoes && (
               <TableCell align="center" onClick={(e) => e.stopPropagation()}>
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                  {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && (
+                  {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && tem('ORDEM_ATUALIZAR_STATUS') && (
                     <Tooltip title="Atualizar status">
                       <IconButton
                         size="small"
