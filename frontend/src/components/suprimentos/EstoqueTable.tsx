@@ -26,7 +26,7 @@ export const colunasDeEstoque: Coluna<PosicaoEstoque>[] = [
   { chave: 'disponivel', rotulo: 'Disponível', valor: (p) => p.saldoDisponivel, texto: (p) => formatarQuantidade(p.saldoDisponivel, p.unidadeDeMedida) },
   { chave: 'lotes', rotulo: 'Lotes', valor: (p) => p.lotesDisponiveis },
   { chave: 'indisponivel', rotulo: 'Indisponível', valor: (p) => p.saldoIndisponivel, texto: (p) => formatarQuantidade(p.saldoIndisponivel, p.unidadeDeMedida) },
-  { chave: 'vencimento', rotulo: 'Próx. vencimento', valor: (p) => p.proximoVencimento, texto: (p) => (p.proximoVencimento ? formatarData(p.proximoVencimento) : '') },
+  { chave: 'vencimento', rotulo: 'Próx. venc.', valor: (p) => p.proximoVencimento, texto: (p) => (p.proximoVencimento ? formatarData(p.proximoVencimento) : '') },
   { chave: 'entrada', rotulo: 'Última entrada', valor: (p) => p.ultimaEntrada, texto: (p) => (p.ultimaEntrada ? formatarDataHora(p.ultimaEntrada) : '') },
 ]
 
@@ -51,7 +51,7 @@ export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
             <CelulaDeCabecalho chave="disponivel" rotulo="Disponível" controle={controle} align="right" />
             <CelulaDeCabecalho chave="lotes" rotulo="Lotes" controle={controle} align="center" />
             <CelulaDeCabecalho chave="indisponivel" rotulo="Indisponível" controle={controle} align="right" />
-            <CelulaDeCabecalho chave="vencimento" rotulo="Próx. vencimento" controle={controle} />
+            <CelulaDeCabecalho chave="vencimento" rotulo="Próx. venc." controle={controle} />
             <CelulaDeCabecalho chave="entrada" rotulo="Última entrada" controle={controle} />
           </TableRow>
         </TableHead>

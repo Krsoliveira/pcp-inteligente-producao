@@ -74,10 +74,22 @@ describe('ListaTecnicaComparacaoPage', () => {
   it('resume quantos componentes mudaram', async () => {
     montar()
 
-    expect(await screen.findByText('1 alterados')).toBeInTheDocument()
-    expect(screen.getByText('1 adicionados')).toBeInTheDocument()
-    expect(screen.getByText('1 removidos')).toBeInTheDocument()
-    expect(screen.getByText('1 iguais')).toBeInTheDocument()
+    expect(await screen.findByText('1 alterado')).toBeInTheDocument()
+    expect(screen.getByText('1 adicionado')).toBeInTheDocument()
+    expect(screen.getByText('1 removido')).toBeInTheDocument()
+    expect(screen.getByText('1 igual')).toBeInTheDocument()
+  })
+
+  it('usa o plural quando há mais de um ou nenhum', async () => {
+    compararMock.mockResolvedValue({
+      ...comDiferencas,
+      alterados: [comDiferencas.alterados[0], { ...comDiferencas.alterados[0], materialComponenteId: 'm-3' }],
+      adicionados: [],
+    })
+    montar()
+
+    expect(await screen.findByText('2 alterados')).toBeInTheDocument()
+    expect(screen.getByText('0 adicionados')).toBeInTheDocument()
   })
 
   it('as diferenças vêm antes do que não mudou', async () => {

@@ -31,6 +31,8 @@ const SITUACAO: Record<Situacao, { rotulo: string; cor: string }> = {
   igual: { rotulo: 'Igual', cor: '#64748B' },
 }
 
+const contagem = (n: number, singular: string, plural: string) => `${n} ${n === 1 ? singular : plural}`
+
 /** Linhas da comparação, das diferenças para o que não mudou. */
 function linhasDa(comparacao: ComparacaoDeVersoes): Array<{ situacao: Situacao; item: ItemComparado }> {
   return [
@@ -103,10 +105,10 @@ export function ListaTecnicaComparacaoPage() {
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-            <Chip size="small" label={`${comparacao.alterados.length} alterados`} />
-            <Chip size="small" label={`${comparacao.adicionados.length} adicionados`} />
-            <Chip size="small" label={`${comparacao.removidos.length} removidos`} />
-            <Chip size="small" label={`${comparacao.iguais.length} iguais`} />
+            <Chip size="small" label={contagem(comparacao.alterados.length, 'alterado', 'alterados')} />
+            <Chip size="small" label={contagem(comparacao.adicionados.length, 'adicionado', 'adicionados')} />
+            <Chip size="small" label={contagem(comparacao.removidos.length, 'removido', 'removidos')} />
+            <Chip size="small" label={contagem(comparacao.iguais.length, 'igual', 'iguais')} />
           </Box>
 
           {!comparacao.temDiferencas && (

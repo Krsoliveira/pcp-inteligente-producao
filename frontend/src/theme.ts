@@ -103,6 +103,10 @@ export const theme = createTheme(
             borderBottom: '1px solid rgba(0,0,0,0.05)',
             paddingTop: 10,
             paddingBottom: 10,
+            // 12 px (e não os 16 do MUI): com os ícones de ordenar e filtrar no título, tabelas de
+            // 8 colunas, como a de Estoque, passavam da largura da tela.
+            paddingLeft: 12,
+            paddingRight: 12,
           },
         },
       },
@@ -110,6 +114,13 @@ export const theme = createTheme(
         defaultProps: { size: 'small' },
       },
       MuiInputBase: {
+        styleOverrides: {
+          root: { fontSize: '0.875rem' },
+        },
+      },
+      // O vão do contorno (notch) é calculado com a fonte do campo; com o rótulo maior que o texto
+      // (1rem x 0,875rem) a borda cortava o fim do rótulo, como no asterisco de "Emissão *".
+      MuiInputLabel: {
         styleOverrides: {
           root: { fontSize: '0.875rem' },
         },
