@@ -70,7 +70,7 @@ export function OrdemDetalhePage() {
   const lotesQuery = useQuery({
     queryKey: ['lotes-ordem', id],
     queryFn: () => listarLotesPorOrdem(id!),
-    enabled: !!id,
+    enabled: !!id && tem('ESTOQUE_VISUALIZAR'),
   })
 
   const listaTecnicaQuery = useQuery({
@@ -80,7 +80,7 @@ export function OrdemDetalhePage() {
   })
 
   // Catálogo de materiais (compartilhado em cache) para exibir código em vez de ID.
-  const materiaisQuery = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
+  const materiaisQuery = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais, enabled: tem('MATERIAL_VISUALIZAR') })
   const materialPorId = new Map((materiaisQuery.data ?? []).map((m) => [m.id, m]))
   const rotuloMaterial = (id: string) => {
     const m = materialPorId.get(id)
@@ -94,7 +94,7 @@ export function OrdemDetalhePage() {
   const materialQuery = useQuery({
     queryKey: ['material', ordemQuery.data?.materialId],
     queryFn: () => buscarMaterialPorId(ordemQuery.data!.materialId),
-    enabled: !!ordemQuery.data?.materialId,
+    enabled: !!ordemQuery.data?.materialId && tem('MATERIAL_VISUALIZAR'),
   })
 
   const invalidar = () => {

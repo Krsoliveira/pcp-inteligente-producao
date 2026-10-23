@@ -97,8 +97,29 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
     expect(consultarEventosAuditoria).not.toHaveBeenCalled()
   })
 
+  it('sem ESTOQUE_VISUALIZAR não pede os lotes da ordem; com a permissão pede', async () => {
+    const { unmount } = montar()
+    await screen.findByRole('button', { name: 'Alterar Status' })
+    expect(listarLotesPorOrdem).toHaveBeenCalled()
+    unmount()
+    vi.mocked(listarLotesPorOrdem).mockClear()
+
+    montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'ESTOQUE_VISUALIZAR'))
+    await screen.findByRole('button', { name: 'Alterar Status' })
+
+    expect(listarLotesPorOrdem).not.toHaveBeenCalled()
+  })
+
+  it('sem MATERIAL_VISUALIZAR não pede o catálogo de materiais', async () => {
+    montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'MATERIAL_VISUALIZAR'))
+    await screen.findByRole('button', { name: 'Alterar Status' })
+
+    expect(listarMateriais).not.toHaveBeenCalled()
+    expect(buscarMaterialPorId).not.toHaveBeenCalled()
+  })
+
   it('um perfil só de consulta não vê nenhuma ação', async () => {
-    montar(['ORDEM_VISUALIZAR', 'CONSUMO_VISUALIZAR'])
+    montar(['ORDEM_VISUALIZAR', 'CONSUMO_VISUALIZAR', 'MATERIAL_VISUALIZAR'])
 
     expect((await screen.findAllByText('110.000.001')).length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: 'Alterar Status' })).not.toBeInTheDocument()

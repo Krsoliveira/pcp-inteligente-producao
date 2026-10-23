@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { usePermissoes } from '../hooks/usePermissoes'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -50,6 +51,7 @@ const VAZIO: CriarOrdemRequest = {
 
 export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
   const [form, setForm] = useState<CriarOrdemRequest>(VAZIO)
+  const { tem } = usePermissoes()
   const [erro, setErro] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
@@ -60,10 +62,12 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     select: (lista) => lista.filter((m) => m.tipo !== 'MATERIA_PRIMA'),
   })
 
+  // O tipo da ordem é opcional: quem não pode consultar os tipos nem vê o campo (o servidor recusaria a consulta).
+  const podeVerTipos = tem('TIPO_ORDEM_VISUALIZAR')
   const { data: tiposOrdem = [] } = useQuery({
     queryKey: ['tipos-ordem'],
     queryFn: listarTiposOrdem,
-    enabled: aberto,
+    enabled: aberto && podeVerTipos,
   })
 
   const { data: listasTecnicas = [] } = useQuery({
@@ -144,26 +148,28 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Quantidade *" type="number" value={form.quantidade} onChange={set('quantidade')} fullWidth inputProps={{ min: 1 }} />
           </Grid>
-          <Grid size={12}>
-            <TextField
-              select
-              label="Tipo de Ordem (opcional)"
-              value={form.tipoOrdemId ?? ''}
-              onChange={(e) => setForm((p) => ({ ...p, tipoOrdemId: e.target.value || null }))}
-              fullWidth
-              helperText="Categorize a ordem: Produção, Manutenção, Revenda, etc."
-            >
-              <MenuItem value=""><em>Sem categoria</em></MenuItem>
-              {tiposOrdem.map((t) => (
-                <MenuItem key={t.id} value={t.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: t.cor, flexShrink: 0 }} />
-                    {t.nome}
-                  </Box>
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
+          {podeVerTipos && (
+            <Grid size={12}>
+              <TextField
+                select
+                label="Tipo de Ordem (opcional)"
+                value={form.tipoOrdemId ?? ''}
+                onChange={(e) => setForm((p) => ({ ...p, tipoOrdemId: e.target.value || null }))}
+                fullWidth
+                helperText="Categorize a ordem: Produção, Manutenção, Revenda, etc."
+              >
+                <MenuItem value=""><em>Sem categoria</em></MenuItem>
+                {tiposOrdem.map((t) => (
+                  <MenuItem key={t.id} value={t.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: t.cor, flexShrink: 0 }} />
+                      {t.nome}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          )}
 
           <Grid size={12}><Divider /></Grid>
 
