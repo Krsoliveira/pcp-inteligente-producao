@@ -2,6 +2,7 @@ package com.krsoliveira.pcp.application.ordem;
 
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.ordem.AtrasoPorCentro;
 import com.krsoliveira.pcp.domain.ordem.FiltroOrdens;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.Objects;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * Implementação FAKE da porta para testes de caso de uso: um HashMap no lugar
@@ -58,6 +60,9 @@ public class OrdemProducaoRepositoryEmMemoria implements OrdemProducaoRepository
                 .filter(o -> filtro.de() == null || !o.getInicioPlanejado().isBefore(filtro.de()))
                 .filter(o -> filtro.ate() == null || !o.getInicioPlanejado().isAfter(filtro.ate()))
                 .filter(o -> filtro.atrasadasEm() == null || o.estaAtrasada(filtro.atrasadasEm()))
+                .filter(o -> filtro.centroDeTrabalho() == null || o.getCentroDeTrabalho().equals(filtro.centroDeTrabalho()))
+                .filter(o -> filtro.fimDe() == null || !o.getFimPlanejado().isBefore(filtro.fimDe()))
+                .filter(o -> filtro.fimAte() == null || !o.getFimPlanejado().isAfter(filtro.fimAte()))
                 .sorted(Comparator.comparing(OrdemProducao::getCriadaEm)
                         .thenComparing(OrdemProducao::getCodigo).reversed())
                 .toList();
@@ -71,6 +76,26 @@ public class OrdemProducaoRepositoryEmMemoria implements OrdemProducaoRepository
         Map<StatusOrdemProducao, Long> contagem = new EnumMap<>(StatusOrdemProducao.class);
         dados.values().forEach(o -> contagem.merge(o.getStatus(), 1L, Long::sum));
         return contagem;
+    }
+
+    @Override
+    public List<OrdemProducao> listarComFimPlanejadoEntre(LocalDate de, LocalDate ate) {
+        return dados.values().stream()
+                .filter(o -> !o.getFimPlanejado().isBefore(de) && !o.getFimPlanejado().isAfter(ate))
+                .toList();
+    }
+
+    @Override
+    public List<AtrasoPorCentro> atrasadasPorCentro(LocalDate hoje) {
+        Map<String, List<OrdemProducao>> porCentro = dados.values().stream()
+                .filter(o -> o.estaAtrasada(hoje))
+                .collect(Collectors.groupingBy(OrdemProducao::getCentroDeTrabalho));
+        return porCentro.entrySet().stream()
+                .map(e -> new AtrasoPorCentro(e.getKey(), e.getValue().size(),
+                        e.getValue().stream().map(OrdemProducao::getFimPlanejado).min(Comparator.naturalOrder()).orElseThrow()))
+                .sorted(Comparator.comparingLong(AtrasoPorCentro::ordensAtrasadas).reversed()
+                        .thenComparing(AtrasoPorCentro::centroDeTrabalho))
+                .toList();
     }
 
     @Override

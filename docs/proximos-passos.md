@@ -143,10 +143,9 @@ ADR-0021._
       perfis por usuário, se o uso pedir.
 - [ ] **Listas técnicas autossuficientes**: as respostas trazerem `materialCodigo` e `materialDescricao` para que
       `LISTA_VISUALIZAR_*` funcione sem `MATERIAL_VISUALIZAR` (contrato só cresce).
-- [ ] **Dashboard acionável, fases 2 e 3** (ADR-0022; a fase 1 está no PR do dashboard): produção por mês
-      (planejado × produzido), atrasos por centro de trabalho, filtro de período, painel "precisa de atenção"
-      (ordens mais atrasadas, lotes perto do vencimento, consumos com desvio) e, se a ordem guardar a data real
-      de conclusão, a aderência ao prazo. Os cartões de indicador do Estoque ainda usam ícones coloridos.
+- [ ] **Dashboard acionável, fase 3** (ADR-0022; as fases 1 e 2 estão entregues): painel "precisa de atenção"
+      (ordens mais atrasadas, lotes perto do vencimento, consumos com desvio). Os cartões de indicador do Estoque
+      ainda usam ícones coloridos.
 - [ ] **Autorização antes da validação** (opcional): hoje um corpo inválido de quem não tem permissão devolve
       400, não 403. Para inverter, a regra teria de ficar no filtro de segurança por caminho em vez de na
       anotação do método.

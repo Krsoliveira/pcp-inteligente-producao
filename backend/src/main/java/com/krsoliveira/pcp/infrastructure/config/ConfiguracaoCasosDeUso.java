@@ -34,6 +34,8 @@ import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.AtualizarTipoOrdem;
+import com.krsoliveira.pcp.application.dashboard.ConsultarAtrasosPorCentro;
+import com.krsoliveira.pcp.application.dashboard.ConsultarEntregasPorMes;
 import com.krsoliveira.pcp.application.dashboard.ConsultarResumoProducao;
 import com.krsoliveira.pcp.application.ordem.CadastrarTipoOrdem;
 import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
@@ -157,6 +159,16 @@ public class ConfiguracaoCasosDeUso {
     @Bean
     ConsultarResumoProducao consultarResumoProducao(OrdemProducaoRepository ordens, LoteRepository lotes) {
         return new ConsultarResumoProducao(ordens, lotes);
+    }
+
+    @Bean
+    ConsultarEntregasPorMes consultarEntregasPorMes(OrdemProducaoRepository ordens) {
+        return new ConsultarEntregasPorMes(ordens);
+    }
+
+    @Bean
+    ConsultarAtrasosPorCentro consultarAtrasosPorCentro(OrdemProducaoRepository ordens) {
+        return new ConsultarAtrasosPorCentro(ordens);
     }
 
     @Bean

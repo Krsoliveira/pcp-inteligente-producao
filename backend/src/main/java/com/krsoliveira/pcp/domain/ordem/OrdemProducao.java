@@ -6,6 +6,7 @@ import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.UUID;
 
 /**
@@ -150,6 +151,16 @@ public class OrdemProducao {
      */
     public boolean estaAtrasada(LocalDate dataDeReferencia) {
         return status.estaAberta() && dataDeReferencia.isAfter(fimPlanejado);
+    }
+
+    /**
+     * Foi concluída até o fim planejado? O dia da conclusão vem da assinatura (o instante que o sistema
+     * registrou, que ninguém digita), no fuso informado. A conclusão é um estado terminal, então a última
+     * alteração da ordem é a própria conclusão.
+     */
+    public boolean foiConcluidaNoPrazo(ZoneId fuso) {
+        return status == StatusOrdemProducao.CONCLUIDA
+                && !assinatura.alteradoEm().atZone(fuso).toLocalDate().isAfter(fimPlanejado);
     }
 
     public UUID getId() { return id; }
