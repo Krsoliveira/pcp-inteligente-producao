@@ -7,6 +7,8 @@ import { listarMateriais } from '../api/materiais'
 import { listarTiposOrdem } from '../api/tiposOrdem'
 import { listaTecnica, material } from '../test/fabricas'
 import { renderizarTela } from '../test/renderizar'
+import { TODAS_AS_PERMISSOES } from '../test/fabricas'
+import type { Permissao } from '../types'
 import { CriarOrdemDialog } from './CriarOrdemDialog'
 
 vi.mock('../api/ordens', () => ({ criarOrdem: vi.fn() }))
@@ -17,8 +19,8 @@ vi.mock('../api/tiposOrdem', () => ({ listarTiposOrdem: vi.fn() }))
 const listasMock = vi.mocked(listarListasTecnicas)
 const criarMock = vi.mocked(criarOrdem)
 
-function montar() {
-  return renderizarTela(<CriarOrdemDialog aberto onFechar={() => {}} />)
+function montar(permissoes?: Permissao[]) {
+  return renderizarTela(<CriarOrdemDialog aberto onFechar={() => {}} />, { permissoes })
 }
 
 async function escolherMaterial() {
@@ -40,6 +42,24 @@ describe('CriarOrdemDialog: versão da lista técnica', () => {
     criarMock.mockReset()
     vi.mocked(listarMateriais).mockResolvedValue([material({ id: 'm-1', codigo: '103000001', descricao: 'Viga metálica' })])
     vi.mocked(listarTiposOrdem).mockResolvedValue([])
+  })
+
+  it('sem TIPO_ORDEM_VISUALIZAR não pede os tipos de ordem e esconde o campo opcional', async () => {
+    listasMock.mockResolvedValue([])
+    montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'TIPO_ORDEM_VISUALIZAR'))
+
+    await screen.findByText('Nova Ordem de Produção')
+
+    expect(listarTiposOrdem).not.toHaveBeenCalled()
+    expect(screen.queryByLabelText(/Tipo de Ordem/)).not.toBeInTheDocument()
+  })
+
+  it('com TIPO_ORDEM_VISUALIZAR pede os tipos e mostra o campo', async () => {
+    listasMock.mockResolvedValue([])
+    montar()
+
+    expect(await screen.findByLabelText(/Tipo de Ordem/)).toBeInTheDocument()
+    expect(listarTiposOrdem).toHaveBeenCalled()
   })
 
   it('com uma só versão em uso, ela já vem selecionada', async () => {
