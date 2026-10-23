@@ -56,3 +56,4 @@ Regras dos ADRs deste projeto:
 | [0021](adr/0021-troca-de-senha-no-primeiro-acesso.md) | Troca de senha no primeiro acesso e redefinição pelo gestor | Aceito |
 | [0022](adr/0022-dashboard-acionavel.md) | Dashboard acionável: indicadores que abrem a consulta e gráficos que dizem algo | Aceito |
 | [0023](adr/0023-relatorios-consumo-de-ordens.md) | Relatórios: primeiro, o consumo de ordens por componente | Aceito |
+| [0024](adr/0024-tipo-de-ordem-conversao.md) | Produto acabado só é consumido em ordem do tipo Conversão | Aceito |

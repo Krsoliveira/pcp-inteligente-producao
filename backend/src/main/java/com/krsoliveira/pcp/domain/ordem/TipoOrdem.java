@@ -21,10 +21,12 @@ public class TipoOrdem {
     private String nome;
     private String descricao;
     private String cor;
+    private final boolean conversao;
     private Assinatura assinatura;
 
-    private TipoOrdem(UUID id, String nome, String descricao, String cor, Assinatura assinatura) {
+    private TipoOrdem(UUID id, String nome, String descricao, String cor, boolean conversao, Assinatura assinatura) {
         this.id = id;
+        this.conversao = conversao;
         this.nome = nome;
         this.descricao = descricao;
         this.cor = cor;
@@ -40,7 +42,7 @@ public class TipoOrdem {
         validarNome(nome);
         validarCor(cor);
         return new TipoOrdem(UUID.randomUUID(), nome.trim(), descricao != null ? descricao.trim() : null,
-                cor.trim(), Assinatura.nova(usuario));
+                cor.trim(), false, Assinatura.nova(usuario));
     }
 
     /**
@@ -48,13 +50,22 @@ public class TipoOrdem {
      */
     public static TipoOrdem reconstituir(UUID id, String nome, String descricao, String cor,
                                          Assinatura assinatura) {
-        return new TipoOrdem(id, nome, descricao, cor, assinatura);
+        return new TipoOrdem(id, nome, descricao, cor, false, assinatura);
+    }
+
+    /** Reconstrói um tipo de ordem existente, dizendo se é o tipo de sistema Conversão. */
+    public static TipoOrdem reconstituir(UUID id, String nome, String descricao, String cor, boolean conversao,
+                                         Assinatura assinatura) {
+        return new TipoOrdem(id, nome, descricao, cor, conversao, assinatura);
     }
 
     /**
      * Atualiza os dados editáveis do tipo de ordem.
      */
     public void atualizar(String nome, String descricao, String cor, String usuario) {
+        if (conversao) {
+            throw new RegraDeNegocioException("O tipo Conversão é do sistema e não pode ser alterado.");
+        }
         Assinatura alterada = assinatura.alterada(usuario);
         validarNome(nome);
         validarCor(cor);
@@ -79,6 +90,9 @@ public class TipoOrdem {
     public UUID getId() { return id; }
     public String getNome() { return nome; }
     public String getDescricao() { return descricao; }
+    /** Tipo de sistema que pode consumir produto acabado (e só produz semiacabado). */
+    public boolean isConversao() { return conversao; }
+
     public String getCor() { return cor; }
     public Assinatura getAssinatura() { return assinatura; }
     public Instant getCriadoEm() { return assinatura.criadoEm(); }

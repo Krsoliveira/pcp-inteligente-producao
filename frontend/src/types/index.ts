@@ -50,6 +50,8 @@ export interface TipoOrdem {
   nome: string
   descricao: string | null
   cor: string
+  /** Tipo de sistema Conversão: o único que pode consumir produto acabado (e só produz semiacabado). */
+  conversao: boolean
   criadoEm: string
   atualizadoEm: string
   criadoPor: string

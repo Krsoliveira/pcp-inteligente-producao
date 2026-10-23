@@ -8,6 +8,7 @@ import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.lista.ItemListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
+import com.krsoliveira.pcp.domain.lista.PoliticaDeComponentes;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
@@ -49,6 +50,12 @@ public class CadastrarListaTecnica {
                         "Matéria-prima não pode ter lista técnica. Material: %s (%s)."
                                 .formatted(material.getCodigo(), material.getTipo()));
             }
+
+            // Regra inegociável (ADR-0024): produto acabado só é componente de lista de semiacabado.
+            PoliticaDeComponentes.validarLista(material, comando.itens().stream()
+                    .map(i -> materialRepository.buscarPorId(i.materialComponenteId())
+                            .orElseThrow(() -> new MaterialNaoEncontradoException(i.materialComponenteId())))
+                    .toList());
 
             if (listaTecnicaRepository.existeVersaoParaMaterial(
                     comando.materialId(), comando.versao())) {

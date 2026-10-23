@@ -147,9 +147,10 @@ public class ConfiguracaoCasosDeUso {
                                           ProjetarConsumoMaterial projetarConsumoMaterial,
                                           MaterialRepository materialRepository,
                                           ListaTecnicaRepository listaTecnicaRepository,
+                                          TipoOrdemRepository tipoOrdemRepository,
                                           ExecucaoAuditada execucao) {
         return new CriarOrdemProducao(ordemRepository, projetarConsumoMaterial, materialRepository,
-                listaTecnicaRepository, execucao);
+                listaTecnicaRepository, tipoOrdemRepository, execucao);
     }
 
     @Bean

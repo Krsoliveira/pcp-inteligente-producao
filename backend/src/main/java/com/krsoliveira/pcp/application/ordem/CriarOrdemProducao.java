@@ -8,13 +8,17 @@ import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
+import com.krsoliveira.pcp.domain.lista.PoliticaDeComponentes;
 import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
+import com.krsoliveira.pcp.domain.ordem.TipoOrdem;
+import com.krsoliveira.pcp.domain.ordem.TipoOrdemRepository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -30,17 +34,20 @@ public class CriarOrdemProducao {
     private final ProjetarConsumoMaterial projetarConsumoMaterial;
     private final MaterialRepository materialRepository;
     private final ListaTecnicaRepository listaTecnicaRepository;
+    private final TipoOrdemRepository tipoOrdemRepository;
     private final ExecucaoAuditada execucao;
 
     public CriarOrdemProducao(OrdemProducaoRepository repositorio,
                               ProjetarConsumoMaterial projetarConsumoMaterial,
                               MaterialRepository materialRepository,
                               ListaTecnicaRepository listaTecnicaRepository,
+                              TipoOrdemRepository tipoOrdemRepository,
                               ExecucaoAuditada execucao) {
         this.repositorio = repositorio;
         this.projetarConsumoMaterial = projetarConsumoMaterial;
         this.materialRepository = materialRepository;
         this.listaTecnicaRepository = listaTecnicaRepository;
+        this.tipoOrdemRepository = tipoOrdemRepository;
         this.execucao = execucao;
     }
 
@@ -50,6 +57,7 @@ public class CriarOrdemProducao {
                 throw new CodigoJaUtilizadoException(comando.codigo());
             }
             ListaTecnica lista = validarVersaoDaLista(comando);
+            validarConsumoDeProdutoAcabado(comando, lista);
             OrdemProducao ordem = OrdemProducao.criar(
                     comando.codigo(),
                     comando.materialId(),
@@ -83,6 +91,22 @@ public class CriarOrdemProducao {
                             .e("consumosProjetados", consumos.size()));
             return ordemSalva;
         });
+    }
+
+    /**
+     * Regra inegociável (ADR-0024): produto acabado só é consumido em ordem do tipo Conversão, que só produz
+     * semiacabado.
+     */
+    private void validarConsumoDeProdutoAcabado(Comando comando, ListaTecnica lista) {
+        Material produzido = materialRepository.buscarPorId(comando.materialId())
+                .orElseThrow(() -> new MaterialNaoEncontradoException(comando.materialId()));
+        List<Material> componentes = lista.getItens().stream()
+                .map(i -> materialRepository.buscarPorId(i.getMaterialComponenteId())
+                        .orElseThrow(() -> new MaterialNaoEncontradoException(i.getMaterialComponenteId())))
+                .toList();
+        TipoOrdem tipo = comando.tipoOrdemId() == null ? null : tipoOrdemRepository.buscarPorId(comando.tipoOrdemId())
+                .orElseThrow(() -> new TipoOrdemNaoEncontradoException(comando.tipoOrdemId()));
+        PoliticaDeComponentes.validarOrdem(produzido, componentes, tipo);
     }
 
     /**

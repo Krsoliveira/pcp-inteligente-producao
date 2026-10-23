@@ -138,3 +138,75 @@ describe('CriarOrdemDialog: versão da lista técnica', () => {
     expect(screen.getByRole('combobox', { name: /Versão da Lista Técnica/ })).toHaveAttribute('aria-disabled', 'true')
   })
 })
+
+describe('CriarOrdemDialog: tipo Conversão (ADR-0024)', () => {
+  const tipo = (extras: Record<string, unknown>) => ({
+    id: 't-1', nome: 'Produção Normal', descricao: null, cor: '#1565c0', conversao: false,
+    criadoEm: '', atualizadoEm: '', criadoPor: '', atualizadoPor: '', ...extras,
+  })
+
+  beforeEach(() => {
+    listasMock.mockReset().mockResolvedValue([])
+    vi.mocked(listarMateriais).mockResolvedValue([
+      material({ id: 'm-1', codigo: '103000001', descricao: 'Viga pronta', tipo: 'PRODUTO_ACABADO' }),
+      material({ id: 'm-4', codigo: '105000001', descricao: 'Viga cortada', tipo: 'SEMIACABADO' }),
+    ])
+    vi.mocked(listarTiposOrdem).mockResolvedValue([
+      tipo({}), tipo({ id: 't-conv', nome: 'Conversão', cor: '#6a1b9a', conversao: true }),
+    ] as never)
+  })
+
+  async function escolherTipo(nome: string) {
+    await userEvent.click(await screen.findByRole('combobox', { name: /Tipo de Ordem/ }))
+    await userEvent.click(await screen.findByRole('option', { name: nome }))
+  }
+
+  async function opcoesDeMaterial() {
+    await userEvent.click(await screen.findByRole('combobox', { name: /^Material/ }))
+    return screen.getAllByRole('option').map((o) => o.textContent ?? '')
+  }
+
+  it('sem o tipo Conversão, o material pode ser acabado ou semiacabado', async () => {
+    montar()
+
+    const opcoes = await opcoesDeMaterial()
+
+    expect(opcoes).toHaveLength(2)
+    expect(opcoes.join(' ')).toContain('Viga pronta')
+    expect(opcoes.join(' ')).toContain('Viga cortada')
+  })
+
+  it('com o tipo Conversão, só semiacabado aparece como material (a conversão produz semiacabado)', async () => {
+    montar()
+    await escolherTipo('Conversão')
+
+    const opcoes = await opcoesDeMaterial()
+
+    expect(opcoes).toHaveLength(1)
+    expect(opcoes[0]).toContain('Viga cortada')
+    expect(screen.getByText('Conversão: consome produto acabado e produz semiacabado.')).toBeInTheDocument()
+  })
+
+  it('escolher Conversão depois de um produto acabado desfaz a escolha do material', async () => {
+    listasMock.mockResolvedValue([])
+    montar()
+    await userEvent.click(await screen.findByRole('combobox', { name: /^Material/ }))
+    await userEvent.click(await screen.findByRole('option', { name: /Viga pronta/ }))
+    expect(screen.getByRole('combobox', { name: /^Material/ })).toHaveTextContent('Viga pronta')
+
+    await escolherTipo('Conversão')
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: /^Material/ })).not.toHaveTextContent('Viga pronta'))
+  })
+
+  it('escolher Conversão com um semiacabado já escolhido mantém o material', async () => {
+    montar()
+    await userEvent.click(await screen.findByRole('combobox', { name: /^Material/ }))
+    await userEvent.click(await screen.findByRole('option', { name: /Viga cortada/ }))
+
+    await escolherTipo('Conversão')
+
+    expect(screen.getByRole('combobox', { name: /^Material/ })).toHaveTextContent('Viga cortada')
+  })
+})
+
