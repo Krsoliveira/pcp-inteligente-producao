@@ -73,6 +73,18 @@ class PoliticaDeComponentesTest {
     }
 
     @Test
+    @DisplayName("item adicionado ao consumo: produto acabado só em ordem do tipo Conversão; os demais materiais em qualquer ordem")
+    void itemAdicionado() {
+        assertThatThrownBy(() -> PoliticaDeComponentes.validarItemAdicionado(ACABADO, null))
+                .isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("tipo Conversão");
+        assertThatThrownBy(() -> PoliticaDeComponentes.validarItemAdicionado(ACABADO, NORMAL))
+                .isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("103000001");
+        assertThatCode(() -> PoliticaDeComponentes.validarItemAdicionado(ACABADO, CONVERSAO)).doesNotThrowAnyException();
+        assertThatCode(() -> PoliticaDeComponentes.validarItemAdicionado(MATERIA_PRIMA, null)).doesNotThrowAnyException();
+        assertThatCode(() -> PoliticaDeComponentes.validarItemAdicionado(SEMIACABADO, NORMAL)).doesNotThrowAnyException();
+    }
+
+    @Test
     @DisplayName("ordem comum sem produto acabado nos componentes continua livre")
     void ordemComumSemAcabado() {
         assertThatCode(() -> PoliticaDeComponentes.validarOrdem(ACABADO, List.of(MATERIA_PRIMA, SEMIACABADO), null)).doesNotThrowAnyException();

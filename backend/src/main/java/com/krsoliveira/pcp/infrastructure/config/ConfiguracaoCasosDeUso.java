@@ -15,6 +15,7 @@ import com.krsoliveira.pcp.application.comum.PermissoesDoUsuarioAtual;
 import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
 import com.krsoliveira.pcp.application.comum.Transacao;
 import com.krsoliveira.pcp.application.comum.UsuarioAtual;
+import com.krsoliveira.pcp.application.consumo.AdicionarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.ConsultarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.RegistrarConsumoMaterial;
@@ -98,6 +99,17 @@ public class ConfiguracaoCasosDeUso {
                                                       ExecucaoAuditada execucao) {
         return new RegistrarConsumoMaterial(consumoRepository, ordemRepository, materialRepository,
                 loteRepository, alocacaoRepository, execucao, Clock.systemDefaultZone());
+    }
+
+    @Bean
+    AdicionarConsumoMaterial adicionarConsumoMaterial(OrdemProducaoRepository ordemRepository,
+                                                      MaterialRepository materialRepository,
+                                                      ConsumoMaterialRepository consumoRepository,
+                                                      TipoOrdemRepository tipoOrdemRepository,
+                                                      RegistrarConsumoMaterial registrarConsumoMaterial,
+                                                      ExecucaoAuditada execucao) {
+        return new AdicionarConsumoMaterial(ordemRepository, materialRepository, consumoRepository, tipoOrdemRepository,
+                registrarConsumoMaterial, execucao);
     }
 
     @Bean

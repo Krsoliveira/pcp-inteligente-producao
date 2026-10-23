@@ -47,6 +47,15 @@ public final class PoliticaDeComponentes {
         }
     }
 
+    /** Valida um item adicionado ao consumo de uma ordem deste tipo (pode ser nulo): produto acabado só na Conversão. */
+    public static void validarItemAdicionado(Material item, TipoOrdem tipo) {
+        if (ehProdutoAcabado(item) && (tipo == null || !tipo.isConversao())) {
+            throw new RegraDeNegocioException(
+                    "O produto acabado %s só pode ser consumido em ordem do tipo Conversão."
+                            .formatted(item.getCodigo()));
+        }
+    }
+
     public static boolean consomeProdutoAcabado(Collection<Material> componentes) {
         return componentes.stream().anyMatch(PoliticaDeComponentes::ehProdutoAcabado);
     }
