@@ -58,3 +58,4 @@ Regras dos ADRs deste projeto:
 | [0023](adr/0023-relatorios-consumo-de-ordens.md) | Relatórios: primeiro, o consumo de ordens por componente | Aceito |
 | [0024](adr/0024-tipo-de-ordem-conversao.md) | Produto acabado só é consumido em ordem do tipo Conversão | Aceito |
 | [0025](adr/0025-item-adicionado-ao-consumo.md) | Item adicionado ao consumo de uma ordem, fora da lista técnica | Aceito |
+| [0026](adr/0026-lancamento-de-consumo-por-ordem.md) | Lançamento do consumo por ordem, com todos os componentes e tudo ou nada | Aceito |

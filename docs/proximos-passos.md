@@ -149,12 +149,8 @@ ADR-0021._
 - [x] **Regra do produto acabado (ADR-0024)** e **item adicionado ao consumo (ADR-0025, V16)**: entregues no
       backend (endpoint, permissão `CONSUMO_ADICIONAR_ITEM`, auditoria). Falta a tela (abaixo).
 - [ ] **Dívida**: o `PATCH` de registro de consumo não confere se a ordem está em produção (o item adicionado confere).
-- [ ] **Tela de lançamento de consumo por ordem**: hoje o consumo é lançado um componente por vez, numa caixa aberta
-      pelo ícone na ordem em produção. A decisão é uma tela por ordem com todos os componentes (consumo, lotes e
-      justificativa de cada um) confirmada de uma vez (tudo ou nada, numa transação), reaproveitando a regra e a
-      sugestão FEFO atuais. Inclui "adicionar item" para material que não está na lista (planejado 0, justificativa
-      obrigatória, ordem em produção, permissão nova `CONSUMO_ADICIONAR_ITEM`, V16 relaxando
-      `ck_consumo_planejada`); produto acabado só em ordem do tipo Conversão.
+- [x] **Tela de lançamento de consumo por ordem** (ADR-0026): entregue, com "Adicionar item fora da lista" e lançamento
+      tudo ou nada.
 - [ ] **Quantidade base da lista técnica** (ALTO RISCO: migração e mudança de cálculo; aguardando aprovação do
       desenho): a lista passaria a dizer "para produzir N unidades (ou kg)"; o consumo planejado vira
       item ÷ base × quantidade da ordem. Padrão 1 para não alterar as listas existentes. Exige ADR próprio.
