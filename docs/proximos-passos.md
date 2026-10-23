@@ -136,10 +136,13 @@ Tornar a interface mais marcante, mantendo a legibilidade:
 _Controle de acesso por perfis de permissões (perfis, usuários, regra "só se concede o que se tem", rastreio e
 telas): concluído, ver ADR-0020._
 
-- [ ] **Acessos, o que sobrou do ADR-0020**: troca de senha obrigatória no primeiro acesso do usuário criado
-      por um gestor (hoje o gestor define a senha provisória e ela vale até o usuário trocar, mas ainda não há
-      tela de troca); redefinir a senha de quem a esqueceu; desativar um usuário sem excluí-lo; exceções de
-      permissão por usuário e vários perfis por usuário, se o uso pedir.
+_Troca de senha obrigatória no primeiro acesso, "Alterar minha senha" e redefinição pelo gestor: concluído, ver
+ADR-0021._
+
+- [ ] **Acessos, o que sobrou**: desativar um usuário sem excluí-lo; exceções de permissão por usuário e vários
+      perfis por usuário, se o uso pedir.
+- [ ] **Listas técnicas autossuficientes**: as respostas trazerem `materialCodigo` e `materialDescricao` para que
+      `LISTA_VISUALIZAR_*` funcione sem `MATERIAL_VISUALIZAR` (contrato só cresce).
 - [ ] **Autorização antes da validação** (opcional): hoje um corpo inválido de quem não tem permissão devolve
       400, não 403. Para inverter, a regra teria de ficar no filtro de segurança por caminho em vez de na
       anotação do método.
