@@ -1,4 +1,5 @@
-import { useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -16,13 +17,16 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
+import BlockIcon from '@mui/icons-material/Block'
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ativarListaTecnica, buscarListaTecnicaPorId } from '../api/listasTecnicas'
+import { ativarListaTecnica, buscarListaTecnicaPorId, listarListasTecnicas } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
 import { InfoRow } from '../components/InfoRow'
 import { PageHeader } from '../components/PageHeader'
 import { StatusListaBadge } from '../components/StatusBadge'
+import { RetirarDeUsoDialog } from '../components/listas/RetirarDeUsoDialog'
 import { TIPO_COR } from '../components/materiais/MaterialTable'
 import { formatarCodigoMaterial, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
@@ -31,11 +35,19 @@ import { TIPO_MATERIAL_LABEL } from '../types'
 /** Detalhe da lista técnica: a "receita" (componentes e quantidades) de uma versão. */
 export function ListaTecnicaDetalhePage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [retirando, setRetirando] = useState(false)
   const listaQuery = useQuery({ queryKey: ['listas-tecnicas', 'detalhe', id], queryFn: () => buscarListaTecnicaPorId(id!), enabled: !!id })
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const materialPorId = new Map(materiais.map((m) => [m.id, m]))
   const lista = listaQuery.data
+  const { data: versoes = [] } = useQuery({
+    queryKey: ['listas-tecnicas', 'versoes', lista?.materialId],
+    queryFn: () => listarListasTecnicas(lista!.materialId),
+    enabled: !!lista,
+  })
+  const outrasVersoes = versoes.filter((v) => v.id !== id)
 
   const { mutate: ativar, isPending: ativando, error: erroAtivar } = useMutation({
     mutationFn: () => ativarListaTecnica(id!),
@@ -63,6 +75,10 @@ export function ListaTecnicaDetalhePage() {
         action={lista.status === 'EM_REVISAO' ? (
           <Button variant="contained" color="success" startIcon={<CheckCircleOutlineIcon />} onClick={() => ativar()} disabled={ativando}>
             {ativando ? 'Ativando…' : 'Ativar esta versão'}
+          </Button>
+        ) : lista.status === 'ATIVA' ? (
+          <Button variant="outlined" color="warning" startIcon={<BlockIcon />} onClick={() => setRetirando(true)}>
+            Retirar de uso
           </Button>
         ) : undefined}
       />
@@ -141,7 +157,56 @@ export function ListaTecnicaDetalhePage() {
             </TableContainer>
           </Card>
         </Grid>
+
+        {outrasVersoes.length > 0 && (
+          <Grid size={12}>
+            <Card>
+              <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="subtitle2">Outras versões desta lista</Typography>
+              </Box>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Versão</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell align="center">Componentes</TableCell>
+                      <TableCell align="center" sx={{ width: 140 }}>Ações</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {outrasVersoes.map((v) => (
+                      <TableRow key={v.id} hover>
+                        <TableCell>
+                          <Button size="small" onClick={() => navigate(`/listas-tecnicas/${v.id}`)} sx={{ fontFamily: 'monospace' }}>{v.versao}</Button>
+                        </TableCell>
+                        <TableCell><StatusListaBadge status={v.status} /></TableCell>
+                        <TableCell align="center">{v.itens.length}</TableCell>
+                        <TableCell align="center">
+                          <Button
+                            size="small"
+                            startIcon={<CompareArrowsIcon />}
+                            aria-label={`Comparar com a versão ${v.versao}`}
+                            onClick={() => navigate(`/listas-tecnicas/comparar?a=${lista.id}&b=${v.id}`)}
+                          >
+                            Comparar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          </Grid>
+        )}
       </Grid>
+
+      <RetirarDeUsoDialog
+        lista={retirando ? lista : null}
+        nomeDoMaterial={material ? `${codigo} — ${material.descricao}` : 'Material'}
+        onFechar={() => setRetirando(false)}
+      />
     </Box>
   )
 }

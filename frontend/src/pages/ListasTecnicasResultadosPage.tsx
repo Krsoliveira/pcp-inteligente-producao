@@ -8,6 +8,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { ativarListaTecnica, pesquisarListasTecnicas } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
 import { ListaTecnicaTable, colunasDeListas } from '../components/listas/ListaTecnicaTable'
+import { RetirarDeUsoDialog } from '../components/listas/RetirarDeUsoDialog'
 import { CamposFiltroListas, STATUS_LISTA_VALIDOS, nomeDoMaterial } from '../components/listas/CamposFiltroListas'
 import { PageHeader } from '../components/PageHeader'
 import { PaginacaoTabela } from '../components/PaginacaoTabela'
@@ -16,7 +17,7 @@ import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
 import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
 import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
-import type { StatusListaTecnica } from '../types'
+import type { ListaTecnica, StatusListaTecnica } from '../types'
 
 /** Segunda etapa: o resultado da consulta de listas técnicas, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function ListasTecnicasResultadosPage() {
@@ -34,10 +35,9 @@ export function ListasTecnicasResultadosPage() {
 
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const comLista = materiais.filter((m) => m.tipo !== 'MATERIA_PRIMA')
-  const nome = (id: string) => {
-    const m = materiais.find((x) => x.id === id)
-    return m ? nomeDoMaterial(m) : `${id.substring(0, 8)}…`
-  }
+  const materialPorId = new Map(materiais.map((m) => [m.id, m]))
+  const [retirando, setRetirando] = useState<ListaTecnica | null>(null)
+  const materialRetirando = retirando ? materialPorId.get(retirando.materialId) : undefined
 
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
     queryKey: ['listas-tecnicas', 'pesquisa', materialAplicado, statusAplicado, pagina, tamanho],
@@ -46,7 +46,7 @@ export function ListasTecnicasResultadosPage() {
   })
   const listas = data?.itens ?? []
   const total = data?.total ?? 0
-  const tabela = useTabelaInterativa(listas, colunasDeListas(nome))
+  const tabela = useTabelaInterativa(listas, colunasDeListas(materialPorId))
   const filtrando = materialAplicado !== '' || statusAplicado !== undefined
 
   const { mutate: ativar, error: erroAtivar } = useMutation({
@@ -90,7 +90,7 @@ export function ListasTecnicasResultadosPage() {
         ) : (
           <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
             <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={listas.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
-            <ListaTecnicaTable listas={tabela.linhas} nomeDoMaterial={nome} onAtivar={ativar} controle={tabela.controle} />
+            <ListaTecnicaTable listas={tabela.linhas} materialPorId={materialPorId} onAtivar={ativar} onRetirarDeUso={setRetirando} controle={tabela.controle} />
             <PaginacaoTabela
               total={total}
               pagina={pagina}
@@ -101,6 +101,11 @@ export function ListasTecnicasResultadosPage() {
           </Box>
         )}
       </Card>
+      <RetirarDeUsoDialog
+        lista={retirando}
+        nomeDoMaterial={materialRetirando ? nomeDoMaterial(materialRetirando) : 'Material'}
+        onFechar={() => setRetirando(null)}
+      />
     </Box>
   )
 }

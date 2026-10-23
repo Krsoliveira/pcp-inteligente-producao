@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { pesquisarListasTecnicas } from '../api/listasTecnicas'
 import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
 import { ListaTecnicaTable, colunasDeListas } from '../components/listas/ListaTecnicaTable'
+import { RetirarDeUsoDialog } from '../components/listas/RetirarDeUsoDialog'
 import { CamposFiltroListas, nomeDoMaterial } from '../components/listas/CamposFiltroListas'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
 import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
@@ -32,7 +33,7 @@ import { listarMateriais } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { formatarCodigoMaterial } from '../utils/formatacao'
-import type { CadastrarListaTecnicaRequest, StatusListaTecnica, TipoMaterial } from '../types'
+import type { ListaTecnica, CadastrarListaTecnicaRequest, StatusListaTecnica, TipoMaterial } from '../types'
 import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 /** Primeira etapa: escolher o que consultar (ou abrir uma das 10 listas mais recentes). */
@@ -49,10 +50,9 @@ export function ListasTecnicasPage() {
   })
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const comLista = materiais.filter((m) => m.tipo !== 'MATERIA_PRIMA')
-  const nome = (id: string) => {
-    const m = materiais.find((x) => x.id === id)
-    return m ? nomeDoMaterial(m) : `${id.substring(0, 8)}…`
-  }
+  const materialPorId = new Map(materiais.map((m) => [m.id, m]))
+  const [retirando, setRetirando] = useState<ListaTecnica | null>(null)
+  const materialRetirando = retirando ? materialPorId.get(retirando.materialId) : undefined
 
   const { mutate: ativar, error: erroAtivar } = useMutation({
     mutationFn: ativarListaTecnica,
@@ -60,7 +60,7 @@ export function ListasTecnicasPage() {
   })
 
   const itensRecentes = recentes.data?.itens ?? []
-  const tabela = useTabelaInterativa(itensRecentes, colunasDeListas(nome))
+  const tabela = useTabelaInterativa(itensRecentes, colunasDeListas(materialPorId))
 
   const verResultados = (filtros: Record<string, string | undefined> = {}) =>
     navigate({ pathname: '/listas-tecnicas/resultados', search: montarBusca(filtros) })
@@ -102,12 +102,17 @@ export function ListasTecnicasPage() {
         ) : (
           <>
           <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
-          <ListaTecnicaTable listas={tabela.linhas} nomeDoMaterial={nome} onAtivar={ativar} controle={tabela.controle} />
+          <ListaTecnicaTable listas={tabela.linhas} materialPorId={materialPorId} onAtivar={ativar} onRetirarDeUso={setRetirando} controle={tabela.controle} />
           </>
         )}
       </CartaoDeRecentes>
 
       <CriarListaTecnicaDialog aberto={dialogAberto} onFechar={() => setDialogAberto(false)} />
+      <RetirarDeUsoDialog
+        lista={retirando}
+        nomeDoMaterial={materialRetirando ? nomeDoMaterial(materialRetirando) : 'Material'}
+        onFechar={() => setRetirando(null)}
+      />
     </Box>
   )
 }

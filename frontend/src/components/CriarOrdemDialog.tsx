@@ -72,13 +72,16 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     enabled: aberto && !!form.materialId,
   })
 
-  // Seleciona a versão ATIVA ao escolher o material. A dependência é o id (texto), não o
-  // array: com a consulta desativada, `data = []` cria um array novo a cada render e o
-  // efeito entraria em loop (setForm → render → efeito...), travando a página de Ordens.
-  const listaAtivaId = listasTecnicas.find((l) => l.status === 'ATIVA')?.id ?? ''
+  // Só versões em uso (ATIVA) podem ser escolhidas; o servidor recusa as demais (ADR-0019).
+  const versoesEmUso = listasTecnicas.filter((l) => l.status === 'ATIVA')
+
+  // Com uma única versão em uso ela já vem selecionada; com mais de uma, o usuário escolhe. A
+  // dependência é o id (texto), não o array: com a consulta desativada, `data = []` cria um array
+  // novo a cada render e o efeito entraria em loop (setForm → render → efeito...), travando a página.
+  const versaoUnicaId = versoesEmUso.length === 1 ? versoesEmUso[0].id : ''
   useEffect(() => {
-    setForm((prev) => (prev.listaTecnicaId === listaAtivaId ? prev : { ...prev, listaTecnicaId: listaAtivaId }))
-  }, [listaAtivaId])
+    setForm((prev) => (prev.listaTecnicaId === versaoUnicaId ? prev : { ...prev, listaTecnicaId: versaoUnicaId }))
+  }, [versaoUnicaId])
 
   const { mutate, isPending } = useMutation({
     mutationFn: criarOrdem,
@@ -104,6 +107,10 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
   }
 
   const handleSubmit = () => {
+    if (form.materialId && !form.listaTecnicaId && versoesEmUso.length > 1) {
+      setErro('Este material tem mais de uma versão da lista técnica em uso: escolha qual usar nesta ordem.')
+      return
+    }
     if (!form.codigo || !form.materialId || !form.listaTecnicaId ||
         !form.centroDeTrabalho || !form.inicioPlanejado || !form.fimPlanejado) {
       setErro('Preencha todos os campos obrigatórios.')
@@ -117,10 +124,6 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     setErro(null)
     onFechar()
   }
-
-  const listasDisponiveis = listasTecnicas.filter(
-    (l) => l.status === 'ATIVA' || l.status === 'EM_REVISAO',
-  )
 
   return (
     <Dialog open={aberto} onClose={handleFechar} fullWidth maxWidth="sm">
@@ -199,17 +202,25 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
           <Grid size={12}>
             <TextField
               select
-              label="Lista Técnica (BOM) *"
+              label="Versão da Lista Técnica (BOM) *"
               value={form.listaTecnicaId}
               onChange={set('listaTecnicaId')}
               fullWidth
-              disabled={!form.materialId || listasDisponiveis.length === 0}
-              helperText={form.materialId && listasDisponiveis.length === 0 ? 'Nenhuma lista técnica ativa para este material.' : ''}
+              disabled={!form.materialId || versoesEmUso.length === 0}
+              helperText={
+                form.materialId && versoesEmUso.length === 0
+                  ? 'Nenhuma versão da lista técnica em uso para este material.'
+                  : versoesEmUso.length > 1
+                    ? `Este material tem ${versoesEmUso.length} versões em uso: escolha qual usar nesta ordem.`
+                    : ''
+              }
             >
-              {listasDisponiveis.map((l) => (
+              {versoesEmUso.map((l) => (
                 <MenuItem key={l.id} value={l.id}>
                   {l.versao}
-                  {l.status === 'ATIVA' && <Typography component="span" variant="caption" color="success.main" sx={{ ml: 1 }}>(Ativa)</Typography>}
+                  <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                    ({l.itens.length} {l.itens.length === 1 ? 'componente' : 'componentes'})
+                  </Typography>
                 </MenuItem>
               ))}
             </TextField>
