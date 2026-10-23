@@ -1,11 +1,8 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
-import com.krsoliveira.pcp.domain.usuario.Perfil;
 import com.krsoliveira.pcp.domain.usuario.Usuario;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -32,9 +29,8 @@ class UsuarioJpaEntity {
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private Perfil perfil;
+    @Column(name = "perfil_id", nullable = false)
+    private UUID perfilId;
 
     @Column(name = "criado_em", nullable = false, updatable = false)
     private Instant criadoEm;
@@ -47,12 +43,12 @@ class UsuarioJpaEntity {
         e.nome = usuario.getNome();
         e.email = usuario.getEmail();
         e.senhaHash = usuario.getSenhaHash();
-        e.perfil = usuario.getPerfil();
+        e.perfilId = usuario.getPerfilId();
         e.criadoEm = usuario.getCriadoEm();
         return e;
     }
 
     Usuario paraDominio() {
-        return Usuario.reconstituir(id, nome, email, senhaHash, perfil, criadoEm);
+        return Usuario.reconstituir(id, nome, email, senhaHash, perfilId, criadoEm);
     }
 }

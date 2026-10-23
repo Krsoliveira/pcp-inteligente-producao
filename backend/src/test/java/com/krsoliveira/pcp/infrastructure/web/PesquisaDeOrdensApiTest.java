@@ -32,6 +32,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
+                "app.admin.nome=Administrador de Teste",
+                "app.admin.email=admin@pcp.com",
+                "app.admin.senha=Senha@123",
                 "pcp.seguranca.rate-limit.login=1000",
                 "pcp.seguranca.rate-limit.registrar=1000"
         })
@@ -53,10 +56,8 @@ class PesquisaDeOrdensApiTest {
     @BeforeAll
     @SuppressWarnings("unchecked")
     void prepararMassa() {
-        rest.postForEntity("/api/v1/auth/registrar", semAuth(Map.of(
-                "nome", "Planejador", "email", "pesquisa@pcp.com", "senha", "Senha@123")), Map.class);
         token = (String) rest.postForEntity("/api/v1/auth/login",
-                semAuth(Map.of("email", "pesquisa@pcp.com", "senha", "Senha@123")), Map.class).getBody().get("token");
+                semAuth(Map.of("email", "admin@pcp.com", "senha", "Senha@123")), Map.class).getBody().get("token");
 
         String componente = idDe(rest.postForEntity("/api/v1/materiais", comAuth(Map.of(
                 "descricao", "Aço", "tipo", "MATERIA_PRIMA", "unidadeDeMedida", "kg")), Void.class));

@@ -4,7 +4,9 @@ import com.krsoliveira.pcp.domain.usuario.Usuario;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Adaptador que implementa o port de domínio {@link UsuarioRepository}
@@ -28,5 +30,20 @@ public class UsuarioRepositoryAdapter implements UsuarioRepository {
     @Override
     public Optional<Usuario> porEmail(String email) {
         return springData.findByEmail(email).map(UsuarioJpaEntity::paraDominio);
+    }
+
+    @Override
+    public Optional<Usuario> porId(UUID id) {
+        return springData.findById(id).map(UsuarioJpaEntity::paraDominio);
+    }
+
+    @Override
+    public List<Usuario> listarTodos() {
+        return springData.findAllByOrderByNomeAsc().stream().map(UsuarioJpaEntity::paraDominio).toList();
+    }
+
+    @Override
+    public long contarPorPerfil(UUID perfilId) {
+        return springData.countByPerfilId(perfilId);
     }
 }
