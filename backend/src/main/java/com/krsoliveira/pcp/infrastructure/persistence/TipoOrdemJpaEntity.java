@@ -36,6 +36,9 @@ public class TipoOrdemJpaEntity {
     @Column(name = "atualizado_em", nullable = false)
     private Instant atualizadoEm;
 
+    @Column(name = "conversao", nullable = false)
+    private boolean conversao;
+
     @Column(name = "criado_por", nullable = false, length = 150)
     private String criadoPor;
 
@@ -50,6 +53,7 @@ public class TipoOrdemJpaEntity {
         entity.nome = tipo.getNome();
         entity.descricao = tipo.getDescricao();
         entity.cor = tipo.getCor();
+        entity.conversao = tipo.isConversao();
         Assinatura a = tipo.getAssinatura();
         entity.criadoEm = a.criadoEm();
         entity.atualizadoEm = a.alteradoEm();
@@ -59,7 +63,7 @@ public class TipoOrdemJpaEntity {
     }
 
     public TipoOrdem paraDominio() {
-        return TipoOrdem.reconstituir(id, nome, descricao, cor,
+        return TipoOrdem.reconstituir(id, nome, descricao, cor, conversao,
                 new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm));
     }
 }

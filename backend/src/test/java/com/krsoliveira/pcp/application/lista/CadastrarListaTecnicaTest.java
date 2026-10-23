@@ -25,24 +25,68 @@ class CadastrarListaTecnicaTest {
     private CadastrarListaTecnica useCase;
     private UUID materialId;
     private UUID outroMaterialId;
+    private UUID semiacabadoId;
+    private UUID componenteId;
+    private UUID acabadoComoComponenteId;
+    private MaterialRepositoryEmMemoria materialRepository;
 
     @BeforeEach
     void setUp() {
-        var materialRepository = new MaterialRepositoryEmMemoria();
+        materialRepository = new MaterialRepositoryEmMemoria();
         listaTecnicaRepository = new ListaTecnicaRepositoryEmMemoria();
         useCase = new CadastrarListaTecnica(listaTecnicaRepository, materialRepository,
                 new TrilhaDeAuditoriaEmMemoria().execucao());
         materialId = UUID.randomUUID();
         outroMaterialId = UUID.randomUUID();
+        semiacabadoId = UUID.randomUUID();
+        componenteId = UUID.randomUUID();
+        acabadoComoComponenteId = UUID.randomUUID();
         materialRepository.salvar(Material.reconstituir(materialId, "PA-000001", "Produto A",
                 TipoMaterial.PRODUTO_ACABADO, "UN", Assinatura.nova(USUARIO)));
         materialRepository.salvar(Material.reconstituir(outroMaterialId, "PA-000002", "Produto B",
+                TipoMaterial.PRODUTO_ACABADO, "UN", Assinatura.nova(USUARIO)));
+        materialRepository.salvar(Material.reconstituir(semiacabadoId, "105000001", "Semiacabado S",
+                TipoMaterial.SEMIACABADO, "UN", Assinatura.nova(USUARIO)));
+        materialRepository.salvar(Material.reconstituir(componenteId, "110000001", "Chapa",
+                TipoMaterial.MATERIA_PRIMA, "KG", Assinatura.nova(USUARIO)));
+        materialRepository.salvar(Material.reconstituir(acabadoComoComponenteId, "103000009", "Produto Z",
                 TipoMaterial.PRODUTO_ACABADO, "UN", Assinatura.nova(USUARIO)));
     }
 
     private UUID cadastrar(UUID material, String versao) {
         return useCase.executar(new CadastrarListaTecnica.Comando(material, versao,
-                List.of(new CadastrarListaTecnica.ItemComando(UUID.randomUUID(), BigDecimal.ONE, "UN"))));
+                List.of(new CadastrarListaTecnica.ItemComando(componenteId, BigDecimal.ONE, "UN"))));
+    }
+
+    private CadastrarListaTecnica.Comando comando(UUID dono, UUID componente) {
+        return new CadastrarListaTecnica.Comando(dono, "v1",
+                List.of(new CadastrarListaTecnica.ItemComando(componente, BigDecimal.ONE, "UN")));
+    }
+
+    @Test
+    @DisplayName("lista de produto acabado não aceita produto acabado como componente (regra inegociável, ADR-0024)")
+    void produtoAcabadoNaoConsomeAcabado() {
+        assertThatThrownBy(() -> useCase.executar(comando(materialId, acabadoComoComponenteId)))
+                .isInstanceOf(com.krsoliveira.pcp.domain.RegraDeNegocioException.class)
+                .hasMessageContaining("103000009").hasMessageContaining("só listas de semiacabado");
+        assertThat(listaTecnicaRepository.listarPorMaterial(materialId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("lista de semiacabado aceita produto acabado como componente (conversão)")
+    void semiacabadoPodeConsumirAcabado() {
+        UUID id = useCase.executar(comando(semiacabadoId, acabadoComoComponenteId));
+
+        assertThat(busca(id).getItens()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("componente que não existe é recusado")
+    void componenteInexistente() {
+        UUID fantasma = UUID.randomUUID();
+
+        assertThatThrownBy(() -> useCase.executar(comando(materialId, fantasma)))
+                .isInstanceOf(com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException.class);
     }
 
     private ListaTecnica busca(UUID id) {

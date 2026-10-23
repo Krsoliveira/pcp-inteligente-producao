@@ -5,7 +5,12 @@ import com.krsoliveira.pcp.application.consumo.ConsumoMaterialRepositoryEmMemori
 import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.material.MaterialRepositoryEmMemoria;
+import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
+import com.krsoliveira.pcp.domain.auditoria.Assinatura;
+import com.krsoliveira.pcp.domain.material.Material;
+import com.krsoliveira.pcp.domain.material.TipoMaterial;
+import com.krsoliveira.pcp.domain.ordem.TipoOrdem;
 import com.krsoliveira.pcp.domain.lista.ItemListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
@@ -35,7 +40,11 @@ class CriarOrdemProducaoTest {
     private CriarOrdemProducao casoDeUso;
 
     private static final UUID MATERIAL_ID = UUID.randomUUID();
+    private static final UUID COMPONENTE_ID = UUID.randomUUID();
+    private static final UUID SEMIACABADO_ID = UUID.randomUUID();
+    private static final UUID ACABADO_COMPONENTE_ID = UUID.randomUUID();
     private UUID listaTecnicaId;
+    private TipoOrdemRepositoryEmMemoria tipoRepositorio;
 
     @BeforeEach
     void setUp() {
@@ -46,16 +55,90 @@ class CriarOrdemProducaoTest {
         ProjetarConsumoMaterial projetar = new ProjetarConsumoMaterial(
                 consumoRepositorio, listaTecnicaRepositorio);
         trilha = new TrilhaDeAuditoriaEmMemoria();
-        casoDeUso = new CriarOrdemProducao(repositorio, projetar, new MaterialRepositoryEmMemoria(),
-                listaTecnicaRepositorio, trilha.execucao());
+        var materiais = new MaterialRepositoryEmMemoria();
+        tipoRepositorio = new TipoOrdemRepositoryEmMemoria();
+        materiais.salvar(material(MATERIAL_ID, "103000001", TipoMaterial.PRODUTO_ACABADO));
+        materiais.salvar(material(COMPONENTE_ID, "110000001", TipoMaterial.MATERIA_PRIMA));
+        materiais.salvar(material(SEMIACABADO_ID, "105000001", TipoMaterial.SEMIACABADO));
+        materiais.salvar(material(ACABADO_COMPONENTE_ID, "103000009", TipoMaterial.PRODUTO_ACABADO));
+        casoDeUso = new CriarOrdemProducao(repositorio, projetar, materiais,
+                listaTecnicaRepositorio, tipoRepositorio, trilha.execucao());
 
         // Pré-cadastrar lista técnica com um componente
         ListaTecnica lista = ListaTecnica.criar(MATERIAL_ID, "v1",
-                List.of(ItemListaTecnica.criar(UUID.randomUUID(),
+                List.of(ItemListaTecnica.criar(COMPONENTE_ID,
                         new BigDecimal("5.00"), "kg")), USUARIO_TESTE);
         lista.ativar(USUARIO_TESTE);
         listaTecnicaRepositorio.salvar(lista);
         listaTecnicaId = lista.getId();
+    }
+
+    private static Material material(UUID id, String codigo, TipoMaterial tipo) {
+        return Material.reconstituir(id, codigo, "Material " + codigo, tipo, "un", Assinatura.nova(USUARIO_TESTE));
+    }
+
+    private static TipoOrdem tipoConversao() {
+        return TipoOrdem.reconstituir(UUID.randomUUID(), "Conversão", null, "#6a1b9a", true,
+                new Assinatura("sistema", java.time.Instant.now(), "sistema", java.time.Instant.now()));
+    }
+
+    /** Lista ativa de um semiacabado que consome um produto acabado (a conversão). */
+    private ListaTecnica listaDeConversao() {
+        ListaTecnica lista = ListaTecnica.criar(SEMIACABADO_ID, "v1",
+                List.of(ItemListaTecnica.criar(ACABADO_COMPONENTE_ID, BigDecimal.ONE, "un")), USUARIO_TESTE);
+        lista.ativar(USUARIO_TESTE);
+        listaTecnicaRepositorio.salvar(lista);
+        return lista;
+    }
+
+    private CriarOrdemProducao.Comando comandoDeConversao(String codigo, ListaTecnica lista, UUID tipoOrdemId) {
+        return new CriarOrdemProducao.Comando(codigo, lista.getMaterialId(), lista.getId(), tipoOrdemId,
+                "Usinagem CNC", 10, LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20));
+    }
+
+    @Test
+    @DisplayName("lista que consome produto acabado só vira ordem do tipo Conversão (sem tipo ou com outro tipo é recusada)")
+    void conversaoExigeOTipoConversao() {
+        ListaTecnica lista = listaDeConversao();
+        TipoOrdem normal = tipoRepositorio.salvar(TipoOrdem.criar("Produção Normal", null, "#1565c0", USUARIO_TESTE));
+
+        assertThatThrownBy(() -> casoDeUso.executar(comandoDeConversao("OP-C1", lista, null)))
+                .isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("tipo Conversão");
+        assertThatThrownBy(() -> casoDeUso.executar(comandoDeConversao("OP-C2", lista, normal.getId())))
+                .isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("tipo Conversão");
+        assertThat(repositorio.listarTodas()).isEmpty();
+        assertThat(consumoRepositorio.listarPorOrdemProducao(UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("ordem do tipo Conversão consome produto acabado e projeta o consumo dele")
+    void conversaoConsomeAcabado() {
+        ListaTecnica lista = listaDeConversao();
+        TipoOrdem conversao = tipoRepositorio.salvar(tipoConversao());
+
+        OrdemProducao ordem = casoDeUso.executar(comandoDeConversao("OP-C3", lista, conversao.getId()));
+
+        assertThat(consumoRepositorio.listarPorOrdemProducao(ordem.getId()))
+                .singleElement().satisfies(c -> assertThat(c.getMaterialId()).isEqualTo(ACABADO_COMPONENTE_ID));
+    }
+
+    @Test
+    @DisplayName("o tipo Conversão só vale para ordem que produz semiacabado")
+    void conversaoSoProduzSemiacabado() {
+        TipoOrdem conversao = tipoRepositorio.salvar(tipoConversao());
+
+        assertThatThrownBy(() -> casoDeUso.executar(new CriarOrdemProducao.Comando("OP-C4", MATERIAL_ID, listaTecnicaId,
+                conversao.getId(), "Usinagem CNC", 5, LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20))))
+                .isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("produzem semiacabado");
+        assertThat(repositorio.listarTodas()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("tipo de ordem que não existe é recusado")
+    void tipoInexistente() {
+        assertThatThrownBy(() -> casoDeUso.executar(new CriarOrdemProducao.Comando("OP-C5", MATERIAL_ID, listaTecnicaId,
+                UUID.randomUUID(), "Usinagem CNC", 5, LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20))))
+                .isInstanceOf(TipoOrdemNaoEncontradoException.class);
     }
 
     private CriarOrdemProducao.Comando comandoValido(String codigo) {
@@ -104,7 +187,7 @@ class CriarOrdemProducaoTest {
     void aceitaOutraVersaoAtiva() {
         ListaTecnica v2 = ListaTecnica.criarVersao(MATERIAL_ID,
                 listaTecnicaRepositorio.buscarPorId(listaTecnicaId).orElseThrow().getListaId(), "v2",
-                List.of(ItemListaTecnica.criar(UUID.randomUUID(), BigDecimal.ONE, "kg")), USUARIO_TESTE);
+                List.of(ItemListaTecnica.criar(COMPONENTE_ID, BigDecimal.ONE, "kg")), USUARIO_TESTE);
         v2.ativar(USUARIO_TESTE);
         listaTecnicaRepositorio.salvar(v2);
 
