@@ -39,6 +39,25 @@ três fases, cada uma em seu PR:
   sem link, e o clique no gráfico fica desligado. O servidor continua sendo a barreira: a pesquisa exige
   `ORDEM_VISUALIZAR`.
 
+### Fase 2 em detalhe
+
+- **Entregas por mês** (`GET /dashboard/entregas-por-mes?meses=12`, 1 a 24): por mês do **fim planejado**, conta
+  ordens (não peças, que misturariam produtos diferentes) em quatro grupos: concluídas no prazo, concluídas com
+  atraso, abertas atrasadas e abertas no prazo. Canceladas ficam de fora. Meses sem ordens vêm com zeros.
+- **"No prazo"** usa o instante em que o **sistema registrou a conclusão** (a assinatura da ordem, que é estado
+  terminal e não se digita), convertido para o dia no fuso do servidor, e não a data de fabricação do lote, que é
+  informada por quem conclui. Premissa decidida com o responsável pelo produto.
+- **Aderência ao prazo** (indicador): concluídas no prazo ÷ concluídas, no período escolhido (3, 6 ou 12 meses),
+  calculada no frontend a partir da mesma série; sem conclusões mostra "—", nunca 0% ou 100%.
+- **Atrasos por centro** (`GET /dashboard/atrasos-por-centro`): agrupado e contado no banco, com há quantos dias a
+  ordem mais antiga está atrasada. A soma bate com o indicador "Atrasadas".
+- **Cliques:** a pesquisa de ordens ganha `centro` (nome exato), `fimDe` e `fimAte` (fim planejado, inclusivos).
+  Um mês do gráfico abre as ordens daquele mês; um centro abre as atrasadas dele. Os filtros aparecem como chips
+  removíveis. A listagem do mês inclui as canceladas, que o gráfico não conta (dito na legenda).
+- **Permissões:** os endpoints novos exigem `DASHBOARD_VISUALIZAR` (só agregados); o clique exige `ORDEM_VISUALIZAR`.
+- **Desempenho:** a série carrega as ordens da janela de até 24 meses e agrega em memória (o fuso é regra de
+  domínio, testável). Sem medição que justifique otimizar; se a base crescer, vira consulta agregada.
+
 ## Alternativas consideradas
 
 | Alternativa | Por que foi descartada |
@@ -58,6 +77,5 @@ três fases, cada uma em seu PR:
     teste).
   - Os cartões de indicador do Estoque ainda usam ícones coloridos; ficam para uma passada de consistência.
 - **Rollback**: reverter o PR. O parâmetro novo é opcional e nenhum campo foi alterado nem removido.
-- **Pendências** (fases 2 e 3): séries mensais, atrasos por centro de trabalho, painel de atenção e a
-  "aderência ao prazo", que depende de a ordem guardar a data real de conclusão (a verificar no modelo antes de
-  propor a regra).
+- **Pendências** (fase 3): painel "precisa de atenção" (ordens mais atrasadas, lotes perto do vencimento e
+  consumos com desvio).
