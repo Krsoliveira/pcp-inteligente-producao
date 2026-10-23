@@ -45,6 +45,14 @@ public class ConsumoMaterialRepositoryAdapter implements ConsumoMaterialReposito
     }
 
     @Override
+    public List<ConsumoMaterial> listarPorOrdensProducao(Collection<UUID> ordemProducaoIds) {
+        if (ordemProducaoIds.isEmpty()) return List.of();
+        return springData.findByOrdemProducaoIdIn(ordemProducaoIds).stream()
+                .map(ConsumoMaterialJpaEntity::paraDominio)
+                .toList();
+    }
+
+    @Override
     public List<ConsumoMaterial> listarPorOrdemProducao(UUID ordemProducaoId) {
         return springData.findByOrdemProducaoId(ordemProducaoId).stream()
                 .map(ConsumoMaterialJpaEntity::paraDominio)

@@ -40,6 +40,8 @@ public enum Permissao {
 
     AUDITORIA_VISUALIZAR("Auditoria", "Ver o histórico de alterações"),
 
+    RELATORIO_CONSUMO_VISUALIZAR("Relatórios", "Ver o relatório de consumo de ordens"),
+
     ACESSO_VISUALIZAR("Acessos", "Ver perfis e usuários"),
     PERFIL_GERENCIAR("Acessos", "Criar, alterar e excluir perfis"),
     USUARIO_GERENCIAR("Acessos", "Criar usuários e atribuir perfis");

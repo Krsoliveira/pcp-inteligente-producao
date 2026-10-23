@@ -35,6 +35,7 @@ import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.AtualizarTipoOrdem;
 import com.krsoliveira.pcp.application.dashboard.ConsultarAtrasosPorCentro;
+import com.krsoliveira.pcp.application.relatorio.ConsultarConsumoDeOrdens;
 import com.krsoliveira.pcp.application.dashboard.ConsultarEntregasPorMes;
 import com.krsoliveira.pcp.application.dashboard.ConsultarResumoProducao;
 import com.krsoliveira.pcp.application.ordem.CadastrarTipoOrdem;
@@ -159,6 +160,12 @@ public class ConfiguracaoCasosDeUso {
     @Bean
     ConsultarResumoProducao consultarResumoProducao(OrdemProducaoRepository ordens, LoteRepository lotes) {
         return new ConsultarResumoProducao(ordens, lotes);
+    }
+
+    @Bean
+    ConsultarConsumoDeOrdens consultarConsumoDeOrdens(OrdemProducaoRepository ordens, ConsumoMaterialRepository consumos,
+                                                      MaterialRepository materiais) {
+        return new ConsultarConsumoDeOrdens(ordens, consumos, materiais);
     }
 
     @Bean
