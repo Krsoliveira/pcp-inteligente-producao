@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.ConsultarOrdensProducao;
@@ -58,6 +59,7 @@ public class OrdemProducaoController {
         this.concluirOrdemProducao = concluirOrdemProducao;
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_CRIAR')")
     @PostMapping
     @Operation(summary = "Cria uma ordem de produção",
             description = "A ordem nasce com status PLANEJADA. O código deve ser único.")
@@ -68,6 +70,7 @@ public class OrdemProducaoController {
         return ResponseEntity.created(location).body(OrdemProducaoResponse.de(ordem));
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_VISUALIZAR')")
     @GetMapping
     @Operation(summary = "Lista todas as ordens de produção")
     public List<OrdemProducaoResponse> listar() {
@@ -76,6 +79,7 @@ public class OrdemProducaoController {
                 .toList();
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_VISUALIZAR')")
     @GetMapping("/pesquisa")
     @Operation(summary = "Pesquisa ordens com filtro e paginação",
             description = "Filtra no servidor por trecho do código (busca), por status e pelo período do início "
@@ -94,12 +98,14 @@ public class OrdemProducaoController {
         return PaginaResponse.de(resultado, OrdemProducaoResponse::de);
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_VISUALIZAR')")
     @GetMapping("/{id}")
     @Operation(summary = "Busca uma ordem de produção pelo id")
     public OrdemProducaoResponse porId(@PathVariable UUID id) {
         return OrdemProducaoResponse.de(consultarOrdensProducao.porId(id));
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_ATUALIZAR_STATUS')")
     @PatchMapping("/{id}/status")
     @Operation(summary = "Avança ou cancela o status de uma ordem",
             description = "Transições válidas: PLANEJADA→LIBERADA→EM_PRODUCAO; "
@@ -110,6 +116,7 @@ public class OrdemProducaoController {
         return OrdemProducaoResponse.de(atualizarStatusOrdemProducao.executar(id, request.status()));
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_CONCLUIR')")
     @PostMapping("/{id}/concluir")
     @Operation(summary = "Concluir ordem de produção",
             description = "Valida que todos os consumos de material estão registrados e justificados, "
