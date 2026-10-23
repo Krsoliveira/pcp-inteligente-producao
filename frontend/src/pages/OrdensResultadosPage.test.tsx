@@ -187,4 +187,46 @@ describe('OrdensResultadosPage', () => {
 
     expect(screen.getByTestId('rota')).toHaveTextContent('pagina=1')
   })
+
+  describe('atalho "atrasadas" vindo do dashboard', () => {
+    it('envia atrasadas=true ao servidor e mostra o chip do filtro', async () => {
+      montar(`${ROTA}?atrasadas=true`)
+
+      await screen.findByText('OP-2026-0003')
+
+      expect(pesquisarMock).toHaveBeenCalledWith(expect.objectContaining({ atrasadas: true }))
+      expect(screen.getByText('Somente ordens atrasadas')).toBeInTheDocument()
+      expect(screen.getByText('3 ordens encontradas')).toBeInTheDocument() // com filtro ativo, não "cadastradas"
+    })
+
+    it('remover o chip volta a pesquisar sem o filtro e tira o parâmetro da URL', async () => {
+      montar(`${ROTA}?atrasadas=true&status=LIBERADA`)
+      await screen.findByText('OP-2026-0003')
+
+      await userEvent.click(within(screen.getByText('Somente ordens atrasadas').closest('.MuiChip-root') as HTMLElement).getByTestId('CancelIcon'))
+
+      await waitFor(() => expect(screen.queryByText('Somente ordens atrasadas')).not.toBeInTheDocument())
+      expect(screen.getByTestId('rota')).not.toHaveTextContent('atrasadas')
+      expect(screen.getByTestId('rota')).toHaveTextContent('status=LIBERADA') // os outros filtros ficam
+      expect(pesquisarMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'LIBERADA', atrasadas: undefined }))
+    })
+
+    it('só "true" liga o filtro; qualquer outro valor na URL é ignorado', async () => {
+      montar(`${ROTA}?atrasadas=talvez`)
+
+      await screen.findByText('OP-2026-0003')
+
+      expect(screen.queryByText('Somente ordens atrasadas')).not.toBeInTheDocument()
+      expect(pesquisarMock).toHaveBeenCalledWith(expect.objectContaining({ atrasadas: undefined }))
+    })
+
+    it('Limpar remove também o filtro de atrasadas', async () => {
+      montar(`${ROTA}?atrasadas=true`)
+      await screen.findByText('OP-2026-0003')
+
+      await userEvent.click(screen.getByRole('button', { name: 'Limpar' }))
+
+      await waitFor(() => expect(screen.queryByText('Somente ordens atrasadas')).not.toBeInTheDocument())
+    })
+  })
 })
