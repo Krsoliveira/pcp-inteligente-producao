@@ -70,6 +70,31 @@ public class ConsumoMaterial {
     }
 
     /**
+     * Fábrica para um consumo NÃO PLANEJADO: item adicionado pelo usuário ao lançar o consumo, fora da lista técnica
+     * (ADR-0025). Nasce com quantidade planejada zero; o desvio é, portanto, tudo o que foi consumido.
+     */
+    public static ConsumoMaterial naoPlanejado(UUID ordemProducaoId, UUID materialId,
+                                               String unidadeDeMedida, String usuario) {
+        if (ordemProducaoId == null) {
+            throw new RegraDeNegocioException("A ordem de produção do consumo é obrigatória.");
+        }
+        if (materialId == null) {
+            throw new RegraDeNegocioException("O material do consumo é obrigatório.");
+        }
+        if (unidadeDeMedida == null || unidadeDeMedida.isBlank()) {
+            throw new RegraDeNegocioException("A unidade de medida do consumo é obrigatória.");
+        }
+        return new ConsumoMaterial(UUID.randomUUID(), ordemProducaoId, materialId,
+                BigDecimal.ZERO, null, unidadeDeMedida.trim(),
+                null, null, null, Assinatura.nova(usuario));
+    }
+
+    /** Item adicionado pelo usuário, fora da lista técnica (planejado zero). */
+    public boolean isNaoPlanejado() {
+        return quantidadePlanejada.signum() == 0;
+    }
+
+    /**
      * Reconstrói um consumo EXISTENTE a partir do banco de dados.
      */
     public static ConsumoMaterial reconstituir(UUID id, UUID ordemProducaoId, UUID materialId,

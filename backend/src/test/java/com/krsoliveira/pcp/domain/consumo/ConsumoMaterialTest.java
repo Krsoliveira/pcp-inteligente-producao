@@ -24,7 +24,63 @@ class ConsumoMaterialTest {
     }
 
     @Nested
-    @DisplayName("Projeção")
+    @DisplayName("Item não planejado (ADR-0025)")
+    class NaoPlanejado {
+
+        private ConsumoMaterial naoPlanejado() {
+            return ConsumoMaterial.naoPlanejado(ORDEM_ID, MATERIAL_ID, " un ", USUARIO);
+        }
+
+        @Test
+        @DisplayName("nasce com planejado zero, sem consumo registrado, e é reconhecido como não planejado")
+        void nasceComPlanejadoZero() {
+            ConsumoMaterial consumo = naoPlanejado();
+
+            assertThat(consumo.isNaoPlanejado()).isTrue();
+            assertThat(consumo.getQuantidadePlanejada()).isEqualByComparingTo("0");
+            assertThat(consumo.getQuantidadeConsumida()).isNull();
+            assertThat(consumo.getUnidadeDeMedida()).isEqualTo("un");
+            assertThat(consumo.estaRegistrado()).isFalse();
+        }
+
+        @Test
+        @DisplayName("as linhas projetadas da lista nunca são não planejadas")
+        void projetadoNaoEhNaoPlanejado() {
+            assertThat(consumoProjetado().isNaoPlanejado()).isFalse();
+        }
+
+        @Test
+        @DisplayName("tudo o que se consome é desvio, então registrar sem justificativa é recusado")
+        void desvioExigeJustificativa() {
+            ConsumoMaterial consumo = naoPlanejado();
+
+            assertThatThrownBy(() -> consumo.registrarConsumo(new BigDecimal("3"), " ", USUARIO))
+                    .isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("Justificativa obrigatória");
+            assertThat(consumo.estaRegistrado()).isFalse();
+        }
+
+        @Test
+        @DisplayName("com justificativa, registra e o desvio é igual ao consumido")
+        void registraComJustificativa() {
+            ConsumoMaterial consumo = naoPlanejado();
+
+            consumo.registrarConsumo(new BigDecimal("3"), "Faltou na lista", USUARIO);
+
+            assertThat(consumo.getDesvio()).isEqualByComparingTo("3");
+            assertThat(consumo.estaJustificado()).isTrue();
+            assertThat(consumo.getJustificadoPor()).isEqualTo(USUARIO);
+        }
+
+        @Test
+        @DisplayName("exige ordem, material e unidade")
+        void exigeDados() {
+            assertThatThrownBy(() -> ConsumoMaterial.naoPlanejado(null, MATERIAL_ID, "un", USUARIO)).isInstanceOf(RegraDeNegocioException.class);
+            assertThatThrownBy(() -> ConsumoMaterial.naoPlanejado(ORDEM_ID, null, "un", USUARIO)).isInstanceOf(RegraDeNegocioException.class);
+            assertThatThrownBy(() -> ConsumoMaterial.naoPlanejado(ORDEM_ID, MATERIAL_ID, " ", USUARIO)).isInstanceOf(RegraDeNegocioException.class);
+        }
+    }
+
+    @Nested
     class Projecao {
 
         @Test
