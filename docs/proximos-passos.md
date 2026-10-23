@@ -146,8 +146,9 @@ ADR-0021._
 - [ ] **Dashboard acionável, fase 3** (ADR-0022; as fases 1 e 2 estão entregues): painel "precisa de atenção"
       (ordens mais atrasadas, lotes perto do vencimento, consumos com desvio). Os cartões de indicador do Estoque
       ainda usam ícones coloridos.
-- [ ] **Regra do produto acabado (ADR-0024)**: entregue (tipo de ordem Conversão, V15). Falta reaplicá-la às linhas
-      adicionadas no lançamento de consumo (abaixo).
+- [x] **Regra do produto acabado (ADR-0024)** e **item adicionado ao consumo (ADR-0025, V16)**: entregues no
+      backend (endpoint, permissão `CONSUMO_ADICIONAR_ITEM`, auditoria). Falta a tela (abaixo).
+- [ ] **Dívida**: o `PATCH` de registro de consumo não confere se a ordem está em produção (o item adicionado confere).
 - [ ] **Tela de lançamento de consumo por ordem**: hoje o consumo é lançado um componente por vez, numa caixa aberta
       pelo ícone na ordem em produção. A decisão é uma tela por ordem com todos os componentes (consumo, lotes e
       justificativa de cada um) confirmada de uma vez (tudo ou nada, numa transação), reaproveitando a regra e a
