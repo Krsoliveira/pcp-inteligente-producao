@@ -165,7 +165,12 @@ _Filtro e ordenação por coluna no cabeçalho (estilo planilha) nas 5 listagens
       `/resumo`, o Vitest, os ADRs 0014–0018 e o estado do deploy.
 - [ ] Conferir no navegador, por inteiro, as telas de Notas Fiscais e Estoque.
 
-- [ ] **Versionamento de listas técnicas e rastreio de alterações** (decisão de 2026-10-21):
+_Várias versões em uso por lista técnica, retirar de uso, escolha da versão na ordem e comparação de versões: concluídos, ver ADR-0019._
+
+- [ ] **Listas técnicas, o que sobrou do ADR-0019**: segregar por perfil quem pode ver as listas e
+      suas comparações (hoje liberado a qualquer usuário autenticado); comparar mais de duas versões
+      de uma vez; criar uma nova versão a partir de uma existente (copiar os componentes).
+- [ ] **Rastreio de alterações das listas técnicas** (decisão de 2026-10-21; o versionamento em si já foi feito, ADR-0019):
       a lista técnica passou a ter tela de detalhe com URL própria (`/listas-tecnicas/:id`)
       justamente para receber isso. Falta definir como versionar (nova versão a partir de
       uma existente, comparação entre versões, o que acontece com ordens abertas) e um

@@ -10,7 +10,9 @@ import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.RegistrarConsumoMaterial;
 import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
 import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
+import com.krsoliveira.pcp.application.lista.CompararListasTecnicas;
 import com.krsoliveira.pcp.application.lista.ConsultarListaTecnica;
+import com.krsoliveira.pcp.application.lista.RetirarListaTecnicaDeUso;
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
 import com.krsoliveira.pcp.application.lote.RastrearLote;
 import com.krsoliveira.pcp.application.estoque.ConsultarEstoque;
@@ -207,6 +209,18 @@ public class ConfiguracaoCasosDeUso {
                                           MaterialRepository materialRepository,
                                           ExecucaoAuditada execucao) {
         return new AtivarListaTecnica(listaTecnicaRepository, materialRepository, execucao);
+    }
+
+    @Bean
+    RetirarListaTecnicaDeUso retirarListaTecnicaDeUso(ListaTecnicaRepository listaTecnicaRepository,
+                                                      MaterialRepository materialRepository,
+                                                      ExecucaoAuditada execucao) {
+        return new RetirarListaTecnicaDeUso(listaTecnicaRepository, materialRepository, execucao);
+    }
+
+    @Bean
+    CompararListasTecnicas compararListasTecnicas(ListaTecnicaRepository listaTecnicaRepository) {
+        return new CompararListasTecnicas(listaTecnicaRepository);
     }
 
     @Bean

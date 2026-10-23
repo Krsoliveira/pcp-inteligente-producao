@@ -103,7 +103,10 @@ export interface ItemListaTecnica {
 }
 
 export interface ListaTecnica {
+  /** Id da versão. */
   id: string
+  /** Id da lista do material: todas as versões do mesmo material compartilham este valor. */
+  listaId: string
   materialId: string
   versao: string
   status: StatusListaTecnica
@@ -112,6 +115,34 @@ export interface ListaTecnica {
   atualizadaEm: string
   criadaPor: string
   atualizadaPor: string
+}
+
+/** Componente nas duas versões comparadas; o lado em que ele não existe vem nulo. */
+export interface ItemComparado {
+  materialComponenteId: string
+  quantidadeA: number | null
+  unidadeA: string | null
+  quantidadeB: number | null
+  unidadeB: string | null
+}
+
+export interface VersaoResumo {
+  id: string
+  listaId: string
+  materialId: string
+  versao: string
+  status: StatusListaTecnica
+}
+
+/** Diferença entre duas versões da mesma lista técnica (GET /listas-tecnicas/comparar). */
+export interface ComparacaoDeVersoes {
+  versaoA: VersaoResumo
+  versaoB: VersaoResumo
+  temDiferencas: boolean
+  adicionados: ItemComparado[]
+  removidos: ItemComparado[]
+  alterados: ItemComparado[]
+  iguais: ItemComparado[]
 }
 
 export interface CadastrarListaTecnicaRequest {

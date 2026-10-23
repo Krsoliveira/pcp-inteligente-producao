@@ -40,6 +40,7 @@ export function material(sobrescritas: Partial<Material> = {}): Material {
 export function listaTecnica(sobrescritas: Partial<ListaTecnica> = {}): ListaTecnica {
   return {
     id: 'l-1',
+    listaId: 'lista-1',
     materialId: 'm-1',
     versao: 'v1',
     status: 'EM_REVISAO',

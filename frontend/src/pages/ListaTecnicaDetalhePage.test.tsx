@@ -1,7 +1,7 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ativarListaTecnica, buscarListaTecnicaPorId } from '../api/listasTecnicas'
+import { ativarListaTecnica, buscarListaTecnicaPorId, listarListasTecnicas, retirarListaTecnicaDeUso } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
 import { erroDeRede, erroHttp } from '../test/erros'
 import { listaTecnica, material } from '../test/fabricas'
@@ -11,11 +11,15 @@ import { ListaTecnicaDetalhePage } from './ListaTecnicaDetalhePage'
 vi.mock('../api/listasTecnicas', () => ({
   buscarListaTecnicaPorId: vi.fn(),
   ativarListaTecnica: vi.fn(),
+  retirarListaTecnicaDeUso: vi.fn(),
+  listarListasTecnicas: vi.fn(),
 }))
 vi.mock('../api/materiais', () => ({ listarMateriais: vi.fn() }))
 
 const buscarMock = vi.mocked(buscarListaTecnicaPorId)
 const ativarMock = vi.mocked(ativarListaTecnica)
+const retirarMock = vi.mocked(retirarListaTecnicaDeUso)
+const versoesMock = vi.mocked(listarListasTecnicas)
 const materiaisMock = vi.mocked(listarMateriais)
 
 const PADRAO = '/listas-tecnicas/:id'
@@ -28,6 +32,9 @@ describe('ListaTecnicaDetalhePage', () => {
   beforeEach(() => {
     buscarMock.mockReset()
     ativarMock.mockReset()
+    retirarMock.mockReset()
+    versoesMock.mockReset()
+    versoesMock.mockResolvedValue([listaTecnica()])
     materiaisMock.mockReset()
     materiaisMock.mockResolvedValue([
       material({ id: 'm-1', codigo: '103000001', descricao: 'Viga metálica' }),
@@ -72,6 +79,49 @@ describe('ListaTecnicaDetalhePage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Ativar esta versão' }))
 
     expect(await screen.findByText('Só é possível ativar listas em revisão.')).toBeInTheDocument()
+  })
+
+  it('oferece retirar de uso a versão ativa, pede confirmação e só então chama o sistema', async () => {
+    buscarMock.mockResolvedValue(listaTecnica({ status: 'ATIVA' }))
+    retirarMock.mockResolvedValue()
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar de uso' }))
+    expect(retirarMock).not.toHaveBeenCalled()
+    expect(screen.getByText(/não pode ser ativada de novo/i)).toBeInTheDocument()
+
+    // com o diálogo aberto, o botão da página fica oculto e só o do diálogo responde
+    await userEvent.click(screen.getByRole('button', { name: 'Retirar de uso' }))
+
+    await waitFor(() => expect(retirarMock).toHaveBeenCalledWith('l-1'))
+  })
+
+  it('não oferece retirar de uso uma versão que não está ativa', async () => {
+    montar()
+
+    await screen.findByRole('heading', { name: 'Viga metálica' })
+
+    expect(screen.queryByRole('button', { name: 'Retirar de uso' })).not.toBeInTheDocument()
+  })
+
+  it('lista as outras versões do mesmo material e leva à comparação', async () => {
+    versoesMock.mockResolvedValue([
+      listaTecnica({ id: 'l-1', versao: 'v1' }),
+      listaTecnica({ id: 'l-2', versao: 'v2', status: 'ATIVA', itens: [] }),
+    ])
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Comparar com a versão v2' }))
+
+    expect(screen.getByTestId('rota')).toHaveTextContent('/listas-tecnicas/comparar?a=l-1&b=l-2')
+  })
+
+  it('não mostra "outras versões" quando o material só tem esta', async () => {
+    montar()
+
+    await screen.findByRole('heading', { name: 'Viga metálica' })
+
+    expect(screen.queryByText('Outras versões desta lista')).not.toBeInTheDocument()
   })
 
   it('diz "não encontrada" apenas quando o sistema responde 404', async () => {

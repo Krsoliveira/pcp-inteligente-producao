@@ -12,6 +12,7 @@ import { MateriaisResultadosPage } from './pages/MateriaisResultadosPage'
 import { ListasTecnicasPage } from './pages/ListasTecnicasPage'
 import { ListasTecnicasResultadosPage } from './pages/ListasTecnicasResultadosPage'
 import { ListaTecnicaDetalhePage } from './pages/ListaTecnicaDetalhePage'
+import { ListaTecnicaComparacaoPage } from './pages/ListaTecnicaComparacaoPage'
 import { TiposOrdemPage } from './pages/TiposOrdemPage'
 import { LoteDetalhePage } from './pages/LoteDetalhePage'
 import { NotasFiscaisPage } from './pages/NotasFiscaisPage'
@@ -56,6 +57,7 @@ const router = createBrowserRouter([
           { path: '/materiais/resultados', element: <MateriaisResultadosPage /> },
           { path: '/listas-tecnicas', element: <ListasTecnicasPage /> },
           { path: '/listas-tecnicas/resultados', element: <ListasTecnicasResultadosPage /> },
+          { path: '/listas-tecnicas/comparar', element: <ListaTecnicaComparacaoPage /> },
           { path: '/listas-tecnicas/:id', element: <ListaTecnicaDetalhePage /> },
           { path: '/tipos-ordem', element: <TiposOrdemPage /> },
         ],

@@ -35,6 +35,33 @@ class ListaTecnicaTest {
     class Criacao {
 
         @Test
+        @DisplayName("criar abre uma lista nova: o listaId é gerado e diferente do id da versão")
+        void criarAbreListaNova() {
+            ListaTecnica lista = listaValida();
+
+            assertThat(lista.getListaId()).isNotNull().isNotEqualTo(lista.getId());
+            assertThat(listaValida().getListaId()).isNotEqualTo(lista.getListaId());
+        }
+
+        @Test
+        @DisplayName("criarVersao reaproveita o listaId informado")
+        void criarVersaoReaproveitaListaId() {
+            UUID listaId = UUID.randomUUID();
+
+            ListaTecnica v2 = ListaTecnica.criarVersao(MATERIAL_ID, listaId, "v2", itensValidos(), USUARIO);
+
+            assertThat(v2.getListaId()).isEqualTo(listaId);
+            assertThat(v2.getStatus()).isEqualTo(StatusListaTecnica.EM_REVISAO);
+        }
+
+        @Test
+        @DisplayName("criarVersao exige o listaId")
+        void criarVersaoExigeListaId() {
+            assertThatThrownBy(() -> ListaTecnica.criarVersao(MATERIAL_ID, null, "v2", itensValidos(), USUARIO))
+                    .isInstanceOf(RegraDeNegocioException.class);
+        }
+
+        @Test
         @DisplayName("cria lista válida com status EM_REVISAO")
         void criaListaValida() {
             ListaTecnica lista = listaValida();

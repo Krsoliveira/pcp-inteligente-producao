@@ -2,7 +2,6 @@ package com.krsoliveira.pcp.infrastructure.persistence;
 
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
-import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 import com.krsoliveira.pcp.domain.lista.FiltroListasTecnicas;
@@ -74,13 +73,6 @@ public class ListaTecnicaRepositoryAdapter implements ListaTecnicaRepository {
         return springDataRepository.findByMaterialId(materialId).stream()
                 .map(ListaTecnicaJpaEntity::paraDominio)
                 .toList();
-    }
-
-    @Override
-    public Optional<ListaTecnica> buscarAtivaParaMaterial(UUID materialId) {
-        return springDataRepository
-                .findByMaterialIdAndStatus(materialId, StatusListaTecnica.ATIVA)
-                .map(ListaTecnicaJpaEntity::paraDominio);
     }
 
     @Override

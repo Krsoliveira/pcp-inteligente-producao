@@ -2,7 +2,6 @@ package com.krsoliveira.pcp.application.lista;
 
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
-import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,14 +39,6 @@ public class ListaTecnicaRepositoryEmMemoria implements ListaTecnicaRepository {
         return dados.values().stream()
                 .filter(l -> materialId.equals(l.getMaterialId()))
                 .toList();
-    }
-
-    @Override
-    public Optional<ListaTecnica> buscarAtivaParaMaterial(UUID materialId) {
-        return dados.values().stream()
-                .filter(l -> materialId.equals(l.getMaterialId())
-                        && l.getStatus() == StatusListaTecnica.ATIVA)
-                .findFirst();
     }
 
     @Override
