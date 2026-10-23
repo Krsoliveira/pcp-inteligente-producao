@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { ListaTecnica, CadastrarListaTecnicaRequest } from '../types'
+import type { ComparacaoDeVersoes, ListaTecnica, CadastrarListaTecnicaRequest, FiltroListasTecnicas, PaginaDe } from '../types'
 
 export const listarListasTecnicas = async (materialId?: string): Promise<ListaTecnica[]> => {
   const { data } = await apiClient.get<ListaTecnica[]>('/v1/listas-tecnicas', {
@@ -21,4 +21,21 @@ export const cadastrarListaTecnica = async (
 
 export const ativarListaTecnica = async (id: string): Promise<void> => {
   await apiClient.patch(`/v1/listas-tecnicas/${id}/ativar`)
+}
+
+/** Retira uma versão ativa de uso (fica obsoleta, sem volta). */
+export const retirarListaTecnicaDeUso = async (id: string): Promise<void> => {
+  await apiClient.patch(`/v1/listas-tecnicas/${id}/retirar-de-uso`)
+}
+
+/** Compara duas versões da mesma lista técnica. */
+export const compararListasTecnicas = async (a: string, b: string): Promise<ComparacaoDeVersoes> => {
+  const { data } = await apiClient.get<ComparacaoDeVersoes>('/v1/listas-tecnicas/comparar', { params: { a, b } })
+  return data
+}
+
+/** Uma página de listas técnicas, já filtrada pelo servidor (das criadas mais recentemente para as mais antigas). */
+export const pesquisarListasTecnicas = async (filtro: FiltroListasTecnicas): Promise<PaginaDe<ListaTecnica>> => {
+  const { data } = await apiClient.get<PaginaDe<ListaTecnica>>('/v1/listas-tecnicas/pesquisa', { params: filtro })
+  return data
 }

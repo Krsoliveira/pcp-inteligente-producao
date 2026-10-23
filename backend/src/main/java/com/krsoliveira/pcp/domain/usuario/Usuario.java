@@ -13,16 +13,16 @@ public class Usuario {
     private final String nome;
     private final String email;
     private final String senhaHash;
-    private final Perfil perfil;
+    private UUID perfilId;
     private final Instant criadoEm;
 
     private Usuario(UUID id, String nome, String email, String senhaHash,
-                    Perfil perfil, Instant criadoEm) {
+                    UUID perfilId, Instant criadoEm) {
         this.id = id;
         this.nome = nome;
         this.email = email;
         this.senhaHash = senhaHash;
-        this.perfil = perfil;
+        this.perfilId = perfilId;
         this.criadoEm = criadoEm;
     }
 
@@ -30,7 +30,7 @@ public class Usuario {
      * Cria um novo usuário. A senha já deve chegar codificada (BCrypt);
      * a codificação é responsabilidade do caso de uso via {@link CodificadorDeSenha}.
      */
-    public static Usuario criar(String nome, String email, String senhaHash, Perfil perfil) {
+    public static Usuario criar(String nome, String email, String senhaHash, UUID perfilId) {
         if (nome == null || nome.isBlank()) {
             throw new IllegalArgumentException("Nome é obrigatório.");
         }
@@ -40,11 +40,11 @@ public class Usuario {
         if (senhaHash == null || senhaHash.isBlank()) {
             throw new IllegalArgumentException("Senha é obrigatória.");
         }
-        if (perfil == null) {
+        if (perfilId == null) {
             throw new IllegalArgumentException("Perfil é obrigatório.");
         }
         return new Usuario(UUID.randomUUID(), nome.trim(), email.trim().toLowerCase(),
-                senhaHash, perfil, Instant.now());
+                senhaHash, perfilId, Instant.now());
     }
 
     /**
@@ -52,14 +52,22 @@ public class Usuario {
      * Não revalida invariantes: os dados já passaram por {@link #criar}.
      */
     public static Usuario reconstituir(UUID id, String nome, String email, String senhaHash,
-                                       Perfil perfil, Instant criadoEm) {
-        return new Usuario(id, nome, email, senhaHash, perfil, criadoEm);
+                                       UUID perfilId, Instant criadoEm) {
+        return new Usuario(id, nome, email, senhaHash, perfilId, criadoEm);
+    }
+
+    /** Muda o perfil de acesso do usuário. Quem pode fazer isso é decidido pelo caso de uso. */
+    public void atribuirPerfil(UUID novoPerfilId) {
+        if (novoPerfilId == null) {
+            throw new IllegalArgumentException("Perfil é obrigatório.");
+        }
+        this.perfilId = novoPerfilId;
     }
 
     public UUID getId() { return id; }
     public String getNome() { return nome; }
     public String getEmail() { return email; }
     public String getSenhaHash() { return senhaHash; }
-    public Perfil getPerfil() { return perfil; }
+    public UUID getPerfilId() { return perfilId; }
     public Instant getCriadoEm() { return criadoEm; }
 }

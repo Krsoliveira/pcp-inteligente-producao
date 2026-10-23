@@ -8,5 +8,7 @@ public enum TipoEntidade {
     LOTE,
     TIPO_ORDEM,
     USUARIO,
-    NOTA_FISCAL
+    NOTA_FISCAL,
+    /** Perfil de acesso (ADR-0020). */
+    PERFIL_ACESSO
 }

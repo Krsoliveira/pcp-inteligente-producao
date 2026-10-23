@@ -103,7 +103,10 @@ export interface ItemListaTecnica {
 }
 
 export interface ListaTecnica {
+  /** Id da versão. */
   id: string
+  /** Id da lista do material: todas as versões do mesmo material compartilham este valor. */
+  listaId: string
   materialId: string
   versao: string
   status: StatusListaTecnica
@@ -112,6 +115,34 @@ export interface ListaTecnica {
   atualizadaEm: string
   criadaPor: string
   atualizadaPor: string
+}
+
+/** Componente nas duas versões comparadas; o lado em que ele não existe vem nulo. */
+export interface ItemComparado {
+  materialComponenteId: string
+  quantidadeA: number | null
+  unidadeA: string | null
+  quantidadeB: number | null
+  unidadeB: string | null
+}
+
+export interface VersaoResumo {
+  id: string
+  listaId: string
+  materialId: string
+  versao: string
+  status: StatusListaTecnica
+}
+
+/** Diferença entre duas versões da mesma lista técnica (GET /listas-tecnicas/comparar). */
+export interface ComparacaoDeVersoes {
+  versaoA: VersaoResumo
+  versaoB: VersaoResumo
+  temDiferencas: boolean
+  adicionados: ItemComparado[]
+  removidos: ItemComparado[]
+  alterados: ItemComparado[]
+  iguais: ItemComparado[]
 }
 
 export interface CadastrarListaTecnicaRequest {
@@ -289,7 +320,7 @@ export interface TokenResponse {
   token: string
 }
 
-/** Autocadastro: o backend sempre cria o usuário com perfil PLANEJADOR. */
+/** Autocadastro: o backend sempre cria o usuário com o perfil padrão (só consulta). */
 export interface RegistrarRequest {
   nome: string
   email: string
@@ -316,6 +347,7 @@ export type TipoEntidade =
   | 'TIPO_ORDEM'
   | 'NOTA_FISCAL'
   | 'USUARIO'
+  | 'PERFIL_ACESSO'
 
 export type AcaoAuditoria =
   | 'CRIADO'
@@ -329,6 +361,8 @@ export type AcaoAuditoria =
   | 'LOTE_ALOCADO'
   | 'ENTRADA_REGISTRADA'
   | 'USUARIO_REGISTRADO'
+  | 'EXCLUIDO'
+  | 'PERFIL_ATRIBUIDO'
 
 /** Mudança de valor registrada na trilha: {"de": ..., "para": ...}. */
 export interface MudancaAuditoria {
@@ -366,4 +400,141 @@ export interface FiltroEventosAuditoria {
   ate?: string
   pagina?: number
   tamanho?: number
+}
+
+/** Página devolvida pelas pesquisas do servidor. `pagina` começa em 0. */
+export interface PaginaDe<T> {
+  itens: T[]
+  pagina: number
+  tamanho: number
+  total: number
+  totalPaginas: number
+}
+
+export interface FiltroOrdens {
+  /** Trecho do código da ordem. */
+  busca?: string
+  status?: StatusOrdem
+  /** Início planejado a partir desta data (AAAA-MM-DD, inclusive). */
+  de?: string
+  /** Início planejado até esta data (AAAA-MM-DD, inclusive). */
+  ate?: string
+  pagina?: number
+  tamanho?: number
+}
+
+/** Totais do dashboard, calculados no servidor. */
+export interface ResumoProducao {
+  totalOrdens: number
+  ordensPorStatus: Record<StatusOrdem, number>
+  ordensAtrasadas: number
+  lotesDisponiveis: number
+}
+
+export interface FiltroMateriais {
+  /** Trecho da descrição ou do código (aceita 103.000.001). */
+  busca?: string
+  tipo?: TipoMaterial
+  pagina?: number
+  tamanho?: number
+}
+
+export interface FiltroListasTecnicas {
+  materialId?: string
+  status?: StatusListaTecnica
+  pagina?: number
+  tamanho?: number
+}
+
+export interface FiltroNotasFiscais {
+  /** Trecho do número da nota, do fornecedor ou do número de um lote que ela trouxe. */
+  busca?: string
+  /** Recebida a partir desta data ("YYYY-MM-DD", inclusive). */
+  de?: string
+  ate?: string
+  pagina?: number
+  tamanho?: number
+}
+
+export interface FiltroEstoque {
+  /** Trecho do código (aceita 103.000.001) ou da descrição. */
+  busca?: string
+  tipo?: TipoMaterial
+  somenteComSaldo?: boolean
+  pagina?: number
+  tamanho?: number
+}
+
+/** Alertas do estoque, calculados sobre todos os materiais. */
+export interface ResumoEstoque {
+  totalMateriais: number
+  materiaisVencendo: number
+  materiasPrimasSemSaldo: number
+}
+
+// ---- Controle de acesso (ADR-0020) ----
+
+/** Capacidades que um perfil pode ter; os nomes são os do catálogo do servidor. */
+export type Permissao =
+  | 'DASHBOARD_VISUALIZAR'
+  | 'MATERIAL_VISUALIZAR' | 'MATERIAL_CADASTRAR'
+  | 'LISTA_VISUALIZAR_ATIVAS' | 'LISTA_VISUALIZAR_TODAS' | 'LISTA_COMPARAR' | 'LISTA_CADASTRAR'
+  | 'LISTA_ATIVAR' | 'LISTA_RETIRAR_DE_USO'
+  | 'ORDEM_VISUALIZAR' | 'ORDEM_CRIAR' | 'ORDEM_ATUALIZAR_STATUS' | 'ORDEM_CONCLUIR'
+  | 'CONSUMO_VISUALIZAR' | 'CONSUMO_REGISTRAR'
+  | 'TIPO_ORDEM_VISUALIZAR' | 'TIPO_ORDEM_GERENCIAR'
+  | 'NOTA_FISCAL_VISUALIZAR' | 'NOTA_FISCAL_REGISTRAR'
+  | 'ESTOQUE_VISUALIZAR'
+  | 'AUDITORIA_VISUALIZAR'
+  | 'ACESSO_VISUALIZAR' | 'PERFIL_GERENCIAR' | 'USUARIO_GERENCIAR'
+
+/** Quem está logado e o que pode fazer (GET /acessos/eu). */
+export interface UsuarioLogado {
+  nome: string
+  email: string
+  perfil: { id: string; nome: string }
+  permissoes: Permissao[]
+}
+
+/** Uma "caixinha" do catálogo, com a área em que aparece. */
+export interface PermissaoDoCatalogo {
+  permissao: Permissao
+  area: string
+  descricao: string
+}
+
+export interface PerfilAcesso {
+  id: string
+  nome: string
+  descricao: string
+  /** Perfil de sistema com todas as permissões; não se altera nem se exclui. */
+  administrador: boolean
+  /** Perfil que o autocadastro recebe; não se exclui. */
+  padraoDoAutocadastro: boolean
+  permissoes: Permissao[]
+  quantidadeDeUsuarios: number
+  atualizadoEm: string
+  atualizadoPor: string
+}
+
+export interface SalvarPerfilRequest {
+  nome: string
+  descricao: string
+  permissoes: Permissao[]
+}
+
+export interface UsuarioAcesso {
+  id: string
+  nome: string
+  email: string
+  perfilId: string
+  perfilNome: string | null
+  criadoEm: string
+}
+
+export interface CriarUsuarioRequest {
+  nome: string
+  email: string
+  senhaProvisoria: string
+  perfilId: string
 }

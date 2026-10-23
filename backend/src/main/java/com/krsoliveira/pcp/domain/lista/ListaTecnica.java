@@ -13,9 +13,9 @@ import java.util.UUID;
  * Lista Técnica (Bill of Materials — BOM): define quais componentes e em quais
  * quantidades são necessários para produzir uma unidade de um material.
  *
- * Cada material pode ter múltiplas versões de lista (campo {@code versao}),
- * mas apenas UMA pode estar ATIVA por vez — regra garantida pelo use case
- * {@code AtivarListaTecnica}.
+ * Cada material tem UMA lista ({@code listaId}) com várias versões (campo {@code versao}).
+ * Várias versões podem estar ATIVAS ao mesmo tempo (receitas alternativas); quem decide
+ * quando uma versão sai de uso é o usuário (ADR-0019).
  *
  * Suporta BOM multinível: um componente pode ser um semiacabado que possui
  * sua própria lista técnica.
@@ -25,15 +25,17 @@ import java.util.UUID;
 public class ListaTecnica {
 
     private final UUID id;
+    private final UUID listaId;
     private final UUID materialId;
     private final String versao;
     private StatusListaTecnica status;
     private final List<ItemListaTecnica> itens;
     private Assinatura assinatura;
 
-    private ListaTecnica(UUID id, UUID materialId, String versao, StatusListaTecnica status,
+    private ListaTecnica(UUID id, UUID listaId, UUID materialId, String versao, StatusListaTecnica status,
                          List<ItemListaTecnica> itens, Assinatura assinatura) {
         this.id = id;
+        this.listaId = listaId;
         this.materialId = materialId;
         this.versao = versao;
         this.status = status;
@@ -42,12 +44,24 @@ public class ListaTecnica {
     }
 
     /**
-     * Fábrica para uma lista NOVA. Nasce sempre com status EM_REVISAO.
-     * A validação de que o material não é MATERIA_PRIMA é responsabilidade
-     * do use case, que tem acesso ao repositório de materiais.
+     * Fábrica da PRIMEIRA versão de um material: abre uma lista nova (novo {@code listaId}).
+     * Nasce sempre com status EM_REVISAO. A validação de que o material não é MATERIA_PRIMA
+     * é responsabilidade do use case, que tem acesso ao repositório de materiais.
      */
     public static ListaTecnica criar(UUID materialId, String versao,
                                      List<ItemListaTecnica> itens, String usuario) {
+        return criarVersao(materialId, UUID.randomUUID(), versao, itens, usuario);
+    }
+
+    /**
+     * Fábrica de uma versão (EM_REVISAO) de uma lista que já existe: reaproveita o
+     * {@code listaId} das demais versões do mesmo material.
+     */
+    public static ListaTecnica criarVersao(UUID materialId, UUID listaId, String versao,
+                                           List<ItemListaTecnica> itens, String usuario) {
+        if (listaId == null) {
+            throw new RegraDeNegocioException("A lista técnica da versão é obrigatória.");
+        }
         if (materialId == null) {
             throw new RegraDeNegocioException("O material da lista técnica é obrigatório.");
         }
@@ -58,23 +72,23 @@ public class ListaTecnica {
             throw new RegraDeNegocioException(
                     "A lista técnica deve ter ao menos um componente.");
         }
-        return new ListaTecnica(UUID.randomUUID(), materialId, versao.trim(),
+        return new ListaTecnica(UUID.randomUUID(), listaId, materialId, versao.trim(),
                 StatusListaTecnica.EM_REVISAO, itens, Assinatura.nova(usuario));
     }
 
     /**
      * Reconstrói uma lista EXISTENTE a partir do banco de dados.
      */
-    public static ListaTecnica reconstituir(UUID id, UUID materialId, String versao,
+    public static ListaTecnica reconstituir(UUID id, UUID listaId, UUID materialId, String versao,
                                             StatusListaTecnica status,
                                             List<ItemListaTecnica> itens,
                                             Assinatura assinatura) {
-        return new ListaTecnica(id, materialId, versao, status, itens, assinatura);
+        return new ListaTecnica(id, listaId, materialId, versao, status, itens, assinatura);
     }
 
     /**
-     * Ativa esta lista. Só é possível se estiver EM_REVISAO.
-     * Cabe ao use case garantir que a lista atualmente ATIVA seja obsoletada antes.
+     * Ativa esta versão. Só é possível se estiver EM_REVISAO. Não afeta as outras versões
+     * do material: várias podem estar ATIVAS ao mesmo tempo.
      */
     public void ativar(String usuario) {
         Assinatura alterada = assinatura.alterada(usuario);
@@ -87,7 +101,7 @@ public class ListaTecnica {
     }
 
     /**
-     * Marca esta lista como OBSOLETA. Chamado pelo use case ao ativar uma versão mais nova.
+     * Retira esta versão de uso (ATIVA → OBSOLETA). Ação explícita do usuário.
      */
     public void obsoleter(String usuario) {
         Assinatura alterada = assinatura.alterada(usuario);
@@ -100,6 +114,7 @@ public class ListaTecnica {
     }
 
     public UUID getId() { return id; }
+    public UUID getListaId() { return listaId; }
     public UUID getMaterialId() { return materialId; }
     public String getVersao() { return versao; }
     public StatusListaTecnica getStatus() { return status; }

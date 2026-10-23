@@ -1,7 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
-import com.krsoliveira.pcp.domain.usuario.Perfil;
 import com.krsoliveira.pcp.infrastructure.security.JwtService;
 import com.krsoliveira.pcp.infrastructure.security.UsuarioDetailsService;
 import com.krsoliveira.pcp.infrastructure.web.dto.LoginRequest;
@@ -31,8 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Autenticação", description = "Registro de usuários e geração de tokens JWT")
 public class AuthController {
 
-    private static final Perfil PERFIL_AUTOCADASTRO = Perfil.PLANEJADOR;
-
     private final RegistrarUsuario registrarUsuario;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -50,13 +47,13 @@ public class AuthController {
 
     @PostMapping("/registrar")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Registra um novo usuário com perfil PLANEJADOR",
+    @Operation(summary = "Registra um novo usuário com o perfil padrão do autocadastro",
             description = "Cria a conta e devolve 201 sem corpo. Use /login para obter o token. "
-                    + "O cadastro público sempre cria PLANEJADOR — um campo 'perfil' enviado é ignorado.")
+                    + "O cadastro público sempre recebe o perfil padrão (só consulta, ADR-0020) — um campo "
+                    + "'perfil' enviado é ignorado; quem muda o perfil é um gestor.")
     public void registrar(@Valid @RequestBody RegistrarRequest request) {
-        // Autocadastro nunca concede GERENTE: o perfil é decidido aqui, não pelo cliente.
-        registrarUsuario.autocadastrar(
-                request.nome(), request.email(), request.senha(), PERFIL_AUTOCADASTRO);
+        // O perfil é decidido no servidor, nunca pelo cliente.
+        registrarUsuario.autocadastrar(request.nome(), request.email(), request.senha());
     }
 
     @PostMapping("/login")

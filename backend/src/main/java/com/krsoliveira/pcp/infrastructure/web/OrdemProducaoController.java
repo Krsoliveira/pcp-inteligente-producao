@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.ConsultarOrdensProducao;
@@ -7,11 +8,16 @@ import com.krsoliveira.pcp.application.ordem.CriarOrdemProducao;
 import com.krsoliveira.pcp.infrastructure.web.dto.AtualizarStatusRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.ConcluirOrdemRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.ConcluirOrdemResponse;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.ordem.FiltroOrdens;
+import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 import com.krsoliveira.pcp.infrastructure.web.dto.CriarOrdemProducaoRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.OrdemProducaoResponse;
+import com.krsoliveira.pcp.infrastructure.web.dto.PaginaResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,10 +26,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,6 +59,7 @@ public class OrdemProducaoController {
         this.concluirOrdemProducao = concluirOrdemProducao;
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_CRIAR')")
     @PostMapping
     @Operation(summary = "Cria uma ordem de produção",
             description = "A ordem nasce com status PLANEJADA. O código deve ser único.")
@@ -61,6 +70,7 @@ public class OrdemProducaoController {
         return ResponseEntity.created(location).body(OrdemProducaoResponse.de(ordem));
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_VISUALIZAR')")
     @GetMapping
     @Operation(summary = "Lista todas as ordens de produção")
     public List<OrdemProducaoResponse> listar() {
@@ -69,12 +79,33 @@ public class OrdemProducaoController {
                 .toList();
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_VISUALIZAR')")
+    @GetMapping("/pesquisa")
+    @Operation(summary = "Pesquisa ordens com filtro e paginação",
+            description = "Filtra no servidor por trecho do código (busca), por status e pelo período do início "
+                    + "planejado (de/ate, datas inclusivas; período invertido devolve 422) e devolve uma página, "
+                    + "das ordens mais recentes para as mais antigas. Tamanho padrão 25, máximo 100; "
+                    + "valores fora desses limites são corrigidos.")
+    public PaginaResponse<OrdemProducaoResponse> pesquisar(
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) StatusOrdemProducao status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamanho) {
+        var resultado = consultarOrdensProducao.pesquisar(
+                new FiltroOrdens(busca, status, de, ate), PedidoDePagina.de(pagina, tamanho));
+        return PaginaResponse.de(resultado, OrdemProducaoResponse::de);
+    }
+
+    @PreAuthorize("hasAuthority('ORDEM_VISUALIZAR')")
     @GetMapping("/{id}")
     @Operation(summary = "Busca uma ordem de produção pelo id")
     public OrdemProducaoResponse porId(@PathVariable UUID id) {
         return OrdemProducaoResponse.de(consultarOrdensProducao.porId(id));
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_ATUALIZAR_STATUS')")
     @PatchMapping("/{id}/status")
     @Operation(summary = "Avança ou cancela o status de uma ordem",
             description = "Transições válidas: PLANEJADA→LIBERADA→EM_PRODUCAO; "
@@ -85,6 +116,7 @@ public class OrdemProducaoController {
         return OrdemProducaoResponse.de(atualizarStatusOrdemProducao.executar(id, request.status()));
     }
 
+    @PreAuthorize("hasAuthority('ORDEM_CONCLUIR')")
     @PostMapping("/{id}/concluir")
     @Operation(summary = "Concluir ordem de produção",
             description = "Valida que todos os consumos de material estão registrados e justificados, "

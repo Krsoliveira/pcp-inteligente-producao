@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePermissoes } from '../hooks/usePermissoes'
 import { useParams, Link as RouterLink } from 'react-router-dom'
 import Link from '@mui/material/Link'
 import Box from '@mui/material/Box'
@@ -30,7 +31,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { buscarOrdemPorId, concluirOrdem } from '../api/ordens'
 import { listarConsumosPorOrdem } from '../api/consumos'
 import { listarLotesPorOrdem } from '../api/lotes'
@@ -44,11 +44,14 @@ import { RegistrarConsumoDialog } from '../components/consumo/RegistrarConsumoDi
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
 import { formatarCodigoMaterial, formatarDataHora } from '../utils/formatacao'
 import type { ConsumoMaterial, ConcluirOrdemRequest } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 
 export function OrdemDetalhePage() {
   const { id } = useParams<{ id: string }>()
   const queryClient = useQueryClient()
   const [consumoSelecionado, setConsumoSelecionado] = useState<ConsumoMaterial | null>(null)
+  const { tem } = usePermissoes()
   const [dialogConcluir, setDialogConcluir] = useState(false)
   const [dialogStatus, setDialogStatus] = useState(false)
 
@@ -61,13 +64,13 @@ export function OrdemDetalhePage() {
   const consumosQuery = useQuery({
     queryKey: ['consumos', id],
     queryFn: () => listarConsumosPorOrdem(id!),
-    enabled: !!id,
+    enabled: !!id && tem('CONSUMO_VISUALIZAR'),
   })
 
   const lotesQuery = useQuery({
     queryKey: ['lotes-ordem', id],
     queryFn: () => listarLotesPorOrdem(id!),
-    enabled: !!id,
+    enabled: !!id && tem('ESTOQUE_VISUALIZAR'),
   })
 
   const listaTecnicaQuery = useQuery({
@@ -77,7 +80,7 @@ export function OrdemDetalhePage() {
   })
 
   // Catálogo de materiais (compartilhado em cache) para exibir código em vez de ID.
-  const materiaisQuery = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
+  const materiaisQuery = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais, enabled: tem('MATERIAL_VISUALIZAR') })
   const materialPorId = new Map((materiaisQuery.data ?? []).map((m) => [m.id, m]))
   const rotuloMaterial = (id: string) => {
     const m = materialPorId.get(id)
@@ -91,7 +94,7 @@ export function OrdemDetalhePage() {
   const materialQuery = useQuery({
     queryKey: ['material', ordemQuery.data?.materialId],
     queryFn: () => buscarMaterialPorId(ordemQuery.data!.materialId),
-    enabled: !!ordemQuery.data?.materialId,
+    enabled: !!ordemQuery.data?.materialId && tem('MATERIAL_VISUALIZAR'),
   })
 
   const invalidar = () => {
@@ -128,7 +131,7 @@ export function OrdemDetalhePage() {
   }
 
   if (ordemQuery.isError || !ordem) {
-    return <Alert severity="error">Ordem não encontrada.</Alert>
+    return <Alert severity="error">{mensagemDeErroAoCarregar(ordemQuery.error, 'Ordem não encontrada.')}</Alert>
   }
 
   return (
@@ -143,12 +146,12 @@ export function OrdemDetalhePage() {
         ]}
         action={
           <Box sx={{ display: 'flex', gap: 1 }}>
-            {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && (
+            {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && tem('ORDEM_ATUALIZAR_STATUS') && (
               <Button variant="outlined" onClick={() => setDialogStatus(true)}>
                 Alterar Status
               </Button>
             )}
-            {podeConcluir && (
+            {podeConcluir && tem('ORDEM_CONCLUIR') && (
               <Button variant="contained" color="success" startIcon={<DoneAllIcon />} onClick={() => setDialogConcluir(true)}>
                 Concluir Ordem
               </Button>
@@ -252,7 +255,9 @@ export function OrdemDetalhePage() {
                 </Box>
               </Box>
               <Divider sx={{ mb: 2 }} />
-              {consumosQuery.isLoading ? (
+              {!tem('CONSUMO_VISUALIZAR') ? (
+                <Typography variant="body2" color="text.secondary">O seu perfil não inclui a consulta de consumos de material.</Typography>
+              ) : consumosQuery.isLoading ? (
                 <Skeleton variant="rounded" height={120} />
               ) : consumos.length === 0 ? (
                 <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
@@ -308,7 +313,7 @@ export function OrdemDetalhePage() {
                             </TableCell>
                             {ordem.status === 'EM_PRODUCAO' && (
                               <TableCell align="center">
-                                {!c.registrado && (
+                                {!c.registrado && tem('CONSUMO_REGISTRAR') && (
                                   <Tooltip title="Registrar consumo">
                                     <IconButton size="small" color="primary" onClick={() => setConsumoSelecionado(c)}>
                                       <EditIcon sx={{ fontSize: 16 }} />
@@ -404,7 +409,7 @@ function ConcluirOrdemDialog({ aberto, ordemId, onFechar, onSucesso }: ConcluirO
   const { mutate, isPending } = useMutation({
     mutationFn: (payload: ConcluirOrdemRequest) => concluirOrdem(ordemId, payload),
     onSuccess: () => { onSucesso(); setErro(null) },
-    onError: (err: unknown) => { if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro.'); else setErro('Erro inesperado.') },
+    onError: (err: unknown) => setErro(mensagemDeErroDaApi(err, 'Não foi possível concluir a ordem. Tente novamente.')),
   })
 
   const handleSubmit = () => {

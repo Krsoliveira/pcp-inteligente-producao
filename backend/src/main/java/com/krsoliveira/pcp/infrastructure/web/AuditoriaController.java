@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.auditoria.ConsultarTrilhaDeAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.FiltroEventos;
@@ -26,6 +27,7 @@ import java.util.UUID;
  * Somente leitura — eventos nunca são alterados nem apagados.
  */
 @RestController
+@PreAuthorize("hasAuthority('AUDITORIA_VISUALIZAR')")
 @RequestMapping("/api/v1/auditoria")
 @Tag(name = "Auditoria", description = "Consulta da trilha de auditoria imutável")
 public class AuditoriaController {

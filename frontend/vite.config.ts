@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
@@ -15,6 +15,15 @@ export default defineConfig({
         },
       },
     },
+  },
+  test: {
+    // Ambiente de navegador simulado; as importações do vitest são explícitas (sem globais).
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
+    css: false,
+    // Telas com MUI + userEvent levam alguns segundos com vários arquivos em paralelo; o padrão (5 s) dava falha intermitente.
+    testTimeout: 15000,
   },
   server: {
     port: 3000,

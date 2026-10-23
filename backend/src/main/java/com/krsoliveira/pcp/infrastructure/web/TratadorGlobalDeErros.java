@@ -1,5 +1,8 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import com.krsoliveira.pcp.application.acesso.PerfilNaoEncontradoException;
+import com.krsoliveira.pcp.application.acesso.PerfilNomeJaUtilizadoException;
+import com.krsoliveira.pcp.application.acesso.UsuarioNaoEncontradoException;
 import com.krsoliveira.pcp.application.auth.EmailJaUtilizadoException;
 import com.krsoliveira.pcp.application.consumo.ConsumoMaterialNaoEncontradoException;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
@@ -14,9 +17,11 @@ import com.krsoliveira.pcp.application.ordem.NomeTipoOrdemJaUtilizadoException;
 import com.krsoliveira.pcp.application.ordem.OrdemProducaoNaoEncontradaException;
 import com.krsoliveira.pcp.application.ordem.TipoOrdemNaoEncontradoException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.acesso.AcessoNegadoException;
 import com.krsoliveira.pcp.infrastructure.security.CorpoGrandeDemaisException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -43,6 +48,33 @@ public class TratadorGlobalDeErros {
     public ProblemDetail regraDeNegocio(RegraDeNegocioException ex) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
         problema.setTitle("Regra de negócio violada");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    /** Falta a permissão exigida pelo endpoint (segurança por método) ou a regra "só se concede o que se tem". */
+    @ExceptionHandler({AccessDeniedException.class, AcessoNegadoException.class})
+    public ProblemDetail acessoNegado(RuntimeException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problema.setTitle("Acesso negado");
+        problema.setDetail(ex instanceof AcessoNegadoException
+                ? ex.getMessage()
+                : "Você não tem permissão para fazer isso.");
+        return problema;
+    }
+
+    @ExceptionHandler({PerfilNaoEncontradoException.class, UsuarioNaoEncontradoException.class})
+    public ProblemDetail acessoNaoEncontrado(RuntimeException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problema.setTitle("Recurso não encontrado");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(PerfilNomeJaUtilizadoException.class)
+    public ProblemDetail perfilDuplicado(PerfilNomeJaUtilizadoException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problema.setTitle("Conflito");
         problema.setDetail(ex.getMessage());
         return problema;
     }

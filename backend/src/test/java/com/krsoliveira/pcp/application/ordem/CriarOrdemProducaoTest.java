@@ -53,6 +53,7 @@ class CriarOrdemProducaoTest {
         ListaTecnica lista = ListaTecnica.criar(MATERIAL_ID, "v1",
                 List.of(ItemListaTecnica.criar(UUID.randomUUID(),
                         new BigDecimal("5.00"), "kg")), USUARIO_TESTE);
+        lista.ativar(USUARIO_TESTE);
         listaTecnicaRepositorio.salvar(lista);
         listaTecnicaId = lista.getId();
     }
@@ -96,6 +97,56 @@ class CriarOrdemProducaoTest {
         assertThat(consumoRepositorio.listarPorOrdemProducao(ordem.getId()))
                 .hasSize(1)
                 .allMatch(c -> !c.estaRegistrado());
+    }
+
+    @Test
+    @DisplayName("aceita qualquer versão ativa do material (várias podem estar em uso)")
+    void aceitaOutraVersaoAtiva() {
+        ListaTecnica v2 = ListaTecnica.criarVersao(MATERIAL_ID,
+                listaTecnicaRepositorio.buscarPorId(listaTecnicaId).orElseThrow().getListaId(), "v2",
+                List.of(ItemListaTecnica.criar(UUID.randomUUID(), BigDecimal.ONE, "kg")), USUARIO_TESTE);
+        v2.ativar(USUARIO_TESTE);
+        listaTecnicaRepositorio.salvar(v2);
+
+        OrdemProducao ordem = casoDeUso.executar(new CriarOrdemProducao.Comando("OP-0010", MATERIAL_ID, v2.getId(),
+                null, "Usinagem CNC", 5, LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20)));
+
+        assertThat(ordem.getListaTecnicaId()).isEqualTo(v2.getId());
+    }
+
+    @Test
+    @DisplayName("rejeita versão que não está ativa e não cria ordem nem consumos")
+    void rejeitaVersaoQueNaoEstaAtiva() {
+        ListaTecnica emRevisao = ListaTecnica.criar(UUID.randomUUID(), "v1",
+                List.of(ItemListaTecnica.criar(UUID.randomUUID(), BigDecimal.ONE, "kg")), USUARIO_TESTE);
+        listaTecnicaRepositorio.salvar(emRevisao);
+
+        assertThatThrownBy(() -> casoDeUso.executar(new CriarOrdemProducao.Comando("OP-0011",
+                emRevisao.getMaterialId(), emRevisao.getId(), null, "Usinagem CNC", 5,
+                LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20))))
+                .isInstanceOf(com.krsoliveira.pcp.domain.RegraDeNegocioException.class)
+                .hasMessageContaining("ativas");
+        assertThat(repositorio.listarTodas()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("rejeita versão de outro material")
+    void rejeitaVersaoDeOutroMaterial() {
+        assertThatThrownBy(() -> casoDeUso.executar(new CriarOrdemProducao.Comando("OP-0012",
+                UUID.randomUUID(), listaTecnicaId, null, "Usinagem CNC", 5,
+                LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20))))
+                .isInstanceOf(com.krsoliveira.pcp.domain.RegraDeNegocioException.class)
+                .hasMessageContaining("material");
+        assertThat(repositorio.listarTodas()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("rejeita versão inexistente")
+    void rejeitaVersaoInexistente() {
+        assertThatThrownBy(() -> casoDeUso.executar(new CriarOrdemProducao.Comando("OP-0013",
+                MATERIAL_ID, UUID.randomUUID(), null, "Usinagem CNC", 5,
+                LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20))))
+                .isInstanceOf(com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException.class);
     }
 
     @Test

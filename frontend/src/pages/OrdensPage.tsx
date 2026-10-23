@@ -1,109 +1,89 @@
 import { useState } from 'react'
+import { SePermitido } from '../components/SePermitido'
+import { usePermissoes } from '../hooks/usePermissoes'
+import { useNavigate } from 'react-router-dom'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
-import TextField from '@mui/material/TextField'
-import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 import Skeleton from '@mui/material/Skeleton'
-import Alert from '@mui/material/Alert'
-import InputAdornment from '@mui/material/InputAdornment'
 import AddIcon from '@mui/icons-material/Add'
-import SearchIcon from '@mui/icons-material/Search'
 import ListAltIcon from '@mui/icons-material/ListAlt'
 import { useQuery } from '@tanstack/react-query'
-import { listarOrdens } from '../api/ordens'
-import { OrdemTable } from '../components/OrdemTable'
+import { pesquisarOrdens } from '../api/ordens'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
+import { OrdemTable, colunasDeOrdens } from '../components/OrdemTable'
 import { CriarOrdemDialog } from '../components/CriarOrdemDialog'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
+import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
+import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
+import { CamposFiltroOrdens } from '../components/ordens/CamposFiltroOrdens'
+import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
+import { periodoInvertido } from '../components/consulta/CamposDePeriodo'
+import { montarBusca } from '../utils/url'
 import type { OrdemProducao, StatusOrdem } from '../types'
 
-const STATUS_OPCOES: Array<{ label: string; value: StatusOrdem | 'TODAS' }> = [
-  { label: 'Todos os status', value: 'TODAS' },
-  { label: 'Planejada', value: 'PLANEJADA' },
-  { label: 'Liberada', value: 'LIBERADA' },
-  { label: 'Em Produção', value: 'EM_PRODUCAO' },
-  { label: 'Concluída', value: 'CONCLUIDA' },
-  { label: 'Cancelada', value: 'CANCELADA' },
-]
-
+/** Primeira etapa: escolher o que consultar (ou abrir uma das 10 ordens mais recentes). */
 export function OrdensPage() {
+  const { tem } = usePermissoes()
+  const navigate = useNavigate()
   const [dialogCriarAberto, setDialogCriarAberto] = useState(false)
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemProducao | null>(null)
   const [busca, setBusca] = useState('')
-  const [filtroStatus, setFiltroStatus] = useState<StatusOrdem | 'TODAS'>('TODAS')
+  const [status, setStatus] = useState<StatusOrdem | 'TODAS'>('TODAS')
+  const [de, setDe] = useState('')
+  const [ate, setAte] = useState('')
 
-  const { data: ordens = [], isLoading, isError } = useQuery({
-    queryKey: ['ordens'],
-    queryFn: listarOrdens,
+  const recentes = useQuery({
+    queryKey: ['ordens', 'recentes', 10],
+    queryFn: () => pesquisarOrdens({ pagina: 0, tamanho: 10 }),
   })
 
-  const ordensFiltradas = ordens.filter((o) => {
-    const buscaMatch = busca === '' || o.codigo.toLowerCase().includes(busca.toLowerCase())
-    const statusMatch = filtroStatus === 'TODAS' || o.status === filtroStatus
-    return buscaMatch && statusMatch
-  })
+  const itensRecentes = recentes.data?.itens ?? []
+  const tabela = useTabelaInterativa(itensRecentes, colunasDeOrdens)
+
+  const verResultados = (filtros: Record<string, string | undefined> = {}) =>
+    navigate({ pathname: '/ordens/resultados', search: montarBusca(filtros) })
+  const pesquisar = () => {
+    if (periodoInvertido(de, ate)) return
+    verResultados({ busca: busca.trim(), status: status === 'TODAS' ? undefined : status, de, ate })
+  }
+  const limpar = () => { setBusca(''); setStatus('TODAS'); setDe(''); setAte('') }
 
   return (
     <Box>
       <PageHeader
         titulo="Ordens de Produção"
-        subtitulo={isLoading ? '…' : `${ordens.length} ordens cadastradas`}
+        subtitulo="Pesquise por código, status ou período de início, ou abra uma das mais recentes"
         breadcrumbs={[{ label: 'Produção' }, { label: 'Ordens' }]}
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogCriarAberto(true)}>
-            Nova Ordem
-          </Button>
+          <SePermitido qualquer={['ORDEM_CRIAR']}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogCriarAberto(true)}>
+              Nova Ordem
+            </Button>
+          </SePermitido>
         }
       />
 
-      {isError && <Alert severity="error" sx={{ mb: 2 }}>Não foi possível carregar as ordens.</Alert>}
+      <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
+        <CamposFiltroOrdens busca={busca} onBusca={setBusca} status={status} onStatus={setStatus} de={de} onDe={setDe} ate={ate} onAte={setAte} />
+      </PainelDeConsulta>
 
-      <Card>
-        <Box sx={{ p: 2, display: 'flex', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <TextField
-            placeholder="Buscar por código…"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            sx={{ flex: 1, minWidth: 220 }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-          <TextField
-            select
-            label="Status"
-            value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value as StatusOrdem | 'TODAS')}
-            sx={{ minWidth: 180 }}
-          >
-            {STATUS_OPCOES.map((op) => (
-              <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>
-            ))}
-          </TextField>
-        </Box>
-
-        {isLoading ? (
+      <CartaoDeRecentes titulo="10 ordens mais recentes" onVerTodas={() => verResultados()}>
+        {recentes.isLoading ? (
           <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : ordensFiltradas.length === 0 ? (
-          <EmptyState
-            Icone={ListAltIcon}
-            titulo={busca || filtroStatus !== 'TODAS' ? 'Nenhuma ordem encontrada com os filtros' : 'Nenhuma ordem cadastrada'}
-            descricao={busca || filtroStatus !== 'TODAS' ? 'Tente ajustar os filtros de busca.' : undefined}
-            acaoLabel={!busca && filtroStatus === 'TODAS' ? 'Criar primeira ordem' : undefined}
-            onAcao={!busca && filtroStatus === 'TODAS' ? () => setDialogCriarAberto(true) : undefined}
-          />
+        ) : recentes.isError ? (
+          <Alert severity="error" sx={{ m: 2 }}>{mensagemDeErroAoCarregar(recentes.error, 'Não foi possível carregar as ordens.')}</Alert>
+        ) : (recentes.data?.itens.length ?? 0) === 0 ? (
+          <EmptyState Icone={ListAltIcon} titulo="Nenhuma ordem cadastrada" acaoLabel={tem('ORDEM_CRIAR') ? 'Criar primeira ordem' : undefined} onAcao={() => setDialogCriarAberto(true)} />
         ) : (
-          <OrdemTable ordens={ordensFiltradas} onAtualizarStatus={setOrdemSelecionada} />
+          <>
+          <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+          <OrdemTable ordens={tabela.linhas} onAtualizarStatus={setOrdemSelecionada} controle={tabela.controle} />
+          </>
         )}
-      </Card>
+      </CartaoDeRecentes>
 
       <CriarOrdemDialog aberto={dialogCriarAberto} onFechar={() => setDialogCriarAberto(false)} />
       <AtualizarStatusDialog ordem={ordemSelecionada} onFechar={() => setOrdemSelecionada(null)} />

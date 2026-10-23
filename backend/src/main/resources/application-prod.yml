@@ -4,7 +4,7 @@
 #   JWT_SECRET  (mínimo 32 caracteres)
 #   CORS_ORIGINS  (URL do frontend, ex.: https://pcp.railway.app)
 #   PROXIES_CONFIAVEIS  (opcional) regex dos IPs do proxy reverso; o padrão cobre redes privadas
-#   ADMIN_EMAIL, ADMIN_NOME, ADMIN_SENHA  (primeiro usuário GERENTE)
+#   ADMIN_EMAIL, ADMIN_NOME, ADMIN_SENHA  (primeiro usuário, com o perfil Administrador)
 
 spring:
   jpa:

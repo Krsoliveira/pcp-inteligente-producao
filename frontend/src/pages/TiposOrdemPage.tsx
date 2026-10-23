@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { SePermitido } from '../components/SePermitido'
+import { usePermissoes } from '../hooks/usePermissoes'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Table from '@mui/material/Table'
@@ -23,12 +25,12 @@ import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { listarTiposOrdem, cadastrarTipoOrdem, atualizarTipoOrdem } from '../api/tiposOrdem'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { TipoOrdemBadge } from '../components/StatusBadge'
 import type { TipoOrdem, CadastrarTipoOrdemRequest } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 const CORES_SUGERIDAS = [
   '#4F46E5', '#2563EB', '#0F766E', '#059669',
@@ -37,6 +39,7 @@ const CORES_SUGERIDAS = [
 ]
 
 export function TiposOrdemPage() {
+  const { tem } = usePermissoes()
   const [dialogAberto, setDialogAberto] = useState(false)
   const [editando, setEditando] = useState<TipoOrdem | null>(null)
 
@@ -52,9 +55,11 @@ export function TiposOrdemPage() {
         subtitulo="Categorias para classificar ordens de produção"
         breadcrumbs={[{ label: 'Cadastros' }, { label: 'Tipos de Ordem' }]}
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
-            Novo Tipo
-          </Button>
+          <SePermitido qualquer={['TIPO_ORDEM_GERENCIAR']}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
+              Novo Tipo
+            </Button>
+          </SePermitido>
         }
       />
 
@@ -68,7 +73,7 @@ export function TiposOrdemPage() {
             Icone={LabelOutlinedIcon}
             titulo="Nenhum tipo de ordem cadastrado"
             descricao="Crie categorias como Produção Normal, Manutenção, Revenda ou Retrabalho para classificar suas ordens."
-            acaoLabel="Criar primeiro tipo"
+            acaoLabel={tem('TIPO_ORDEM_GERENCIAR') ? 'Criar primeiro tipo' : undefined}
             onAcao={() => setDialogAberto(true)}
           />
         ) : (
@@ -100,11 +105,13 @@ export function TiposOrdemPage() {
                       </Box>
                     </TableCell>
                     <TableCell align="center">
-                      <Tooltip title="Editar">
-                        <IconButton size="small" onClick={() => setEditando(t)}>
-                          <EditIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                      </Tooltip>
+                      <SePermitido qualquer={['TIPO_ORDEM_GERENCIAR']}>
+                        <Tooltip title="Editar">
+                          <IconButton size="small" onClick={() => setEditando(t)}>
+                            <EditIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </SePermitido>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -149,8 +156,7 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
     mutationFn: cadastrarTipoOrdem,
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tipos-ordem'] }); onFechar(); setErro(null) },
     onError: (err: unknown) => {
-      if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro ao cadastrar.')
-      else setErro('Erro inesperado.')
+      setErro(mensagemDeErroDaApi(err, 'Não foi possível cadastrar o tipo de ordem. Tente novamente.'))
     },
   })
 
@@ -158,8 +164,7 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
     mutationFn: (payload: CadastrarTipoOrdemRequest) => atualizarTipoOrdem(tipoExistente!.id, payload),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tipos-ordem'] }); onFechar(); setErro(null) },
     onError: (err: unknown) => {
-      if (axios.isAxiosError(err)) setErro(err.response?.data?.detail ?? 'Erro ao atualizar.')
-      else setErro('Erro inesperado.')
+      setErro(mensagemDeErroDaApi(err, 'Não foi possível atualizar o tipo de ordem. Tente novamente.'))
     },
   })
 

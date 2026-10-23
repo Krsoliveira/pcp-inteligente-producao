@@ -10,9 +10,9 @@ import Alert from '@mui/material/Alert'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { atualizarStatus } from '../api/ordens'
 import type { OrdemProducao, StatusOrdem } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 /** Transições válidas por status atual (espelha a máquina de estados do domínio). */
 const TRANSICOES: Record<StatusOrdem, StatusOrdem[]> = {
@@ -51,12 +51,7 @@ export function AtualizarStatusDialog({ ordem, onFechar }: AtualizarStatusDialog
       handleFechar()
     },
     onError: (error: unknown) => {
-      if (axios.isAxiosError(error)) {
-        const detail = error.response?.data?.detail as string | undefined
-        setErro(detail ?? 'Erro ao atualizar status.')
-      } else {
-        setErro('Erro inesperado. Tente novamente.')
-      }
+      setErro(mensagemDeErroDaApi(error, 'Não foi possível atualizar o status da ordem. Tente novamente.'))
     },
   })
 

@@ -1,5 +1,8 @@
 package com.krsoliveira.pcp.application.ordem;
 
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.ordem.FiltroOrdens;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
 
@@ -24,5 +27,10 @@ public class ConsultarOrdensProducao {
 
     public List<OrdemProducao> listar() {
         return repositorio.listarTodas();
+    }
+
+    /** Uma página de ordens, já filtrada pelo servidor (ver {@link PedidoDePagina} para os limites). */
+    public Pagina<OrdemProducao> pesquisar(FiltroOrdens filtro, PedidoDePagina pedido) {
+        return repositorio.pesquisar(filtro, pedido);
     }
 }

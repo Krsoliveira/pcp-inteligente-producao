@@ -4,7 +4,9 @@ import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
 import com.krsoliveira.pcp.application.lote.LoteRepositoryEmMemoria;
 import com.krsoliveira.pcp.application.material.MaterialRepositoryEmMemoria;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 import com.krsoliveira.pcp.domain.material.Material;
+import com.krsoliveira.pcp.domain.notafiscal.FiltroNotasFiscais;
 import com.krsoliveira.pcp.domain.material.TipoMaterial;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -74,5 +76,37 @@ class ConsultarNotasFiscaisTest {
                 .containsExactlyInAnyOrder("A1", "A2");
         assertThatThrownBy(() -> consultar.porId(UUID.randomUUID()))
                 .isInstanceOf(NotaFiscalNaoEncontradaException.class);
+    }
+
+    @Test
+    @DisplayName("pesquisa: página das notas mais recentes, cada uma com seus itens")
+    void pesquisaPaginaComItens() {
+        registrar("1", LocalDate.of(2026, 9, 1), "A1");
+        registrar("2", LocalDate.of(2026, 9, 10), "B1", "B2");
+        registrar("3", LocalDate.of(2026, 10, 1), "C1");
+
+        var primeira = consultar.pesquisar(FiltroNotasFiscais.semFiltro(), PedidoDePagina.de(0, 2));
+        var segunda = consultar.pesquisar(FiltroNotasFiscais.semFiltro(), PedidoDePagina.de(1, 2));
+
+        assertThat(primeira.itens()).extracting(n -> n.nota().getNumero()).containsExactly("3", "2");
+        assertThat(primeira.itens().get(1).itens()).hasSize(2);
+        assertThat(primeira.total()).isEqualTo(3);
+        assertThat(segunda.itens()).extracting(n -> n.nota().getNumero()).containsExactly("1");
+    }
+
+    @Test
+    @DisplayName("pesquisa: filtra por número ou fornecedor e por período")
+    void pesquisaFiltra() {
+        registrar("NF-100", LocalDate.of(2026, 9, 1), "A1");
+        registrar("NF-200", LocalDate.of(2026, 10, 1), "B1");
+
+        var porNumero = consultar.pesquisar(new FiltroNotasFiscais("nf-2", null, null), PedidoDePagina.de(0, 25));
+        var porFornecedor = consultar.pesquisar(new FiltroNotasFiscais("FORNEC", null, null), PedidoDePagina.de(0, 25));
+        var porPeriodo = consultar.pesquisar(
+                new FiltroNotasFiscais(null, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)), PedidoDePagina.de(0, 25));
+
+        assertThat(porNumero.itens()).extracting(n -> n.nota().getNumero()).containsExactly("NF-200");
+        assertThat(porFornecedor.total()).isEqualTo(2);
+        assertThat(porPeriodo.itens()).extracting(n -> n.nota().getNumero()).containsExactly("NF-100");
     }
 }

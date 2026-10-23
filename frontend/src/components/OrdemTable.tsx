@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { usePermissoes } from '../hooks/usePermissoes'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
@@ -13,7 +14,9 @@ import EditIcon from '@mui/icons-material/Edit'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import ListAltIcon from '@mui/icons-material/ListAlt'
-import { StatusOrdemBadge } from './StatusBadge'
+import { StatusOrdemBadge, rotuloDoStatusDeOrdem } from './StatusBadge'
+import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from './consulta/TabelaInterativa'
+
 import { EmptyState } from './EmptyState'
 import type { OrdemProducao } from '../types'
 
@@ -21,10 +24,23 @@ interface OrdemTableProps {
   ordens: OrdemProducao[]
   onAtualizarStatus: (ordem: OrdemProducao) => void
   mostrarAcoes?: boolean
+  /** Quando informado, o cabeçalho ordena e filtra por coluna (tela de resultados). */
+  controle?: ControleDaTabela<OrdemProducao>
 }
 
-export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: OrdemTableProps) {
+/** Colunas que a tela de resultados ordena e filtra; o texto é o que aparece na célula. */
+export const colunasDeOrdens: Coluna<OrdemProducao>[] = [
+  { chave: 'codigo', rotulo: 'Código', valor: (o) => o.codigo },
+  { chave: 'centro', rotulo: 'Centro de Trabalho', valor: (o) => o.centroDeTrabalho },
+  { chave: 'quantidade', rotulo: 'Qtd', valor: (o) => o.quantidade, texto: (o) => o.quantidade.toLocaleString('pt-BR') },
+  { chave: 'inicio', rotulo: 'Início', valor: (o) => o.inicioPlanejado, texto: (o) => formatarData(o.inicioPlanejado) },
+  { chave: 'fim', rotulo: 'Fim', valor: (o) => o.fimPlanejado, texto: (o) => formatarData(o.fimPlanejado) },
+  { chave: 'status', rotulo: 'Status', valor: (o) => rotuloDoStatusDeOrdem(o.status) },
+]
+
+export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, controle }: OrdemTableProps) {
   const navigate = useNavigate()
+  const { tem } = usePermissoes()
 
   if (ordens.length === 0) {
     return (
@@ -41,12 +57,12 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: O
       <Table size="small">
         <TableHead sx={{ '& th': { whiteSpace: 'nowrap' } }}>
           <TableRow>
-            <TableCell>Código</TableCell>
-            <TableCell>Centro de Trabalho</TableCell>
-            <TableCell align="right">Qtd</TableCell>
-            <TableCell>Início</TableCell>
-            <TableCell>Fim</TableCell>
-            <TableCell>Status</TableCell>
+            <CelulaDeCabecalho chave="codigo" rotulo="Código" controle={controle} />
+            <CelulaDeCabecalho chave="centro" rotulo="Centro de Trabalho" controle={controle} />
+            <CelulaDeCabecalho chave="quantidade" rotulo="Qtd" controle={controle} align="right" />
+            <CelulaDeCabecalho chave="inicio" rotulo="Início" controle={controle} />
+            <CelulaDeCabecalho chave="fim" rotulo="Fim" controle={controle} />
+            <CelulaDeCabecalho chave="status" rotulo="Status" controle={controle} />
             <TableCell align="center" sx={{ width: 40 }}></TableCell>
             {mostrarAcoes && <TableCell align="center" sx={{ width: 80 }}>Ações</TableCell>}
           </TableRow>
@@ -93,7 +109,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true }: O
               {mostrarAcoes && (
               <TableCell align="center" onClick={(e) => e.stopPropagation()}>
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                  {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && (
+                  {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && tem('ORDEM_ATUALIZAR_STATUS') && (
                     <Tooltip title="Atualizar status">
                       <IconButton
                         size="small"

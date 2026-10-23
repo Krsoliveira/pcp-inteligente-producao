@@ -30,6 +30,8 @@ public interface LoteSpringDataRepository extends JpaRepository<LoteJpaEntity, U
 
     List<LoteJpaEntity> findByMaterialId(UUID materialId);
 
+    long countByStatus(com.krsoliveira.pcp.domain.lote.StatusLote status);
+
     List<LoteJpaEntity> findByNotaFiscalIdIn(Collection<UUID> notaFiscalIds);
 
     @Query("SELECT COUNT(l) > 0 FROM LoteJpaEntity l WHERE l.materialId = :materialId "

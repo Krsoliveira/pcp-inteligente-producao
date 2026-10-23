@@ -4,13 +4,16 @@ import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
 import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.usuario.CodificadorDeSenha;
-import com.krsoliveira.pcp.domain.usuario.Perfil;
+import com.krsoliveira.pcp.application.acesso.PerfilAcessoRepositoryEmMemoria;
 import com.krsoliveira.pcp.domain.usuario.Usuario;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,7 +35,24 @@ class AdministradorInicialTest {
         public Optional<Usuario> porEmail(String email) {
             return Optional.ofNullable(usuarios.get(email));
         }
+
+        @Override
+        public Optional<Usuario> porId(UUID id) {
+            return usuarios.values().stream().filter(u -> u.getId().equals(id)).findFirst();
+        }
+
+        @Override
+        public List<Usuario> listarTodos() {
+            return new ArrayList<>(usuarios.values());
+        }
+
+        @Override
+        public long contarPorPerfil(UUID perfilId) {
+            return usuarios.values().stream().filter(u -> u.getPerfilId().equals(perfilId)).count();
+        }
     };
+
+    private final PerfilAcessoRepositoryEmMemoria perfis = new PerfilAcessoRepositoryEmMemoria();
 
     private final CodificadorDeSenha codificador = new CodificadorDeSenha() {
         @Override
@@ -48,10 +68,10 @@ class AdministradorInicialTest {
 
     private final TrilhaDeAuditoriaEmMemoria trilha = new TrilhaDeAuditoriaEmMemoria();
     private final RegistrarUsuario registrarUsuario =
-            new RegistrarUsuario(repositorio, codificador, trilha.execucao());
+            new RegistrarUsuario(repositorio, perfis, codificador, trilha.execucao());
 
     private AdministradorInicial com(String nome, String email, String senha) {
-        return new AdministradorInicial(repositorio, registrarUsuario, nome, email, senha);
+        return new AdministradorInicial(repositorio, registrarUsuario, perfis, nome, email, senha);
     }
 
     @Test
@@ -63,13 +83,13 @@ class AdministradorInicialTest {
     }
 
     @Test
-    @DisplayName("cria o administrador como GERENTE, com e-mail normalizado e senha codificada")
+    @DisplayName("cria o administrador com o perfil Administrador, e-mail normalizado e senha codificada")
     void criaAdministrador() {
         com("Admin Teste", " Admin@PCP.dev ", "SenhaForte123").run(null);
 
         Usuario admin = usuarios.get("admin@pcp.dev");
         assertThat(admin).isNotNull();
-        assertThat(admin.getPerfil()).isEqualTo(Perfil.GERENTE);
+        assertThat(admin.getPerfilId()).isEqualTo(PerfilAcessoRepositoryEmMemoria.ID_ADMINISTRADOR);
         assertThat(admin.getSenhaHash()).isEqualTo("hash:SenhaForte123");
         assertThat(trilha.eventos(AcaoAuditoria.USUARIO_REGISTRADO)).singleElement()
                 .satisfies(evento -> assertThat(evento.getUsuario())
@@ -92,12 +112,12 @@ class AdministradorInicialTest {
     @Test
     @DisplayName("não promove conta já existente com o mesmo e-mail")
     void naoPromoveContaExistente() {
-        registrarUsuario.autocadastrar("Outra Pessoa", "admin@pcp.dev", "senhaDela123", Perfil.PLANEJADOR);
+        registrarUsuario.autocadastrar("Outra Pessoa", "admin@pcp.dev", "senhaDela123");
 
         com("Admin Teste", "admin@pcp.dev", "SenhaForte123").run(null);
 
         Usuario conta = usuarios.get("admin@pcp.dev");
-        assertThat(conta.getPerfil()).isEqualTo(Perfil.PLANEJADOR);
+        assertThat(conta.getPerfilId()).isEqualTo(PerfilAcessoRepositoryEmMemoria.ID_VISUALIZADOR);
         assertThat(conta.getSenhaHash()).isEqualTo("hash:senhaDela123");
     }
 

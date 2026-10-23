@@ -1,9 +1,13 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.notafiscal.ConsultarNotasFiscais;
 import com.krsoliveira.pcp.application.notafiscal.RegistrarEntradaNotaFiscal;
 import com.krsoliveira.pcp.infrastructure.web.dto.NotaFiscalResponse;
 import com.krsoliveira.pcp.infrastructure.web.dto.RegistrarNotaFiscalRequest;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.notafiscal.FiltroNotasFiscais;
+import com.krsoliveira.pcp.infrastructure.web.dto.PaginaResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -41,6 +45,7 @@ public class NotaFiscalController {
         this.consultarNotas = consultarNotas;
     }
 
+    @PreAuthorize("hasAuthority('NOTA_FISCAL_REGISTRAR')")
     @PostMapping
     @Operation(summary = "Registrar entrada de nota fiscal",
             description = "Cabeçalho (fornecedor, número, emissão, recebimento) e itens: matéria-prima, "
@@ -53,6 +58,7 @@ public class NotaFiscalController {
         return ResponseEntity.created(local).body(NotaFiscalResponse.de(resultado.nota(), resultado.lotes()));
     }
 
+    @PreAuthorize("hasAuthority('NOTA_FISCAL_VISUALIZAR')")
     @GetMapping
     @Operation(summary = "Listar notas fiscais de entrada",
             description = "Filtro opcional por período de recebimento (datas inclusivas). Mais recentes primeiro.")
@@ -63,6 +69,24 @@ public class NotaFiscalController {
                 .map(n -> NotaFiscalResponse.de(n.nota(), n.itens())).toList());
     }
 
+    @PreAuthorize("hasAuthority('NOTA_FISCAL_VISUALIZAR')")
+    @GetMapping("/pesquisa")
+    @Operation(summary = "Pesquisa notas fiscais com filtro e paginação",
+            description = "Filtra no servidor por trecho do número, do fornecedor ou do lote de um item, e por "
+                    + "período de recebimento (datas inclusivas). Da recebida mais recentemente para a mais antiga. "
+                    + "Tamanho padrão 25, máximo 100.")
+    public PaginaResponse<NotaFiscalResponse> pesquisar(
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamanho) {
+        var resultado = consultarNotas.pesquisar(
+                new FiltroNotasFiscais(busca, de, ate), PedidoDePagina.de(pagina, tamanho));
+        return PaginaResponse.de(resultado, n -> NotaFiscalResponse.de(n.nota(), n.itens()));
+    }
+
+    @PreAuthorize("hasAuthority('NOTA_FISCAL_VISUALIZAR')")
     @GetMapping("/{id}")
     @Operation(summary = "Buscar nota fiscal com seus itens")
     public ResponseEntity<NotaFiscalResponse> buscar(@PathVariable UUID id) {

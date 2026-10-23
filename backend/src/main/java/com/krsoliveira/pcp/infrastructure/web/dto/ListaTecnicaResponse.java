@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public record ListaTecnicaResponse(
         UUID id,
+        UUID listaId,
         UUID materialId,
         String versao,
         StatusListaTecnica status,
@@ -21,6 +22,7 @@ public record ListaTecnicaResponse(
     public static ListaTecnicaResponse de(ListaTecnica lista) {
         return new ListaTecnicaResponse(
                 lista.getId(),
+                lista.getListaId(),
                 lista.getMaterialId(),
                 lista.getVersao(),
                 lista.getStatus(),

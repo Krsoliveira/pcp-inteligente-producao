@@ -31,6 +31,8 @@ public interface LoteRepository {
 
     List<Lote> listarTodos();
 
+    long contarPorStatus(StatusLote status);
+
     List<Lote> listarPorOrdemProducao(UUID ordemProducaoId);
 
 

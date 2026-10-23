@@ -18,12 +18,12 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import axios from 'axios'
 import { registrarConsumo } from '../../api/consumos'
 import { listarLotesDisponiveis } from '../../api/lotes'
 import { formatarCodigoMaterial, formatarData, formatarQuantidade } from '../../utils/formatacao'
 import { deUnidades, lerQuantidade, paraUnidades, sugerirFefo } from './alocacao'
-import type { ApiError, ConsumoMaterial, Lote, Material, RegistrarConsumoRequest } from '../../types'
+import type { ConsumoMaterial, Lote, Material, RegistrarConsumoRequest } from '../../types'
+import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
 
 /** Referência estável: um `[]` novo a cada render dispararia o efeito de sugestão sem parar. */
 const SEM_LOTES: Lote[] = []
@@ -81,8 +81,7 @@ export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, o
     mutationFn: (payload: RegistrarConsumoRequest) => registrarConsumo(ordemId, consumo!.id, payload),
     onSuccess: () => { onSucesso(); fechar() },
     onError: (err: unknown) => {
-      if (axios.isAxiosError<ApiError>(err)) setErro(err.response?.data?.detail ?? 'Não foi possível registrar o consumo.')
-      else setErro('Erro inesperado.')
+      setErro(mensagemDeErroDaApi(err, 'Não foi possível registrar o consumo. Tente novamente.'))
     },
   })
 

@@ -1,9 +1,16 @@
 package com.krsoliveira.pcp.application.ordem;
 
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.ordem.FiltroOrdens;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
+import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +47,34 @@ public class OrdemProducaoRepositoryEmMemoria implements OrdemProducaoRepository
     @Override
     public List<OrdemProducao> listarTodas() {
         return new ArrayList<>(dados.values());
+    }
+
+    @Override
+    public Pagina<OrdemProducao> pesquisar(FiltroOrdens filtro, PedidoDePagina pedido) {
+        List<OrdemProducao> filtradas = dados.values().stream()
+                .filter(o -> filtro.status() == null || o.getStatus() == filtro.status())
+                .filter(o -> filtro.busca() == null
+                        || o.getCodigo().toLowerCase().contains(filtro.busca().toLowerCase()))
+                .filter(o -> filtro.de() == null || !o.getInicioPlanejado().isBefore(filtro.de()))
+                .filter(o -> filtro.ate() == null || !o.getInicioPlanejado().isAfter(filtro.ate()))
+                .sorted(Comparator.comparing(OrdemProducao::getCriadaEm)
+                        .thenComparing(OrdemProducao::getCodigo).reversed())
+                .toList();
+        int de = (int) Math.min(pedido.deslocamento(), filtradas.size());
+        int ate = Math.min(de + pedido.tamanho(), filtradas.size());
+        return new Pagina<>(filtradas.subList(de, ate), pedido.pagina(), pedido.tamanho(), filtradas.size());
+    }
+
+    @Override
+    public Map<StatusOrdemProducao, Long> contarPorStatus() {
+        Map<StatusOrdemProducao, Long> contagem = new EnumMap<>(StatusOrdemProducao.class);
+        dados.values().forEach(o -> contagem.merge(o.getStatus(), 1L, Long::sum));
+        return contagem;
+    }
+
+    @Override
+    public long contarAtrasadas(LocalDate hoje) {
+        return dados.values().stream().filter(o -> o.estaAtrasada(hoje)).count();
     }
 
     @Override

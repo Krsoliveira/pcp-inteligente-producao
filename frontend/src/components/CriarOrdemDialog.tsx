@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { usePermissoes } from '../hooks/usePermissoes'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -13,13 +14,13 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Divider from '@mui/material/Divider'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { criarOrdem } from '../api/ordens'
 import { listarMateriais } from '../api/materiais'
 import { listarListasTecnicas } from '../api/listasTecnicas'
 import { listarTiposOrdem } from '../api/tiposOrdem'
 import { formatarCodigoMaterial } from '../utils/formatacao'
 import type { CriarOrdemRequest } from '../types'
+import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 interface CriarOrdemDialogProps {
   aberto: boolean
@@ -50,6 +51,7 @@ const VAZIO: CriarOrdemRequest = {
 
 export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
   const [form, setForm] = useState<CriarOrdemRequest>(VAZIO)
+  const { tem } = usePermissoes()
   const [erro, setErro] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
@@ -60,10 +62,12 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     select: (lista) => lista.filter((m) => m.tipo !== 'MATERIA_PRIMA'),
   })
 
+  // O tipo da ordem é opcional: quem não pode consultar os tipos nem vê o campo (o servidor recusaria a consulta).
+  const podeVerTipos = tem('TIPO_ORDEM_VISUALIZAR')
   const { data: tiposOrdem = [] } = useQuery({
     queryKey: ['tipos-ordem'],
     queryFn: listarTiposOrdem,
-    enabled: aberto,
+    enabled: aberto && podeVerTipos,
   })
 
   const { data: listasTecnicas = [] } = useQuery({
@@ -72,13 +76,16 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     enabled: aberto && !!form.materialId,
   })
 
-  // Seleciona a versão ATIVA ao escolher o material. A dependência é o id (texto), não o
-  // array: com a consulta desativada, `data = []` cria um array novo a cada render e o
-  // efeito entraria em loop (setForm → render → efeito...), travando a página de Ordens.
-  const listaAtivaId = listasTecnicas.find((l) => l.status === 'ATIVA')?.id ?? ''
+  // Só versões em uso (ATIVA) podem ser escolhidas; o servidor recusa as demais (ADR-0019).
+  const versoesEmUso = listasTecnicas.filter((l) => l.status === 'ATIVA')
+
+  // Com uma única versão em uso ela já vem selecionada; com mais de uma, o usuário escolhe. A
+  // dependência é o id (texto), não o array: com a consulta desativada, `data = []` cria um array
+  // novo a cada render e o efeito entraria em loop (setForm → render → efeito...), travando a página.
+  const versaoUnicaId = versoesEmUso.length === 1 ? versoesEmUso[0].id : ''
   useEffect(() => {
-    setForm((prev) => (prev.listaTecnicaId === listaAtivaId ? prev : { ...prev, listaTecnicaId: listaAtivaId }))
-  }, [listaAtivaId])
+    setForm((prev) => (prev.listaTecnicaId === versaoUnicaId ? prev : { ...prev, listaTecnicaId: versaoUnicaId }))
+  }, [versaoUnicaId])
 
   const { mutate, isPending } = useMutation({
     mutationFn: criarOrdem,
@@ -89,12 +96,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
       onFechar()
     },
     onError: (error: unknown) => {
-      if (axios.isAxiosError(error)) {
-        const detail = error.response?.data?.detail as string | undefined
-        setErro(detail ?? 'Erro ao criar ordem. Verifique os campos.')
-      } else {
-        setErro('Erro inesperado. Tente novamente.')
-      }
+      setErro(mensagemDeErroDaApi(error, 'Não foi possível criar a ordem. Confira os campos e tente novamente.'))
     },
   })
 
@@ -109,6 +111,10 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
   }
 
   const handleSubmit = () => {
+    if (form.materialId && !form.listaTecnicaId && versoesEmUso.length > 1) {
+      setErro('Este material tem mais de uma versão da lista técnica em uso: escolha qual usar nesta ordem.')
+      return
+    }
     if (!form.codigo || !form.materialId || !form.listaTecnicaId ||
         !form.centroDeTrabalho || !form.inicioPlanejado || !form.fimPlanejado) {
       setErro('Preencha todos os campos obrigatórios.')
@@ -122,10 +128,6 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     setErro(null)
     onFechar()
   }
-
-  const listasDisponiveis = listasTecnicas.filter(
-    (l) => l.status === 'ATIVA' || l.status === 'EM_REVISAO',
-  )
 
   return (
     <Dialog open={aberto} onClose={handleFechar} fullWidth maxWidth="sm">
@@ -146,26 +148,28 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Quantidade *" type="number" value={form.quantidade} onChange={set('quantidade')} fullWidth inputProps={{ min: 1 }} />
           </Grid>
-          <Grid size={12}>
-            <TextField
-              select
-              label="Tipo de Ordem (opcional)"
-              value={form.tipoOrdemId ?? ''}
-              onChange={(e) => setForm((p) => ({ ...p, tipoOrdemId: e.target.value || null }))}
-              fullWidth
-              helperText="Categorize a ordem: Produção, Manutenção, Revenda, etc."
-            >
-              <MenuItem value=""><em>Sem categoria</em></MenuItem>
-              {tiposOrdem.map((t) => (
-                <MenuItem key={t.id} value={t.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: t.cor, flexShrink: 0 }} />
-                    {t.nome}
-                  </Box>
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
+          {podeVerTipos && (
+            <Grid size={12}>
+              <TextField
+                select
+                label="Tipo de Ordem (opcional)"
+                value={form.tipoOrdemId ?? ''}
+                onChange={(e) => setForm((p) => ({ ...p, tipoOrdemId: e.target.value || null }))}
+                fullWidth
+                helperText="Categorize a ordem: Produção, Manutenção, Revenda, etc."
+              >
+                <MenuItem value=""><em>Sem categoria</em></MenuItem>
+                {tiposOrdem.map((t) => (
+                  <MenuItem key={t.id} value={t.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: t.cor, flexShrink: 0 }} />
+                      {t.nome}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          )}
 
           <Grid size={12}><Divider /></Grid>
 
@@ -204,17 +208,25 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
           <Grid size={12}>
             <TextField
               select
-              label="Lista Técnica (BOM) *"
+              label="Versão da Lista Técnica (BOM) *"
               value={form.listaTecnicaId}
               onChange={set('listaTecnicaId')}
               fullWidth
-              disabled={!form.materialId || listasDisponiveis.length === 0}
-              helperText={form.materialId && listasDisponiveis.length === 0 ? 'Nenhuma lista técnica ativa para este material.' : ''}
+              disabled={!form.materialId || versoesEmUso.length === 0}
+              helperText={
+                form.materialId && versoesEmUso.length === 0
+                  ? 'Nenhuma versão da lista técnica em uso para este material.'
+                  : versoesEmUso.length > 1
+                    ? `Este material tem ${versoesEmUso.length} versões em uso: escolha qual usar nesta ordem.`
+                    : ''
+              }
             >
-              {listasDisponiveis.map((l) => (
+              {versoesEmUso.map((l) => (
                 <MenuItem key={l.id} value={l.id}>
                   {l.versao}
-                  {l.status === 'ATIVA' && <Typography component="span" variant="caption" color="success.main" sx={{ ml: 1 }}>(Ativa)</Typography>}
+                  <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                    ({l.itens.length} {l.itens.length === 1 ? 'componente' : 'componentes'})
+                  </Typography>
                 </MenuItem>
               ))}
             </TextField>

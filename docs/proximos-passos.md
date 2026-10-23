@@ -133,6 +133,68 @@ Tornar a interface mais marcante, mantendo a legibilidade:
 
 ## Pendências
 
+_Controle de acesso por perfis de permissões (perfis, usuários, regra "só se concede o que se tem", rastreio e
+telas): concluído, ver ADR-0020._
+
+- [ ] **Acessos, o que sobrou do ADR-0020**: troca de senha obrigatória no primeiro acesso do usuário criado
+      por um gestor (hoje o gestor define a senha provisória e ela vale até o usuário trocar, mas ainda não há
+      tela de troca); redefinir a senha de quem a esqueceu; desativar um usuário sem excluí-lo; exceções de
+      permissão por usuário e vários perfis por usuário, se o uso pedir.
+- [ ] **Autorização antes da validação** (opcional): hoje um corpo inválido de quem não tem permissão devolve
+      400, não 403. Para inverter, a regra teria de ficar no filtro de segurança por caminho em vez de na
+      anotação do método.
+
+### Para 2026-10-22 (feedback do teste manual de 21/10)
+
+- [ ] **Redesenhar os filtros das listagens** (Ordens, Materiais, Listas Técnicas, Notas Fiscais,
+      Estoque). O desenho atual ficou pouco intuitivo: os campos parecem filtros das colunas da
+      tabela. A direção pedida:
+      1. **Primeiro filtro (vai ao banco):** poucos critérios simples e óbvios, só para **reduzir a
+         quantidade de dados** buscados (ex.: período, status, tipo). Definir, tela a tela, quais.
+      2. **Segundo filtro (só dentro da página já carregada):** em vez de um campo de texto livre
+         sobre as colunas, oferecer ao usuário **classificar** (ordenar) os dados da página, por
+         exemplo clicando no cabeçalho da coluna.
+      Pontos a decidir: critérios de cada tela; se a classificação vale só para a página ou também
+      passa a ser feita no servidor; o que fazer com o subfiltro de texto atual (`SubfiltroTabela`).
+- [ ] **Atualizar o README do projeto** (telas e fluxo de consulta em duas etapas, novos
+      endpoints `/pesquisa` e `/resumo`, testes do frontend com Vitest, ADRs 0014 a 0017,
+      estado do deploy).
+- [x] Notas Fiscais e Estoque mostravam "Não foi possível carregar...": era o backend de
+      desenvolvimento rodando sem os endpoints novos (iniciado antes do commit). Após reiniciar
+      (`mvn spring-boot:run "-Dspring-boot.run.profiles=dev,seed"`), os endpoints respondem 200.
+      Conferir de novo na tela.
+
+### Gerais
+
+_Testes do frontend (Vitest) e correção do script `lint`: concluídos, ver ADR-0017._
+_Filtro e ordenação por coluna no cabeçalho (estilo planilha) nas 5 listagens e período do início planejado em Ordens: concluídos, ver ADR-0018._
+
+- [ ] **Filtros das listagens, o que sobrou** (decisão de 2026-10-22): decidir se Materiais, Ordens e
+      Estoque também tiram a busca por texto do primeiro filtro (hoje é o único meio de achar um item
+      entre várias páginas) e se vale ordenar o resultado inteiro no servidor, não só a página.
+- [ ] **README**: atualizar com as telas, a consulta em duas etapas, os endpoints `/pesquisa` e
+      `/resumo`, o Vitest, os ADRs 0014–0018 e o estado do deploy.
+- [ ] Conferir no navegador, por inteiro, as telas de Notas Fiscais e Estoque.
+
+_Várias versões em uso por lista técnica, retirar de uso, escolha da versão na ordem e comparação de versões: concluídos, ver ADR-0019._
+
+- [ ] **Listas técnicas, o que sobrou do ADR-0019**: segregar por perfil quem pode ver as listas e
+      suas comparações (hoje liberado a qualquer usuário autenticado); comparar mais de duas versões
+      de uma vez; criar uma nova versão a partir de uma existente (copiar os componentes).
+- [ ] **Rastreio de alterações das listas técnicas** (decisão de 2026-10-21; o versionamento em si já foi feito, ADR-0019):
+      a lista técnica passou a ter tela de detalhe com URL própria (`/listas-tecnicas/:id`)
+      justamente para receber isso. Falta definir como versionar (nova versão a partir de
+      uma existente, comparação entre versões, o que acontece com ordens abertas) e um
+      **"caminho de migalhas" de alterações**: linha do tempo de quem mudou o quê e quando,
+      navegável a partir do registro. A trilha de auditoria (ADR-0011) e o componente
+      `HistoricoAuditoria` já existem em ordem e lote e são o ponto de partida. Exige ADR.
+- [ ] Subir o Node do CI para 22+ (o Node 20 saiu de suporte) e atualizar Vitest, jsdom e
+      jest-dom, que hoje estão presos a versões compatíveis com Node 20 (ADR-0017).
+- [ ] Os lotes de um material (tela de estoque do material) e a posição de estoque ainda
+      baixam o conjunto inteiro: lotes por material paginam só na tela, e a agregação do estoque
+      roda sobre todos os materiais. Migrar para pesquisa/filtro em SQL se passarem de ~1000
+      registros (ADR-0015, ADR-0016).
+
 - [ ] Apagar as branches já mescladas `claude/laughing-cannon-a62pda` e
       `feature/dataset-sintetico` no GitHub.
 - [ ] Preencher descrição e tópicos do repositório (⚙️ ao lado de **About**) e fixá-lo

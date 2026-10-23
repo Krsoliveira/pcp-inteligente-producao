@@ -1,7 +1,15 @@
 package com.krsoliveira.pcp.infrastructure.config;
 
 import com.krsoliveira.pcp.application.auditoria.ConsultarTrilhaDeAuditoria;
+import com.krsoliveira.pcp.application.acesso.AtribuirPerfilAoUsuario;
+import com.krsoliveira.pcp.application.acesso.AtualizarPerfilAcesso;
+import com.krsoliveira.pcp.application.acesso.ConsultarAcessos;
+import com.krsoliveira.pcp.application.acesso.ConsultarUsuarioLogado;
+import com.krsoliveira.pcp.application.acesso.CriarPerfilAcesso;
+import com.krsoliveira.pcp.application.acesso.CriarUsuarioPorGestor;
+import com.krsoliveira.pcp.application.acesso.ExcluirPerfilAcesso;
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
+import com.krsoliveira.pcp.application.comum.PermissoesDoUsuarioAtual;
 import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
 import com.krsoliveira.pcp.application.comum.Transacao;
 import com.krsoliveira.pcp.application.comum.UsuarioAtual;
@@ -10,7 +18,9 @@ import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.RegistrarConsumoMaterial;
 import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
 import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
+import com.krsoliveira.pcp.application.lista.CompararListasTecnicas;
 import com.krsoliveira.pcp.application.lista.ConsultarListaTecnica;
+import com.krsoliveira.pcp.application.lista.RetirarListaTecnicaDeUso;
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
 import com.krsoliveira.pcp.application.lote.RastrearLote;
 import com.krsoliveira.pcp.application.estoque.ConsultarEstoque;
@@ -22,6 +32,7 @@ import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.AtualizarTipoOrdem;
+import com.krsoliveira.pcp.application.dashboard.ConsultarResumoProducao;
 import com.krsoliveira.pcp.application.ordem.CadastrarTipoOrdem;
 import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.ConsultarOrdensProducao;
@@ -29,6 +40,7 @@ import com.krsoliveira.pcp.application.ordem.ConsultarTiposOrdem;
 import com.krsoliveira.pcp.application.ordem.CriarOrdemProducao;
 import com.krsoliveira.pcp.domain.auditoria.TrilhaDeAuditoria;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterialRepository;
+import com.krsoliveira.pcp.domain.acesso.PerfilAcessoRepository;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 import com.krsoliveira.pcp.domain.lote.AlocacaoLoteRepository;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
@@ -141,6 +153,11 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
+    ConsultarResumoProducao consultarResumoProducao(OrdemProducaoRepository ordens, LoteRepository lotes) {
+        return new ConsultarResumoProducao(ordens, lotes);
+    }
+
+    @Bean
     AtualizarStatusOrdemProducao atualizarStatusOrdemProducao(OrdemProducaoRepository repositorio,
                                                               ExecucaoAuditada execucao) {
         return new AtualizarStatusOrdemProducao(repositorio, execucao);
@@ -204,16 +221,74 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
-    ConsultarListaTecnica consultarListaTecnica(ListaTecnicaRepository listaTecnicaRepository) {
-        return new ConsultarListaTecnica(listaTecnicaRepository);
+    RetirarListaTecnicaDeUso retirarListaTecnicaDeUso(ListaTecnicaRepository listaTecnicaRepository,
+                                                      MaterialRepository materialRepository,
+                                                      ExecucaoAuditada execucao) {
+        return new RetirarListaTecnicaDeUso(listaTecnicaRepository, materialRepository, execucao);
+    }
+
+    @Bean
+    CompararListasTecnicas compararListasTecnicas(ListaTecnicaRepository listaTecnicaRepository,
+                                                  PermissoesDoUsuarioAtual permissoesAtuais) {
+        return new CompararListasTecnicas(listaTecnicaRepository, permissoesAtuais);
+    }
+
+    @Bean
+    ConsultarListaTecnica consultarListaTecnica(ListaTecnicaRepository listaTecnicaRepository,
+                                                PermissoesDoUsuarioAtual permissoesAtuais) {
+        return new ConsultarListaTecnica(listaTecnicaRepository, permissoesAtuais);
+    }
+
+    // --- Controle de acesso (ADR-0020) ---
+
+    @Bean
+    CriarPerfilAcesso criarPerfilAcesso(PerfilAcessoRepository perfilRepository,
+                                        PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
+        return new CriarPerfilAcesso(perfilRepository, permissoesAtuais, execucao);
+    }
+
+    @Bean
+    AtualizarPerfilAcesso atualizarPerfilAcesso(PerfilAcessoRepository perfilRepository,
+                                                PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
+        return new AtualizarPerfilAcesso(perfilRepository, permissoesAtuais, execucao);
+    }
+
+    @Bean
+    ExcluirPerfilAcesso excluirPerfilAcesso(PerfilAcessoRepository perfilRepository, UsuarioRepository usuarioRepository,
+                                            PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
+        return new ExcluirPerfilAcesso(perfilRepository, usuarioRepository, permissoesAtuais, execucao);
+    }
+
+    @Bean
+    CriarUsuarioPorGestor criarUsuarioPorGestor(PerfilAcessoRepository perfilRepository, RegistrarUsuario registrarUsuario,
+                                                PermissoesDoUsuarioAtual permissoesAtuais, UsuarioAtual usuarioAtual) {
+        return new CriarUsuarioPorGestor(perfilRepository, registrarUsuario, permissoesAtuais, usuarioAtual);
+    }
+
+    @Bean
+    AtribuirPerfilAoUsuario atribuirPerfilAoUsuario(UsuarioRepository usuarioRepository, PerfilAcessoRepository perfilRepository,
+                                                    PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
+        return new AtribuirPerfilAoUsuario(usuarioRepository, perfilRepository, permissoesAtuais, execucao);
+    }
+
+    @Bean
+    ConsultarAcessos consultarAcessos(PerfilAcessoRepository perfilRepository, UsuarioRepository usuarioRepository) {
+        return new ConsultarAcessos(perfilRepository, usuarioRepository);
+    }
+
+    @Bean
+    ConsultarUsuarioLogado consultarUsuarioLogado(UsuarioAtual usuarioAtual, UsuarioRepository usuarioRepository,
+                                                  PerfilAcessoRepository perfilRepository) {
+        return new ConsultarUsuarioLogado(usuarioAtual, usuarioRepository, perfilRepository);
     }
 
     // --- Autenticação ---
 
     @Bean
     RegistrarUsuario registrarUsuario(UsuarioRepository usuarioRepository,
+                                      PerfilAcessoRepository perfilRepository,
                                       CodificadorDeSenha codificadorDeSenha,
                                       ExecucaoAuditada execucao) {
-        return new RegistrarUsuario(usuarioRepository, codificadorDeSenha, execucao);
+        return new RegistrarUsuario(usuarioRepository, perfilRepository, codificadorDeSenha, execucao);
     }
 }
