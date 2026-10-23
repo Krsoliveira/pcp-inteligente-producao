@@ -18,6 +18,7 @@ import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
 import BlockIcon from '@mui/icons-material/Block'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -27,6 +28,7 @@ import { InfoRow } from '../components/InfoRow'
 import { PageHeader } from '../components/PageHeader'
 import { StatusListaBadge } from '../components/StatusBadge'
 import { RetirarDeUsoDialog } from '../components/listas/RetirarDeUsoDialog'
+import { CriarListaTecnicaDialog } from '../components/listas/CriarListaTecnicaDialog'
 import { TIPO_COR } from '../components/materiais/MaterialTable'
 import { formatarCodigoMaterial, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
@@ -38,6 +40,7 @@ export function ListaTecnicaDetalhePage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [retirando, setRetirando] = useState(false)
+  const [copiando, setCopiando] = useState(false)
   const listaQuery = useQuery({ queryKey: ['listas-tecnicas', 'detalhe', id], queryFn: () => buscarListaTecnicaPorId(id!), enabled: !!id })
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const materialPorId = new Map(materiais.map((m) => [m.id, m]))
@@ -53,6 +56,13 @@ export function ListaTecnicaDetalhePage() {
     mutationFn: () => ativarListaTecnica(id!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['listas-tecnicas'] }),
   })
+
+  // Depois de criar, abre a versão nova (o cadastro não devolve o id, então procura pelo rótulo).
+  const irParaVersaoCriada = async (materialId: string, rotulo: string) => {
+    const doMaterial = await queryClient.fetchQuery({ queryKey: ['listas-tecnicas', 'versoes', materialId], queryFn: () => listarListasTecnicas(materialId), staleTime: 0 })
+    const nova = doMaterial.find((v) => v.versao === rotulo)
+    if (nova) navigate(`/listas-tecnicas/${nova.id}`)
+  }
 
   if (listaQuery.isLoading) return <Skeleton variant="rounded" height={320} />
   if (listaQuery.isError || !lista) {
@@ -72,15 +82,22 @@ export function ListaTecnicaDetalhePage() {
           { label: 'Listas Técnicas', href: '/listas-tecnicas' },
           { label: `${codigo} · ${lista.versao}` },
         ]}
-        action={lista.status === 'EM_REVISAO' ? (
-          <Button variant="contained" color="success" startIcon={<CheckCircleOutlineIcon />} onClick={() => ativar()} disabled={ativando}>
-            {ativando ? 'Ativando…' : 'Ativar esta versão'}
-          </Button>
-        ) : lista.status === 'ATIVA' ? (
-          <Button variant="outlined" color="warning" startIcon={<BlockIcon />} onClick={() => setRetirando(true)}>
-            Retirar de uso
-          </Button>
-        ) : undefined}
+        action={
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => setCopiando(true)}>
+              Nova versão a partir desta
+            </Button>
+            {lista.status === 'EM_REVISAO' ? (
+              <Button variant="contained" color="success" startIcon={<CheckCircleOutlineIcon />} onClick={() => ativar()} disabled={ativando}>
+                {ativando ? 'Ativando…' : 'Ativar esta versão'}
+              </Button>
+            ) : lista.status === 'ATIVA' ? (
+              <Button variant="outlined" color="warning" startIcon={<BlockIcon />} onClick={() => setRetirando(true)}>
+                Retirar de uso
+              </Button>
+            ) : null}
+          </Box>
+        }
       />
 
       {erroAtivar && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroDaApi(erroAtivar, 'Não foi possível ativar a lista técnica.')}</Alert>}
@@ -201,6 +218,14 @@ export function ListaTecnicaDetalhePage() {
           </Grid>
         )}
       </Grid>
+
+      <CriarListaTecnicaDialog
+        aberto={copiando}
+        onFechar={() => setCopiando(false)}
+        modelo={lista}
+        versoesExistentes={versoes.map((v) => v.versao)}
+        onCriada={irParaVersaoCriada}
+      />
 
       <RetirarDeUsoDialog
         lista={retirando ? lista : null}
