@@ -22,6 +22,8 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    // Telas com MUI + userEvent levam alguns segundos com vários arquivos em paralelo; o padrão (5 s) dava falha intermitente.
+    testTimeout: 15000,
   },
   server: {
     port: 3000,
