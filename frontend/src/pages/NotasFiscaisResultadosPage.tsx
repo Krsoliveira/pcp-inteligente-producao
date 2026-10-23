@@ -7,50 +7,45 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLongOutlined'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { pesquisarNotasFiscais } from '../api/notasFiscais'
 import { listarMateriais } from '../api/materiais'
-import { NotaFiscalTable } from '../components/suprimentos/NotaFiscalTable'
-import { CamposFiltroNotas, ehDataIso, periodoInvertido } from '../components/suprimentos/CamposFiltroNotas'
+import { NotaFiscalTable, colunasDeNotas } from '../components/suprimentos/NotaFiscalTable'
+import { CamposFiltroNotas } from '../components/suprimentos/CamposFiltroNotas'
+import { ehDataIso, periodoInvertido } from '../components/consulta/CamposDePeriodo'
 import { PageHeader } from '../components/PageHeader'
 import { PaginacaoTabela } from '../components/PaginacaoTabela'
 import { EmptyState } from '../components/EmptyState'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
-import { SubfiltroTabela, useSubfiltro } from '../components/consulta/SubfiltroTabela'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
-import { formatarCodigoMaterial } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 
-/** Segunda etapa: o resultado da consulta de notas, paginado no servidor, com subfiltro na página. */
+/** Segunda etapa: o resultado da consulta de notas, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function NotasFiscaisResultadosPage() {
   const url = useParametrosDaUrl()
-  const buscaAplicada = url.texto('busca')
   const deAplicado = ehDataIso(url.texto('de')) ? url.texto('de') : ''
   const ateAplicado = ehDataIso(url.texto('ate')) ? url.texto('ate') : ''
   const periodoValido = !periodoInvertido(deAplicado, ateAplicado)
   const pagina = url.numero('pagina', 0)
   const tamanho = url.numero('tamanho', 25)
 
-  const [busca, setBusca] = useState(buscaAplicada)
   const [de, setDe] = useState(deAplicado)
   const [ate, setAte] = useState(ateAplicado)
-  useEffect(() => { setBusca(buscaAplicada); setDe(deAplicado); setAte(ateAplicado) }, [buscaAplicada, deAplicado, ateAplicado])
+  useEffect(() => { setDe(deAplicado); setAte(ateAplicado) }, [deAplicado, ateAplicado])
 
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const materialPorId = new Map(materiais.map((m) => [m.id, m]))
 
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
-    queryKey: ['notas-fiscais', 'pesquisa', buscaAplicada, deAplicado, ateAplicado, pagina, tamanho],
+    queryKey: ['notas-fiscais', 'pesquisa', deAplicado, ateAplicado, pagina, tamanho],
     queryFn: () => pesquisarNotasFiscais({
-      busca: buscaAplicada || undefined, de: deAplicado || undefined, ate: ateAplicado || undefined, pagina, tamanho,
+      de: deAplicado || undefined, ate: ateAplicado || undefined, pagina, tamanho,
     }),
     enabled: periodoValido,
     placeholderData: keepPreviousData,
   })
   const notas = data?.itens ?? []
   const total = data?.total ?? 0
-  const subfiltro = useSubfiltro(notas, (n) => [
-    n.numero, n.fornecedor, ...n.itens.map((l) => l.numeroLote),
-    ...n.itens.map((l) => formatarCodigoMaterial(materialPorId.get(l.materialId)?.codigo)),
-  ].join(' '))
-  const filtrando = buscaAplicada !== '' || deAplicado !== '' || ateAplicado !== ''
+  const tabela = useTabelaInterativa(notas, colunasDeNotas(materialPorId))
+  const filtrando = deAplicado !== '' || ateAplicado !== ''
 
   useEffect(() => {
     if (data && data.itens.length === 0 && data.total > 0 && pagina > 0) {
@@ -60,11 +55,11 @@ export function NotasFiscaisResultadosPage() {
 
   const pesquisar = () => {
     if (periodoInvertido(de, ate)) return
-    url.atualizar({ busca: busca.trim(), de, ate, pagina: undefined })
+    url.atualizar({ de, ate, pagina: undefined })
   }
   const limpar = () => {
-    setBusca(''); setDe(''); setAte('')
-    url.atualizar({ busca: undefined, de: undefined, ate: undefined, pagina: undefined })
+    setDe(''); setAte('')
+    url.atualizar({ de: undefined, ate: undefined, pagina: undefined })
   }
 
   return (
@@ -76,7 +71,7 @@ export function NotasFiscaisResultadosPage() {
       />
 
       <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
-        <CamposFiltroNotas busca={busca} onBusca={setBusca} de={de} onDe={setDe} ate={ate} onAte={setAte} />
+        <CamposFiltroNotas de={de} onDe={setDe} ate={ate} onAte={setAte} />
       </PainelDeConsulta>
 
       {!periodoValido && <Alert severity="warning" sx={{ mb: 2 }}>O fim do período não pode ser anterior ao início.</Alert>}
@@ -89,12 +84,12 @@ export function NotasFiscaisResultadosPage() {
           <EmptyState
             Icone={ReceiptLongIcon}
             titulo={filtrando ? 'Nenhuma nota fiscal encontrada com os filtros' : 'Nenhuma nota fiscal registrada'}
-            descricao={filtrando ? 'Ajuste o termo ou o período.' : undefined}
+            descricao={filtrando ? 'Ajuste o período.' : undefined}
           />
         ) : (
           <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <SubfiltroTabela valor={subfiltro.texto} onChange={subfiltro.setTexto} exibidas={subfiltro.filtrados.length} naPagina={notas.length} />
-            <NotaFiscalTable notas={subfiltro.filtrados} materialPorId={materialPorId} />
+            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={notas.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+            <NotaFiscalTable notas={tabela.linhas} materialPorId={materialPorId} controle={tabela.controle} />
             <PaginacaoTabela
               total={total}
               pagina={pagina}

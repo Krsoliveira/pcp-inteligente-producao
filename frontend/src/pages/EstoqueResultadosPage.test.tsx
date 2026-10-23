@@ -65,15 +65,14 @@ describe('EstoqueResultadosPage', () => {
     await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(`${ROTA}?somenteComSaldo=true`))
   })
 
-  it('o subfiltro refina as linhas da página sem consultar de novo', async () => {
+  it('ordena as linhas da página pelo saldo disponível, sem consultar de novo', async () => {
     montar()
     await screen.findByText('Aço inox')
     const consultasAntes = pesquisarMock.mock.calls.length
 
-    await userEvent.type(screen.getByPlaceholderText(/filtrar nas linhas desta página/i), 'alum')
+    await userEvent.click(screen.getByRole('button', { name: 'Ordenar Disponível' }))
 
-    expect(screen.getByText('Alumínio')).toBeInTheDocument()
-    expect(screen.queryByText('Aço inox')).not.toBeInTheDocument()
+    expect(screen.getAllByText(/^(Aço inox|Alumínio)$/).map((c) => c.textContent)).toEqual(['Alumínio', 'Aço inox'])
     expect(pesquisarMock.mock.calls.length).toBe(consultasAntes)
   })
 

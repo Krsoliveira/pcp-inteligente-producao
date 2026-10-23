@@ -94,6 +94,44 @@ class ConsultarOrdensProducaoTest {
         assertThat(pagina.total()).isZero();
     }
 
+    @Test
+    @DisplayName("filtra pelo período do início planejado, com limites inclusivos")
+    void filtroPorPeriodo() {
+        repositorio.salvar(ordemComInicio("OP-C-001", LocalDate.of(2026, 3, 10)));
+        repositorio.salvar(ordemComInicio("OP-C-002", LocalDate.of(2026, 3, 20)));
+
+        var noPeriodo = casoDeUso.pesquisar(new FiltroOrdens(null, null, LocalDate.of(2026, 3, 10), LocalDate.of(2026, 3, 20)),
+                PedidoDePagina.de(0, 25));
+        var soDepois = casoDeUso.pesquisar(new FiltroOrdens(null, null, LocalDate.of(2026, 3, 11), null),
+                PedidoDePagina.de(0, 25));
+        var soAntes = casoDeUso.pesquisar(new FiltroOrdens(null, null, null, LocalDate.of(2026, 3, 10)),
+                PedidoDePagina.de(0, 25));
+
+        assertThat(noPeriodo.itens()).extracting(OrdemProducao::getCodigo).containsExactlyInAnyOrder("OP-C-001", "OP-C-002");
+        assertThat(soDepois.itens()).extracting(OrdemProducao::getCodigo).containsExactly("OP-C-002");
+        assertThat(soAntes.total()).isEqualTo(8 + 1); // as 8 de janeiro e a de 10/03
+    }
+
+    @Test
+    @DisplayName("período, busca e status se combinam")
+    void periodoBuscaEStatus() {
+        var liberada = ordemComInicio("OP-D-001", LocalDate.of(2026, 5, 5));
+        liberada.alterarStatusPara(StatusOrdemProducao.LIBERADA, "teste");
+        repositorio.salvar(liberada);
+        repositorio.salvar(ordemComInicio("OP-D-002", LocalDate.of(2026, 5, 5)));
+
+        var pagina = casoDeUso.pesquisar(
+                new FiltroOrdens("OP-D", StatusOrdemProducao.LIBERADA, LocalDate.of(2026, 5, 1), LocalDate.of(2026, 5, 31)),
+                PedidoDePagina.de(0, 25));
+
+        assertThat(pagina.itens()).extracting(OrdemProducao::getCodigo).containsExactly("OP-D-001");
+    }
+
+    private static OrdemProducao ordemComInicio(String codigo, LocalDate inicio) {
+        return OrdemProducao.criar(codigo, UUID.randomUUID(), UUID.randomUUID(), null, "Usinagem", 10,
+                inicio, inicio.plusDays(5), "teste");
+    }
+
     private static OrdemProducao ordem(String codigo) {
         return OrdemProducao.criar(codigo, UUID.randomUUID(), UUID.randomUUID(), null, "Usinagem", 10,
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 10), "teste");

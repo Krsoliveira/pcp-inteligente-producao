@@ -3,6 +3,7 @@ import MenuItem from '@mui/material/MenuItem'
 import TextField from '@mui/material/TextField'
 import SearchIcon from '@mui/icons-material/Search'
 import type { StatusOrdem } from '../../types'
+import { CamposDePeriodo } from '../consulta/CamposDePeriodo'
 
 const STATUS_OPCOES: Array<{ label: string; value: StatusOrdem | 'TODAS' }> = [
   { label: 'Todos os status', value: 'TODAS' },
@@ -21,9 +22,13 @@ interface CamposFiltroOrdensProps {
   onBusca: (valor: string) => void
   status: StatusOrdem | 'TODAS'
   onStatus: (valor: StatusOrdem | 'TODAS') => void
+  de: string
+  onDe: (valor: string) => void
+  ate: string
+  onAte: (valor: string) => void
 }
 
-export function CamposFiltroOrdens({ busca, onBusca, status, onStatus }: CamposFiltroOrdensProps) {
+export function CamposFiltroOrdens({ busca, onBusca, status, onStatus, de, onDe, ate, onAte }: CamposFiltroOrdensProps) {
   return (
     <>
       <TextField
@@ -39,6 +44,7 @@ export function CamposFiltroOrdens({ busca, onBusca, status, onStatus }: CamposF
           <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>
         ))}
       </TextField>
+      <CamposDePeriodo rotuloDe="Início de" de={de} onDe={onDe} ate={ate} onAte={onAte} />
     </>
   )
 }

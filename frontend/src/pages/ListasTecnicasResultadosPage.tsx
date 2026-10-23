@@ -7,18 +7,18 @@ import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ativarListaTecnica, pesquisarListasTecnicas } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
-import { ListaTecnicaTable } from '../components/listas/ListaTecnicaTable'
+import { ListaTecnicaTable, colunasDeListas } from '../components/listas/ListaTecnicaTable'
 import { CamposFiltroListas, STATUS_LISTA_VALIDOS, nomeDoMaterial } from '../components/listas/CamposFiltroListas'
 import { PageHeader } from '../components/PageHeader'
 import { PaginacaoTabela } from '../components/PaginacaoTabela'
 import { EmptyState } from '../components/EmptyState'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
-import { SubfiltroTabela, useSubfiltro } from '../components/consulta/SubfiltroTabela'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
 import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import type { StatusListaTecnica } from '../types'
 
-/** Segunda etapa: o resultado da consulta de listas técnicas, paginado no servidor, com subfiltro na página. */
+/** Segunda etapa: o resultado da consulta de listas técnicas, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function ListasTecnicasResultadosPage() {
   const queryClient = useQueryClient()
   const url = useParametrosDaUrl()
@@ -46,7 +46,7 @@ export function ListasTecnicasResultadosPage() {
   })
   const listas = data?.itens ?? []
   const total = data?.total ?? 0
-  const subfiltro = useSubfiltro(listas, (l) => `${nome(l.materialId)} ${l.versao}`)
+  const tabela = useTabelaInterativa(listas, colunasDeListas(nome))
   const filtrando = materialAplicado !== '' || statusAplicado !== undefined
 
   const { mutate: ativar, error: erroAtivar } = useMutation({
@@ -89,8 +89,8 @@ export function ListasTecnicasResultadosPage() {
           />
         ) : (
           <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <SubfiltroTabela valor={subfiltro.texto} onChange={subfiltro.setTexto} exibidas={subfiltro.filtrados.length} naPagina={listas.length} />
-            <ListaTecnicaTable listas={subfiltro.filtrados} nomeDoMaterial={nome} onAtivar={ativar} />
+            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={listas.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+            <ListaTecnicaTable listas={tabela.linhas} nomeDoMaterial={nome} onAtivar={ativar} controle={tabela.controle} />
             <PaginacaoTabela
               total={total}
               pagina={pagina}

@@ -381,6 +381,10 @@ export interface FiltroOrdens {
   /** Trecho do código da ordem. */
   busca?: string
   status?: StatusOrdem
+  /** Início planejado a partir desta data (AAAA-MM-DD, inclusive). */
+  de?: string
+  /** Início planejado até esta data (AAAA-MM-DD, inclusive). */
+  ate?: string
   pagina?: number
   tamanho?: number
 }

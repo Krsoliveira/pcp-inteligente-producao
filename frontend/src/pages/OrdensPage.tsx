@@ -8,7 +8,8 @@ import AddIcon from '@mui/icons-material/Add'
 import ListAltIcon from '@mui/icons-material/ListAlt'
 import { useQuery } from '@tanstack/react-query'
 import { pesquisarOrdens } from '../api/ordens'
-import { OrdemTable } from '../components/OrdemTable'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
+import { OrdemTable, colunasDeOrdens } from '../components/OrdemTable'
 import { CriarOrdemDialog } from '../components/CriarOrdemDialog'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { PageHeader } from '../components/PageHeader'
@@ -17,6 +18,7 @@ import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
 import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
 import { CamposFiltroOrdens } from '../components/ordens/CamposFiltroOrdens'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
+import { periodoInvertido } from '../components/consulta/CamposDePeriodo'
 import { montarBusca } from '../utils/url'
 import type { OrdemProducao, StatusOrdem } from '../types'
 
@@ -27,22 +29,30 @@ export function OrdensPage() {
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemProducao | null>(null)
   const [busca, setBusca] = useState('')
   const [status, setStatus] = useState<StatusOrdem | 'TODAS'>('TODAS')
+  const [de, setDe] = useState('')
+  const [ate, setAte] = useState('')
 
   const recentes = useQuery({
     queryKey: ['ordens', 'recentes', 10],
     queryFn: () => pesquisarOrdens({ pagina: 0, tamanho: 10 }),
   })
 
+  const itensRecentes = recentes.data?.itens ?? []
+  const tabela = useTabelaInterativa(itensRecentes, colunasDeOrdens)
+
   const verResultados = (filtros: Record<string, string | undefined> = {}) =>
     navigate({ pathname: '/ordens/resultados', search: montarBusca(filtros) })
-  const pesquisar = () => verResultados({ busca: busca.trim(), status: status === 'TODAS' ? undefined : status })
-  const limpar = () => { setBusca(''); setStatus('TODAS') }
+  const pesquisar = () => {
+    if (periodoInvertido(de, ate)) return
+    verResultados({ busca: busca.trim(), status: status === 'TODAS' ? undefined : status, de, ate })
+  }
+  const limpar = () => { setBusca(''); setStatus('TODAS'); setDe(''); setAte('') }
 
   return (
     <Box>
       <PageHeader
         titulo="Ordens de Produção"
-        subtitulo="Pesquise por código ou status, ou abra uma das mais recentes"
+        subtitulo="Pesquise por código, status ou período de início, ou abra uma das mais recentes"
         breadcrumbs={[{ label: 'Produção' }, { label: 'Ordens' }]}
         action={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogCriarAberto(true)}>
@@ -52,7 +62,7 @@ export function OrdensPage() {
       />
 
       <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
-        <CamposFiltroOrdens busca={busca} onBusca={setBusca} status={status} onStatus={setStatus} />
+        <CamposFiltroOrdens busca={busca} onBusca={setBusca} status={status} onStatus={setStatus} de={de} onDe={setDe} ate={ate} onAte={setAte} />
       </PainelDeConsulta>
 
       <CartaoDeRecentes titulo="10 ordens mais recentes" onVerTodas={() => verResultados()}>
@@ -63,7 +73,10 @@ export function OrdensPage() {
         ) : (recentes.data?.itens.length ?? 0) === 0 ? (
           <EmptyState Icone={ListAltIcon} titulo="Nenhuma ordem cadastrada" acaoLabel="Criar primeira ordem" onAcao={() => setDialogCriarAberto(true)} />
         ) : (
-          <OrdemTable ordens={recentes.data!.itens} onAtualizarStatus={setOrdemSelecionada} />
+          <>
+          <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+          <OrdemTable ordens={tabela.linhas} onAtualizarStatus={setOrdemSelecionada} controle={tabela.controle} />
+          </>
         )}
       </CartaoDeRecentes>
 

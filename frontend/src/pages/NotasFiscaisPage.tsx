@@ -11,8 +11,10 @@ import { useQuery } from '@tanstack/react-query'
 import { pesquisarNotasFiscais } from '../api/notasFiscais'
 import { listarMateriais } from '../api/materiais'
 import { EntradaNotaFiscalDialog } from '../components/suprimentos/EntradaNotaFiscalDialog'
-import { NotaFiscalTable } from '../components/suprimentos/NotaFiscalTable'
-import { CamposFiltroNotas, periodoInvertido } from '../components/suprimentos/CamposFiltroNotas'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
+import { NotaFiscalTable, colunasDeNotas } from '../components/suprimentos/NotaFiscalTable'
+import { CamposFiltroNotas } from '../components/suprimentos/CamposFiltroNotas'
+import { periodoInvertido } from '../components/consulta/CamposDePeriodo'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
 import { CartaoDeRecentes } from '../components/consulta/CartaoDeRecentes'
 import { PageHeader } from '../components/PageHeader'
@@ -27,7 +29,6 @@ import type { NotaFiscal } from '../types'
  */
 export function NotasFiscaisPage() {
   const navigate = useNavigate()
-  const [busca, setBusca] = useState('')
   const [de, setDe] = useState('')
   const [ate, setAte] = useState('')
   const [dialogAberto, setDialogAberto] = useState(false)
@@ -40,19 +41,22 @@ export function NotasFiscaisPage() {
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const materialPorId = new Map(materiais.map((m) => [m.id, m]))
 
+  const itensRecentes = recentes.data?.itens ?? []
+  const tabela = useTabelaInterativa(itensRecentes, colunasDeNotas(materialPorId))
+
   const verResultados = (filtros: Record<string, string | undefined> = {}) =>
     navigate({ pathname: '/notas-fiscais/resultados', search: montarBusca(filtros) })
   const pesquisar = () => {
     if (periodoInvertido(de, ate)) return
-    verResultados({ busca: busca.trim(), de, ate })
+    verResultados({ de, ate })
   }
-  const limpar = () => { setBusca(''); setDe(''); setAte('') }
+  const limpar = () => { setDe(''); setAte('') }
 
   return (
     <Box>
       <PageHeader
         titulo="Entrada de notas"
-        subtitulo="Pesquise por nota, fornecedor, lote ou período, ou abra uma das mais recentes"
+        subtitulo="Escolha o período de recebimento, ou abra uma das mais recentes"
         breadcrumbs={[{ label: 'Suprimentos' }, { label: 'Entrada de notas' }]}
         action={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
@@ -62,7 +66,7 @@ export function NotasFiscaisPage() {
       />
 
       <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
-        <CamposFiltroNotas busca={busca} onBusca={setBusca} de={de} onDe={setDe} ate={ate} onAte={setAte} />
+        <CamposFiltroNotas de={de} onDe={setDe} ate={ate} onAte={setAte} />
       </PainelDeConsulta>
 
       <CartaoDeRecentes titulo="10 notas recebidas mais recentemente" onVerTodas={() => verResultados()}>
@@ -79,7 +83,10 @@ export function NotasFiscaisPage() {
             onAcao={() => setDialogAberto(true)}
           />
         ) : (
-          <NotaFiscalTable notas={recentes.data!.itens} materialPorId={materialPorId} />
+          <>
+          <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+          <NotaFiscalTable notas={tabela.linhas} materialPorId={materialPorId} controle={tabela.controle} />
+          </>
         )}
       </CartaoDeRecentes>
 

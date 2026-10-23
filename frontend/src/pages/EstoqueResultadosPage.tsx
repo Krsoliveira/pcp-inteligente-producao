@@ -8,18 +8,17 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { pesquisarEstoque } from '../api/estoque'
 import { AlertaDeEstoque } from '../components/suprimentos/AlertaDeEstoque'
 import { CamposFiltroEstoque, TIPOS_DE_ESTOQUE_VALIDOS } from '../components/suprimentos/CamposFiltroEstoque'
-import { EstoqueTable } from '../components/suprimentos/EstoqueTable'
+import { EstoqueTable, colunasDeEstoque } from '../components/suprimentos/EstoqueTable'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
-import { SubfiltroTabela, useSubfiltro } from '../components/consulta/SubfiltroTabela'
+import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
 import { PageHeader } from '../components/PageHeader'
 import { PaginacaoTabela } from '../components/PaginacaoTabela'
 import { EmptyState } from '../components/EmptyState'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
-import { formatarCodigoMaterial } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
-import { TIPO_MATERIAL_LABEL, type TipoMaterial } from '../types'
+import { type TipoMaterial } from '../types'
 
-/** Estoque, segunda etapa: o resultado da consulta, paginado no servidor, com subfiltro na página. */
+/** Estoque, segunda etapa: o resultado da consulta, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function EstoqueResultadosPage() {
   const url = useParametrosDaUrl()
   const buscaAplicada = url.texto('busca')
@@ -45,8 +44,7 @@ export function EstoqueResultadosPage() {
   })
   const posicoes = data?.itens ?? []
   const total = data?.total ?? 0
-  const subfiltro = useSubfiltro(posicoes, (p) =>
-    `${formatarCodigoMaterial(p.codigo)} ${p.descricao} ${TIPO_MATERIAL_LABEL[p.tipo]}`)
+  const tabela = useTabelaInterativa(posicoes, colunasDeEstoque)
   const filtrando = buscaAplicada !== '' || tipoAplicado !== undefined || saldoAplicado
 
   useEffect(() => {
@@ -94,8 +92,8 @@ export function EstoqueResultadosPage() {
           />
         ) : (
           <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <SubfiltroTabela valor={subfiltro.texto} onChange={subfiltro.setTexto} exibidas={subfiltro.filtrados.length} naPagina={posicoes.length} />
-            <EstoqueTable posicoes={subfiltro.filtrados} />
+            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={posicoes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+            <EstoqueTable posicoes={tabela.linhas} controle={tabela.controle} />
             <PaginacaoTabela
               total={total}
               pagina={pagina}

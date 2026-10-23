@@ -3,6 +3,7 @@
 - **Status**: Aceito
 - **Data**: 2026-10-21
 - **Complementa**: ADR-0015 (pesquisa paginada e resumo do dashboard)
+- **Alterado por**: ADR-0018 (o subfiltro de texto livre virou filtro e ordenação por coluna)
 
 ## Contexto
 

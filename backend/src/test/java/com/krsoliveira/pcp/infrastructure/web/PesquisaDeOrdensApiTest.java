@@ -116,6 +116,22 @@ class PesquisaDeOrdensApiTest {
     }
 
     @Test
+    @DisplayName("filtra pelo período do início planejado (limites inclusivos)")
+    void filtroPorPeriodo() {
+        assertThat(pesquisar("?de=2999-01-01").getBody()).containsEntry("total", 2);
+        assertThat(pesquisar("?ate=2020-12-31").getBody()).containsEntry("total", 5);
+        assertThat(pesquisar("?de=2020-01-01&ate=2020-01-01").getBody()).containsEntry("total", 5);
+        assertThat(pesquisar("?de=2021-01-01&ate=2021-12-31").getBody()).containsEntry("total", 0);
+    }
+
+    @Test
+    @DisplayName("período invertido devolve 422 e data inválida devolve 400")
+    void periodoInvalido() {
+        assertThat(pesquisar("?de=2026-09-30&ate=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(pesquisar("?de=ontem").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
     @DisplayName("curinga digitado (%) é texto comum e não casa com tudo")
     void curingaEhTextoComum() {
         assertThat(pesquisar("?busca=%25").getBody()).containsEntry("total", 0);

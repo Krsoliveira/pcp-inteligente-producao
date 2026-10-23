@@ -16,6 +16,7 @@ import com.krsoliveira.pcp.infrastructure.web.dto.PaginaResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,16 +78,19 @@ public class OrdemProducaoController {
 
     @GetMapping("/pesquisa")
     @Operation(summary = "Pesquisa ordens com filtro e paginação",
-            description = "Filtra no servidor por trecho do código (busca) e por status e devolve uma página, "
+            description = "Filtra no servidor por trecho do código (busca), por status e pelo período do início "
+                    + "planejado (de/ate, datas inclusivas; período invertido devolve 422) e devolve uma página, "
                     + "das ordens mais recentes para as mais antigas. Tamanho padrão 25, máximo 100; "
                     + "valores fora desses limites são corrigidos.")
     public PaginaResponse<OrdemProducaoResponse> pesquisar(
             @RequestParam(required = false) String busca,
             @RequestParam(required = false) StatusOrdemProducao status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
             @RequestParam(required = false) Integer pagina,
             @RequestParam(required = false) Integer tamanho) {
         var resultado = consultarOrdensProducao.pesquisar(
-                new FiltroOrdens(busca, status), PedidoDePagina.de(pagina, tamanho));
+                new FiltroOrdens(busca, status, de, ate), PedidoDePagina.de(pagina, tamanho));
         return PaginaResponse.de(resultado, OrdemProducaoResponse::de);
     }
 

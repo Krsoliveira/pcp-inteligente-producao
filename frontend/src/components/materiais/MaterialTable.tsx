@@ -8,6 +8,7 @@ import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import { TIPO_MATERIAL_LABEL, type Material, type TipoMaterial } from '../../types'
 import { formatarCodigoMaterial } from '../../utils/formatacao'
+import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
 
 export const TIPO_COR: Record<TipoMaterial, string> = {
   PRODUTO_ACABADO: '#4F46E5',
@@ -15,16 +16,30 @@ export const TIPO_COR: Record<TipoMaterial, string> = {
   MATERIA_PRIMA:   '#059669',
 }
 
-export function MaterialTable({ materiais }: { materiais: Material[] }) {
+/** Colunas que a tela de resultados ordena e filtra; o texto é o que aparece na célula. */
+export const colunasDeMateriais: Coluna<Material>[] = [
+  { chave: 'codigo', rotulo: 'Código', valor: (m) => m.codigo, texto: (m) => formatarCodigoMaterial(m.codigo) },
+  { chave: 'descricao', rotulo: 'Descrição', valor: (m) => m.descricao },
+  { chave: 'tipo', rotulo: 'Tipo', valor: (m) => TIPO_MATERIAL_LABEL[m.tipo] },
+  { chave: 'unidade', rotulo: 'Unidade', valor: (m) => m.unidadeDeMedida },
+]
+
+interface MaterialTableProps {
+  materiais: Material[]
+  /** Quando informado, o cabeçalho ordena e filtra por coluna (tela de resultados). */
+  controle?: ControleDaTabela<Material>
+}
+
+export function MaterialTable({ materiais, controle }: MaterialTableProps) {
   return (
     <TableContainer>
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Código</TableCell>
-            <TableCell>Descrição</TableCell>
-            <TableCell>Tipo</TableCell>
-            <TableCell>Unidade</TableCell>
+            <CelulaDeCabecalho chave="codigo" rotulo="Código" controle={controle} />
+            <CelulaDeCabecalho chave="descricao" rotulo="Descrição" controle={controle} />
+            <CelulaDeCabecalho chave="tipo" rotulo="Tipo" controle={controle} />
+            <CelulaDeCabecalho chave="unidade" rotulo="Unidade" controle={controle} />
           </TableRow>
         </TableHead>
         <TableBody>
