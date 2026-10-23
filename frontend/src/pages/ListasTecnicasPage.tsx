@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { SePermitido } from '../components/SePermitido'
+import { usePermissoes } from '../hooks/usePermissoes'
 import { useNavigate } from 'react-router-dom'
 import { pesquisarListasTecnicas } from '../api/listasTecnicas'
 import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
@@ -26,6 +28,7 @@ import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 /** Primeira etapa: escolher o que consultar (ou abrir uma das 10 listas mais recentes). */
 export function ListasTecnicasPage() {
+  const { tem } = usePermissoes()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [dialogAberto, setDialogAberto] = useState(false)
@@ -62,9 +65,11 @@ export function ListasTecnicasPage() {
         subtitulo="Pesquise por material ou status, ou abra uma das mais recentes"
         breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas Técnicas' }]}
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
-            Nova Lista
-          </Button>
+          <SePermitido qualquer={['LISTA_CADASTRAR']}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
+              Nova Lista
+            </Button>
+          </SePermitido>
         }
       />
 
@@ -84,7 +89,7 @@ export function ListasTecnicasPage() {
             Icone={AccountTreeIcon}
             titulo="Nenhuma lista técnica cadastrada"
             descricao="As listas técnicas (BOM) definem quais materiais e quantidades são necessários para produzir cada produto."
-            acaoLabel="Criar lista técnica"
+            acaoLabel={tem('LISTA_CADASTRAR') ? 'Criar lista técnica' : undefined}
             onAcao={() => setDialogAberto(true)}
           />
         ) : (

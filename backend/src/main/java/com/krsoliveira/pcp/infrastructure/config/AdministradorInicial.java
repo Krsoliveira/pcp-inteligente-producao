@@ -1,7 +1,7 @@
 package com.krsoliveira.pcp.infrastructure.config;
 
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
-import com.krsoliveira.pcp.domain.usuario.Perfil;
+import com.krsoliveira.pcp.domain.acesso.PerfilAcessoRepository;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +11,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 /**
- * Cria o usuário administrador (perfil GERENTE) na inicialização, a partir das
+ * Cria o usuário administrador (perfil Administrador) na inicialização, a partir das
  * variáveis de ambiente {@code ADMIN_NOME}, {@code ADMIN_EMAIL} e {@code ADMIN_SENHA}.
  *
  * <ul>
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  *   <li>Sem {@code ADMIN_EMAIL}, não faz nada.</li>
  *   <li>Idempotente: se o e-mail já existe, não altera a conta. Em especial, NÃO promove
  *       uma conta existente — senão quem se autocadastrasse antes com esse e-mail
- *       ganharia o perfil GERENTE com a própria senha.</li>
+ *       ganharia o perfil Administrador com a própria senha.</li>
  *   <li>Configuração incompleta (e-mail sem nome ou senha) impede a aplicação de subir:
  *       falha rápida em vez de um administrador silenciosamente ausente.</li>
  * </ul>
@@ -34,17 +34,20 @@ public class AdministradorInicial implements ApplicationRunner {
 
     private final UsuarioRepository usuarioRepository;
     private final RegistrarUsuario registrarUsuario;
+    private final PerfilAcessoRepository perfilRepository;
     private final String nome;
     private final String email;
     private final String senha;
 
     public AdministradorInicial(UsuarioRepository usuarioRepository,
                                 RegistrarUsuario registrarUsuario,
+                                PerfilAcessoRepository perfilRepository,
                                 @Value("${app.admin.nome:}") String nome,
                                 @Value("${app.admin.email:}") String email,
                                 @Value("${app.admin.senha:}") String senha) {
         this.usuarioRepository = usuarioRepository;
         this.registrarUsuario = registrarUsuario;
+        this.perfilRepository = perfilRepository;
         this.nome = nome;
         this.email = email;
         this.senha = senha;
@@ -68,8 +71,10 @@ public class AdministradorInicial implements ApplicationRunner {
             log.info("Administrador inicial: e-mail já cadastrado — nenhuma alteração feita.");
             return;
         }
-        registrarUsuario.executar(nome, emailNormalizado, senha, Perfil.GERENTE, RESPONSAVEL);
+        var administrador = perfilRepository.buscarAdministrador()
+                .orElseThrow(() -> new IllegalStateException("Perfil Administrador não encontrado."));
+        registrarUsuario.executar(nome, emailNormalizado, senha, administrador, RESPONSAVEL);
         // Não registra e-mail nem senha no log (dados pessoais / segredo).
-        log.info("Administrador inicial criado com perfil GERENTE.");
+        log.info("Administrador inicial criado com o perfil Administrador.");
     }
 }

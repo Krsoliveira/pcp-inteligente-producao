@@ -16,5 +16,9 @@ public enum AcaoAuditoria {
     /** Parte do saldo do lote foi usada num consumo (genealogia). */
     LOTE_ALOCADO,
     ENTRADA_REGISTRADA,
-    USUARIO_REGISTRADO
+    USUARIO_REGISTRADO,
+    /** Uma entidade foi excluída (ex.: perfil de acesso sem usuários). */
+    EXCLUIDO,
+    /** Um usuário teve o perfil de acesso trocado (ADR-0020). */
+    PERFIL_ATRIBUIDO
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePermissoes } from '../hooks/usePermissoes'
 import { useNavigate, useParams } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -38,6 +39,7 @@ import { TIPO_MATERIAL_LABEL } from '../types'
 export function ListaTecnicaDetalhePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { tem } = usePermissoes()
   const queryClient = useQueryClient()
   const [retirando, setRetirando] = useState(false)
   const [copiando, setCopiando] = useState(false)
@@ -84,14 +86,16 @@ export function ListaTecnicaDetalhePage() {
         ]}
         action={
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => setCopiando(true)}>
-              Nova versão a partir desta
-            </Button>
-            {lista.status === 'EM_REVISAO' ? (
+            {tem('LISTA_CADASTRAR') && (
+              <Button variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => setCopiando(true)}>
+                Nova versão a partir desta
+              </Button>
+            )}
+            {lista.status === 'EM_REVISAO' && tem('LISTA_ATIVAR') ? (
               <Button variant="contained" color="success" startIcon={<CheckCircleOutlineIcon />} onClick={() => ativar()} disabled={ativando}>
                 {ativando ? 'Ativando…' : 'Ativar esta versão'}
               </Button>
-            ) : lista.status === 'ATIVA' ? (
+            ) : lista.status === 'ATIVA' && tem('LISTA_RETIRAR_DE_USO') ? (
               <Button variant="outlined" color="warning" startIcon={<BlockIcon />} onClick={() => setRetirando(true)}>
                 Retirar de uso
               </Button>
@@ -200,6 +204,7 @@ export function ListaTecnicaDetalhePage() {
                         <TableCell><StatusListaBadge status={v.status} /></TableCell>
                         <TableCell align="center">{v.itens.length}</TableCell>
                         <TableCell align="center">
+                          {tem('LISTA_COMPARAR') && (
                           <Button
                             size="small"
                             startIcon={<CompareArrowsIcon />}
@@ -208,6 +213,7 @@ export function ListaTecnicaDetalhePage() {
                           >
                             Comparar
                           </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

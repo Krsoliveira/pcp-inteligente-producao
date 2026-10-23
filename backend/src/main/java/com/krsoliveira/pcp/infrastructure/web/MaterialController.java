@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.infrastructure.web.dto.CadastrarMaterialRequest;
@@ -39,6 +40,7 @@ public class MaterialController {
         this.consultarMateriais = consultarMateriais;
     }
 
+    @PreAuthorize("hasAuthority('MATERIAL_CADASTRAR')")
     @PostMapping
     @Operation(summary = "Cadastrar material", description = "Registra um novo material (PA, SA ou MP). O código de 9 dígitos é gerado na faixa do tipo: 103 (acabado), 105 (semiacabado), 110 (matéria-prima).")
     public ResponseEntity<Void> cadastrar(@RequestBody @Valid CadastrarMaterialRequest request) {
@@ -48,6 +50,7 @@ public class MaterialController {
         return ResponseEntity.created(location).build();
     }
 
+    @PreAuthorize("hasAuthority('MATERIAL_VISUALIZAR')")
     @GetMapping
     @Operation(summary = "Listar materiais", description = "Retorna todos os materiais cadastrados.")
     public ResponseEntity<List<MaterialResponse>> listar() {
@@ -56,6 +59,7 @@ public class MaterialController {
         return ResponseEntity.ok(resposta);
     }
 
+    @PreAuthorize("hasAuthority('MATERIAL_VISUALIZAR')")
     @GetMapping("/pesquisa")
     @Operation(summary = "Pesquisa materiais com filtro e paginação",
             description = "Filtra no servidor por trecho da descrição ou do código (aceita 103.000.001) e por tipo. "
@@ -70,6 +74,7 @@ public class MaterialController {
         return PaginaResponse.de(resultado, MaterialResponse::de);
     }
 
+    @PreAuthorize("hasAuthority('MATERIAL_VISUALIZAR')")
     @GetMapping("/{id}")
     @Operation(summary = "Buscar material por ID")
     public ResponseEntity<MaterialResponse> buscar(@PathVariable UUID id) {

@@ -208,7 +208,7 @@ export function CadastroPage() {
         />
 
         <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
-          Novas contas são criadas com o perfil <strong>Planejador</strong>.
+          Novas contas começam com o perfil <strong>Visualizador</strong> (somente consulta). Um gestor pode ampliar o seu acesso depois.
         </Alert>
 
         <Button

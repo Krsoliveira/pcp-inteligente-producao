@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.dashboard.ConsultarResumoProducao;
 import com.krsoliveira.pcp.infrastructure.web.dto.ResumoProducaoResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 
 /** Totais do painel principal, calculados no banco. */
 @RestController
+@PreAuthorize("hasAuthority('DASHBOARD_VISUALIZAR')")
 @RequestMapping("/api/v1/dashboard")
 @Tag(name = "Dashboard", description = "Totais do painel principal")
 public class DashboardController {

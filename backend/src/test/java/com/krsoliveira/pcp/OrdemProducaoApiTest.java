@@ -41,7 +41,13 @@ import com.krsoliveira.pcp.infrastructure.security.JwtService;
  * Fase 5a: o setup cria Material + Lista Técnica + ativa a lista antes de
  * criar ordens — refletindo o novo modelo de domínio (ADR-0007).
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                "app.admin.nome=Administrador de Teste",
+                "app.admin.email=admin@pcp.com",
+                "app.admin.senha=Senha@123"
+        })
 @Testcontainers
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -72,15 +78,10 @@ class OrdemProducaoApiTest {
     @SuppressWarnings("unchecked")
     void configurarAmbiente() {
         // 1. Registrar e autenticar usuário
-        rest.postForEntity("/api/v1/auth/registrar", jsonSemAuth(Map.of(
-                "nome", "Planejador Teste",
-                "email", "teste@pcp.com",
-                "senha", "Senha@123",
-                "perfil", "PLANEJADOR")), Map.class);
 
         ResponseEntity<Map> login = rest.postForEntity(
                 "/api/v1/auth/login",
-                jsonSemAuth(Map.of("email", "teste@pcp.com", "senha", "Senha@123")),
+                jsonSemAuth(Map.of("email", "admin@pcp.com", "senha", "Senha@123")),
                 Map.class);
         assertThat(login.getStatusCode()).isEqualTo(HttpStatus.OK);
         jwtToken = (String) login.getBody().get("token");
@@ -246,7 +247,7 @@ class OrdemProducaoApiTest {
     void loginComSenhaErradaDevolve401() {
         ResponseEntity<Map> resposta = rest.postForEntity(
                 "/api/v1/auth/login",
-                jsonSemAuth(Map.of("email", "teste@pcp.com", "senha", "senhaErrada")),
+                jsonSemAuth(Map.of("email", "admin@pcp.com", "senha", "senhaErrada")),
                 Map.class);
 
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);

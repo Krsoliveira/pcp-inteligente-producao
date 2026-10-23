@@ -13,17 +13,13 @@ import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
 import Divider from '@mui/material/Divider'
 import Tooltip from '@mui/material/Tooltip'
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import ListAltIcon from '@mui/icons-material/ListAlt'
-import InventoryIcon from '@mui/icons-material/Inventory2Outlined'
-import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
-import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined'
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLongOutlined'
-import WarehouseIcon from '@mui/icons-material/WarehouseOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
 import MenuIcon from '@mui/icons-material/Menu'
 import FactoryIcon from '@mui/icons-material/Factory'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
+import { usePermissoes } from '../hooks/usePermissoes'
+import { secoesVisiveis, type NavItem } from './navegacao'
 
 const DRAWER_WIDTH = 248
 
@@ -35,57 +31,19 @@ const SIDEBAR_DIVIDER = 'rgba(255,255,255,0.08)'
 const SIDEBAR_ACTIVE_BG = '#4F46E5'
 const SIDEBAR_HOVER_BG = 'rgba(255,255,255,0.06)'
 
-interface NavItem {
-  label: string
-  icon: React.ReactNode
-  rota: string
-  /** Outras rotas que também destacam o item (ex.: telas de detalhe). */
-  ativoTambem?: string[]
-}
-
-interface NavSection {
-  titulo: string
-  itens: NavItem[]
-}
-
-const NAV_SECTIONS: NavSection[] = [
-  {
-    titulo: 'Painel',
-    itens: [
-      { label: 'Dashboard', icon: <DashboardIcon fontSize="small" />, rota: '/dashboard' },
-    ],
-  },
-  {
-    titulo: 'Cadastros',
-    itens: [
-      { label: 'Materiais', icon: <InventoryIcon fontSize="small" />, rota: '/materiais' },
-      { label: 'Listas Técnicas', icon: <AccountTreeIcon fontSize="small" />, rota: '/listas-tecnicas' },
-      { label: 'Tipos de Ordem', icon: <LabelOutlinedIcon fontSize="small" />, rota: '/tipos-ordem' },
-    ],
-  },
-  {
-    titulo: 'Suprimentos',
-    itens: [
-      { label: 'Entrada de notas', icon: <ReceiptLongIcon fontSize="small" />, rota: '/notas-fiscais' },
-      { label: 'Estoque', icon: <WarehouseIcon fontSize="small" />, rota: '/estoque', ativoTambem: ['/lotes'] },
-    ],
-  },
-  {
-    titulo: 'Produção',
-    itens: [
-      { label: 'Ordens', icon: <ListAltIcon fontSize="small" />, rota: '/ordens' },
-    ],
-  },
-]
-
 export function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const logout = useAuthStore((s) => s.logout)
+  const queryClient = useQueryClient()
+  const { usuario, temAlguma } = usePermissoes()
+  const secoes = secoesVisiveis(temAlguma)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
+    // Nada da sessão anterior (inclusive as permissões) pode aparecer para o próximo usuário.
+    queryClient.clear()
     navigate('/login')
   }
 
@@ -129,7 +87,7 @@ export function Layout() {
 
       {/* Seções de navegação */}
       <Box sx={{ flexGrow: 1, overflow: 'auto', py: 1 }}>
-        {NAV_SECTIONS.map((section, sIdx) => (
+        {secoes.map((section, sIdx) => (
           <Box key={section.titulo}>
             {sIdx > 0 && <Divider sx={{ my: 0.5, mx: 2, borderColor: SIDEBAR_DIVIDER }} />}
             <List
@@ -202,6 +160,21 @@ export function Layout() {
           </Box>
         ))}
       </Box>
+
+      {/* Quem está logado e com qual perfil */}
+      {usuario && (
+        <>
+          <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
+          <Box sx={{ px: 2.5, py: 1.25 }}>
+            <Typography noWrap sx={{ fontSize: '0.78rem', color: 'white', fontWeight: 600 }}>
+              {usuario.nome}
+            </Typography>
+            <Typography noWrap sx={{ fontSize: '0.68rem', color: SIDEBAR_SUBHEADER }}>
+              {usuario.perfil.nome}
+            </Typography>
+          </Box>
+        </>
+      )}
 
       {/* Logout */}
       <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />

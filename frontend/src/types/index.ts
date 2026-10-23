@@ -320,7 +320,7 @@ export interface TokenResponse {
   token: string
 }
 
-/** Autocadastro: o backend sempre cria o usuário com perfil PLANEJADOR. */
+/** Autocadastro: o backend sempre cria o usuário com o perfil padrão (só consulta). */
 export interface RegistrarRequest {
   nome: string
   email: string
@@ -347,6 +347,7 @@ export type TipoEntidade =
   | 'TIPO_ORDEM'
   | 'NOTA_FISCAL'
   | 'USUARIO'
+  | 'PERFIL_ACESSO'
 
 export type AcaoAuditoria =
   | 'CRIADO'
@@ -360,6 +361,8 @@ export type AcaoAuditoria =
   | 'LOTE_ALOCADO'
   | 'ENTRADA_REGISTRADA'
   | 'USUARIO_REGISTRADO'
+  | 'EXCLUIDO'
+  | 'PERFIL_ATRIBUIDO'
 
 /** Mudança de valor registrada na trilha: {"de": ..., "para": ...}. */
 export interface MudancaAuditoria {
@@ -467,4 +470,71 @@ export interface ResumoEstoque {
   totalMateriais: number
   materiaisVencendo: number
   materiasPrimasSemSaldo: number
+}
+
+// ---- Controle de acesso (ADR-0020) ----
+
+/** Capacidades que um perfil pode ter; os nomes são os do catálogo do servidor. */
+export type Permissao =
+  | 'DASHBOARD_VISUALIZAR'
+  | 'MATERIAL_VISUALIZAR' | 'MATERIAL_CADASTRAR'
+  | 'LISTA_VISUALIZAR_ATIVAS' | 'LISTA_VISUALIZAR_TODAS' | 'LISTA_COMPARAR' | 'LISTA_CADASTRAR'
+  | 'LISTA_ATIVAR' | 'LISTA_RETIRAR_DE_USO'
+  | 'ORDEM_VISUALIZAR' | 'ORDEM_CRIAR' | 'ORDEM_ATUALIZAR_STATUS' | 'ORDEM_CONCLUIR'
+  | 'CONSUMO_VISUALIZAR' | 'CONSUMO_REGISTRAR'
+  | 'TIPO_ORDEM_VISUALIZAR' | 'TIPO_ORDEM_GERENCIAR'
+  | 'NOTA_FISCAL_VISUALIZAR' | 'NOTA_FISCAL_REGISTRAR'
+  | 'ESTOQUE_VISUALIZAR'
+  | 'AUDITORIA_VISUALIZAR'
+  | 'ACESSO_VISUALIZAR' | 'PERFIL_GERENCIAR' | 'USUARIO_GERENCIAR'
+
+/** Quem está logado e o que pode fazer (GET /acessos/eu). */
+export interface UsuarioLogado {
+  nome: string
+  email: string
+  perfil: { id: string; nome: string }
+  permissoes: Permissao[]
+}
+
+/** Uma "caixinha" do catálogo, com a área em que aparece. */
+export interface PermissaoDoCatalogo {
+  permissao: Permissao
+  area: string
+  descricao: string
+}
+
+export interface PerfilAcesso {
+  id: string
+  nome: string
+  descricao: string
+  /** Perfil de sistema com todas as permissões; não se altera nem se exclui. */
+  administrador: boolean
+  /** Perfil que o autocadastro recebe; não se exclui. */
+  padraoDoAutocadastro: boolean
+  permissoes: Permissao[]
+  quantidadeDeUsuarios: number
+  atualizadoEm: string
+  atualizadoPor: string
+}
+
+export interface SalvarPerfilRequest {
+  nome: string
+  descricao: string
+  permissoes: Permissao[]
+}
+
+export interface UsuarioAcesso {
+  id: string
+  nome: string
+  email: string
+  perfilId: string
+  perfilNome: string | null
+  criadoEm: string
+}
+
+export interface CriarUsuarioRequest {
+  nome: string
+  email: string
+  senhaProvisoria: string
+  perfilId: string
 }

@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.consumo.ConsultarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.RegistrarConsumoMaterial;
 import com.krsoliveira.pcp.infrastructure.web.dto.ConsumoMaterialResponse;
@@ -37,6 +38,7 @@ public class ConsumoMaterialController {
         this.registrarConsumoMaterial = registrarConsumoMaterial;
     }
 
+    @PreAuthorize("hasAuthority('CONSUMO_VISUALIZAR')")
     @GetMapping
     @Operation(summary = "Listar consumos de uma ordem",
             description = "Retorna todos os consumos de materiais projetados e registrados para a ordem.")
@@ -47,6 +49,7 @@ public class ConsumoMaterialController {
                         .toList());
     }
 
+    @PreAuthorize("hasAuthority('CONSUMO_REGISTRAR')")
     @PatchMapping("/{consumoId}")
     @Operation(summary = "Registrar consumo real",
             description = "Informa a quantidade efetivamente consumida. "

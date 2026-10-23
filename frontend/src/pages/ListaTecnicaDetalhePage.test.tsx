@@ -137,6 +137,17 @@ describe('ListaTecnicaDetalhePage', () => {
     expect(screen.getByLabelText(/^Versão/)).toHaveValue('v2')
   })
 
+  it('sem LISTA_CADASTRAR não oferece criar uma nova versão', async () => {
+    renderizarTela(<ListaTecnicaDetalhePage />, {
+      rotas: ['/listas-tecnicas/l-1'], padrao: PADRAO, permissoes: ['LISTA_VISUALIZAR_TODAS', 'LISTA_ATIVAR'],
+    })
+
+    await screen.findByRole('heading', { name: 'Viga metálica' })
+
+    expect(screen.queryByRole('button', { name: 'Nova versão a partir desta' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ativar esta versão' })).toBeInTheDocument()
+  })
+
   it('depois de criar a versão nova, abre o detalhe dela', async () => {
     const v1 = listaTecnica({ id: 'l-1', versao: 'v1' })
     const v2 = listaTecnica({ id: 'l-9', versao: 'v2' })

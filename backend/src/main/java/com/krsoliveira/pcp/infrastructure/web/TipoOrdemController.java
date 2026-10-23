@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.ordem.AtualizarTipoOrdem;
 import com.krsoliveira.pcp.application.ordem.CadastrarTipoOrdem;
 import com.krsoliveira.pcp.application.ordem.ConsultarTiposOrdem;
@@ -44,6 +45,7 @@ public class TipoOrdemController {
         this.atualizarTipoOrdem = atualizarTipoOrdem;
     }
 
+    @PreAuthorize("hasAuthority('TIPO_ORDEM_GERENCIAR')")
     @PostMapping
     @Operation(summary = "Cadastrar tipo de ordem",
             description = "Cria uma nova categoria de ordem (ex.: Produção Normal, Manutenção, Revenda).")
@@ -55,6 +57,7 @@ public class TipoOrdemController {
         return ResponseEntity.created(location).body(TipoOrdemResponse.de(tipo));
     }
 
+    @PreAuthorize("hasAuthority('TIPO_ORDEM_VISUALIZAR')")
     @GetMapping
     @Operation(summary = "Listar tipos de ordem")
     public ResponseEntity<List<TipoOrdemResponse>> listar() {
@@ -64,12 +67,14 @@ public class TipoOrdemController {
                         .toList());
     }
 
+    @PreAuthorize("hasAuthority('TIPO_ORDEM_VISUALIZAR')")
     @GetMapping("/{id}")
     @Operation(summary = "Buscar tipo de ordem por ID")
     public ResponseEntity<TipoOrdemResponse> buscar(@PathVariable UUID id) {
         return ResponseEntity.ok(TipoOrdemResponse.de(consultarTiposOrdem.porId(id)));
     }
 
+    @PreAuthorize("hasAuthority('TIPO_ORDEM_GERENCIAR')")
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar tipo de ordem")
     public ResponseEntity<TipoOrdemResponse> atualizar(@PathVariable UUID id,

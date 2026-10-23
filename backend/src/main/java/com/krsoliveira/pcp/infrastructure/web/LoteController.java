@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
 import com.krsoliveira.pcp.application.lote.RastrearLote;
 import com.krsoliveira.pcp.domain.lote.Lote;
@@ -23,6 +24,7 @@ import java.util.UUID;
  * (ver {@link NotaFiscalController}). Este controller consulta e rastreia os lotes.
  */
 @RestController
+@PreAuthorize("hasAuthority('ESTOQUE_VISUALIZAR')")
 @RequestMapping("/api/v1/lotes")
 @Tag(name = "Lotes", description = "Consulta e rastreabilidade de lotes de produção e de compra")
 public class LoteController {

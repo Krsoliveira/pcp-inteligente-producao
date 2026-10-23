@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.notafiscal.ConsultarNotasFiscais;
 import com.krsoliveira.pcp.application.notafiscal.RegistrarEntradaNotaFiscal;
 import com.krsoliveira.pcp.infrastructure.web.dto.NotaFiscalResponse;
@@ -44,6 +45,7 @@ public class NotaFiscalController {
         this.consultarNotas = consultarNotas;
     }
 
+    @PreAuthorize("hasAuthority('NOTA_FISCAL_REGISTRAR')")
     @PostMapping
     @Operation(summary = "Registrar entrada de nota fiscal",
             description = "Cabeçalho (fornecedor, número, emissão, recebimento) e itens: matéria-prima, "
@@ -56,6 +58,7 @@ public class NotaFiscalController {
         return ResponseEntity.created(local).body(NotaFiscalResponse.de(resultado.nota(), resultado.lotes()));
     }
 
+    @PreAuthorize("hasAuthority('NOTA_FISCAL_VISUALIZAR')")
     @GetMapping
     @Operation(summary = "Listar notas fiscais de entrada",
             description = "Filtro opcional por período de recebimento (datas inclusivas). Mais recentes primeiro.")
@@ -66,6 +69,7 @@ public class NotaFiscalController {
                 .map(n -> NotaFiscalResponse.de(n.nota(), n.itens())).toList());
     }
 
+    @PreAuthorize("hasAuthority('NOTA_FISCAL_VISUALIZAR')")
     @GetMapping("/pesquisa")
     @Operation(summary = "Pesquisa notas fiscais com filtro e paginação",
             description = "Filtra no servidor por trecho do número, do fornecedor ou do lote de um item, e por "
@@ -82,6 +86,7 @@ public class NotaFiscalController {
         return PaginaResponse.de(resultado, n -> NotaFiscalResponse.de(n.nota(), n.itens()));
     }
 
+    @PreAuthorize("hasAuthority('NOTA_FISCAL_VISUALIZAR')")
     @GetMapping("/{id}")
     @Operation(summary = "Buscar nota fiscal com seus itens")
     public ResponseEntity<NotaFiscalResponse> buscar(@PathVariable UUID id) {

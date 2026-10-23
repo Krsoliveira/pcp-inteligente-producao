@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
 import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
 import com.krsoliveira.pcp.application.lista.CompararListasTecnicas;
@@ -53,6 +54,7 @@ public class ListaTecnicaController {
         this.consultarListaTecnica = consultarListaTecnica;
     }
 
+    @PreAuthorize("hasAuthority('LISTA_CADASTRAR')")
     @PostMapping
     @Operation(summary = "Cadastrar lista técnica",
                description = "Cria uma nova BOM em status EM_REVISAO para o material informado.")
@@ -64,6 +66,7 @@ public class ListaTecnicaController {
         return ResponseEntity.created(location).build();
     }
 
+    @PreAuthorize("hasAuthority('LISTA_ATIVAR')")
     @PatchMapping("/{id}/ativar")
     @Operation(summary = "Ativar lista técnica",
                description = "Ativa uma versão em revisão. Não afeta as outras versões do material: várias "
@@ -73,6 +76,7 @@ public class ListaTecnicaController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAuthority('LISTA_RETIRAR_DE_USO')")
     @PatchMapping("/{id}/retirar-de-uso")
     @Operation(summary = "Retirar lista técnica de uso",
                description = "Torna OBSOLETA uma versão ATIVA. É decisão do usuário: ativar outra versão não "
@@ -82,6 +86,7 @@ public class ListaTecnicaController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAnyAuthority('LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS')")
     @GetMapping("/pesquisa")
     @Operation(summary = "Pesquisa listas técnicas com filtro e paginação",
             description = "Filtra no servidor por material e status, das criadas mais recentemente para as mais antigas. "
@@ -96,6 +101,7 @@ public class ListaTecnicaController {
         return PaginaResponse.de(resultado, ListaTecnicaResponse::de);
     }
 
+    @PreAuthorize("hasAuthority('LISTA_COMPARAR') and hasAnyAuthority('LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS')")
     @GetMapping("/comparar")
     @Operation(summary = "Compara duas versões da mesma lista técnica",
             description = "Devolve os componentes adicionados, removidos, alterados (quantidade ou unidade) e "
@@ -105,6 +111,7 @@ public class ListaTecnicaController {
         return ComparacaoDeVersoesResponse.de(compararListasTecnicas.executar(a, b));
     }
 
+    @PreAuthorize("hasAnyAuthority('LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS')")
     @GetMapping("/{id}")
     @Operation(summary = "Buscar lista técnica por ID")
     public ResponseEntity<ListaTecnicaResponse> buscar(@PathVariable UUID id) {
@@ -112,6 +119,7 @@ public class ListaTecnicaController {
                 ListaTecnicaResponse.de(consultarListaTecnica.buscarPorId(id)));
     }
 
+    @PreAuthorize("hasAnyAuthority('LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS')")
     @GetMapping
     @Operation(summary = "Listar listas técnicas",
                description = "Sem materialId, retorna todas as listas; com materialId, "

@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.estoque.ConsultarEstoque;
 import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 import com.krsoliveira.pcp.domain.estoque.FiltroEstoque;
@@ -21,6 +22,7 @@ import java.util.List;
 
 /** Estoque por material (ADR-0012): saldo calculado a partir dos lotes. */
 @RestController
+@PreAuthorize("hasAuthority('ESTOQUE_VISUALIZAR')")
 @RequestMapping("/api/v1/estoque")
 @Tag(name = "Estoque", description = "Posição de estoque por material, a partir dos saldos dos lotes")
 public class EstoqueController {

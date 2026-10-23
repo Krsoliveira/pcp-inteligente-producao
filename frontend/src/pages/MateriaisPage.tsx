@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { SePermitido } from '../components/SePermitido'
+import { usePermissoes } from '../hooks/usePermissoes'
 import { useNavigate } from 'react-router-dom'
 import { pesquisarMateriais } from '../api/materiais'
 import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
@@ -31,6 +33,7 @@ import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 /** Primeira etapa: escolher o que consultar (ou abrir um dos 10 materiais mais recentes). */
 export function MateriaisPage() {
+  const { tem } = usePermissoes()
   const navigate = useNavigate()
   const [dialogAberto, setDialogAberto] = useState(false)
   const [busca, setBusca] = useState('')
@@ -56,9 +59,11 @@ export function MateriaisPage() {
         subtitulo="Pesquise por código, descrição ou tipo, ou veja os mais recentes"
         breadcrumbs={[{ label: 'Cadastros' }, { label: 'Materiais' }]}
         action={
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
-            Novo Material
-          </Button>
+          <SePermitido qualquer={['MATERIAL_CADASTRAR']}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
+              Novo Material
+            </Button>
+          </SePermitido>
         }
       />
 
@@ -72,7 +77,7 @@ export function MateriaisPage() {
         ) : recentes.isError ? (
           <Alert severity="error" sx={{ m: 2 }}>{mensagemDeErroAoCarregar(recentes.error, 'Não foi possível carregar os materiais.')}</Alert>
         ) : (recentes.data?.itens.length ?? 0) === 0 ? (
-          <EmptyState Icone={InventoryIcon} titulo="Nenhum material cadastrado" descricao="Cadastre materiais: produtos acabados, semiacabados e matérias-primas." acaoLabel="Novo Material" onAcao={() => setDialogAberto(true)} />
+          <EmptyState Icone={InventoryIcon} titulo="Nenhum material cadastrado" descricao="Cadastre materiais: produtos acabados, semiacabados e matérias-primas." acaoLabel={tem('MATERIAL_CADASTRAR') ? 'Novo Material' : undefined} onAcao={() => setDialogAberto(true)} />
         ) : (
           <>
           <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
