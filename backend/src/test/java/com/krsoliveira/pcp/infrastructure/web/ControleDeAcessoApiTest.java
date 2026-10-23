@@ -348,8 +348,12 @@ class ControleDeAcessoApiTest {
         return email;
     }
 
+    /** Senha de quem já fez o primeiro acesso (trocou a provisória); quem não está aqui usa {@link #SENHA}. */
+    private final Map<String, String> senhaAposPrimeiroAcesso = new java.util.concurrent.ConcurrentHashMap<>();
+
     private String login(String email) {
-        ResponseEntity<Map> resposta = rest.postForEntity("/api/v1/auth/login", json(null, Map.of("email", email, "senha", SENHA)), Map.class);
+        ResponseEntity<Map> resposta = rest.postForEntity("/api/v1/auth/login",
+                json(null, Map.of("email", email, "senha", senhaAposPrimeiroAcesso.getOrDefault(email, SENHA))), Map.class);
         assertThat(resposta.getStatusCode()).as("login de " + email).isEqualTo(HttpStatus.OK);
         return (String) resposta.getBody().get("token");
     }
@@ -368,7 +372,18 @@ class ControleDeAcessoApiTest {
         ResponseEntity<Map> resposta = chamar(token, HttpMethod.POST, ACESSOS + "/usuarios",
                 Map.of("nome", apelido, "email", email, "senhaProvisoria", SENHA, "perfilId", perfilId));
         assertThat(resposta.getStatusCode()).as("criar usuário " + email + ": " + resposta.getBody()).isEqualTo(HttpStatus.CREATED);
+        primeiroAcesso(email);
         return email;
+    }
+
+    /** Usuário criado por gestor entra com a senha provisória e precisa trocá-la antes de usar o sistema (ADR-0021). */
+    private void primeiroAcesso(String email) {
+        String token = login(email);
+        String definitiva = SENHA + "!definitiva";
+        ResponseEntity<Void> troca = rest.exchange(ACESSOS + "/minha-senha", HttpMethod.PUT,
+                json(token, Map.of("senhaAtual", SENHA, "novaSenha", definitiva)), Void.class);
+        assertThat(troca.getStatusCode()).as("primeiro acesso de " + email).isEqualTo(HttpStatus.NO_CONTENT);
+        senhaAposPrimeiroAcesso.put(email, definitiva);
     }
 
     private String idDoPerfil(String token, String nome) {

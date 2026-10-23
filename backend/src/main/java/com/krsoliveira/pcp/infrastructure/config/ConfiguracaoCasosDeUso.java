@@ -8,6 +8,8 @@ import com.krsoliveira.pcp.application.acesso.ConsultarUsuarioLogado;
 import com.krsoliveira.pcp.application.acesso.CriarPerfilAcesso;
 import com.krsoliveira.pcp.application.acesso.CriarUsuarioPorGestor;
 import com.krsoliveira.pcp.application.acesso.ExcluirPerfilAcesso;
+import com.krsoliveira.pcp.application.acesso.RedefinirSenhaDoUsuario;
+import com.krsoliveira.pcp.application.acesso.TrocarMinhaSenha;
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
 import com.krsoliveira.pcp.application.comum.PermissoesDoUsuarioAtual;
 import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
@@ -269,6 +271,19 @@ public class ConfiguracaoCasosDeUso {
     AtribuirPerfilAoUsuario atribuirPerfilAoUsuario(UsuarioRepository usuarioRepository, PerfilAcessoRepository perfilRepository,
                                                     PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
         return new AtribuirPerfilAoUsuario(usuarioRepository, perfilRepository, permissoesAtuais, execucao);
+    }
+
+    @Bean
+    TrocarMinhaSenha trocarMinhaSenha(UsuarioRepository usuarioRepository, CodificadorDeSenha codificadorDeSenha,
+                                      ExecucaoAuditada execucao) {
+        return new TrocarMinhaSenha(usuarioRepository, codificadorDeSenha, execucao);
+    }
+
+    @Bean
+    RedefinirSenhaDoUsuario redefinirSenhaDoUsuario(UsuarioRepository usuarioRepository, PerfilAcessoRepository perfilRepository,
+                                                    CodificadorDeSenha codificadorDeSenha,
+                                                    PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
+        return new RedefinirSenhaDoUsuario(usuarioRepository, perfilRepository, codificadorDeSenha, permissoesAtuais, execucao);
     }
 
     @Bean
