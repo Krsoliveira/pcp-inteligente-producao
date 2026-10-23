@@ -39,18 +39,19 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
 | | |
 |---|---|
 | 🧱 **Clean Architecture + DDD** | Domínio em Java puro (sem Spring/JPA), portas e adaptadores, casos de uso explícitos. Regras de negócio vivem nas entidades — é impossível levar uma ordem a um estado inválido. |
-| 🔁 **Regras de negócio reais** | BOM multinível com versionamento (só uma versão ativa), conclusão de ordem bloqueada sem consumos registrados e justificados, lote com origem única (produção **ou** compra) garantida no banco. |
+| 🔁 **Regras de negócio reais** | BOM multinível com várias versões em uso, escolhidas na ordem de produção, conclusão de ordem bloqueada sem consumos registrados e justificados, lote com origem única (produção **ou** compra) garantida no banco. |
 | 🔎 **Auditoria** | Todo registro assinado (quem criou/alterou e quando) e trilha de eventos **imutável** — um trigger no PostgreSQL bloqueia `UPDATE`, `DELETE` e `TRUNCATE`. Ação e evento gravados na mesma transação. |
-| 🔐 **Segurança** | JWT stateless + BCrypt; autocadastro nunca concede privilégio (a regra está no backend, não só na tela); credenciais do administrador só em variáveis de ambiente; erros no padrão RFC 9457. |
-| 🧪 **Qualidade** | Mais de 100 testes de unidade + integração com **Testcontainers** (PostgreSQL real). Um teste carrega o dataset inteiro e valida as invariantes do domínio. |
-| 🛡️ **DevSecOps** | CI com CodeQL, Semgrep, Gitleaks, Trivy, OWASP Dependency-Check e `npm audit`; Dependabot semanal. |
+| 🔐 **Segurança** | JWT stateless + BCrypt; **controle de acesso por perfis e permissões** (o servidor confere cada requisição; "só se concede o que se tem"); troca de senha obrigatória no primeiro acesso; autocadastro nunca concede privilégio; rate limiting por IP, limite de corpo e CORS restrito; credenciais do administrador só em variáveis de ambiente; erros no padrão RFC 9457. |
+| 🧪 **Qualidade** | Mais de 700 testes automáticos: backend com unidade + integração com **Testcontainers** (PostgreSQL real, mais de 440) e frontend com **Vitest + Testing Library** (mais de 250). Um teste carrega o dataset inteiro e valida as invariantes do domínio. |
+| 🛡️ **DevSecOps** | CI com CodeQL, Semgrep, Gitleaks, Trivy, OWASP Dependency-Check (job próprio) e `npm audit`; Dependabot semanal. |
 | 📊 **Engenharia de dados** | Gerador Python determinístico (pipeline load → transform → validate → export) com sazonalidade, gargalos e desvios — sinal real para a IA. Datas ancoradas no dia da carga. |
-| 📝 **Decisões documentadas** | [11 ADRs](docs/README.md#índice-de-adrs) registram o *porquê* de cada escolha de arquitetura. |
+| 📝 **Decisões documentadas** | [21 ADRs](docs/README.md#índice-de-adrs) registram o *porquê* de cada escolha de arquitetura. |
 
 ## Funcionalidades
 
 - **Materiais** — produto acabado, semiacabado e matéria-prima, com código de 9 dígitos gerado na faixa do tipo (`103.000.001`, `105…`, `110…`).
-- **Listas técnicas (BOM)** — versionadas; ativar uma versão torna a anterior obsoleta.
+- **Listas técnicas (BOM)** — várias versões em uso por material, com escolha da versão ao criar a ordem,
+  comparação entre versões e cópia de uma versão para criar a próxima.
 - **Ordens de produção** — ciclo `Planejada → Liberada → Em produção → Concluída`, com
   consumo projetado automaticamente a partir da BOM.
 - **Consumo de materiais** — planejado × consumido; todo desvio exige justificativa, registrada em nome do usuário logado.
@@ -65,19 +66,30 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
   ordens e lotes que o usaram. Consumos simultâneos não ultrapassam o saldo (bloqueio de linha).
 - **Rastreabilidade** — cada registro mostra quem criou, quem alterou e quando; a trilha de
   auditoria (`GET /api/v1/auditoria/eventos`) filtra por entidade, registro, usuário, ação e período.
+- **Consulta nas listagens** — primeiro um filtro simples no banco (com período, onde faz sentido) e,
+  nos resultados, filtro e ordenação por coluna no cabeçalho, como numa planilha; paginação "página X de Y".
 - **Dashboard** — total de ordens, atrasadas, em produção, concluídas e lotes disponíveis.
-- **Autenticação** — login, autocadastro (perfil Planejador) e administrador inicial (Gerente).
+- **Controle de acesso** — cada usuário tem um perfil, e o perfil é um conjunto de permissões por área.
+  O Administrador cria perfis e usuários; quem gerencia só concede o que ele mesmo tem; menus, telas e
+  API respeitam as permissões. Quem se cadastra sozinho entra como Visualizador (só consulta).
+- **Senhas** — o usuário criado por um gestor entra com senha provisória e é obrigado a trocá-la antes de
+  usar o sistema; há "Alterar minha senha" no menu e "Redefinir senha" para o gestor. Nenhuma senha
+  aparece na trilha de auditoria.
 
 ## Telas
 
 <table>
   <tr>
     <td width="50%"><img src="docs/imagens/ordem-detalhe.png" alt="Detalhe da ordem com BOM, consumo e lote"><br><sub><b>Ordem de produção</b> — BOM utilizada, consumo com desvio e lote gerado</sub></td>
-    <td width="50%"><img src="docs/imagens/listas-tecnicas.png" alt="Listas técnicas versionadas"><br><sub><b>Listas técnicas</b> — versões ativas e obsoletas por material</sub></td>
+    <td width="50%"><img src="docs/imagens/listas-tecnicas.png" alt="Listas técnicas versionadas"><br><sub><b>Listas técnicas</b> — versões em uso e obsoletas por material</sub></td>
   </tr>
   <tr>
     <td width="50%"><img src="docs/imagens/entrada-notas.png" alt="Entrada de nota fiscal com itens"><br><sub><b>Entrada de notas</b> — nota fiscal com vários itens; cada item vira um lote</sub></td>
-    <td width="50%"><img src="docs/imagens/estoque.png" alt="Estoque por material"><br><sub><b>Estoque</b> — saldo por material calculado a partir dos lotes</sub></td>
+    <td width="50%"><img src="docs/imagens/estoque.png" alt="Estoque por material"><br><sub><b>Estoque</b> — saldo por material, com filtro e ordenação por coluna</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/imagens/perfil-permissoes.png" alt="Catálogo de permissões ao criar um perfil de acesso"><br><sub><b>Perfis de acesso</b> — permissões por área; só se marca o que se possui</sub></td>
+    <td width="50%"></td>
   </tr>
 </table>
 
@@ -97,7 +109,7 @@ flowchart LR
         JPA[infrastructure/persistence<br/>Adaptadores JPA] -. implementa .-> DOM
     end
     RQ -->|HTTPS · JSON · JWT| WEB
-    JPA --> DB[(PostgreSQL 16<br/>Flyway V1–V10)]
+    JPA --> DB[(PostgreSQL 16<br/>Flyway V1–V14)]
 ```
 
 ### Modelo de domínio
@@ -123,9 +135,9 @@ Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 | Camada | Tecnologias |
 |---|---|
 | **Backend** | Java 21, Spring Boot 3.5, Spring Security, JPA/Hibernate, Flyway, Bean Validation, springdoc-openapi (Swagger) |
-| **Frontend** | React 18, TypeScript, Vite, Material UI, TanStack Query, Zustand, ECharts |
+| **Frontend** | React 18, TypeScript, Vite, Material UI 6, TanStack Query, Zustand, ECharts |
 | **Dados** | PostgreSQL 16, gerador Python (biblioteca padrão) |
-| **Testes** | JUnit 5, AssertJ, Testcontainers |
+| **Testes** | JUnit 5, AssertJ, Testcontainers (backend); Vitest, Testing Library (frontend) |
 | **DevOps** | Docker Compose, GitHub Actions, Dependabot |
 
 ## Como rodar
@@ -138,23 +150,27 @@ cp .env.example .env
 docker compose up -d
 
 # 2. Backend — API em http://localhost:8080 · Swagger em /swagger-ui.html
+#    Sem usuário não se entra: defina o administrador inicial (veja abaixo) antes de subir.
 cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=dev,seed   # "seed" carrega o dataset (só em banco vazio)
 
-# 3. Frontend — http://localhost:5173
+# 3. Frontend — http://localhost:3000
 cd ../frontend
 npm install
 npm run dev
 ```
 
-Na tela de login, use **Criar conta**. Para testes completos: `mvn verify` no backend
-(requer Docker, por causa do Testcontainers).
+Entre com o administrador inicial. Quem usar **Criar conta** entra como Visualizador (só consulta) até um
+gestor lhe dar outro perfil.
+
+**Testes:** `cd backend && mvn -B verify` (requer Docker com o daemon rodando, por causa do Testcontainers) e
+`cd frontend && npm run lint && npm test && npm run build`.
 
 <details>
-<summary><b>Usuário administrador (Gerente)</b></summary>
+<summary><b>Usuário administrador inicial</b></summary>
 
-A API cria um usuário **GERENTE** na inicialização a partir de variáveis de ambiente — as
-credenciais nunca vão para o código nem para o Git. No PowerShell:
+A API cria um usuário com o perfil **Administrador** na inicialização a partir de variáveis de ambiente —
+as credenciais nunca vão para o código nem para o Git. No PowerShell:
 
 ```powershell
 $env:ADMIN_NOME  = "Seu Nome"
@@ -163,7 +179,13 @@ $env:ADMIN_SENHA = "uma-senha-forte"
 mvn spring-boot:run "-Dspring-boot.run.profiles=dev,seed"
 ```
 
-Idempotente: se o e-mail já existir, nada muda (uma conta existente nunca é promovida).
+A senha deve ter no mínimo 8 caracteres; configuração incompleta impede a API de subir. O administrador
+inicial não precisa trocar a senha, que vem do ambiente.
+
+Idempotente: se o e-mail já existir, nada muda (nem a senha), e uma conta existente nunca é promovida.
+Para **recuperar o acesso** quando o único Administrador esquece a senha, suba a API com um e-mail novo em
+`ADMIN_EMAIL`: ela cria um segundo Administrador, que redefine a senha do primeiro pela tela de Usuários
+(ver [ADR-0021](docs/adr/0021-troca-de-senha-no-primeiro-acesso.md)).
 </details>
 
 <details>
@@ -172,8 +194,8 @@ Idempotente: se o e-mail já existir, nada muda (uma conta existente nunca é pr
 | Serviço | Endereço |
 |---|---|
 | API REST | <http://localhost:8080/api/v1> |
-| Swagger UI | <http://localhost:8080/swagger-ui.html> |
-| Frontend | <http://localhost:5173> |
+| Swagger UI | <http://localhost:8080/swagger-ui.html> (desligado em produção) |
+| Frontend | <http://localhost:3000> |
 | PostgreSQL | `localhost:5433` (host 5433 → container 5432) |
 
 O `docker-compose.yml` também sobe Redis e RabbitMQ, reservados para as próximas fases.
@@ -197,13 +219,14 @@ O `docker-compose.yml` também sobe Redis e RabbitMQ, reservados para as próxim
 | 5a | Material + lista técnica (BOM) versionada | ✅ |
 | 5b | Consumo de material, lotes, conclusão de ordem, dataset sintético, entrada de matéria-prima | ✅ |
 | 5b+ | Rastreabilidade (auditoria e genealogia de lotes) e suprimentos (entrada de notas e estoque) | ✅ |
-| 5c | **Interface** — tema escuro com visual neon (sombras e brilho) | 🔜 |
+| 5b++ | Consulta em duas etapas, filtro e ordenação por coluna, versões de lista técnica, controle de acesso por perfis e troca de senha | ✅ |
+| 5c | **Interface** — visual com sombras e brilho (neon) | 🔜 |
 | 5d | **Módulo de IA** — previsão de demanda, análise de atrasos e recomendações | 🔜 |
 | 6 | **Qualidade** — inspeção do lote após a produção (plano, laudo, aprovação ou reprova) | 🔜 |
-| 7 | Integrações simuladas (SAP, Power BI) e deploy (Render + Neon) | 🔜 |
+| 7 | Integrações simuladas (SAP, Power BI) e deploy no Railway ([ADR-0013](docs/adr/0013-deploy-railway.md)) | 🔜 |
 
-Planejado para as próximas fases: cache com Redis, eventos com RabbitMQ e testes de
-frontend (Vitest). Estado detalhado em [docs/proximos-passos.md](docs/proximos-passos.md).
+Planejado para as próximas fases: cache com Redis e eventos com RabbitMQ (já provisionados no Docker
+Compose, ainda sem consumidores). Estado detalhado em [docs/proximos-passos.md](docs/proximos-passos.md).
 
 ## Documentação
 
