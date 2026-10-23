@@ -57,6 +57,7 @@ public class OrdemProducaoRepositoryEmMemoria implements OrdemProducaoRepository
                         || o.getCodigo().toLowerCase().contains(filtro.busca().toLowerCase()))
                 .filter(o -> filtro.de() == null || !o.getInicioPlanejado().isBefore(filtro.de()))
                 .filter(o -> filtro.ate() == null || !o.getInicioPlanejado().isAfter(filtro.ate()))
+                .filter(o -> filtro.atrasadasEm() == null || o.estaAtrasada(filtro.atrasadasEm()))
                 .sorted(Comparator.comparing(OrdemProducao::getCriadaEm)
                         .thenComparing(OrdemProducao::getCodigo).reversed())
                 .toList();

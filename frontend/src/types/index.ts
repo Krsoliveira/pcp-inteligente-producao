@@ -421,6 +421,8 @@ export interface FiltroOrdens {
   de?: string
   /** Início planejado até esta data (AAAA-MM-DD, inclusive). */
   ate?: string
+  /** `true`: só as ordens abertas depois do fim planejado (as mesmas que o dashboard conta). */
+  atrasadas?: boolean
   pagina?: number
   tamanho?: number
 }

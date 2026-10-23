@@ -126,6 +126,30 @@ class PesquisaDeOrdensApiTest {
     }
 
     @Test
+    @DisplayName("atrasadas=true devolve só as ordens abertas depois do fim planejado, as mesmas que o dashboard conta")
+    @SuppressWarnings("unchecked")
+    void filtroPorAtrasadas() {
+        Map<String, Object> corpo = pesquisar("?atrasadas=true").getBody();
+
+        assertThat(corpo).containsEntry("total", 5);
+        assertThat((List<Map<String, Object>>) corpo.get("itens"))
+                .allSatisfy(ordem -> assertThat((String) ordem.get("codigo")).startsWith("OP-A-"))
+                .allSatisfy(ordem -> assertThat(ordem).containsEntry("atrasada", true));
+        Map<String, Object> resumo = rest.exchange("/api/v1/dashboard/resumo", HttpMethod.GET, comAuth(null), Map.class).getBody();
+        assertThat(corpo.get("total")).isEqualTo(resumo.get("ordensAtrasadas"));
+    }
+
+    @Test
+    @DisplayName("atrasadas combina com os outros filtros e atrasadas=false não filtra")
+    void atrasadasCombinaComOsOutrosFiltros() {
+        assertThat(pesquisar("?atrasadas=true&status=LIBERADA").getBody()).containsEntry("total", 0);
+        assertThat(pesquisar("?atrasadas=true&status=PLANEJADA").getBody()).containsEntry("total", 5);
+        assertThat(pesquisar("?atrasadas=true&busca=OP-B").getBody()).containsEntry("total", 0);
+        assertThat(pesquisar("?atrasadas=false").getBody()).containsEntry("total", 7);
+        assertThat(pesquisar("?atrasadas=talvez").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
     @DisplayName("período invertido devolve 422 e data inválida devolve 400")
     void periodoInvalido() {
         assertThat(pesquisar("?de=2026-09-30&ate=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);

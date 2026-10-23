@@ -72,6 +72,10 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
             if (filtro.ate() != null) {
                 condicoes.add(cb.lessThanOrEqualTo(ordem.get("inicioPlanejado"), filtro.ate()));
             }
+            if (filtro.atrasadasEm() != null) {
+                condicoes.add(ordem.get("status").in(statusAbertos()));
+                condicoes.add(cb.lessThan(ordem.get("fimPlanejado"), filtro.atrasadasEm()));
+            }
             if (filtro.busca() != null) {
                 condicoes.add(cb.like(cb.lower(ordem.get("codigo")),
                         PesquisaJpa.contem(filtro.busca()), PesquisaJpa.ESCAPE));
@@ -98,10 +102,13 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
 
     @Override
     public long contarAtrasadas(LocalDate hoje) {
-        List<StatusOrdemProducao> abertos = Arrays.stream(StatusOrdemProducao.values())
+        return springData.countByStatusInAndFimPlanejadoBefore(statusAbertos(), hoje);
+    }
+
+    private static List<StatusOrdemProducao> statusAbertos() {
+        return Arrays.stream(StatusOrdemProducao.values())
                 .filter(StatusOrdemProducao::estaAberta)
                 .toList();
-        return springData.countByStatusInAndFimPlanejadoBefore(abertos, hoje);
     }
 
     @Override

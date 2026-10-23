@@ -6,23 +6,30 @@ import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
-import FactoryIcon from '@mui/icons-material/Factory'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
-import BuildIcon from '@mui/icons-material/Build'
-import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { pesquisarOrdens } from '../api/ordens'
 import { consultarResumoProducao } from '../api/dashboard'
 import { KpiCard } from '../components/KpiCard'
-import { StatusPieChart } from '../components/StatusPieChart'
+import { FilaDeProducaoChart } from '../components/FilaDeProducaoChart'
 import { OrdemTable } from '../components/OrdemTable'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { PageHeader } from '../components/PageHeader'
+import { usePermissoes } from '../hooks/usePermissoes'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
-import type { OrdemProducao } from '../types'
+import { montarBusca } from '../utils/url'
+import type { OrdemProducao, StatusOrdem } from '../types'
+
+/** Cada indicador abre a listagem já filtrada, mas só para quem pode ver a tela de destino. */
+const PARA_ORDENS = '/ordens/resultados'
 
 export function DashboardPage() {
+  const navigate = useNavigate()
+  const { tem } = usePermissoes()
+  const podeVerOrdens = tem('ORDEM_VISUALIZAR')
+  const podeVerEstoque = tem('ESTOQUE_VISUALIZAR')
+  const linkDeOrdens = (filtros: Record<string, string> = {}) =>
+    podeVerOrdens ? { para: `${PARA_ORDENS}${montarBusca(filtros)}`, rotulo: 'Ver ordens' } : undefined
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemProducao | null>(null)
 
   // Os totais vêm calculados do servidor; só as 5 ordens mais recentes são baixadas.
@@ -71,19 +78,22 @@ export function DashboardPage() {
         ) : (
           <>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Total de Ordens" valor={total} Icone={FactoryIcon} cor="#4F46E5" />
+              <KpiCard titulo="Total de ordens" valor={total} link={linkDeOrdens()} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Atrasadas" valor={atrasadas} Icone={WarningAmberIcon} cor={atrasadas > 0 ? '#DC2626' : '#059669'} subtitulo={atrasadas > 0 ? 'Requer atenção' : 'Sem atrasos'} />
+              <KpiCard titulo="Atrasadas" valor={atrasadas} cor={atrasadas > 0 ? '#DC2626' : undefined}
+                subtitulo={atrasadas > 0 ? 'Abertas depois do fim planejado' : 'Nenhuma ordem atrasada'}
+                link={linkDeOrdens({ atrasadas: 'true' })} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Em Produção" valor={emProducao} Icone={BuildIcon} cor="#D97706" />
+              <KpiCard titulo="Em produção" valor={emProducao} link={linkDeOrdens({ status: 'EM_PRODUCAO' })} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Concluídas" valor={concluidas} Icone={CheckCircleOutlineIcon} cor="#059669" />
+              <KpiCard titulo="Concluídas" valor={concluidas} link={linkDeOrdens({ status: 'CONCLUIDA' })} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <KpiCard titulo="Lotes Disponíveis" valor={lotesDisponiveis} Icone={AllInboxIcon} cor="#2563EB" />
+              <KpiCard titulo="Lotes disponíveis" valor={lotesDisponiveis}
+                link={podeVerEstoque ? { para: '/estoque', rotulo: 'Ver estoque' } : undefined} />
             </Grid>
           </>
         )}
@@ -95,7 +105,10 @@ export function DashboardPage() {
           {isLoading ? (
             <Skeleton variant="rounded" height={360} />
           ) : (
-            <StatusPieChart contagem={resumo?.ordensPorStatus} />
+            <FilaDeProducaoChart
+              contagem={resumo?.ordensPorStatus}
+              onSelecionar={podeVerOrdens ? (status: StatusOrdem) => navigate(`${PARA_ORDENS}${montarBusca({ status })}`) : undefined}
+            />
           )}
         </Grid>
         <Grid size={{ xs: 12, xl: 7 }}>
