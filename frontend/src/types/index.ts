@@ -264,6 +264,14 @@ export interface RegistrarConsumoRequest {
   alocacoes: AlocacaoLoteRequest[]
 }
 
+/** Lançamento do consumo de uma ordem de uma vez, tudo ou nada (ADR-0026). */
+export interface LancarConsumoRequest {
+  /** Linhas da lista técnica (as de quantidade em branco ficam de fora). */
+  consumos: Array<{ consumoId: string; quantidadeConsumida: number; justificativa?: string; alocacoes: AlocacaoLoteRequest[] }>
+  /** Itens que não estão na lista técnica (justificativa obrigatória). */
+  itensAdicionais: Array<{ materialId: string; quantidadeConsumida: number; justificativa: string; alocacoes: AlocacaoLoteRequest[] }>
+}
+
 export interface AlocacaoLoteRequest {
   loteId: string
   quantidade: number

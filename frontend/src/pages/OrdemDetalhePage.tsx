@@ -246,6 +246,9 @@ export function OrdemDetalhePage() {
                       {consumos.filter(c => c.registrado).length}/{consumos.length} registrados
                     </Typography>
                   )}
+                  {ordem.status === 'EM_PRODUCAO' && tem('CONSUMO_REGISTRAR') && (
+                    <Button size="small" variant="contained" component={RouterLink} to={`/ordens/${ordem.id}/lancar-consumo`}>Lançar consumo</Button>
+                  )}
                   {!todosRegistrados && ordem.status === 'EM_PRODUCAO' && (
                     <Chip label="Pendente" size="small" color="warning" variant="outlined" sx={{ fontSize: '0.7rem', height: 20 }} />
                   )}
