@@ -6,7 +6,10 @@ import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
+import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
+import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
+import com.krsoliveira.pcp.domain.lista.StatusListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
@@ -46,6 +49,7 @@ public class CriarOrdemProducao {
             if (repositorio.existePorCodigo(comando.codigo())) {
                 throw new CodigoJaUtilizadoException(comando.codigo());
             }
+            ListaTecnica lista = validarVersaoDaLista(comando);
             OrdemProducao ordem = OrdemProducao.criar(
                     comando.codigo(),
                     comando.materialId(),
@@ -70,9 +74,7 @@ public class CriarOrdemProducao {
                     Detalhes.com("codigo", ordemSalva.getCodigo())
                             .e("material", materialRepository.buscarPorId(ordemSalva.getMaterialId())
                                     .map(Material::getCodigo).orElse(null))
-                            .e("versaoListaTecnica", listaTecnicaRepository
-                                    .buscarPorId(ordemSalva.getListaTecnicaId())
-                                    .map(ListaTecnica::getVersao).orElse(null))
+                            .e("versaoListaTecnica", lista.getVersao())
                             .e("centroDeTrabalho", ordemSalva.getCentroDeTrabalho())
                             .e("quantidade", ordemSalva.getQuantidade())
                             .e("inicioPlanejado", ordemSalva.getInicioPlanejado())
@@ -81,6 +83,24 @@ public class CriarOrdemProducao {
                             .e("consumosProjetados", consumos.size()));
             return ordemSalva;
         });
+    }
+
+    /**
+     * A versão escolhida precisa ser do material da ordem e estar em uso (ATIVA). Como várias
+     * versões podem estar ativas ao mesmo tempo (ADR-0019), a escolha é explícita e validada aqui.
+     */
+    private ListaTecnica validarVersaoDaLista(Comando comando) {
+        ListaTecnica lista = listaTecnicaRepository.buscarPorId(comando.listaTecnicaId())
+                .orElseThrow(() -> new ListaTecnicaNaoEncontradaException(comando.listaTecnicaId()));
+        if (!lista.getMaterialId().equals(comando.materialId())) {
+            throw new RegraDeNegocioException("A versão da lista técnica escolhida não é do material da ordem.");
+        }
+        if (lista.getStatus() != StatusListaTecnica.ATIVA) {
+            throw new RegraDeNegocioException(
+                    "Só versões ativas da lista técnica podem ser usadas em uma ordem. A versão %s está %s."
+                            .formatted(lista.getVersao(), lista.getStatus()));
+        }
+        return lista;
     }
 
     /**
