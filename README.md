@@ -14,7 +14,7 @@ consumo real × planejado e base de dados preparada para análise com IA.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 
-<img src="docs/imagens/dashboard.png" alt="Dashboard com indicadores de produção" width="900">
+<img src="docs/imagens/dashboard.png" alt="Dashboard com indicadores clicáveis, fila de produção e entregas por mês" width="900">
 
 </div>
 
@@ -39,21 +39,26 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
 | | |
 |---|---|
 | 🧱 **Clean Architecture + DDD** | Domínio em Java puro (sem Spring/JPA), portas e adaptadores, casos de uso explícitos. Regras de negócio vivem nas entidades — é impossível levar uma ordem a um estado inválido. |
-| 🔁 **Regras de negócio reais** | BOM multinível com várias versões em uso, escolhidas na ordem de produção, conclusão de ordem bloqueada sem consumos registrados e justificados, lote com origem única (produção **ou** compra) garantida no banco. |
+| 🔁 **Regras de negócio reais** | BOM multinível com várias versões em uso e quantidade base (receita "por 100 kg"), conclusão de ordem bloqueada sem consumos registrados e justificados, produto acabado só consumido em ordem de **Conversão**, lançamento de consumo **tudo ou nada** numa transação, lote com origem única (produção **ou** compra) garantida no banco. |
 | 🔎 **Auditoria** | Todo registro assinado (quem criou/alterou e quando) e trilha de eventos **imutável** — um trigger no PostgreSQL bloqueia `UPDATE`, `DELETE` e `TRUNCATE`. Ação e evento gravados na mesma transação. |
 | 🔐 **Segurança** | JWT stateless + BCrypt; **controle de acesso por perfis e permissões** (o servidor confere cada requisição; "só se concede o que se tem"); troca de senha obrigatória no primeiro acesso; autocadastro nunca concede privilégio; rate limiting por IP, limite de corpo e CORS restrito; credenciais do administrador só em variáveis de ambiente; erros no padrão RFC 9457. |
-| 🧪 **Qualidade** | Mais de 700 testes automáticos: backend com unidade + integração com **Testcontainers** (PostgreSQL real, mais de 440) e frontend com **Vitest + Testing Library** (mais de 250). Um teste carrega o dataset inteiro e valida as invariantes do domínio. |
+| 🧪 **Qualidade** | Quase 900 testes automáticos: backend com unidade + integração com **Testcontainers** (PostgreSQL real, mais de 540) e frontend com **Vitest + Testing Library** (mais de 350). Um teste carrega o dataset inteiro e valida as invariantes do domínio; outro força a falha na última linha de um lançamento e prova que nada foi gravado. |
 | 🛡️ **DevSecOps** | CI com CodeQL, Semgrep, Gitleaks, Trivy, OWASP Dependency-Check (job próprio) e `npm audit`; Dependabot semanal. |
 | 📊 **Engenharia de dados** | Gerador Python determinístico (pipeline load → transform → validate → export) com sazonalidade, gargalos e desvios — sinal real para a IA. Datas ancoradas no dia da carga. |
-| 📝 **Decisões documentadas** | [21 ADRs](docs/README.md#índice-de-adrs) registram o *porquê* de cada escolha de arquitetura. |
+| 📝 **Decisões documentadas** | [27 ADRs](docs/README.md#índice-de-adrs) registram o *porquê* de cada escolha de arquitetura. |
 
 ## Funcionalidades
 
 - **Materiais** — produto acabado, semiacabado e matéria-prima, com código de 9 dígitos gerado na faixa do tipo (`103.000.001`, `105…`, `110…`).
 - **Listas técnicas (BOM)** — várias versões em uso por material, com escolha da versão ao criar a ordem,
-  comparação entre versões e cópia de uma versão para criar a próxima.
+  comparação entre versões (por unidade produzida) e cópia de uma versão para criar a próxima. Cada versão
+  tem a sua **quantidade base**: "80 kg de pigmento para 100 kg de tinta" é escrito assim, sem frações.
 - **Ordens de produção** — ciclo `Planejada → Liberada → Em produção → Concluída`, com
-  consumo projetado automaticamente a partir da BOM.
+  consumo projetado automaticamente a partir da BOM (item ÷ base × quantidade da ordem). Produto acabado
+  nunca é componente de outro acabado: só pode ser consumido numa ordem do tipo **Conversão**, que gera semiacabado.
+- **Lançamento de consumo** — uma tela por ordem com todos os componentes, os lotes de onde cada um saiu
+  (sugestão FEFO) e a justificativa de cada desvio. Tudo é gravado de uma vez: se uma linha for recusada,
+  nada é lançado. Item fora da lista entra com justificativa e permissão própria.
 - **Consumo de materiais** — planejado × consumido; todo desvio exige justificativa, registrada em nome do usuário logado.
 - **Entrada de notas** — nota fiscal de compra com vários itens; cada item vira um lote de
   matéria-prima com o lote do fornecedor. A mesma nota ou o mesmo lote não entram duas vezes.
@@ -68,7 +73,11 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
   auditoria (`GET /api/v1/auditoria/eventos`) filtra por entidade, registro, usuário, ação e período.
 - **Consulta nas listagens** — primeiro um filtro simples no banco (com período, onde faz sentido) e,
   nos resultados, filtro e ordenação por coluna no cabeçalho, como numa planilha; paginação "página X de Y".
-- **Dashboard** — total de ordens, atrasadas, em produção, concluídas e lotes disponíveis.
+- **Dashboard acionável** — cada número abre a lista de ordens que o originou; aderência ao prazo
+  (pelo instante em que a ordem foi concluída no sistema), fila de produção, entregas por mês e atrasos
+  por centro de trabalho.
+- **Relatório de consumo de ordens** — por período do fim planejado: cada ordem concluída com seus
+  componentes, planejado, consumido e desvio, com filtro e ordenação por coluna.
 - **Controle de acesso** — cada usuário tem um perfil, e o perfil é um conjunto de permissões por área.
   O Administrador cria perfis e usuários; quem gerencia só concede o que ele mesmo tem; menus, telas e
   API respeitam as permissões. Quem se cadastra sozinho entra como Visualizador (só consulta).
@@ -80,7 +89,11 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/imagens/ordem-detalhe.png" alt="Detalhe da ordem com BOM, consumo e lote"><br><sub><b>Ordem de produção</b> — BOM utilizada, consumo com desvio e lote gerado</sub></td>
+    <td width="50%"><img src="docs/imagens/lancamento-consumo.png" alt="Lançamento de consumo com lotes e justificativa de desvio"><br><sub><b>Lançamento de consumo</b> — todos os componentes, lotes (FEFO) e desvio justificado, tudo ou nada</sub></td>
+    <td width="50%"><img src="docs/imagens/relatorio-consumo.png" alt="Relatório de consumo de ordens por período"><br><sub><b>Relatório de consumo</b> — planejado × consumido por ordem e componente</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/imagens/ordem-detalhe.png" alt="Detalhe da ordem com BOM, consumo e lote"><br><sub><b>Ordem de produção</b> — BOM utilizada, consumo e lote gerado</sub></td>
     <td width="50%"><img src="docs/imagens/listas-tecnicas.png" alt="Listas técnicas versionadas"><br><sub><b>Listas técnicas</b> — versões em uso e obsoletas por material</sub></td>
   </tr>
   <tr>
@@ -109,7 +122,7 @@ flowchart LR
         JPA[infrastructure/persistence<br/>Adaptadores JPA] -. implementa .-> DOM
     end
     RQ -->|HTTPS · JSON · JWT| WEB
-    JPA --> DB[(PostgreSQL 16<br/>Flyway V1–V14)]
+    JPA --> DB[(PostgreSQL 16<br/>Flyway V1–V17)]
 ```
 
 ### Modelo de domínio
@@ -220,6 +233,7 @@ O `docker-compose.yml` também sobe Redis e RabbitMQ, reservados para as próxim
 | 5b | Consumo de material, lotes, conclusão de ordem, dataset sintético, entrada de matéria-prima | ✅ |
 | 5b+ | Rastreabilidade (auditoria e genealogia de lotes) e suprimentos (entrada de notas e estoque) | ✅ |
 | 5b++ | Consulta em duas etapas, filtro e ordenação por coluna, versões de lista técnica, controle de acesso por perfis e troca de senha | ✅ |
+| 5b+++ | Dashboard acionável, relatório de consumo, ordem de Conversão, lançamento de consumo por ordem e quantidade base da lista | ✅ |
 | 5c | **Interface** — visual com sombras e brilho (neon) | 🔜 |
 | 5d | **Módulo de IA** — previsão de demanda, análise de atrasos e recomendações | 🔜 |
 | 6 | **Qualidade** — inspeção do lote após a produção (plano, laudo, aprovação ou reprova) | 🔜 |
