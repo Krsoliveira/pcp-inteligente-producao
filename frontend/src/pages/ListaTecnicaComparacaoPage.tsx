@@ -1,7 +1,9 @@
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import Card from '@mui/material/Card'
 import Chip from '@mui/material/Chip'
+import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
 import Skeleton from '@mui/material/Skeleton'
 import Table from '@mui/material/Table'
@@ -11,8 +13,10 @@ import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { compararListasTecnicas, listarListasTecnicas } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
@@ -57,12 +61,15 @@ export function ListaTecnicaComparacaoPage() {
     queryFn: () => compararListasTecnicas(a, b),
     enabled: !!a && !!b,
     retry: false,
+    placeholderData: keepPreviousData,
   })
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const materialPorId = new Map(materiais.map((m) => [m.id, m]))
   const comparacao = comparacaoQuery.data
 
-  const materialId = comparacao?.versaoA.materialId
+  // O produto da última comparação que deu certo: mantém os seletores na tela mesmo se a próxima falhar.
+  const [materialId, setMaterialId] = useState<string>()
+  if (comparacao && comparacao.versaoA.materialId !== materialId) setMaterialId(comparacao.versaoA.materialId)
   const { data: versoes = [] } = useQuery({
     queryKey: ['listas-tecnicas', 'versoes', materialId],
     queryFn: () => listarListasTecnicas(materialId!),
@@ -79,6 +86,10 @@ export function ListaTecnicaComparacaoPage() {
     </TextField>
   )
 
+  // Escolher de um lado a versão que está do outro inverte a comparação (v2 → v1 vira v1 → v2).
+  const escolherA = (id: string) => url.atualizar(id === b ? { a: id, b: a } : { a: id })
+  const escolherB = (id: string) => url.atualizar(id === a ? { a: b, b: id } : { b: id })
+
   return (
     <Box>
       <PageHeader
@@ -89,20 +100,31 @@ export function ListaTecnicaComparacaoPage() {
 
       {(!a || !b) && <Alert severity="info">Abra uma lista técnica e use "Comparar" em uma das outras versões.</Alert>}
 
+      {materialId && (
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
+          {seletor('Versão A', a, escolherA)}
+          <Tooltip title="Inverter versões">
+            <IconButton aria-label="Inverter versões" size="small" onClick={() => url.atualizar({ a: b, b: a })}>
+              <SwapHorizIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {seletor('Versão B', b, escolherB)}
+          {comparacao && !comparacaoQuery.isError && (
+            <>
+              <StatusListaBadge status={comparacao.versaoA.status} />
+              <StatusListaBadge status={comparacao.versaoB.status} />
+            </>
+          )}
+        </Box>
+      )}
+
       {comparacaoQuery.isLoading && <Skeleton variant="rounded" height={240} />}
       {comparacaoQuery.isError && (
         <Alert severity="error">{mensagemDeErroDaApi(comparacaoQuery.error, 'Não foi possível comparar as versões.')}</Alert>
       )}
 
-      {comparacao && (
+      {comparacao && !comparacaoQuery.isError && (
         <>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
-            {seletor('Versão A', a, (id) => url.atualizar({ a: id }))}
-            <Typography color="text.secondary">→</Typography>
-            {seletor('Versão B', b, (id) => url.atualizar({ b: id }))}
-            <StatusListaBadge status={comparacao.versaoA.status} />
-            <StatusListaBadge status={comparacao.versaoB.status} />
-          </Box>
 
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
             <Chip size="small" label={contagem(comparacao.alterados.length, 'alterado', 'alterados')} />

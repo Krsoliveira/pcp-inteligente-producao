@@ -136,6 +136,52 @@ describe('ListaTecnicaComparacaoPage', () => {
     expect(compararMock).toHaveBeenLastCalledWith('l-1', 'l-3')
   })
 
+  it('escolher na Versão A a versão que está em B inverte a comparação em vez de dar erro', async () => {
+    montar()
+    await screen.findByText('Aço inox')
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Versão A' }))
+    await userEvent.click(screen.getByRole('option', { name: 'v2' }))
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(`${ROTA}?a=l-2&b=l-1`))
+    expect(compararMock).toHaveBeenLastCalledWith('l-2', 'l-1')
+    expect(compararMock).not.toHaveBeenCalledWith('l-2', 'l-2')
+  })
+
+  it('escolher na Versão B a versão que está em A também inverte', async () => {
+    montar()
+    await screen.findByText('Aço inox')
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Versão B' }))
+    await userEvent.click(screen.getByRole('option', { name: 'v1' }))
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(`${ROTA}?a=l-2&b=l-1`))
+    expect(compararMock).not.toHaveBeenCalledWith('l-1', 'l-1')
+  })
+
+  it('o botão Inverter troca as versões A e B', async () => {
+    montar()
+    await screen.findByText('Aço inox')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Inverter versões' }))
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(`${ROTA}?a=l-2&b=l-1`))
+    expect(compararMock).toHaveBeenLastCalledWith('l-2', 'l-1')
+  })
+
+  it('se a nova comparação falhar, os seletores continuam na tela para escolher outra versão', async () => {
+    montar()
+    await screen.findByText('Aço inox')
+    compararMock.mockRejectedValueOnce(erroHttp(422, { detail: 'Só é possível comparar versões da mesma lista técnica.' }))
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Versão B' }))
+    await userEvent.click(screen.getByRole('option', { name: 'v3' }))
+
+    expect(await screen.findByText('Só é possível comparar versões da mesma lista técnica.')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Versão A' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Versão B' })).toBeInTheDocument()
+  })
+
   it('mostra o motivo quando o sistema recusa a comparação (listas diferentes)', async () => {
     compararMock.mockRejectedValue(erroHttp(422, { detail: 'Só é possível comparar versões da mesma lista técnica.' }))
     montar()
