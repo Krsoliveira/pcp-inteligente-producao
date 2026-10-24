@@ -14,7 +14,7 @@ consumo real × planejado e base de dados preparada para análise com IA.
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 
-<img src="docs/imagens/dashboard.png" alt="Dashboard com indicadores clicáveis, fila de produção e entregas por mês" width="900">
+<img src="docs/imagens/dashboard-2026-10.png" alt="Dashboard com indicadores clicáveis, fila de produção e entregas por mês" width="900">
 
 </div>
 
@@ -93,8 +93,8 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
     <td width="50%"><img src="docs/imagens/relatorio-consumo.png" alt="Relatório de consumo de ordens por período"><br><sub><b>Relatório de consumo</b> — planejado × consumido por ordem e componente</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/imagens/ordem-detalhe.png" alt="Detalhe da ordem com BOM, consumo e lote"><br><sub><b>Ordem de produção</b> — BOM utilizada, consumo e lote gerado</sub></td>
-    <td width="50%"><img src="docs/imagens/listas-tecnicas.png" alt="Listas técnicas versionadas"><br><sub><b>Listas técnicas</b> — versões em uso e obsoletas por material</sub></td>
+    <td width="50%"><img src="docs/imagens/ordem-detalhe-2026-10.png" alt="Detalhe da ordem com BOM, consumo e lote"><br><sub><b>Ordem de produção</b> — BOM utilizada, consumo e lote gerado</sub></td>
+    <td width="50%"><img src="docs/imagens/listas-tecnicas-2026-10.png" alt="Listas técnicas versionadas"><br><sub><b>Listas técnicas</b> — versões em uso e obsoletas por material</sub></td>
   </tr>
   <tr>
     <td width="50%"><img src="docs/imagens/entrada-notas.png" alt="Entrada de nota fiscal com itens"><br><sub><b>Entrada de notas</b> — nota fiscal com vários itens; cada item vira um lote</sub></td>
