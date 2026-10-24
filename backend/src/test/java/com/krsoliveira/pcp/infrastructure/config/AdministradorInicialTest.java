@@ -122,6 +122,44 @@ class AdministradorInicialTest {
     }
 
     @Test
+    @DisplayName("e-mail de um Administrador que já existe: não reseta a senha nem liga a troca obrigatória")
+    void naoResetaSenhaDoAdministradorExistente() {
+        com("Admin Teste", "admin@pcp.dev", "SenhaForte123").run(null);
+
+        com("Admin Teste", "admin@pcp.dev", "OutraSenha456").run(null);
+
+        Usuario admin = usuarios.get("admin@pcp.dev");
+        assertThat(usuarios).hasSize(1);
+        assertThat(admin.getSenhaHash()).isEqualTo("hash:SenhaForte123");
+        assertThat(admin.isDeveTrocarSenha()).isFalse();
+    }
+
+    @Test
+    @DisplayName("recuperação: e-mail novo cria um segundo Administrador e deixa o primeiro intacto")
+    void emailNovoCriaSegundoAdministrador() {
+        com("Admin Teste", "admin@pcp.dev", "SenhaForte123").run(null);
+
+        com("Admin Recuperação", "recuperacao@pcp.dev", "Recupera#2026").run(null);
+
+        assertThat(usuarios).hasSize(2);
+        assertThat(usuarios.get("recuperacao@pcp.dev").getPerfilId()).isEqualTo(PerfilAcessoRepositoryEmMemoria.ID_ADMINISTRADOR);
+        assertThat(usuarios.get("recuperacao@pcp.dev").isDeveTrocarSenha()).isFalse();
+        assertThat(usuarios.get("admin@pcp.dev").getSenhaHash()).isEqualTo("hash:SenhaForte123");
+    }
+
+    @Test
+    @DisplayName("e-mail sem senha (ausente ou em branco) impede a inicialização e não cria ninguém")
+    void emailSemSenha() {
+        assertThatThrownBy(() -> com("Admin", "novo@pcp.dev", "").run(null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ADMIN_SENHA");
+        assertThatThrownBy(() -> com("Admin", "novo@pcp.dev", null).run(null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ADMIN_SENHA");
+        assertThat(usuarios).isEmpty();
+    }
+
+    @Test
     @DisplayName("configuração incompleta impede a inicialização")
     void configuracaoIncompleta() {
         assertThatThrownBy(() -> com("", "admin@pcp.dev", "SenhaForte123").run(null))

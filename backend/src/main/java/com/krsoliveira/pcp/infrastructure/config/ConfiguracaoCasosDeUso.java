@@ -8,12 +8,16 @@ import com.krsoliveira.pcp.application.acesso.ConsultarUsuarioLogado;
 import com.krsoliveira.pcp.application.acesso.CriarPerfilAcesso;
 import com.krsoliveira.pcp.application.acesso.CriarUsuarioPorGestor;
 import com.krsoliveira.pcp.application.acesso.ExcluirPerfilAcesso;
+import com.krsoliveira.pcp.application.acesso.RedefinirSenhaDoUsuario;
+import com.krsoliveira.pcp.application.acesso.TrocarMinhaSenha;
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
 import com.krsoliveira.pcp.application.comum.PermissoesDoUsuarioAtual;
 import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
 import com.krsoliveira.pcp.application.comum.Transacao;
 import com.krsoliveira.pcp.application.comum.UsuarioAtual;
+import com.krsoliveira.pcp.application.consumo.AdicionarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.ConsultarConsumoMaterial;
+import com.krsoliveira.pcp.application.consumo.LancarConsumoDaOrdem;
 import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.RegistrarConsumoMaterial;
 import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
@@ -32,6 +36,9 @@ import com.krsoliveira.pcp.application.material.CadastrarMaterial;
 import com.krsoliveira.pcp.application.material.ConsultarMateriais;
 import com.krsoliveira.pcp.application.ordem.AtualizarStatusOrdemProducao;
 import com.krsoliveira.pcp.application.ordem.AtualizarTipoOrdem;
+import com.krsoliveira.pcp.application.dashboard.ConsultarAtrasosPorCentro;
+import com.krsoliveira.pcp.application.relatorio.ConsultarConsumoDeOrdens;
+import com.krsoliveira.pcp.application.dashboard.ConsultarEntregasPorMes;
 import com.krsoliveira.pcp.application.dashboard.ConsultarResumoProducao;
 import com.krsoliveira.pcp.application.ordem.CadastrarTipoOrdem;
 import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
@@ -96,6 +103,28 @@ public class ConfiguracaoCasosDeUso {
     }
 
     @Bean
+    AdicionarConsumoMaterial adicionarConsumoMaterial(OrdemProducaoRepository ordemRepository,
+                                                      MaterialRepository materialRepository,
+                                                      ConsumoMaterialRepository consumoRepository,
+                                                      TipoOrdemRepository tipoOrdemRepository,
+                                                      RegistrarConsumoMaterial registrarConsumoMaterial,
+                                                      ExecucaoAuditada execucao) {
+        return new AdicionarConsumoMaterial(ordemRepository, materialRepository, consumoRepository, tipoOrdemRepository,
+                registrarConsumoMaterial, execucao);
+    }
+
+    @Bean
+    LancarConsumoDaOrdem lancarConsumoDaOrdem(OrdemProducaoRepository ordemRepository,
+                                              ConsumoMaterialRepository consumoRepository,
+                                              MaterialRepository materialRepository,
+                                              RegistrarConsumoMaterial registrarConsumoMaterial,
+                                              AdicionarConsumoMaterial adicionarConsumoMaterial,
+                                              ExecucaoAuditada execucao) {
+        return new LancarConsumoDaOrdem(ordemRepository, consumoRepository, materialRepository,
+                registrarConsumoMaterial, adicionarConsumoMaterial, execucao);
+    }
+
+    @Bean
     ConsultarConsumoMaterial consultarConsumoMaterial(ConsumoMaterialRepository consumoRepository) {
         return new ConsultarConsumoMaterial(consumoRepository);
     }
@@ -142,9 +171,10 @@ public class ConfiguracaoCasosDeUso {
                                           ProjetarConsumoMaterial projetarConsumoMaterial,
                                           MaterialRepository materialRepository,
                                           ListaTecnicaRepository listaTecnicaRepository,
+                                          TipoOrdemRepository tipoOrdemRepository,
                                           ExecucaoAuditada execucao) {
         return new CriarOrdemProducao(ordemRepository, projetarConsumoMaterial, materialRepository,
-                listaTecnicaRepository, execucao);
+                listaTecnicaRepository, tipoOrdemRepository, execucao);
     }
 
     @Bean
@@ -155,6 +185,22 @@ public class ConfiguracaoCasosDeUso {
     @Bean
     ConsultarResumoProducao consultarResumoProducao(OrdemProducaoRepository ordens, LoteRepository lotes) {
         return new ConsultarResumoProducao(ordens, lotes);
+    }
+
+    @Bean
+    ConsultarConsumoDeOrdens consultarConsumoDeOrdens(OrdemProducaoRepository ordens, ConsumoMaterialRepository consumos,
+                                                      MaterialRepository materiais) {
+        return new ConsultarConsumoDeOrdens(ordens, consumos, materiais);
+    }
+
+    @Bean
+    ConsultarEntregasPorMes consultarEntregasPorMes(OrdemProducaoRepository ordens) {
+        return new ConsultarEntregasPorMes(ordens);
+    }
+
+    @Bean
+    ConsultarAtrasosPorCentro consultarAtrasosPorCentro(OrdemProducaoRepository ordens) {
+        return new ConsultarAtrasosPorCentro(ordens);
     }
 
     @Bean
@@ -269,6 +315,19 @@ public class ConfiguracaoCasosDeUso {
     AtribuirPerfilAoUsuario atribuirPerfilAoUsuario(UsuarioRepository usuarioRepository, PerfilAcessoRepository perfilRepository,
                                                     PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
         return new AtribuirPerfilAoUsuario(usuarioRepository, perfilRepository, permissoesAtuais, execucao);
+    }
+
+    @Bean
+    TrocarMinhaSenha trocarMinhaSenha(UsuarioRepository usuarioRepository, CodificadorDeSenha codificadorDeSenha,
+                                      ExecucaoAuditada execucao) {
+        return new TrocarMinhaSenha(usuarioRepository, codificadorDeSenha, execucao);
+    }
+
+    @Bean
+    RedefinirSenhaDoUsuario redefinirSenhaDoUsuario(UsuarioRepository usuarioRepository, PerfilAcessoRepository perfilRepository,
+                                                    CodificadorDeSenha codificadorDeSenha,
+                                                    PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
+        return new RedefinirSenhaDoUsuario(usuarioRepository, perfilRepository, codificadorDeSenha, permissoesAtuais, execucao);
     }
 
     @Bean

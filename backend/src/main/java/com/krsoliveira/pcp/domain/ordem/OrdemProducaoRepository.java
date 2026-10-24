@@ -38,6 +38,15 @@ public interface OrdemProducaoRepository {
     /** Ordens abertas ({@link StatusOrdemProducao#estaAberta()}) cujo fim planejado já passou em {@code hoje}. */
     long contarAtrasadas(LocalDate hoje);
 
+    /** Ordens cujo fim planejado está entre as datas, inclusive. */
+    List<OrdemProducao> listarComFimPlanejadoEntre(LocalDate de, LocalDate ate);
+
+    /**
+     * Ordens abertas e atrasadas em {@code hoje}, agrupadas por centro de trabalho: do centro com mais ordens
+     * atrasadas para o com menos (empate pelo nome do centro).
+     */
+    List<AtrasoPorCentro> atrasadasPorCentro(LocalDate hoje);
+
     boolean existePorCodigo(String codigo);
 
     long contarTodas();

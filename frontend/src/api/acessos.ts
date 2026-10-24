@@ -52,3 +52,13 @@ export const atribuirPerfil = async (usuarioId: string, perfilId: string): Promi
   const { data } = await apiClient.patch<UsuarioAcesso>(`/v1/acessos/usuarios/${usuarioId}/perfil`, { perfilId })
   return data
 }
+
+/** O próprio usuário troca a senha (serve ao primeiro acesso e a "Alterar minha senha"). */
+export const trocarMinhaSenha = async (senhaAtual: string, novaSenha: string): Promise<void> => {
+  await apiClient.put('/v1/acessos/minha-senha', { senhaAtual, novaSenha })
+}
+
+/** Um gestor define uma senha provisória nova; o usuário precisa trocá-la no próximo acesso. */
+export const redefinirSenha = async (usuarioId: string, senhaProvisoria: string): Promise<void> => {
+  await apiClient.post(`/v1/acessos/usuarios/${usuarioId}/redefinir-senha`, { senhaProvisoria })
+}

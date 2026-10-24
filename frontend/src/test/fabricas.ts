@@ -6,11 +6,12 @@ export const TODAS_AS_PERMISSOES: Permissao[] = [
   'MATERIAL_VISUALIZAR', 'MATERIAL_CADASTRAR',
   'LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS', 'LISTA_COMPARAR', 'LISTA_CADASTRAR', 'LISTA_ATIVAR', 'LISTA_RETIRAR_DE_USO',
   'ORDEM_VISUALIZAR', 'ORDEM_CRIAR', 'ORDEM_ATUALIZAR_STATUS', 'ORDEM_CONCLUIR',
-  'CONSUMO_VISUALIZAR', 'CONSUMO_REGISTRAR',
+  'CONSUMO_VISUALIZAR', 'CONSUMO_REGISTRAR', 'CONSUMO_ADICIONAR_ITEM',
   'TIPO_ORDEM_VISUALIZAR', 'TIPO_ORDEM_GERENCIAR',
   'NOTA_FISCAL_VISUALIZAR', 'NOTA_FISCAL_REGISTRAR',
   'ESTOQUE_VISUALIZAR',
   'AUDITORIA_VISUALIZAR',
+  'RELATORIO_CONSUMO_VISUALIZAR',
   'ACESSO_VISUALIZAR', 'PERFIL_GERENCIAR', 'USUARIO_GERENCIAR',
 ]
 
@@ -20,6 +21,7 @@ export function usuarioLogado(sobrescritas: Partial<UsuarioLogado> = {}): Usuari
     email: 'ana@pcp.com',
     perfil: { id: 'perfil-1', nome: 'Administrador' },
     permissoes: TODAS_AS_PERMISSOES,
+    deveTrocarSenha: false,
     ...sobrescritas,
   }
 }
@@ -67,6 +69,7 @@ export function listaTecnica(sobrescritas: Partial<ListaTecnica> = {}): ListaTec
     listaId: 'lista-1',
     materialId: 'm-1',
     versao: 'v1',
+    quantidadeBase: 1,
     status: 'EM_REVISAO',
     itens: [{ id: 'i-1', materialComponenteId: 'm-2', quantidadePlanejada: 2.5, unidadeDeMedida: 'kg' }],
     criadaEm: '2026-10-01T10:00:00Z',

@@ -15,7 +15,8 @@ import java.util.Set;
  */
 public class ConsultarUsuarioLogado {
 
-    public record Resultado(Usuario usuario, PerfilAcesso perfil, Set<Permissao> permissoes) {}
+    /** Com a troca de senha pendente (ADR-0021) o usuário ainda não tem permissão nenhuma. */
+    public record Resultado(Usuario usuario, PerfilAcesso perfil, Set<Permissao> permissoes, boolean deveTrocarSenha) {}
 
     private final UsuarioAtual usuarioAtual;
     private final UsuarioRepository usuarioRepository;
@@ -34,6 +35,7 @@ public class ConsultarUsuarioLogado {
                 .orElseThrow(() -> new IllegalStateException("Usuário autenticado não encontrado."));
         PerfilAcesso perfil = perfilRepository.buscarPorId(usuario.getPerfilId())
                 .orElseThrow(() -> new PerfilNaoEncontradoException(usuario.getPerfilId()));
-        return new Resultado(usuario, perfil, perfil.permissoesEfetivas());
+        return new Resultado(usuario, perfil,
+                usuario.isDeveTrocarSenha() ? Set.of() : perfil.permissoesEfetivas(), usuario.isDeveTrocarSenha());
     }
 }

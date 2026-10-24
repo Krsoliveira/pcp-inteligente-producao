@@ -36,7 +36,7 @@ Regras dos ADRs deste projeto:
 | [0001](adr/0001-clean-architecture-ddd.md) | Clean Architecture + DDD no backend | Aceito |
 | [0002](adr/0002-rabbitmq-mensageria.md) | RabbitMQ como mensageria | Aceito |
 | [0003](adr/0003-openai-provedor-ia.md) | OpenAI como provedor de IA (com camada de abstração) | Aceito |
-| [0004](adr/0004-render-hospedagem-backend.md) | Render como hospedagem do backend | Aceito |
+| [0004](adr/0004-render-hospedagem-backend.md) | Render como hospedagem do backend | Substituído por ADR-0013 |
 | [0005](adr/0005-autenticacao-jwt.md) | Autenticação com JWT | Aceito |
 | [0006](adr/0006-dataset-carga-inicial.md) | Dataset e estratégia de carga inicial | Substituído parcialmente por ADR-0009 |
 | [0007](adr/0007-modelo-material-lista-tecnica-lote.md) | Material, Lista Técnica (BOM), Consumo e Lote | Aceito |
@@ -45,3 +45,18 @@ Regras dos ADRs deste projeto:
 | [0010](adr/0010-entrada-de-material-por-compra.md) | Entrada de matéria-prima por compra gera lote | Aceito |
 | [0011](adr/0011-rastreabilidade-e-auditoria.md) | Rastreabilidade e auditoria: assinatura, trilha de eventos e genealogia de lotes | Aceito |
 | [0012](adr/0012-suprimentos-nota-fiscal-estoque.md) | Suprimentos: entrada de nota fiscal, estoque por material e padrões de código e lote | Aceito |
+| [0013](adr/0013-deploy-railway.md) | Railway como plataforma de deploy | Aceito |
+| [0014](adr/0014-protecao-da-borda-http.md) | Proteção da borda HTTP: rate limiting, IP do cliente e limite de corpo | Aceito |
+| [0015](adr/0015-pesquisa-paginada-e-resumo-do-dashboard.md) | Pesquisa paginada de ordens e resumo do dashboard | Aceito |
+| [0016](adr/0016-consulta-em-duas-etapas.md) | Consulta em duas etapas nas listagens | Aceito |
+| [0017](adr/0017-testes-do-frontend-com-vitest.md) | Testes automáticos do frontend com Vitest e Testing Library | Aceito |
+| [0018](adr/0018-filtro-e-ordenacao-por-coluna.md) | Filtro e ordenação por coluna no cabeçalho (estilo planilha) | Aceito |
+| [0019](adr/0019-versoes-de-lista-tecnica.md) | Várias versões em uso por lista técnica, escolha na ordem e comparação | Aceito |
+| [0020](adr/0020-controle-de-acesso-por-perfil.md) | Controle de acesso por perfis de permissões | Aceito |
+| [0021](adr/0021-troca-de-senha-no-primeiro-acesso.md) | Troca de senha no primeiro acesso e redefinição pelo gestor | Aceito |
+| [0022](adr/0022-dashboard-acionavel.md) | Dashboard acionável: indicadores que abrem a consulta e gráficos que dizem algo | Aceito |
+| [0023](adr/0023-relatorios-consumo-de-ordens.md) | Relatórios: primeiro, o consumo de ordens por componente | Aceito |
+| [0024](adr/0024-tipo-de-ordem-conversao.md) | Produto acabado só é consumido em ordem do tipo Conversão | Aceito |
+| [0025](adr/0025-item-adicionado-ao-consumo.md) | Item adicionado ao consumo de uma ordem, fora da lista técnica | Aceito |
+| [0026](adr/0026-lancamento-de-consumo-por-ordem.md) | Lançamento do consumo por ordem, com todos os componentes e tudo ou nada | Aceito |
+| [0027](adr/0027-quantidade-base-da-lista-tecnica.md) | Quantidade base da lista técnica | Aceito |

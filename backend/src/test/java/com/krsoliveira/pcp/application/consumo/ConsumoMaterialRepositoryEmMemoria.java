@@ -39,6 +39,13 @@ public class ConsumoMaterialRepositoryEmMemoria implements ConsumoMaterialReposi
     }
 
     @Override
+    public List<ConsumoMaterial> listarPorOrdensProducao(Collection<UUID> ordemProducaoIds) {
+        return dados.values().stream()
+                .filter(c -> ordemProducaoIds.contains(c.getOrdemProducaoId()))
+                .toList();
+    }
+
+    @Override
     public List<ConsumoMaterial> listarPorOrdemProducao(UUID ordemProducaoId) {
         return dados.values().stream()
                 .filter(c -> ordemProducaoId.equals(c.getOrdemProducaoId()))

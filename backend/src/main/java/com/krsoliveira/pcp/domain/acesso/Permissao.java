@@ -29,6 +29,7 @@ public enum Permissao {
 
     CONSUMO_VISUALIZAR("Consumos", "Consultar consumos de material"),
     CONSUMO_REGISTRAR("Consumos", "Registrar consumos de material"),
+    CONSUMO_ADICIONAR_ITEM("Consumos", "Adicionar ao consumo um item que não está na lista técnica"),
 
     TIPO_ORDEM_VISUALIZAR("Tipos de ordem", "Consultar tipos de ordem"),
     TIPO_ORDEM_GERENCIAR("Tipos de ordem", "Criar e alterar tipos de ordem"),
@@ -39,6 +40,8 @@ public enum Permissao {
     ESTOQUE_VISUALIZAR("Estoque", "Consultar estoque, lotes e rastreabilidade"),
 
     AUDITORIA_VISUALIZAR("Auditoria", "Ver o histórico de alterações"),
+
+    RELATORIO_CONSUMO_VISUALIZAR("Relatórios", "Ver o relatório de consumo de ordens"),
 
     ACESSO_VISUALIZAR("Acessos", "Ver perfis e usuários"),
     PERFIL_GERENCIAR("Acessos", "Criar, alterar e excluir perfis"),

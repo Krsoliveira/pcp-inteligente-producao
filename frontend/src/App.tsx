@@ -22,7 +22,10 @@ import { NotaFiscalDetalhePage } from './pages/NotaFiscalDetalhePage'
 import { EstoquePage } from './pages/EstoquePage'
 import { EstoqueResultadosPage } from './pages/EstoqueResultadosPage'
 import { EstoqueMaterialPage } from './pages/EstoqueMaterialPage'
+import { LancamentoDeConsumoPage } from './pages/LancamentoDeConsumoPage'
 import { PerfisAcessoPage } from './pages/PerfisAcessoPage'
+import { RelatorioConsumoOrdensPage } from './pages/RelatorioConsumoOrdensPage'
+import { TrocarSenhaPage } from './pages/TrocarSenhaPage'
 import { UsuariosAcessoPage } from './pages/UsuariosAcessoPage'
 
 const router = createBrowserRouter([
@@ -40,6 +43,8 @@ const router = createBrowserRouter([
       {
         element: <Layout />,
         children: [
+          // Troca de senha: obrigatória no primeiro acesso (ADR-0021) e voluntária depois; não exige permissão.
+          { path: '/minha-senha', element: <TrocarSenhaPage /> },
           // Cada grupo exige a permissão da área (conforto; o servidor confere de novo em cada endpoint).
           // O painel é a entrada do sistema: sem acesso a ele, leva para a primeira tela permitida.
           {
@@ -53,6 +58,10 @@ const router = createBrowserRouter([
               { path: '/ordens', element: <OrdensPage /> },
               { path: '/ordens/resultados', element: <OrdensResultadosPage /> },
               { path: '/ordens/:id', element: <OrdemDetalhePage /> },
+              {
+                element: <ExigirPermissao qualquer={['CONSUMO_REGISTRAR']} />,
+                children: [{ path: '/ordens/:id/lancar-consumo', element: <LancamentoDeConsumoPage /> }],
+              },
             ],
           },
           // Suprimentos (ADR-0012)
@@ -98,6 +107,11 @@ const router = createBrowserRouter([
           {
             element: <ExigirPermissao qualquer={['TIPO_ORDEM_VISUALIZAR']} />,
             children: [{ path: '/tipos-ordem', element: <TiposOrdemPage /> }],
+          },
+          // Relatórios (ADR-0023)
+          {
+            element: <ExigirPermissao qualquer={['RELATORIO_CONSUMO_VISUALIZAR']} />,
+            children: [{ path: '/relatorios/consumo-de-ordens', element: <RelatorioConsumoOrdensPage /> }],
           },
           // Administração (ADR-0020)
           {

@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.application.ordem;
 
+import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 import com.krsoliveira.pcp.domain.ordem.FiltroOrdens;
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ConsultarOrdensProducaoTest {
 
@@ -125,6 +127,45 @@ class ConsultarOrdensProducaoTest {
                 PedidoDePagina.de(0, 25));
 
         assertThat(pagina.itens()).extracting(OrdemProducao::getCodigo).containsExactly("OP-D-001");
+    }
+
+    @Test
+    @DisplayName("atrasadas: só as abertas depois do fim planejado; no próprio dia do fim ainda não está atrasada")
+    void filtroPorAtrasadas() {
+        var cancelada = ordem("OP-E-001");
+        cancelada.alterarStatusPara(StatusOrdemProducao.CANCELADA, "teste");
+        repositorio.salvar(cancelada);
+        LocalDate fim = LocalDate.of(2026, 1, 10); // fim planejado das ordens do cenário
+
+        var noDiaDoFim = casoDeUso.pesquisar(
+                new FiltroOrdens(null, null, null, null, fim), PedidoDePagina.de(0, 25));
+        var umDiaDepois = casoDeUso.pesquisar(
+                new FiltroOrdens(null, null, null, null, fim.plusDays(1)), PedidoDePagina.de(0, 25));
+
+        assertThat(noDiaDoFim.total()).isZero();
+        assertThat(umDiaDepois.total()).isEqualTo(8); // as 8 abertas; a cancelada não conta
+        assertThat(umDiaDepois.itens()).extracting(OrdemProducao::getCodigo).doesNotContain("OP-E-001");
+    }
+
+    @Test
+    @DisplayName("centro de trabalho (nome exato) e fim planejado entram no filtro; período do fim invertido é recusado")
+    void filtroPorCentroEFim() {
+        repositorio.salvar(OrdemProducao.criar("OP-F-001", UUID.randomUUID(), UUID.randomUUID(), null, "Soldagem", 10,
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 20), "teste"));
+
+        var soldagem = casoDeUso.pesquisar(new FiltroOrdens(null, null, null, null, null, "Soldagem", null, null), PedidoDePagina.de(0, 25));
+        var minusculas = casoDeUso.pesquisar(new FiltroOrdens(null, null, null, null, null, "soldagem", null, null), PedidoDePagina.de(0, 25));
+        var emJunho = casoDeUso.pesquisar(new FiltroOrdens(null, null, null, null, null, null,
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)), PedidoDePagina.de(0, 25));
+        var emJaneiro = casoDeUso.pesquisar(new FiltroOrdens(null, null, null, null, null, null,
+                LocalDate.of(2026, 1, 10), LocalDate.of(2026, 1, 10)), PedidoDePagina.de(0, 25));
+
+        assertThat(soldagem.itens()).extracting(OrdemProducao::getCodigo).containsExactly("OP-F-001");
+        assertThat(minusculas.total()).isZero();
+        assertThat(emJunho.itens()).extracting(OrdemProducao::getCodigo).containsExactly("OP-F-001");
+        assertThat(emJaneiro.total()).isEqualTo(8); // as 8 ordens do cenário terminam em 10/01
+        assertThatThrownBy(() -> new FiltroOrdens(null, null, null, null, null, null,
+                LocalDate.of(2026, 7, 1), LocalDate.of(2026, 6, 1))).isInstanceOf(RegraDeNegocioException.class);
     }
 
     private static OrdemProducao ordemComInicio(String codigo, LocalDate inicio) {

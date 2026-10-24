@@ -21,10 +21,11 @@ public record ComparacaoDeVersoesResponse(
         List<ItemComparadoResponse> alterados,
         List<ItemComparadoResponse> iguais
 ) {
-    public record VersaoResumo(UUID id, UUID listaId, UUID materialId, String versao, StatusListaTecnica status) {
+    public record VersaoResumo(UUID id, UUID listaId, UUID materialId, String versao, BigDecimal quantidadeBase,
+                               StatusListaTecnica status) {
         static VersaoResumo de(ListaTecnica lista) {
             return new VersaoResumo(lista.getId(), lista.getListaId(), lista.getMaterialId(),
-                    lista.getVersao(), lista.getStatus());
+                    lista.getVersao(), lista.getQuantidadeBase(), lista.getStatus());
         }
     }
 

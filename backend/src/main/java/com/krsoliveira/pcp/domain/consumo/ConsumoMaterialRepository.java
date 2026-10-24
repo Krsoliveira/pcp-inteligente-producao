@@ -20,4 +20,7 @@ public interface ConsumoMaterialRepository {
     List<ConsumoMaterial> buscarPorIds(Collection<UUID> ids);
 
     List<ConsumoMaterial> listarPorOrdemProducao(UUID ordemProducaoId);
+
+    /** Os consumos de várias ordens de uma vez (evita uma consulta por ordem nos relatórios). */
+    List<ConsumoMaterial> listarPorOrdensProducao(Collection<UUID> ordemProducaoIds);
 }

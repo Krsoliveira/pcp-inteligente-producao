@@ -11,8 +11,14 @@ import java.time.LocalDate;
  * @param status somente ordens neste status
  * @param de     início planejado a partir desta data (inclusive)
  * @param ate    início planejado até esta data (inclusive)
+ * @param atrasadasEm quando informado, somente ordens abertas cujo fim planejado é anterior a este dia
+ *                    (a mesma regra de {@link OrdemProducao#estaAtrasada}); {@code null} não filtra
+ * @param centroDeTrabalho somente ordens deste centro de trabalho (nome exato); em branco vira {@code null}
+ * @param fimDe  fim planejado a partir desta data (inclusive)
+ * @param fimAte fim planejado até esta data (inclusive)
  */
-public record FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate de, LocalDate ate) {
+public record FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate de, LocalDate ate, LocalDate atrasadasEm,
+                           String centroDeTrabalho, LocalDate fimDe, LocalDate fimAte) {
 
     /** Código tem no máximo 30 caracteres; mais que isso nunca casa, então não vale processar. */
     static final int TAMANHO_MAXIMO_DA_BUSCA = 100;
@@ -21,6 +27,10 @@ public record FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate d
         if (de != null && ate != null && ate.isBefore(de)) {
             throw new RegraDeNegocioException("O fim do período não pode ser anterior ao início.");
         }
+        if (fimDe != null && fimAte != null && fimAte.isBefore(fimDe)) {
+            throw new RegraDeNegocioException("O fim do período não pode ser anterior ao início.");
+        }
+        centroDeTrabalho = centroDeTrabalho == null || centroDeTrabalho.isBlank() ? null : centroDeTrabalho.trim();
         if (busca == null || busca.isBlank()) {
             busca = null;
         } else {
@@ -31,12 +41,22 @@ public record FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate d
         }
     }
 
+    /** Pesquisa com os critérios de busca, status, início planejado e atrasadas. */
+    public FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate de, LocalDate ate, LocalDate atrasadasEm) {
+        this(busca, status, de, ate, atrasadasEm, null, null, null);
+    }
+
+    /** Pesquisa sem o filtro de atrasadas. */
+    public FiltroOrdens(String busca, StatusOrdemProducao status, LocalDate de, LocalDate ate) {
+        this(busca, status, de, ate, null, null, null, null);
+    }
+
     /** Pesquisa sem período. */
     public FiltroOrdens(String busca, StatusOrdemProducao status) {
-        this(busca, status, null, null);
+        this(busca, status, null, null, null, null, null, null);
     }
 
     public static FiltroOrdens semFiltro() {
-        return new FiltroOrdens(null, null, null, null);
+        return new FiltroOrdens(null, null, null, null, null, null, null, null);
     }
 }

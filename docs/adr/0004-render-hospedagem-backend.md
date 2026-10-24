@@ -1,6 +1,6 @@
 # ADR-0004: Render como hospedagem do backend
 
-- **Status**: Aceito
+- **Status**: Substituído por ADR-0013
 - **Data**: 2026-08-02
 
 ## Contexto

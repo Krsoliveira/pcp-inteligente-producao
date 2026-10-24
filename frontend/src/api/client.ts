@@ -31,6 +31,11 @@ apiClient.interceptors.response.use(
       useAuthStore.getState().logout()
       window.location.href = '/login'
     }
+    // Um gestor redefiniu a senha com a sessão aberta (ADR-0021): o servidor passa a recusar tudo com este código.
+    const codigo = axios.isAxiosError(error) ? (error.response?.data as { codigo?: string } | undefined)?.codigo : undefined
+    if (codigo === 'TROCAR_SENHA' && window.location.pathname !== '/minha-senha') {
+      window.location.href = '/minha-senha'
+    }
     return Promise.reject(error)
   },
 )

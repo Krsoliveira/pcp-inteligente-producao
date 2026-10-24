@@ -24,6 +24,14 @@ describe('menu por permissão', () => {
     expect(rotas(com('ORDEM_CRIAR', 'MATERIAL_CADASTRAR'))).toEqual([])
   })
 
+  it('Relatórios só aparece para quem pode ver o relatório de consumo, entre Produção e Administração', () => {
+    expect(rotas(com('RELATORIO_CONSUMO_VISUALIZAR'))).toEqual(['/relatorios/consumo-de-ordens'])
+    expect(secoesVisiveis(com('RELATORIO_CONSUMO_VISUALIZAR')).map((s) => s.titulo)).toEqual(['Relatórios'])
+    expect(secoesVisiveis(com('ORDEM_VISUALIZAR', 'RELATORIO_CONSUMO_VISUALIZAR', 'ACESSO_VISUALIZAR')).map((s) => s.titulo))
+      .toEqual(['Produção', 'Relatórios', 'Administração'])
+    expect(rotas(com('CONSUMO_VISUALIZAR', 'ORDEM_VISUALIZAR'))).not.toContain('/relatorios/consumo-de-ordens') // ver consumo na ordem não dá o relatório
+  })
+
   it('a Administração só aparece para quem pode ver acessos, com perfis e usuários', () => {
     expect(rotas(com('ACESSO_VISUALIZAR'))).toEqual(['/acessos/perfis', '/acessos/usuarios'])
     expect(secoesVisiveis(com('ACESSO_VISUALIZAR')).map((s) => s.titulo)).toEqual(['Administração'])

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Drawer from '@mui/material/Drawer'
 import AppBar from '@mui/material/AppBar'
@@ -14,6 +14,7 @@ import IconButton from '@mui/material/IconButton'
 import Divider from '@mui/material/Divider'
 import Tooltip from '@mui/material/Tooltip'
 import LogoutIcon from '@mui/icons-material/Logout'
+import PasswordIcon from '@mui/icons-material/PasswordOutlined'
 import MenuIcon from '@mui/icons-material/Menu'
 import FactoryIcon from '@mui/icons-material/Factory'
 import { useQueryClient } from '@tanstack/react-query'
@@ -45,6 +46,11 @@ export function Layout() {
     // Nada da sessão anterior (inclusive as permissões) pode aparecer para o próximo usuário.
     queryClient.clear()
     navigate('/login')
+  }
+
+  // Senha provisória (ADR-0021): até trocá-la, a única tela possível é a da troca.
+  if (usuario?.deveTrocarSenha && location.pathname !== '/minha-senha') {
+    return <Navigate to="/minha-senha" replace />
   }
 
   const isAtivo = ({ rota, ativoTambem = [] }: NavItem) =>
@@ -176,9 +182,24 @@ export function Layout() {
         </>
       )}
 
-      {/* Logout */}
+      {/* Conta: trocar a senha e sair */}
       <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
       <List sx={{ px: 1, py: 0.5 }}>
+        {usuario && !usuario.deveTrocarSenha && (
+          <ListItemButton
+            selected={location.pathname === '/minha-senha'}
+            onClick={() => { navigate('/minha-senha'); setMobileOpen(false) }}
+            sx={{
+              borderRadius: 1.5, px: 1.5, py: 0.75, color: SIDEBAR_TEXT,
+              '& .MuiListItemIcon-root': { color: SIDEBAR_TEXT },
+              '&.Mui-selected': { bgcolor: SIDEBAR_ACTIVE_BG, color: 'white', '& .MuiListItemIcon-root': { color: 'white' } },
+              '&:hover': { bgcolor: SIDEBAR_HOVER_BG, color: 'white', '& .MuiListItemIcon-root': { color: 'white' } },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 32 }}><PasswordIcon fontSize="small" /></ListItemIcon>
+            <ListItemText primary="Alterar minha senha" primaryTypographyProps={{ fontSize: '0.825rem' }} />
+          </ListItemButton>
+        )}
         <ListItemButton
           onClick={handleLogout}
           sx={{

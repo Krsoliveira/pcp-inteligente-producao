@@ -8,6 +8,7 @@ import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.lista.ItemListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
+import com.krsoliveira.pcp.domain.lista.PoliticaDeComponentes;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
@@ -37,7 +38,13 @@ public class CadastrarListaTecnica {
     public record ItemComando(UUID materialComponenteId, BigDecimal quantidadePlanejada,
                               String unidadeDeMedida) {}
 
-    public record Comando(UUID materialId, String versao, List<ItemComando> itens) {}
+    /** @param quantidadeBase para quantas unidades (ou kg) do material valem os componentes; {@code null} é 1 */
+    public record Comando(UUID materialId, String versao, BigDecimal quantidadeBase, List<ItemComando> itens) {
+
+        public Comando(UUID materialId, String versao, List<ItemComando> itens) {
+            this(materialId, versao, null, itens);
+        }
+    }
 
     public UUID executar(Comando comando) {
         return execucao.executar(ctx -> {
@@ -49,6 +56,12 @@ public class CadastrarListaTecnica {
                         "Matéria-prima não pode ter lista técnica. Material: %s (%s)."
                                 .formatted(material.getCodigo(), material.getTipo()));
             }
+
+            // Regra inegociável (ADR-0024): produto acabado só é componente de lista de semiacabado.
+            PoliticaDeComponentes.validarLista(material, comando.itens().stream()
+                    .map(i -> materialRepository.buscarPorId(i.materialComponenteId())
+                            .orElseThrow(() -> new MaterialNaoEncontradoException(i.materialComponenteId())))
+                    .toList());
 
             if (listaTecnicaRepository.existeVersaoParaMaterial(
                     comando.materialId(), comando.versao())) {
@@ -62,12 +75,14 @@ public class CadastrarListaTecnica {
                             i.unidadeDeMedida()))
                     .toList();
 
+            BigDecimal base = comando.quantidadeBase() == null ? BigDecimal.ONE : comando.quantidadeBase();
+
             // Cada material tem uma lista; a nova versão entra nela (ou abre a lista, se for a primeira).
             ListaTecnica lista = listaTecnicaRepository.listarPorMaterial(comando.materialId()).stream()
                     .findFirst()
                     .map(existente -> ListaTecnica.criarVersao(comando.materialId(), existente.getListaId(),
-                            comando.versao(), itens, ctx.usuario()))
-                    .orElseGet(() -> ListaTecnica.criar(comando.materialId(), comando.versao(), itens,
+                            comando.versao(), base, itens, ctx.usuario()))
+                    .orElseGet(() -> ListaTecnica.criar(comando.materialId(), comando.versao(), base, itens,
                             ctx.usuario()));
             listaTecnicaRepository.salvar(lista);
 
@@ -77,7 +92,8 @@ public class CadastrarListaTecnica {
                             .e("listaId", lista.getListaId())
                             .e("versao", lista.getVersao())
                             .e("status", lista.getStatus())
-                            .e("componentes", itens.size()));
+                            .e("componentes", itens.size())
+                            .e("quantidadeBase", base));
             return lista.getId();
         });
     }

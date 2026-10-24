@@ -13,6 +13,42 @@ class TipoOrdemTest {
     private static final String USUARIO = "teste@pcp";
 
     @Nested
+    @DisplayName("Tipo de sistema Conversão")
+    class Conversao {
+
+        private TipoOrdem conversao() {
+            return TipoOrdem.reconstituir(java.util.UUID.randomUUID(), "Conversão", "Acabado em semiacabado", "#6a1b9a", true,
+                    new com.krsoliveira.pcp.domain.auditoria.Assinatura("sistema", java.time.Instant.now(), "sistema", java.time.Instant.now()));
+        }
+
+        @Test
+        @DisplayName("tipos criados pelo usuário nunca são Conversão")
+        void tiposDoUsuarioNaoSaoConversao() {
+            assertThat(TipoOrdem.criar("Retrabalho", null, "#c62828", USUARIO).isConversao()).isFalse();
+        }
+
+        @Test
+        @DisplayName("o tipo de sistema Conversão é reconhecido e não pode ser alterado")
+        void conversaoNaoSeAltera() {
+            TipoOrdem tipo = conversao();
+
+            assertThat(tipo.isConversao()).isTrue();
+            assertThatThrownBy(() -> tipo.atualizar("Outro nome", null, "#000000", USUARIO))
+                    .isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("do sistema");
+            assertThat(tipo.getNome()).isEqualTo("Conversão");
+        }
+
+        @Test
+        @DisplayName("reconstituir sem a marca mantém o comportamento antigo (não é Conversão)")
+        void reconstituirSemMarca() {
+            TipoOrdem tipo = TipoOrdem.reconstituir(java.util.UUID.randomUUID(), "Normal", null, "#1565c0",
+                    new com.krsoliveira.pcp.domain.auditoria.Assinatura("a", java.time.Instant.now(), "a", java.time.Instant.now()));
+
+            assertThat(tipo.isConversao()).isFalse();
+        }
+    }
+
+    @Nested
     @DisplayName("Criação")
     class Criacao {
 

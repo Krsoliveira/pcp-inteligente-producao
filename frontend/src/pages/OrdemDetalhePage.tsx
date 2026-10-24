@@ -246,6 +246,9 @@ export function OrdemDetalhePage() {
                       {consumos.filter(c => c.registrado).length}/{consumos.length} registrados
                     </Typography>
                   )}
+                  {ordem.status === 'EM_PRODUCAO' && tem('CONSUMO_REGISTRAR') && (
+                    <Button size="small" variant="contained" component={RouterLink} to={`/ordens/${ordem.id}/lancar-consumo`}>Lançar consumo</Button>
+                  )}
                   {!todosRegistrados && ordem.status === 'EM_PRODUCAO' && (
                     <Chip label="Pendente" size="small" color="warning" variant="outlined" sx={{ fontSize: '0.7rem', height: 20 }} />
                   )}
@@ -285,6 +288,11 @@ export function OrdemDetalhePage() {
                           <TableRow key={c.id}>
                             <TableCell>
                               {rotuloMaterial(c.materialId)}
+                              {c.naoPlanejado && (
+                                <Tooltip title="Item adicionado ao lançar o consumo; não está na lista técnica">
+                                  <Chip label="Não planejado" size="small" variant="outlined" sx={{ ml: 1, fontSize: '0.65rem', height: 18 }} />
+                                </Tooltip>
+                              )}
                             </TableCell>
                             <TableCell align="right"><Typography variant="body2">{c.quantidadePlanejada.toLocaleString('pt-BR')}</Typography></TableCell>
                             <TableCell align="right">

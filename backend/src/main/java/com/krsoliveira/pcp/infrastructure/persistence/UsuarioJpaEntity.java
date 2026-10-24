@@ -32,6 +32,9 @@ class UsuarioJpaEntity {
     @Column(name = "perfil_id", nullable = false)
     private UUID perfilId;
 
+    @Column(name = "deve_trocar_senha", nullable = false)
+    private boolean deveTrocarSenha;
+
     @Column(name = "criado_em", nullable = false, updatable = false)
     private Instant criadoEm;
 
@@ -44,11 +47,12 @@ class UsuarioJpaEntity {
         e.email = usuario.getEmail();
         e.senhaHash = usuario.getSenhaHash();
         e.perfilId = usuario.getPerfilId();
+        e.deveTrocarSenha = usuario.isDeveTrocarSenha();
         e.criadoEm = usuario.getCriadoEm();
         return e;
     }
 
     Usuario paraDominio() {
-        return Usuario.reconstituir(id, nome, email, senhaHash, perfilId, criadoEm);
+        return Usuario.reconstituir(id, nome, email, senhaHash, perfilId, deveTrocarSenha, criadoEm);
     }
 }

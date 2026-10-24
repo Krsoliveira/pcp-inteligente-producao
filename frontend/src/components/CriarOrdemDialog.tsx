@@ -70,6 +70,11 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     enabled: aberto && podeVerTipos,
   })
 
+  // Tipo Conversão (ADR-0024): só produz semiacabado; produto acabado não aparece como material da ordem.
+  const tipoSelecionado = tiposOrdem.find((t) => t.id === form.tipoOrdemId)
+  const conversao = tipoSelecionado?.conversao === true
+  const materiaisDaOrdem = conversao ? materiais.filter((m) => m.tipo === 'SEMIACABADO') : materiais
+
   const { data: listasTecnicas = [] } = useQuery({
     queryKey: ['listas-tecnicas', form.materialId],
     queryFn: () => listarListasTecnicas(form.materialId),
@@ -154,9 +159,19 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
                 select
                 label="Tipo de Ordem (opcional)"
                 value={form.tipoOrdemId ?? ''}
-                onChange={(e) => setForm((p) => ({ ...p, tipoOrdemId: e.target.value || null }))}
+                onChange={(e) => {
+                  const novo = tiposOrdem.find((t) => t.id === e.target.value)
+                  setForm((p) => {
+                    // Conversão só produz semiacabado: se o material escolhido não é, a escolha é desfeita.
+                    const materialAtual = materiais.find((m) => m.id === p.materialId)
+                    const desfaz = novo?.conversao === true && materialAtual?.tipo !== 'SEMIACABADO'
+                    return { ...p, tipoOrdemId: e.target.value || null, ...(desfaz ? { materialId: '', listaTecnicaId: '' } : {}) }
+                  })
+                }}
                 fullWidth
-                helperText="Categorize a ordem: Produção, Manutenção, Revenda, etc."
+                helperText={conversao
+                  ? 'Conversão: consome produto acabado e produz semiacabado.'
+                  : 'Categorize a ordem: Produção, Manutenção, Revenda, etc. Lista que consome produto acabado exige o tipo Conversão.'}
               >
                 <MenuItem value=""><em>Sem categoria</em></MenuItem>
                 {tiposOrdem.map((t) => (
@@ -192,9 +207,9 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
                 value={form.materialId}
                 onChange={set('materialId')}
                 fullWidth
-                helperText={materiais.length === 0 ? 'Cadastre um material primeiro.' : ''}
+                helperText={materiaisDaOrdem.length === 0 ? (conversao ? 'Nenhum semiacabado cadastrado.' : 'Cadastre um material primeiro.') : conversao ? 'Só semiacabados: é o que a conversão produz.' : ''}
               >
-                {materiais.map((m) => (
+                {materiaisDaOrdem.map((m) => (
                   <MenuItem key={m.id} value={m.id}>
                     <Box>
                       <Typography variant="body2" fontWeight={500}>{formatarCodigoMaterial(m.codigo)}</Typography>

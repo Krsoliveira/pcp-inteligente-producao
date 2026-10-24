@@ -6,6 +6,7 @@ import com.krsoliveira.pcp.application.comum.UsuarioAtual;
 import com.krsoliveira.pcp.domain.acesso.Delegacao;
 import com.krsoliveira.pcp.domain.acesso.PerfilAcesso;
 import com.krsoliveira.pcp.domain.acesso.PerfilAcessoRepository;
+import com.krsoliveira.pcp.domain.usuario.PoliticaDeSenha;
 import com.krsoliveira.pcp.domain.usuario.Usuario;
 
 import java.util.UUID;
@@ -34,6 +35,7 @@ public class CriarUsuarioPorGestor {
         PerfilAcesso perfil = perfilRepository.buscarPorId(perfilId)
                 .orElseThrow(() -> new PerfilNaoEncontradoException(perfilId));
         Delegacao.exigirQueAbrange(permissoesAtuais.permissoes(), perfil.permissoesEfetivas());
-        return registrarUsuario.executar(nome, email, senhaProvisoria, perfil, usuarioAtual.identificador());
+        PoliticaDeSenha.validar(senhaProvisoria);
+        return registrarUsuario.executarComSenhaProvisoria(nome, email, senhaProvisoria, perfil, usuarioAtual.identificador());
     }
 }

@@ -19,6 +19,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import TextField from '@mui/material/TextField'
 import Grid from '@mui/material/Grid2'
+import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import AddIcon from '@mui/icons-material/Add'
@@ -91,7 +92,10 @@ export function TiposOrdemPage() {
                 {tipos.map((t) => (
                   <TableRow key={t.id} hover>
                     <TableCell>
-                      <TipoOrdemBadge nome={t.nome} cor={t.cor} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TipoOrdemBadge nome={t.nome} cor={t.cor} />
+                        {t.conversao && <Chip size="small" variant="outlined" label="Sistema" />}
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="text.secondary">{t.descricao ?? '—'}</Typography>
@@ -106,11 +110,13 @@ export function TiposOrdemPage() {
                     </TableCell>
                     <TableCell align="center">
                       <SePermitido qualquer={['TIPO_ORDEM_GERENCIAR']}>
-                        <Tooltip title="Editar">
-                          <IconButton size="small" onClick={() => setEditando(t)}>
-                            <EditIcon sx={{ fontSize: 16 }} />
-                          </IconButton>
-                        </Tooltip>
+                        {!t.conversao && (
+                          <Tooltip title="Editar">
+                            <IconButton size="small" onClick={() => setEditando(t)}>
+                              <EditIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </SePermitido>
                     </TableCell>
                   </TableRow>

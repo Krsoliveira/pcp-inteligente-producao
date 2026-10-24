@@ -50,6 +50,8 @@ export interface TipoOrdem {
   nome: string
   descricao: string | null
   cor: string
+  /** Tipo de sistema Conversão: o único que pode consumir produto acabado (e só produz semiacabado). */
+  conversao: boolean
   criadoEm: string
   atualizadoEm: string
   criadoPor: string
@@ -109,6 +111,8 @@ export interface ListaTecnica {
   listaId: string
   materialId: string
   versao: string
+  /** Para quantas unidades (ou kg) do material produzido valem as quantidades dos componentes (ADR-0027). */
+  quantidadeBase: number
   status: StatusListaTecnica
   itens: ItemListaTecnica[]
   criadaEm: string
@@ -131,6 +135,7 @@ export interface VersaoResumo {
   listaId: string
   materialId: string
   versao: string
+  quantidadeBase: number
   status: StatusListaTecnica
 }
 
@@ -148,6 +153,8 @@ export interface ComparacaoDeVersoes {
 export interface CadastrarListaTecnicaRequest {
   materialId: string
   versao: string
+  /** Ausente é 1: as quantidades valem "por 1 unidade". */
+  quantidadeBase?: number
   itens: { materialComponenteId: string; quantidadePlanejada: number; unidadeDeMedida: string }[]
 }
 
@@ -243,6 +250,8 @@ export interface ConsumoMaterial {
   unidadeDeMedida: string
   registrado: boolean
   justificado: boolean
+  /** Item adicionado ao lançar o consumo, fora da lista técnica (planejado 0). */
+  naoPlanejado: boolean
   justificativa: string | null
   justificadoPor: string | null
   justificadoEm: string | null
@@ -258,6 +267,14 @@ export interface RegistrarConsumoRequest {
   justificativa?: string
   /** De quais lotes saiu o material: a soma deve ser igual à quantidade consumida. */
   alocacoes: AlocacaoLoteRequest[]
+}
+
+/** Lançamento do consumo de uma ordem de uma vez, tudo ou nada (ADR-0026). */
+export interface LancarConsumoRequest {
+  /** Linhas da lista técnica (as de quantidade em branco ficam de fora). */
+  consumos: Array<{ consumoId: string; quantidadeConsumida: number; justificativa?: string; alocacoes: AlocacaoLoteRequest[] }>
+  /** Itens que não estão na lista técnica (justificativa obrigatória). */
+  itensAdicionais: Array<{ materialId: string; quantidadeConsumida: number; justificativa: string; alocacoes: AlocacaoLoteRequest[] }>
 }
 
 export interface AlocacaoLoteRequest {
@@ -356,6 +373,7 @@ export type AcaoAuditoria =
   | 'ATIVADA'
   | 'OBSOLETADA'
   | 'CONSUMO_REGISTRADO'
+  | 'CONSUMO_ADICIONADO'
   | 'ORDEM_CONCLUIDA'
   | 'LOTE_GERADO'
   | 'LOTE_ALOCADO'
@@ -363,6 +381,8 @@ export type AcaoAuditoria =
   | 'USUARIO_REGISTRADO'
   | 'EXCLUIDO'
   | 'PERFIL_ATRIBUIDO'
+  | 'SENHA_ALTERADA'
+  | 'SENHA_REDEFINIDA'
 
 /** Mudança de valor registrada na trilha: {"de": ..., "para": ...}. */
 export interface MudancaAuditoria {
@@ -419,8 +439,39 @@ export interface FiltroOrdens {
   de?: string
   /** Início planejado até esta data (AAAA-MM-DD, inclusive). */
   ate?: string
+  /** `true`: só as ordens abertas depois do fim planejado (as mesmas que o dashboard conta). */
+  atrasadas?: boolean
+  /** Nome exato do centro de trabalho. */
+  centro?: string
+  /** Fim planejado a partir desta data (AAAA-MM-DD, inclusive). */
+  fimDe?: string
+  /** Fim planejado até esta data (AAAA-MM-DD, inclusive). */
+  fimAte?: string
   pagina?: number
   tamanho?: number
+}
+
+/** Consumo total de um componente numa ordem concluída (soma dos lotes); `desvio` = consumido − planejado. */
+export interface LinhaDeConsumoDeOrdem {
+  ordemId: string
+  ordemCodigo: string
+  fimPlanejado: string
+  produtoCodigo: string
+  produtoDescricao: string
+  componenteCodigo: string
+  componenteDescricao: string
+  unidadeDeMedida: string
+  quantidadePlanejada: number
+  quantidadeConsumida: number | null
+  desvio: number | null
+}
+
+/** Relatório de consumo de ordens concluídas com fim planejado entre `de` e `ate`. */
+export interface RelatorioConsumoDeOrdens {
+  de: string
+  ate: string
+  totalDeOrdens: number
+  linhas: LinhaDeConsumoDeOrdem[]
 }
 
 /** Totais do dashboard, calculados no servidor. */
@@ -429,6 +480,22 @@ export interface ResumoProducao {
   ordensPorStatus: Record<StatusOrdem, number>
   ordensAtrasadas: number
   lotesDisponiveis: number
+}
+
+/** Como terminaram as ordens cujo fim planejado cai no mês (`mes` no formato AAAA-MM); canceladas ficam de fora. */
+export interface EntregasDoMes {
+  mes: string
+  noPrazo: number
+  comAtraso: number
+  abertasAtrasadas: number
+  abertasNoPrazo: number
+}
+
+/** Ordens atrasadas de um centro de trabalho e há quantos dias a mais antiga passou do fim planejado. */
+export interface AtrasoDoCentro {
+  centroDeTrabalho: string
+  ordensAtrasadas: number
+  diasDeAtrasoDaMaisAntiga: number
 }
 
 export interface FiltroMateriais {
@@ -481,11 +548,12 @@ export type Permissao =
   | 'LISTA_VISUALIZAR_ATIVAS' | 'LISTA_VISUALIZAR_TODAS' | 'LISTA_COMPARAR' | 'LISTA_CADASTRAR'
   | 'LISTA_ATIVAR' | 'LISTA_RETIRAR_DE_USO'
   | 'ORDEM_VISUALIZAR' | 'ORDEM_CRIAR' | 'ORDEM_ATUALIZAR_STATUS' | 'ORDEM_CONCLUIR'
-  | 'CONSUMO_VISUALIZAR' | 'CONSUMO_REGISTRAR'
+  | 'CONSUMO_VISUALIZAR' | 'CONSUMO_REGISTRAR' | 'CONSUMO_ADICIONAR_ITEM'
   | 'TIPO_ORDEM_VISUALIZAR' | 'TIPO_ORDEM_GERENCIAR'
   | 'NOTA_FISCAL_VISUALIZAR' | 'NOTA_FISCAL_REGISTRAR'
   | 'ESTOQUE_VISUALIZAR'
   | 'AUDITORIA_VISUALIZAR'
+  | 'RELATORIO_CONSUMO_VISUALIZAR'
   | 'ACESSO_VISUALIZAR' | 'PERFIL_GERENCIAR' | 'USUARIO_GERENCIAR'
 
 /** Quem está logado e o que pode fazer (GET /acessos/eu). */
@@ -494,6 +562,8 @@ export interface UsuarioLogado {
   email: string
   perfil: { id: string; nome: string }
   permissoes: Permissao[]
+  /** A senha é provisória: até trocá-la o servidor só aceita consultar quem sou eu e a troca (ADR-0021). */
+  deveTrocarSenha: boolean
 }
 
 /** Uma "caixinha" do catálogo, com a área em que aparece. */

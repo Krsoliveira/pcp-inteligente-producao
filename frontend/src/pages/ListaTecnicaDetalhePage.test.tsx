@@ -46,6 +46,15 @@ describe('ListaTecnicaDetalhePage', () => {
     buscarMock.mockResolvedValue(listaTecnica())
   })
 
+  it('mostra a quantidade base, na unidade do material produzido', async () => {
+    buscarMock.mockResolvedValue(listaTecnica({ quantidadeBase: 100 }))
+    montar()
+
+    expect(await screen.findByText('Quantidade base')).toBeInTheDocument()
+    expect(screen.getByText('100 un')).toBeInTheDocument()
+    expect(screen.getByText('Os componentes valem para produzir essa quantidade.')).toBeInTheDocument()
+  })
+
   it('mostra o produto, a versão e a receita com cada componente', async () => {
     montar()
 

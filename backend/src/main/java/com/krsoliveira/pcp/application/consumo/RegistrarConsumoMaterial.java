@@ -80,55 +80,65 @@ public class RegistrarConsumoMaterial {
             ConsumoMaterial consumo = consumoRepository.buscarPorId(comando.consumoMaterialId())
                     .orElseThrow(() -> new ConsumoMaterialNaoEncontradoException(
                             comando.consumoMaterialId()));
-
-            validarAlocacoes(comando);
-            consumo.registrarConsumo(comando.quantidadeConsumida(), comando.justificativa(), ctx.usuario());
-
-            String codigoOrdem = ordemRepository.buscarPorId(consumo.getOrdemProducaoId())
-                    .map(OrdemProducao::getCodigo).orElse("");
-            String codigoMaterial = materialRepository.buscarPorId(consumo.getMaterialId())
-                    .map(Material::getCodigo).orElse(null);
-            LocalDate hoje = LocalDate.now(relogio);
-
-            List<AlocacaoLote> alocacoes = new ArrayList<>();
-            List<String> resumoLotes = new ArrayList<>();
-            for (Alocacao pedido : comando.alocacoes()) {
-                Lote lote = loteRepository.buscarPorIdParaAtualizar(pedido.loteId())
-                        .orElseThrow(() -> new LoteNaoEncontradoException(pedido.loteId()));
-                BigDecimal saldoAntes = lote.getSaldo();
-                StatusLote statusAntes = lote.getStatus();
-
-                alocacoes.add(lote.alocar(consumo, pedido.quantidade(), hoje, ctx.usuario()));
-                loteRepository.salvar(lote);
-                resumoLotes.add(lote.getNumeroLote() + ": "
-                        + pedido.quantidade().stripTrailingZeros().toPlainString());
-
-                Detalhes detalhesLote = Detalhes.com("ordemProducao", codigoOrdem)
-                        .e("material", codigoMaterial)
-                        .e("quantidade", pedido.quantidade())
-                        .e("unidadeDeMedida", lote.getUnidadeDeMedida())
-                        .mudanca("saldo", saldoAntes, lote.getSaldo());
-                if (lote.getStatus() != statusAntes) {
-                    detalhesLote.mudanca("status", statusAntes, lote.getStatus());
-                }
-                ctx.registrar(TipoEntidade.LOTE, lote.getId(), lote.getNumeroLote(),
-                        AcaoAuditoria.LOTE_ALOCADO, detalhesLote);
-            }
-
-            ConsumoMaterial salvo = consumoRepository.salvar(consumo);
-            alocacaoRepository.salvarTodas(alocacoes);
-
-            ctx.registrar(TipoEntidade.ORDEM_PRODUCAO, salvo.getOrdemProducaoId(), codigoOrdem,
-                    AcaoAuditoria.CONSUMO_REGISTRADO,
-                    Detalhes.com("material", codigoMaterial)
-                            .e("quantidadePlanejada", salvo.getQuantidadePlanejada())
-                            .e("quantidadeConsumida", salvo.getQuantidadeConsumida())
-                            .e("desvio", salvo.getDesvio())
-                            .e("unidadeDeMedida", salvo.getUnidadeDeMedida())
-                            .e("justificativa", salvo.getJustificativa())
-                            .e("lotes", resumoLotes.isEmpty() ? null : String.join("; ", resumoLotes)));
-            return salvo;
+            return registrarNoContexto(ctx, consumo, comando, AcaoAuditoria.CONSUMO_REGISTRADO);
         });
+    }
+
+    /**
+     * Registra o consumo dentro de uma execução auditada que já está aberta: valida os lotes, baixa o saldo e grava
+     * a genealogia e os eventos. Também é usado por quem cria o consumo na hora (item adicionado, ADR-0025), que
+     * passa a ação de auditoria correspondente.
+     */
+    public ConsumoMaterial registrarNoContexto(ExecucaoAuditada.Contexto ctx, ConsumoMaterial consumo,
+                                               Comando comando, AcaoAuditoria acao) {
+        validarAlocacoes(comando);
+        consumo.registrarConsumo(comando.quantidadeConsumida(), comando.justificativa(), ctx.usuario());
+
+        String codigoOrdem = ordemRepository.buscarPorId(consumo.getOrdemProducaoId())
+                .map(OrdemProducao::getCodigo).orElse("");
+        String codigoMaterial = materialRepository.buscarPorId(consumo.getMaterialId())
+                .map(Material::getCodigo).orElse(null);
+        LocalDate hoje = LocalDate.now(relogio);
+
+        List<AlocacaoLote> alocacoes = new ArrayList<>();
+        List<String> resumoLotes = new ArrayList<>();
+        for (Alocacao pedido : comando.alocacoes()) {
+            Lote lote = loteRepository.buscarPorIdParaAtualizar(pedido.loteId())
+                    .orElseThrow(() -> new LoteNaoEncontradoException(pedido.loteId()));
+            BigDecimal saldoAntes = lote.getSaldo();
+            StatusLote statusAntes = lote.getStatus();
+
+            alocacoes.add(lote.alocar(consumo, pedido.quantidade(), hoje, ctx.usuario()));
+            loteRepository.salvar(lote);
+            resumoLotes.add(lote.getNumeroLote() + ": "
+                    + pedido.quantidade().stripTrailingZeros().toPlainString());
+
+            Detalhes detalhesLote = Detalhes.com("ordemProducao", codigoOrdem)
+                    .e("material", codigoMaterial)
+                    .e("quantidade", pedido.quantidade())
+                    .e("unidadeDeMedida", lote.getUnidadeDeMedida())
+                    .mudanca("saldo", saldoAntes, lote.getSaldo());
+            if (lote.getStatus() != statusAntes) {
+                detalhesLote.mudanca("status", statusAntes, lote.getStatus());
+            }
+            ctx.registrar(TipoEntidade.LOTE, lote.getId(), lote.getNumeroLote(),
+                    AcaoAuditoria.LOTE_ALOCADO, detalhesLote);
+        }
+
+        ConsumoMaterial salvo = consumoRepository.salvar(consumo);
+        alocacaoRepository.salvarTodas(alocacoes);
+
+        ctx.registrar(TipoEntidade.ORDEM_PRODUCAO, salvo.getOrdemProducaoId(), codigoOrdem,
+                acao,
+                Detalhes.com("material", codigoMaterial)
+                        .e("naoPlanejado", salvo.isNaoPlanejado() ? true : null)
+                        .e("quantidadePlanejada", salvo.getQuantidadePlanejada())
+                        .e("quantidadeConsumida", salvo.getQuantidadeConsumida())
+                        .e("desvio", salvo.getDesvio())
+                        .e("unidadeDeMedida", salvo.getUnidadeDeMedida())
+                        .e("justificativa", salvo.getJustificativa())
+                        .e("lotes", resumoLotes.isEmpty() ? null : String.join("; ", resumoLotes)));
+        return salvo;
     }
 
     private static void validarAlocacoes(Comando comando) {
