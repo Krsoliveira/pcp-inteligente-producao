@@ -54,7 +54,10 @@ public record ComparacaoDeVersoes(ListaTecnica versaoA, ListaTecnica versaoB,
             }
             var comparado = new ItemComparado(componente, itemA.getQuantidadePlanejada(),
                     itemA.getUnidadeDeMedida(), itemB.getQuantidadePlanejada(), itemB.getUnidadeDeMedida());
-            boolean mudou = itemA.getQuantidadePlanejada().compareTo(itemB.getQuantidadePlanejada()) != 0
+            // As quantidades valem para bases diferentes: 2 kg para 1 un é o mesmo que 200 kg para 100 un.
+            // Compara por unidade produzida (produto cruzado, sem divisão).
+            boolean mudou = itemA.getQuantidadePlanejada().multiply(b.getQuantidadeBase())
+                    .compareTo(itemB.getQuantidadePlanejada().multiply(a.getQuantidadeBase())) != 0
                     || !itemA.getUnidadeDeMedida().equals(itemB.getUnidadeDeMedida());
             (mudou ? alterados : iguais).add(comparado);
         });

@@ -111,6 +111,8 @@ export interface ListaTecnica {
   listaId: string
   materialId: string
   versao: string
+  /** Para quantas unidades (ou kg) do material produzido valem as quantidades dos componentes (ADR-0027). */
+  quantidadeBase: number
   status: StatusListaTecnica
   itens: ItemListaTecnica[]
   criadaEm: string
@@ -133,6 +135,7 @@ export interface VersaoResumo {
   listaId: string
   materialId: string
   versao: string
+  quantidadeBase: number
   status: StatusListaTecnica
 }
 
@@ -150,6 +153,8 @@ export interface ComparacaoDeVersoes {
 export interface CadastrarListaTecnicaRequest {
   materialId: string
   versao: string
+  /** Ausente é 1: as quantidades valem "por 1 unidade". */
+  quantidadeBase?: number
   itens: { materialComponenteId: string; quantidadePlanejada: number; unidadeDeMedida: string }[]
 }
 

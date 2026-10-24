@@ -151,9 +151,8 @@ ADR-0021._
 - [ ] **Dívida**: o `PATCH` de registro de consumo não confere se a ordem está em produção (o item adicionado confere).
 - [x] **Tela de lançamento de consumo por ordem** (ADR-0026): entregue, com "Adicionar item fora da lista" e lançamento
       tudo ou nada.
-- [ ] **Quantidade base da lista técnica** (ALTO RISCO: migração e mudança de cálculo; aguardando aprovação do
-      desenho): a lista passaria a dizer "para produzir N unidades (ou kg)"; o consumo planejado vira
-      item ÷ base × quantidade da ordem. Padrão 1 para não alterar as listas existentes. Exige ADR próprio.
+- [x] **Quantidade base da lista técnica** (ADR-0027, V17): entregue; padrão 1, comparação por unidade produzida.
+- [ ] **Prévia do consumo planejado** ao escolher a versão da lista na criação da ordem (hoje só se vê depois de criada).
 - [ ] **Relatórios, próximos passos**: exportar o consumo de ordens (CSV/Excel) e outros relatórios na mesma área.
 - [ ] **Autorização antes da validação** (opcional): hoje um corpo inválido de quem não tem permissão devolve
       400, não 403. Para inverter, a regra teria de ficar no filtro de segurança por caminho em vez de na

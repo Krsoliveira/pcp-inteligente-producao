@@ -15,8 +15,8 @@ vi.mock('../api/materiais', () => ({ listarMateriais: vi.fn() }))
 const compararMock = vi.mocked(compararListasTecnicas)
 const ROTA = '/listas-tecnicas/comparar'
 
-const versaoA = { id: 'l-1', listaId: 'lista-1', materialId: 'm-1', versao: 'v1', status: 'ATIVA' as const }
-const versaoB = { id: 'l-2', listaId: 'lista-1', materialId: 'm-1', versao: 'v2', status: 'EM_REVISAO' as const }
+const versaoA = { id: 'l-1', listaId: 'lista-1', materialId: 'm-1', versao: 'v1', quantidadeBase: 1, status: 'ATIVA' as const }
+const versaoB = { id: 'l-2', listaId: 'lista-1', materialId: 'm-1', versao: 'v2', quantidadeBase: 1, status: 'EM_REVISAO' as const }
 
 const comDiferencas: ComparacaoDeVersoes = {
   versaoA,
@@ -46,6 +46,23 @@ describe('ListaTecnicaComparacaoPage', () => {
       material({ id: 'm-4', codigo: '110000003', descricao: 'Tinta', tipo: 'MATERIA_PRIMA', unidadeDeMedida: 'l' }),
       material({ id: 'm-5', codigo: '110000004', descricao: 'Arruela', tipo: 'MATERIA_PRIMA', unidadeDeMedida: 'un' }),
     ])
+  })
+
+  it('versões com a mesma base não mostram o aviso de bases diferentes', async () => {
+    montar()
+    await screen.findByText('103.000.001 — Viga metálica')
+
+    expect(screen.queryByText(/usam bases diferentes/)).not.toBeInTheDocument()
+  })
+
+  it('versões com bases diferentes avisam que a comparação é por unidade produzida', async () => {
+    compararMock.mockResolvedValue({ ...comDiferencas, versaoB: { ...versaoB, quantidadeBase: 100 } })
+    montar()
+
+    const aviso = await screen.findByText(/usam bases diferentes/)
+
+    expect(aviso).toHaveTextContent('a v1 vale para 1 e a v2 para 100')
+    expect(aviso).toHaveTextContent('por unidade produzida')
   })
 
   it('compara as versões que estão na URL e mostra o produto', async () => {

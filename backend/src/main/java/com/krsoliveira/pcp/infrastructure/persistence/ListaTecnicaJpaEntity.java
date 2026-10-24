@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,9 @@ public class ListaTecnicaJpaEntity {
 
     @Column(nullable = false, length = 50)
     private String versao;
+
+    @Column(name = "quantidade_base", nullable = false, precision = 12, scale = 4)
+    private BigDecimal quantidadeBase;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 15)
@@ -67,6 +71,7 @@ public class ListaTecnicaJpaEntity {
         entity.listaId = lista.getListaId();
         entity.materialId = lista.getMaterialId();
         entity.versao = lista.getVersao();
+        entity.quantidadeBase = lista.getQuantidadeBase();
         entity.status = lista.getStatus();
         Assinatura a = lista.getAssinatura();
         entity.criadaEm = a.criadoEm();
@@ -85,7 +90,7 @@ public class ListaTecnicaJpaEntity {
         List<ItemListaTecnica> itensDominio = itens.stream()
                 .map(ItemListaTecnicaJpaEntity::paraDominio)
                 .toList();
-        return ListaTecnica.reconstituir(id, listaId, materialId, versao, status,
+        return ListaTecnica.reconstituir(id, listaId, materialId, versao, quantidadeBase, status,
                 itensDominio, new Assinatura(criadaPor, criadaEm, atualizadaPor, atualizadaEm));
     }
 
