@@ -34,6 +34,11 @@ import type { ConsumoMaterial, Material } from '../types'
 
 let contadorDeItens = 0
 
+/** O texto de ajuda fica sob o campo sem ocupar espaço: aparecer ou sumir não desloca o campo na linha. */
+const AJUDA_SEM_DESLOCAR = { formHelperText: { sx: { position: 'absolute', top: '100%', mx: 0, mt: 0.25, whiteSpace: 'nowrap' } } } as const
+/** Espaço fixo sob os campos da linha para o texto de ajuda, igual em todas as células para mantê-las alinhadas. */
+const ESPACO_PARA_AJUDA = { '& > td': { pb: 3.5 } } as const
+
 /**
  * Lançamento do consumo de uma ordem em produção, com todos os componentes numa tela (ADR-0026). O que ficou em
  * branco não é lançado; o que foi preenchido, e os itens adicionados fora da lista, entram juntos: tudo ou nada.
@@ -198,7 +203,7 @@ function LinhaDaLista({ consumo, material, rascunho, onChange }: LinhaDaListaPro
 
   return (
     <>
-      <TableRow>
+      <TableRow sx={ESPACO_PARA_AJUDA}>
         <TableCell>
           <Typography variant="body2" fontWeight={600}>{nome}</Typography>
           {material && <Typography variant="caption" color="text.secondary">{material.descricao}</Typography>}
@@ -206,7 +211,7 @@ function LinhaDaLista({ consumo, material, rascunho, onChange }: LinhaDaListaPro
         <TableCell align="right"><Typography variant="body2">{formatarQuantidade(consumo.quantidadePlanejada, consumo.unidadeDeMedida)}</Typography></TableCell>
         <TableCell>
           <TextField size="small" value={rascunho.qtd} onChange={(e) => onChange({ qtd: e.target.value })} placeholder="—"
-            slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': `Quantidade consumida de ${nome}` } }}
+            slotProps={{ ...AJUDA_SEM_DESLOCAR, htmlInput: { inputMode: 'decimal', 'aria-label': `Quantidade consumida de ${nome}` } }}
             helperText={temDesvio ? `Desvio: ${desvio > 0 ? '+' : ''}${formatarQuantidade(desvio, consumo.unidadeDeMedida)}` : undefined} />
         </TableCell>
         <TableCell>
@@ -242,7 +247,7 @@ function LinhaAdicionada({ item, opcoes, materialPorId, onChange, onRemover }: L
 
   return (
     <>
-      <TableRow>
+      <TableRow sx={ESPACO_PARA_AJUDA}>
         <TableCell>
           <TextField select size="small" fullWidth label="Material fora da lista" value={item.materialId}
             onChange={(e) => onChange({ materialId: e.target.value, alocado: {} })}>
@@ -254,7 +259,7 @@ function LinhaAdicionada({ item, opcoes, materialPorId, onChange, onRemover }: L
         <TableCell align="right"><Typography variant="body2" color="text.secondary">0 (não planejado)</Typography></TableCell>
         <TableCell>
           <TextField size="small" value={item.qtd} onChange={(e) => onChange({ qtd: e.target.value })} placeholder="Qtd"
-            slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': 'Quantidade consumida do item adicionado' } }}
+            slotProps={{ ...AJUDA_SEM_DESLOCAR, htmlInput: { inputMode: 'decimal', 'aria-label': 'Quantidade consumida do item adicionado' } }}
             helperText={material?.unidadeDeMedida} />
         </TableCell>
         <TableCell>
