@@ -3,9 +3,11 @@ package com.krsoliveira.pcp.infrastructure.web;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.consumo.AdicionarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.ConsultarConsumoMaterial;
+import com.krsoliveira.pcp.application.consumo.LancarConsumoDaOrdem;
 import com.krsoliveira.pcp.application.consumo.RegistrarConsumoMaterial;
 import com.krsoliveira.pcp.infrastructure.web.dto.AdicionarConsumoRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.ConsumoMaterialResponse;
+import com.krsoliveira.pcp.infrastructure.web.dto.LancarConsumoRequest;
 import com.krsoliveira.pcp.infrastructure.web.dto.RegistrarConsumoRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,13 +38,16 @@ public class ConsumoMaterialController {
     private final ConsultarConsumoMaterial consultarConsumoMaterial;
     private final RegistrarConsumoMaterial registrarConsumoMaterial;
     private final AdicionarConsumoMaterial adicionarConsumoMaterial;
+    private final LancarConsumoDaOrdem lancarConsumoDaOrdem;
 
     public ConsumoMaterialController(ConsultarConsumoMaterial consultarConsumoMaterial,
                                      RegistrarConsumoMaterial registrarConsumoMaterial,
-                                     AdicionarConsumoMaterial adicionarConsumoMaterial) {
+                                     AdicionarConsumoMaterial adicionarConsumoMaterial,
+                                     LancarConsumoDaOrdem lancarConsumoDaOrdem) {
         this.consultarConsumoMaterial = consultarConsumoMaterial;
         this.registrarConsumoMaterial = registrarConsumoMaterial;
         this.adicionarConsumoMaterial = adicionarConsumoMaterial;
+        this.lancarConsumoDaOrdem = lancarConsumoDaOrdem;
     }
 
     @PreAuthorize("hasAuthority('CONSUMO_VISUALIZAR')")
@@ -67,6 +72,22 @@ public class ConsumoMaterialController {
                                                               @RequestBody @Valid AdicionarConsumoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ConsumoMaterialResponse.de(adicionarConsumoMaterial.executar(request.paraComando(ordemId))));
+    }
+
+    @PreAuthorize("hasAuthority('CONSUMO_REGISTRAR') and (#request.itensAdicionais().isEmpty() or hasAuthority('CONSUMO_ADICIONAR_ITEM'))")
+    @PostMapping("/lancamento")
+    @Operation(summary = "Lançar o consumo da ordem de uma vez (tudo ou nada)",
+            description = "Registra o consumo de várias linhas da lista técnica (consumos) e adiciona itens que não estão "
+                    + "nela (itensAdicionais), na mesma transação: se qualquer linha for recusada, nada é lançado e nenhum "
+                    + "saldo de lote é baixado. Só em ordem em produção. Cada linha segue as regras do registro individual "
+                    + "(justificativa em caso de desvio, soma dos lotes igual à quantidade). Itens adicionais exigem também "
+                    + "a permissão CONSUMO_ADICIONAR_ITEM; produto acabado só em ordem do tipo Conversão. Devolve as linhas "
+                    + "lançadas.")
+    public ResponseEntity<List<ConsumoMaterialResponse>> lancar(@PathVariable UUID ordemId,
+                                                                 @RequestBody @Valid LancarConsumoRequest request) {
+        return ResponseEntity.ok(lancarConsumoDaOrdem.executar(request.paraComando(ordemId)).stream()
+                .map(ConsumoMaterialResponse::de)
+                .toList());
     }
 
     @PreAuthorize("hasAuthority('CONSUMO_REGISTRAR')")

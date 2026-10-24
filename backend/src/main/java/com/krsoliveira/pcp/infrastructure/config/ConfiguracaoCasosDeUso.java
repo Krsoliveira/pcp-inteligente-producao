@@ -17,6 +17,7 @@ import com.krsoliveira.pcp.application.comum.Transacao;
 import com.krsoliveira.pcp.application.comum.UsuarioAtual;
 import com.krsoliveira.pcp.application.consumo.AdicionarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.ConsultarConsumoMaterial;
+import com.krsoliveira.pcp.application.consumo.LancarConsumoDaOrdem;
 import com.krsoliveira.pcp.application.consumo.ProjetarConsumoMaterial;
 import com.krsoliveira.pcp.application.consumo.RegistrarConsumoMaterial;
 import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
@@ -110,6 +111,17 @@ public class ConfiguracaoCasosDeUso {
                                                       ExecucaoAuditada execucao) {
         return new AdicionarConsumoMaterial(ordemRepository, materialRepository, consumoRepository, tipoOrdemRepository,
                 registrarConsumoMaterial, execucao);
+    }
+
+    @Bean
+    LancarConsumoDaOrdem lancarConsumoDaOrdem(OrdemProducaoRepository ordemRepository,
+                                              ConsumoMaterialRepository consumoRepository,
+                                              MaterialRepository materialRepository,
+                                              RegistrarConsumoMaterial registrarConsumoMaterial,
+                                              AdicionarConsumoMaterial adicionarConsumoMaterial,
+                                              ExecucaoAuditada execucao) {
+        return new LancarConsumoDaOrdem(ordemRepository, consumoRepository, materialRepository,
+                registrarConsumoMaterial, adicionarConsumoMaterial, execucao);
     }
 
     @Bean

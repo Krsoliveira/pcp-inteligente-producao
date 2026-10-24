@@ -22,6 +22,7 @@ import { NotaFiscalDetalhePage } from './pages/NotaFiscalDetalhePage'
 import { EstoquePage } from './pages/EstoquePage'
 import { EstoqueResultadosPage } from './pages/EstoqueResultadosPage'
 import { EstoqueMaterialPage } from './pages/EstoqueMaterialPage'
+import { LancamentoDeConsumoPage } from './pages/LancamentoDeConsumoPage'
 import { PerfisAcessoPage } from './pages/PerfisAcessoPage'
 import { RelatorioConsumoOrdensPage } from './pages/RelatorioConsumoOrdensPage'
 import { TrocarSenhaPage } from './pages/TrocarSenhaPage'
@@ -57,6 +58,10 @@ const router = createBrowserRouter([
               { path: '/ordens', element: <OrdensPage /> },
               { path: '/ordens/resultados', element: <OrdensResultadosPage /> },
               { path: '/ordens/:id', element: <OrdemDetalhePage /> },
+              {
+                element: <ExigirPermissao qualquer={['CONSUMO_REGISTRAR']} />,
+                children: [{ path: '/ordens/:id/lancar-consumo', element: <LancamentoDeConsumoPage /> }],
+              },
             ],
           },
           // Suprimentos (ADR-0012)
