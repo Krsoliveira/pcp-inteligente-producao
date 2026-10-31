@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -40,11 +41,12 @@ import static org.assertj.core.api.Assertions.assertThat;
         })
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@AutoConfigureTestRestTemplate
 class PesquisaDeOrdensApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     private static final String ORDENS = "/api/v1/ordens-producao";
 
@@ -160,7 +162,7 @@ class PesquisaDeOrdensApiTest {
         assertThat(pesquisar("?fimDe=2999-01-10").getBody()).containsEntry("total", 2);
         assertThat(pesquisar("?fimAte=2020-01-09").getBody()).containsEntry("total", 0);
         assertThat(pesquisar("?fimDe=2020-01-01&fimAte=2020-01-31").getBody()).containsEntry("total", 5);
-        assertThat(pesquisar("?fimDe=2020-02-01&fimAte=2020-01-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(pesquisar("?fimDe=2020-02-01&fimAte=2020-01-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @Test
@@ -197,7 +199,7 @@ class PesquisaDeOrdensApiTest {
     @Test
     @DisplayName("período invertido devolve 422 e data inválida devolve 400")
     void periodoInvalido() {
-        assertThat(pesquisar("?de=2026-09-30&ate=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(pesquisar("?de=2026-09-30&ate=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(pesquisar("?de=ontem").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 

@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -41,11 +42,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SuppressWarnings({"unchecked", "rawtypes"})
+@AutoConfigureTestRestTemplate
 class AdicionarItemAoConsumoApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     private static final String ORDENS = "/api/v1/ordens-producao";
 
@@ -118,12 +120,12 @@ class AdicionarItemAoConsumoApiTest {
 
         ResponseEntity<Map> semJustificativa = adicionar(ordem, Map.of("materialId", lubrificante, "quantidadeConsumida", 1,
                 "alocacoes", List.of(Map.of("loteId", lotes.get(0).get("id"), "quantidade", 1))));
-        assertThat(semJustificativa.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(semJustificativa.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(lotesDisponiveis(lubrificante).get(0)).satisfies(l -> assertThat(numero(l, "saldo")).isEqualByComparingTo("5"));
 
         ResponseEntity<Map> repetido = adicionar(ordem, Map.of("materialId", aco, "quantidadeConsumida", 1, "justificativa", "x",
                 "alocacoes", List.of(Map.of("loteId", lotesDisponiveis(aco).get(0).get("id"), "quantidade", 1))));
-        assertThat(repetido.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(repetido.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat((String) repetido.getBody().get("detail")).contains("já está na ordem");
     }
 
@@ -131,11 +133,11 @@ class AdicionarItemAoConsumoApiTest {
     @DisplayName("produto acabado em ordem comum devolve 422 (só no tipo Conversão); ordem que não está em produção devolve 422")
     void produtoAcabadoEOrdemPlanejada() {
         ResponseEntity<Map> acabado = adicionar(ordem, Map.of("materialId", outroAcabado, "quantidadeConsumida", 1, "justificativa", "x"));
-        assertThat(acabado.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(acabado.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat((String) acabado.getBody().get("detail")).contains("Conversão");
 
         ResponseEntity<Map> planejada = adicionar(ordemPlanejada, Map.of("materialId", lubrificante, "quantidadeConsumida", 1, "justificativa", "x"));
-        assertThat(planejada.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(planejada.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat((String) planejada.getBody().get("detail")).contains("em produção");
     }
 

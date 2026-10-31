@@ -62,3 +62,4 @@ Regras dos ADRs deste projeto:
 | [0027](adr/0027-quantidade-base-da-lista-tecnica.md) | Quantidade base da lista técnica | Aceito |
 | [0028](adr/0028-etiqueta-do-lote-com-qr-code.md) | Etiqueta do lote com QR code | Aceito |
 | [0029](adr/0029-migracao-mui-6-para-9.md) | Migração do Material UI 6 para o 9 | Aceito |
+| [0030](adr/0030-migracao-spring-boot-3-para-4.md) | Migração do Spring Boot 3.5 para o 4.1 | Aceito |

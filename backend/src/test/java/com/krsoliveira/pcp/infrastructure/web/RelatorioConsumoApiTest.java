@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -41,11 +42,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SuppressWarnings({"unchecked", "rawtypes"})
+@AutoConfigureTestRestTemplate
 class RelatorioConsumoApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     private static final String RELATORIO = "/api/v1/relatorios/consumo-de-ordens";
     private static final String FIM = "2026-09-10";
@@ -155,8 +157,8 @@ class RelatorioConsumoApiTest {
         assertThat(relatorio("").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(relatorio("?de=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(relatorio("?de=ontem&ate=hoje").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(relatorio("?de=2026-09-30&ate=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-        assertThat(relatorio("?de=2025-01-01&ate=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(relatorio("?de=2026-09-30&ate=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(relatorio("?de=2025-01-01&ate=2026-09-01").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @Test

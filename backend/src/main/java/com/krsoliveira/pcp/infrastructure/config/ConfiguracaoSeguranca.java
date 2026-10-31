@@ -100,7 +100,7 @@ public class ConfiguracaoSeguranca {
                         .referrerPolicy(referrer -> referrer
                                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
                         // Desabilita APIs de browser que esta aplicação não usa.
-                        .permissionsPolicy(permissions -> permissions
+                        .permissionsPolicyHeader(permissions -> permissions
                                 .policy("camera=(), microphone=(), geolocation=(), payment=()"))
                 )
                 .authorizeHttpRequests(auth -> auth
@@ -175,8 +175,7 @@ public class ConfiguracaoSeguranca {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(usuarioDetailsService);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(usuarioDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }

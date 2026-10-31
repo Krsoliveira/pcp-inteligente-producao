@@ -4,14 +4,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -36,11 +37,12 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "pcp.seguranca.rate-limit.registrar=1000"
         })
 @Testcontainers
+@AutoConfigureTestRestTemplate
 class AuthControllerTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     @Autowired
     private TestRestTemplate rest;
@@ -59,6 +61,21 @@ class AuthControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNull();
+    }
+
+    @Test
+    @DisplayName("toda resposta leva os cabeçalhos de segurança (Permissions-Policy, Referrer-Policy, nosniff)")
+    void cabecalhosDeSeguranca() {
+        ResponseEntity<Void> response = rest.postForEntity(
+                "/api/v1/auth/registrar",
+                json(Map.of("nome", "Carla", "email", "carla@pcp.com", "senha", "Senha@123")),
+                Void.class);
+
+        HttpHeaders cabecalhos = response.getHeaders();
+        assertThat(cabecalhos.getFirst("Permissions-Policy"))
+                .isEqualTo("camera=(), microphone=(), geolocation=(), payment=()");
+        assertThat(cabecalhos.getFirst("Referrer-Policy")).isEqualTo("strict-origin-when-cross-origin");
+        assertThat(cabecalhos.getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
     }
 
     @Test

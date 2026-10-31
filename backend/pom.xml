@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.4</version>
+    <version>4.1.2</version>
     <relativePath/>
   </parent>
 
@@ -20,14 +20,14 @@
 
   <properties>
     <java.version>21</java.version>
-    <springdoc.version>2.8.17</springdoc.version>
+    <springdoc.version>3.2.0</springdoc.version>
   </properties>
 
   <dependencies>
     <!-- Web: API REST -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
 
     <!-- Persistência: JPA/Hibernate -->
@@ -44,8 +44,8 @@
 
     <!-- Migrações de banco versionadas -->
     <dependency>
-      <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-core</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-flyway</artifactId>
     </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
@@ -64,14 +64,6 @@
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
       <version>${springdoc.version}</version>
-    </dependency>
-    <!-- Sobrepõe o swagger-ui transitivo do springdoc 2.8.17 (5.32.2, com DOMPurify 3.3.2
-         vulnerável) por uma versão com DOMPurify 3.4.16. Remover quando o springdoc
-         da linha 2.8 trouxer um swagger-ui >= 5.34.0. -->
-    <dependency>
-      <groupId>org.webjars</groupId>
-      <artifactId>swagger-ui</artifactId>
-      <version>5.34.0</version>
     </dependency>
 
     <!-- Autenticação e autorização -->
@@ -113,8 +105,19 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-test</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- TestRestTemplate (no Boot 4 saiu do @SpringBootTest e virou módulo próprio) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-resttestclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-restclient</artifactId>
       <scope>test</scope>
     </dependency>
     <!-- Cliente HTTP que suporta PATCH no TestRestTemplate -->
@@ -130,12 +133,12 @@
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
+      <artifactId>testcontainers-postgresql</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
