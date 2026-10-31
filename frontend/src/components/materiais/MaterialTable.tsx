@@ -45,13 +45,16 @@ export function MaterialTable({ materiais, controle }: MaterialTableProps) {
         <TableBody>
           {materiais.map((m) => (
             <TableRow key={m.id} hover>
-              <TableCell><Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }} noWrap>{formatarCodigoMaterial(m.codigo)}</Typography></TableCell>
+              <TableCell><Typography
+                variant="body2"
+                noWrap
+                sx={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatarCodigoMaterial(m.codigo)}</Typography></TableCell>
               <TableCell>{m.descricao}</TableCell>
               <TableCell>
                 <Chip label={TIPO_MATERIAL_LABEL[m.tipo]} size="small"
                   sx={{ bgcolor: `${TIPO_COR[m.tipo]}14`, color: TIPO_COR[m.tipo], fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
               </TableCell>
-              <TableCell><Typography variant="body2" color="text.secondary">{m.unidadeDeMedida}</Typography></TableCell>
+              <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{m.unidadeDeMedida}</Typography></TableCell>
             </TableRow>
           ))}
         </TableBody>

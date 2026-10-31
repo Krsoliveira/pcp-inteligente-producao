@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography'
 import Tooltip from '@mui/material/Tooltip'
 import InputAdornment from '@mui/material/InputAdornment'
 import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 import { listarMateriais } from '../../api/materiais'
@@ -127,7 +127,7 @@ export function EntradaNotaFiscalDialog({ aberto, onFechar, onRegistrada }: Entr
           </Alert>
         )}
 
-        <Typography variant="overline" color="text.secondary">Nota fiscal</Typography>
+        <Typography variant="overline" sx={{ color: 'text.secondary' }}>Nota fiscal</Typography>
         <Grid container spacing={2} sx={{ mb: 2, mt: 0.5 }}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Fornecedor *" value={cabecalho.fornecedor} onChange={alterarCabecalho('fornecedor')}
@@ -155,7 +155,7 @@ export function EntradaNotaFiscalDialog({ aberto, onFechar, onRegistrada }: Entr
 
         <Divider sx={{ mb: 1.5 }} />
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="overline" color="text.secondary">
+          <Typography variant="overline" sx={{ color: 'text.secondary' }}>
             Itens ({itens.length}) — cada item vira um lote no estoque
           </Typography>
           <Button size="small" startIcon={<AddIcon />} onClick={() => setItens((atuais) => [...atuais, novoItem()])}>
@@ -169,7 +169,9 @@ export function EntradaNotaFiscalDialog({ aberto, onFechar, onRegistrada }: Entr
           return (
             <Box key={item.chave} sx={{ p: 1.5, mb: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="caption" fontWeight={600} color="text.secondary">Item {indice + 1}</Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, color: 'text.secondary' }}>Item {indice + 1}</Typography>
                 <Tooltip title={itens.length === 1 ? 'A nota precisa de pelo menos um item' : 'Remover item'}>
                   <span>
                     <IconButton size="small" aria-label={`Remover item ${indice + 1}`}

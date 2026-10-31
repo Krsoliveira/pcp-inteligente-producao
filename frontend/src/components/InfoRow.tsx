@@ -7,7 +7,9 @@ export function InfoRow({ label, children }: { label: string; children: ReactNod
   return (
     <>
       <Grid size={{ xs: 12, sm: 5 }}>
-        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <Typography
+          variant="caption"
+          sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
           {label}
         </Typography>
       </Grid>

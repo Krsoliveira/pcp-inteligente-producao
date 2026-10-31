@@ -143,15 +143,17 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
         <Grid container spacing={2} sx={{ mt: 0 }}>
           {/* Identificação */}
           <Grid size={12}>
-            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Identificação
             </Typography>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Código *" value={form.codigo} onChange={set('codigo')} fullWidth inputProps={{ maxLength: 30 }} placeholder="OP-0001" />
+            <TextField label="Código *" value={form.codigo} onChange={set('codigo')} fullWidth placeholder="OP-0001" slotProps={{ htmlInput: { maxLength: 30 } }} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Quantidade *" type="number" value={form.quantidade} onChange={set('quantidade')} fullWidth inputProps={{ min: 1 }} />
+            <TextField label="Quantidade *" type="number" value={form.quantidade} onChange={set('quantidade')} fullWidth slotProps={{ htmlInput: { min: 1 } }} />
           </Grid>
           {podeVerTipos && (
             <Grid size={12}>
@@ -190,7 +192,9 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
 
           {/* Produto */}
           <Grid size={12}>
-            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Produto e Lista Técnica
             </Typography>
           </Grid>
@@ -198,7 +202,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
             {carregandoMateriais ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CircularProgress size={18} />
-                <Typography variant="body2" color="text.secondary">Carregando materiais…</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Carregando materiais…</Typography>
               </Box>
             ) : (
               <TextField
@@ -212,8 +216,8 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
                 {materiaisDaOrdem.map((m) => (
                   <MenuItem key={m.id} value={m.id}>
                     <Box>
-                      <Typography variant="body2" fontWeight={500}>{formatarCodigoMaterial(m.codigo)}</Typography>
-                      <Typography variant="caption" color="text.secondary">{m.descricao}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{formatarCodigoMaterial(m.codigo)}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>{m.descricao}</Typography>
                     </Box>
                   </MenuItem>
                 ))}
@@ -239,7 +243,10 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
               {versoesEmUso.map((l) => (
                 <MenuItem key={l.id} value={l.id}>
                   {l.versao}
-                  <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    sx={{ color: 'text.secondary', ml: 1 }}>
                     ({l.itens.length} {l.itens.length === 1 ? 'componente' : 'componentes'})
                   </Typography>
                 </MenuItem>
@@ -251,7 +258,9 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
 
           {/* Execução */}
           <Grid size={12}>
-            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Execução
             </Typography>
           </Grid>

@@ -21,7 +21,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import EditIcon from '@mui/icons-material/EditOutlined'
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -117,16 +117,16 @@ export function PerfisAcessoPage() {
                     <TableRow key={p.id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" fontWeight={600}>{p.nome}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.nome}</Typography>
                           {(p.administrador || p.padraoDoAutocadastro) && <Chip label="Sistema" size="small" variant="outlined" sx={{ fontSize: '0.65rem' }} />}
                         </Box>
                       </TableCell>
-                      <TableCell><Typography variant="body2" color="text.secondary">{p.descricao || '—'}</Typography></TableCell>
+                      <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{p.descricao || '—'}</Typography></TableCell>
                       <TableCell align="center">{p.administrador ? 'Todas' : p.permissoes.length}</TableCell>
                       <TableCell align="center">{p.quantidadeDeUsuarios}</TableCell>
                       <TableCell>
                         <Typography variant="body2" noWrap>{formatarDataHora(p.atualizadoEm)}</Typography>
-                        <Typography variant="caption" color="text.secondary">{p.atualizadoPor}</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>{p.atualizadoPor}</Typography>
                       </TableCell>
                       <TableCell align="center">
                         <Tooltip title={podeGerenciar && !p.administrador ? 'Editar' : 'Ver permissões'}>

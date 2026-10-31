@@ -52,7 +52,9 @@ export function NotaFiscalDetalhePage() {
               <Grid container spacing={1.5}>
                 <InfoRow label="Fornecedor">{nota.fornecedor}</InfoRow>
                 <InfoRow label="Número">
-                  <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
                     {nota.numero}
                   </Typography>
                 </InfoRow>
@@ -62,7 +64,7 @@ export function NotaFiscalDetalhePage() {
                 <InfoRow label="Lançada">
                   <Box>
                     <Typography variant="body2">{nota.registradaPor}</Typography>
-                    <Typography variant="caption" color="text.secondary">{formatarDataHora(nota.registradaEm)}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{formatarDataHora(nota.registradaEm)}</Typography>
                   </Box>
                 </InfoRow>
               </Grid>
@@ -73,7 +75,7 @@ export function NotaFiscalDetalhePage() {
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 3, pb: 1 }}>
               <Typography variant="subtitle2">Itens — lotes recebidos</Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 Clique em um lote para ver o saldo e onde ele foi consumido.
               </Typography>
             </CardContent>

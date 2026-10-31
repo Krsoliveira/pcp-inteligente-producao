@@ -25,7 +25,7 @@ import DialogActions from '@mui/material/DialogActions'
 import TextField from '@mui/material/TextField'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined'
 import EditIcon from '@mui/icons-material/Edit'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
@@ -86,7 +86,7 @@ export function OrdemDetalhePage() {
     const m = materialPorId.get(id)
     return (
       <Tooltip title={m?.descricao ?? ''}>
-        <Typography variant="body2" fontWeight={500}>{m ? formatarCodigoMaterial(m.codigo) : '…'}</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>{m ? formatarCodigoMaterial(m.codigo) : '…'}</Typography>
       </Tooltip>
     )
   }
@@ -175,7 +175,9 @@ export function OrdemDetalhePage() {
                 <InfoRow label="Quantidade planejada">{ordem.quantidade.toLocaleString('pt-BR')} {material?.unidadeDeMedida}</InfoRow>
                 {ordem.quantidadeProduzida != null && (
                   <InfoRow label="Quantidade produzida">
-                    <Typography variant="body2" fontWeight={600} color="success.main">
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, color: 'success.main' }}>
                       {Number(ordem.quantidadeProduzida).toLocaleString('pt-BR')} {material?.unidadeDeMedida}
                     </Typography>
                   </InfoRow>
@@ -222,7 +224,7 @@ export function OrdemDetalhePage() {
                             <Typography variant="body2">{Number(item.quantidadePlanejada).toLocaleString('pt-BR')}</Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2" color="text.secondary">{item.unidadeDeMedida}</Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>{item.unidadeDeMedida}</Typography>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -242,7 +244,7 @@ export function OrdemDetalhePage() {
                 <Typography variant="subtitle2">Consumo de Materiais</Typography>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   {consumos.length > 0 && (
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                       {consumos.filter(c => c.registrado).length}/{consumos.length} registrados
                     </Typography>
                   )}
@@ -259,11 +261,13 @@ export function OrdemDetalhePage() {
               </Box>
               <Divider sx={{ mb: 2 }} />
               {!tem('CONSUMO_VISUALIZAR') ? (
-                <Typography variant="body2" color="text.secondary">O seu perfil não inclui a consulta de consumos de material.</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>O seu perfil não inclui a consulta de consumos de material.</Typography>
               ) : consumosQuery.isLoading ? (
                 <Skeleton variant="rounded" height={120} />
               ) : consumos.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>
                   Nenhum consumo projetado. Verifique a lista técnica.
                 </Typography>
               ) : (
@@ -299,17 +303,17 @@ export function OrdemDetalhePage() {
                               {c.registrado ? (
                                 <Typography variant="body2">{c.quantidadeConsumida?.toLocaleString('pt-BR')}</Typography>
                               ) : (
-                                <Typography variant="body2" color="text.disabled">—</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.disabled' }}>—</Typography>
                               )}
                             </TableCell>
                             <TableCell align="right">
                               {c.registrado && (
-                                <Typography variant="body2" color={temDesvio ? (desvio > 0 ? 'error.main' : 'warning.main') : 'text.secondary'} fontWeight={temDesvio ? 600 : 400}>
+                                <Typography variant="body2" sx={{ color: temDesvio ? (desvio > 0 ? 'error.main' : 'warning.main') : 'text.secondary', fontWeight: temDesvio ? 600 : 400 }}>
                                   {desvio > 0 ? '+' : ''}{desvio.toLocaleString('pt-BR')}
                                 </Typography>
                               )}
                             </TableCell>
-                            <TableCell><Typography variant="body2" color="text.secondary">{c.unidadeDeMedida}</Typography></TableCell>
+                            <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{c.unidadeDeMedida}</Typography></TableCell>
                             <TableCell>
                               {!c.registrado ? (
                                 <Chip label="Pendente" size="small" sx={{ bgcolor: 'rgba(217,119,6,0.10)', color: '#B45309', fontSize: '0.65rem', height: 18, border: 'none' }} />
@@ -354,7 +358,11 @@ export function OrdemDetalhePage() {
                 {lotes.map((lote) => (
                   <Grid key={lote.id} container spacing={2}>
                     <InfoRow label="Número do Lote">
-                      <Link component={RouterLink} to={`/lotes/${lote.id}`} variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
+                      <Link
+                        component={RouterLink}
+                        to={`/lotes/${lote.id}`}
+                        variant="body2"
+                        sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
                         {lote.numeroLote}
                       </Link>
                     </InfoRow>
@@ -435,7 +443,7 @@ function ConcluirOrdemDialog({ aberto, ordemId, onFechar, onSucesso }: ConcluirO
         </Alert>
         <Grid container spacing={2}>
           <Grid size={12}>
-            <TextField label="Quantidade produzida *" type="number" value={form.quantidadeProduzida || ''} onChange={(e) => setForm(p => ({ ...p, quantidadeProduzida: Number(e.target.value) }))} fullWidth inputProps={{ min: 0.0001, step: 0.0001 }} />
+            <TextField label="Quantidade produzida *" type="number" value={form.quantidadeProduzida || ''} onChange={(e) => setForm(p => ({ ...p, quantidadeProduzida: Number(e.target.value) }))} fullWidth slotProps={{ htmlInput: { min: 0.0001, step: 0.0001 } }} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField label="Data de fabricação *" type="date" value={form.dataFabricacao} onChange={(e) => setForm(p => ({ ...p, dataFabricacao: e.target.value }))} fullWidth slotProps={{ inputLabel: { shrink: true } }} />

@@ -108,8 +108,8 @@ export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, o
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         {consumo && (
           <Box sx={{ mb: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
-            <Typography variant="caption" color="text.secondary">Quantidade planejada</Typography>
-            <Typography variant="body2" fontWeight={600}>{formatarQuantidade(consumo.quantidadePlanejada, unidade)}</Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>Quantidade planejada</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatarQuantidade(consumo.quantidadePlanejada, unidade)}</Typography>
           </Box>
         )}
         <Grid container spacing={2}>
@@ -162,7 +162,7 @@ export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, o
                         <TableRow key={lote.id}>
                           <TableCell>
                             <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{lote.numeroLote}</Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                               {lote.origem === 'COMPRA' ? `NF ${lote.notaFiscal}` : 'Produção'}
                             </Typography>
                           </TableCell>
@@ -179,11 +179,11 @@ export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, o
                   </Table>
                 </TableContainer>
                 <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                  <Typography variant="body2" color={diferenca === 0 ? 'success.main' : 'warning.main'} fontWeight={600}>
+                  <Typography variant="body2" sx={{ color: diferenca === 0 ? 'success.main' : 'warning.main', fontWeight: 600 }}>
                     Alocado {formatarQuantidade(deUnidades(totalAlocado))} de {formatarQuantidade(quantidade, unidade)}
                   </Typography>
                   {saldoInsuficiente && (
-                    <Typography variant="body2" color="error.main">
+                    <Typography variant="body2" sx={{ color: 'error.main' }}>
                       Saldo disponível: {formatarQuantidade(deUnidades(saldoDisponivel), unidade)}
                     </Typography>
                   )}

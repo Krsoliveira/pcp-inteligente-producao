@@ -140,14 +140,14 @@ export function RelatorioConsumoOrdensPage() {
                     <TableRow key={`${l.ordemId}-${l.componenteCodigo}`} hover>
                       <TableCell>
                         {tem('ORDEM_VISUALIZAR') ? (
-                          <Link component={RouterLink} to={`/ordens/${l.ordemId}`} underline="hover" variant="body2" fontWeight={600} noWrap>
+                          <Link component={RouterLink} to={`/ordens/${l.ordemId}`} underline="hover" variant="body2" noWrap sx={{ fontWeight: 600 }}>
                             {l.ordemCodigo}
                           </Link>
                         ) : (
-                          <Typography variant="body2" fontWeight={600} noWrap>{l.ordemCodigo}</Typography>
+                          <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>{l.ordemCodigo}</Typography>
                         )}
                       </TableCell>
-                      <TableCell><Typography variant="body2" color="text.secondary" noWrap>{formatarData(l.fimPlanejado)}</Typography></TableCell>
+                      <TableCell><Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>{formatarData(l.fimPlanejado)}</Typography></TableCell>
                       <TableCell>
                         <Tooltip title={l.produtoDescricao}>
                           <Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>{formatarCodigoMaterial(l.produtoCodigo)}</Typography>
@@ -156,16 +156,18 @@ export function RelatorioConsumoOrdensPage() {
                       <TableCell><Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>{formatarCodigoMaterial(l.componenteCodigo)}</Typography></TableCell>
                       <TableCell sx={{ minWidth: 160 }}><Typography variant="body2">{l.componenteDescricao}</Typography></TableCell>
                       <TableCell align="right"><Typography variant="body2">{formatarQuantidade(l.quantidadePlanejada, l.unidadeDeMedida)}</Typography></TableCell>
-                      <TableCell align="right"><Typography variant="body2" fontWeight={600}>{formatarQuantidade(l.quantidadeConsumida, l.unidadeDeMedida)}</Typography></TableCell>
+                      <TableCell align="right"><Typography variant="body2" sx={{ fontWeight: 600 }}>{formatarQuantidade(l.quantidadeConsumida, l.unidadeDeMedida)}</Typography></TableCell>
                       <TableCell align="right">
-                        <Typography variant="body2" color={corDoDesvio(l.desvio)}>{formatarQuantidade(l.desvio, l.unidadeDeMedida)}</Typography>
+                        <Typography variant="body2" sx={{ color: corDoDesvio(l.desvio) }}>{formatarQuantidade(l.desvio, l.unidadeDeMedida)}</Typography>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', p: 2 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', p: 2 }}>
               Consumo total por componente (a soma dos lotes). Para ver de quais lotes saiu, abra a ordem.
             </Typography>
           </Box>

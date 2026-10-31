@@ -10,7 +10,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
 import Typography from '@mui/material/Typography'
 import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
-import CheckCircleIcon from '@mui/icons-material/CheckCircleOutline'
+import CheckCircleIcon from '@mui/icons-material/CheckCircleOutlined'
 import BlockIcon from '@mui/icons-material/Block'
 import EventIcon from '@mui/icons-material/EventOutlined'
 import { useQuery } from '@tanstack/react-query'
@@ -105,7 +105,9 @@ export function EstoqueMaterialPage() {
             <TabelaLotes lotes={paginacao.visiveis} coluna="origem" />
             <PaginacaoTabela total={paginacao.total} pagina={paginacao.pagina} tamanho={paginacao.tamanho}
               onPagina={paginacao.setPagina} onTamanho={paginacao.setTamanho} />
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 2, pb: 1 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', px: 2, pb: 1 }}>
               {filtrados.length} de {lotes.length} lotes
             </Typography>
           </>

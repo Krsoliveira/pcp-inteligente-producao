@@ -159,9 +159,9 @@ function IdentificacaoCard({ lote, material }: { lote: Lote; material?: Material
         <InfoRow label="Quantidade">{formatarQuantidade(lote.quantidade, lote.unidadeDeMedida)}</InfoRow>
         <InfoRow label="Saldo">
           <Box>
-            <Typography variant="body2" fontWeight={600}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
               {formatarQuantidade(lote.saldo, lote.unidadeDeMedida)}
-              <Typography component="span" variant="caption" color="text.secondary">
+              <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>
                 {` · ${Math.round((lote.saldo / lote.quantidade) * 100)}% disponível`}
               </Typography>
             </Typography>
@@ -198,12 +198,17 @@ function OrigemCompraCard({ lote }: { lote: Lote }) {
         <InfoRow label="Fornecedor">{lote.fornecedor ?? '—'}</InfoRow>
         <InfoRow label="Nota fiscal">
           {lote.notaFiscalId ? (
-            <Link component={RouterLink} to={`/notas-fiscais/${lote.notaFiscalId}`} variant="body2" fontWeight={600}
-              sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
+            <Link
+              component={RouterLink}
+              to={`/notas-fiscais/${lote.notaFiscalId}`}
+              variant="body2"
+              sx={{ fontWeight: 600, fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
               {lote.notaFiscal}
             </Link>
           ) : (
-            <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 600, fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
               {lote.notaFiscal ?? '—'}
             </Typography>
           )}
@@ -241,7 +246,7 @@ function OrigemProducaoCard({ lote }: { lote: Lote }) {
       ) : (
         <Grid container spacing={1.5}>
           <InfoRow label="Ordem de produção">
-            <Link component={RouterLink} to={`/ordens/${ordem.id}`} variant="body2" fontWeight={600}>
+            <Link component={RouterLink} to={`/ordens/${ordem.id}`} variant="body2" sx={{ fontWeight: 600 }}>
               {ordem.codigo}
             </Link>
           </InfoRow>
@@ -279,7 +284,9 @@ function MateriaisConsumidosCard({ ordemId, materialPorId, rastreio }: {
       ) : isError ? (
         <Alert severity="error">Não foi possível carregar os consumos.</Alert>
       ) : consumos.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+        <Typography
+          variant="body2"
+          sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>
           Nenhum consumo registrado para a ordem de origem.
         </Typography>
       ) : (
@@ -316,7 +323,7 @@ function LinhaConsumo({ consumo: c, material, lotes }: { consumo: ConsumoMateria
     <TableRow>
       <TableCell>
         <Tooltip title={material?.descricao ?? ''}>
-          <Typography variant="body2" fontWeight={500}>{material ? formatarCodigoMaterial(material.codigo) : '…'}</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>{material ? formatarCodigoMaterial(material.codigo) : '…'}</Typography>
         </Tooltip>
       </TableCell>
       <TableCell align="right">
@@ -329,8 +336,8 @@ function LinhaConsumo({ consumo: c, material, lotes }: { consumo: ConsumoMateria
       </TableCell>
       <TableCell align="right">
         {c.registrado && (
-          <Typography variant="body2" noWrap fontWeight={temDesvio ? 600 : 400}
-            color={temDesvio ? (desvio > 0 ? 'error.main' : 'warning.main') : 'text.secondary'}>
+          <Typography variant="body2" noWrap
+            sx={{ color: temDesvio ? (desvio > 0 ? 'error.main' : 'warning.main') : 'text.secondary', fontWeight: temDesvio ? 600 : 400 }}>
             {desvio > 0 ? '+' : ''}{formatarQuantidade(desvio)}
           </Typography>
         )}
@@ -339,7 +346,7 @@ function LinhaConsumo({ consumo: c, material, lotes }: { consumo: ConsumoMateria
         <LotesDeOrigem lotes={lotes} registrado={c.registrado} unidade={c.unidadeDeMedida} />
       </TableCell>
       <TableCell>
-        <Typography variant="body2" color={c.justificativa ? 'text.primary' : 'text.disabled'}>
+        <Typography variant="body2" sx={{ color: c.justificativa ? 'text.primary' : 'text.disabled' }}>
           {c.justificativa ?? '—'}
         </Typography>
       </TableCell>
@@ -352,12 +359,14 @@ function LinhaConsumo({ consumo: c, material, lotes }: { consumo: ConsumoMateria
 
 /** Links para os lotes de onde saiu o material; compra mostra a NF. */
 function LotesDeOrigem({ lotes, registrado, unidade }: { lotes?: LoteOrigem[]; registrado: boolean; unidade: string }) {
-  if (!registrado) return <Typography variant="body2" color="text.disabled">—</Typography>
+  if (!registrado) return (
+    <Typography variant="body2" sx={{ color: 'text.disabled' }}>—</Typography>
+  )
   if (!lotes) return <Skeleton width={120} />
   if (lotes.length === 0) {
     return (
       <Tooltip title="Consumo registrado antes da genealogia de lotes.">
-        <Typography variant="body2" color="text.disabled">Sem rastreio</Typography>
+        <Typography variant="body2" sx={{ color: 'text.disabled' }}>Sem rastreio</Typography>
       </Tooltip>
     )
   }
@@ -369,7 +378,9 @@ function LotesDeOrigem({ lotes, registrado, unidade }: { lotes?: LoteOrigem[]; r
             sx={{ fontFamily: 'monospace', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
             {l.numeroLote}
           </Link>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', display: 'block' }}>
             {formatarQuantidade(l.quantidade, unidade)}
             {l.origem === 'COMPRA' ? ` · NF ${l.notaFiscal} · ${l.fornecedor}` : ' · produção'}
           </Typography>
@@ -396,14 +407,18 @@ function OndeFoiUsadoCard({ lote, rastreio, carregando, erro, materialPorId }: {
       ) : erro ? (
         <Alert severity="error">Não foi possível carregar a rastreabilidade do lote.</Alert>
       ) : destinos.length === 0 ? (
-        <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+        <Typography
+          variant="body2"
+          sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>
           {lote.status === 'CONSUMIDO'
             ? 'Lote consumido antes da genealogia de lotes — sem registro de onde foi usado.'
             : 'Este lote ainda não foi usado em nenhuma ordem.'}
         </Typography>
       ) : (
         <>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', mb: 1.5 }}>
             {`Usado em ${destinos.length} ${destinos.length === 1 ? 'consumo' : 'consumos'} — `
               + `${formatarQuantidade(usado, lote.unidadeDeMedida)} de ${formatarQuantidade(lote.quantidade, lote.unidadeDeMedida)}.`}
           </Typography>
@@ -422,7 +437,7 @@ function OndeFoiUsadoCard({ lote, rastreio, carregando, erro, materialPorId }: {
                 {destinos.map((d) => (
                   <TableRow key={d.alocacaoId}>
                     <TableCell>
-                      <Link component={RouterLink} to={`/ordens/${d.ordemProducaoId}`} variant="body2" fontWeight={600} noWrap>
+                      <Link component={RouterLink} to={`/ordens/${d.ordemProducaoId}`} variant="body2" noWrap sx={{ fontWeight: 600 }}>
                         {d.ordemCodigo}
                       </Link>
                       <Box sx={{ mt: 0.25 }}><StatusOrdemBadge status={d.ordemStatus} /></Box>
@@ -440,7 +455,7 @@ function OndeFoiUsadoCard({ lote, rastreio, carregando, erro, materialPorId }: {
                           {d.loteGeradoNumero}
                         </Link>
                       ) : (
-                        <Typography variant="body2" color="text.disabled">Ordem em andamento</Typography>
+                        <Typography variant="body2" sx={{ color: 'text.disabled' }}>Ordem em andamento</Typography>
                       )}
                     </TableCell>
                     <TableCell><Assinatura usuario={d.alocadoPor} instante={d.alocadoEm} /></TableCell>
@@ -459,7 +474,7 @@ function Assinatura({ usuario, instante }: { usuario: string; instante: string }
   return (
     <Box>
       <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>{usuario}</Typography>
-      <Typography variant="caption" color="text.secondary" noWrap>{formatarDataHora(instante)}</Typography>
+      <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>{formatarDataHora(instante)}</Typography>
     </Box>
   )
 }

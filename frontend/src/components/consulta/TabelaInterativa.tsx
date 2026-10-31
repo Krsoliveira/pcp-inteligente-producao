@@ -160,7 +160,7 @@ interface ResumoDaTabelaProps {
 export function ResumoDaTabela({ exibidas, naPagina, filtrando, onLimpar }: ResumoDaTabelaProps) {
   return (
     <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
         {filtrando ? `Mostrando ${exibidas} de ${naPagina} linhas desta página` : `${naPagina} linhas nesta página`}
         {' · use os ícones do título para ordenar e filtrar'}
       </Typography>

@@ -99,7 +99,9 @@ export function TrocarSenhaPage() {
               autoComplete="new-password" fullWidth
             />
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', mr: 'auto' }}>
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', alignSelf: 'center', mr: 'auto' }}>
                 Sua senha nunca aparece no histórico do sistema.
               </Typography>
               <Button type="submit" variant="contained" disabled={isPending}>

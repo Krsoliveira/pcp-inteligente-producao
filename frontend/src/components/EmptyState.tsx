@@ -38,11 +38,15 @@ export function EmptyState({ Icone, titulo, descricao, acaoLabel, onAcao }: Empt
       >
         <Icone sx={{ fontSize: 28, color: 'text.disabled' }} />
       </Box>
-      <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+      <Typography
+        variant="subtitle1"
+        sx={{ fontWeight: 600, color: 'text.primary' }}>
         {titulo}
       </Typography>
       {descricao && (
-        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>
+        <Typography
+          variant="body2"
+          sx={{ color: 'text.secondary', maxWidth: 360 }}>
           {descricao}
         </Typography>
       )}
