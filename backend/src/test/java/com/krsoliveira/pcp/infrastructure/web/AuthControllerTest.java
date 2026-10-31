@@ -64,6 +64,21 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("toda resposta leva os cabeçalhos de segurança (Permissions-Policy, Referrer-Policy, nosniff)")
+    void cabecalhosDeSeguranca() {
+        ResponseEntity<Void> response = rest.postForEntity(
+                "/api/v1/auth/registrar",
+                json(Map.of("nome", "Carla", "email", "carla@pcp.com", "senha", "Senha@123")),
+                Void.class);
+
+        HttpHeaders cabecalhos = response.getHeaders();
+        assertThat(cabecalhos.getFirst("Permissions-Policy"))
+                .isEqualTo("camera=(), microphone=(), geolocation=(), payment=()");
+        assertThat(cabecalhos.getFirst("Referrer-Policy")).isEqualTo("strict-origin-when-cross-origin");
+        assertThat(cabecalhos.getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
+    }
+
+    @Test
     @DisplayName("registrar: e-mail duplicado retorna 409")
     void registrarEmailDuplicado() {
         Map<String, Object> corpo = Map.of("nome", "Bob", "email", "bob@pcp.com", "senha", "Senha@123");
