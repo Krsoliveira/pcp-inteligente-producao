@@ -45,7 +45,7 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
 | 🧪 **Qualidade** | Quase 900 testes automáticos: backend com unidade + integração com **Testcontainers** (PostgreSQL real, mais de 540) e frontend com **Vitest + Testing Library** (mais de 350). Um teste carrega o dataset inteiro e valida as invariantes do domínio; outro força a falha na última linha de um lançamento e prova que nada foi gravado. |
 | 🛡️ **DevSecOps** | CI com CodeQL, Semgrep, Gitleaks, Trivy, OWASP Dependency-Check (job próprio) e `npm audit`; Dependabot semanal. |
 | 📊 **Engenharia de dados** | Gerador Python determinístico (pipeline load → transform → validate → export) com sazonalidade, gargalos e desvios — sinal real para a IA. Datas ancoradas no dia da carga. |
-| 📝 **Decisões documentadas** | [27 ADRs](docs/README.md#índice-de-adrs) registram o *porquê* de cada escolha de arquitetura. |
+| 📝 **Decisões documentadas** | [29 ADRs](docs/README.md#índice-de-adrs) registram o *porquê* de cada escolha de arquitetura. |
 
 ## Funcionalidades
 
@@ -148,7 +148,7 @@ Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 | Camada | Tecnologias |
 |---|---|
 | **Backend** | Java 21, Spring Boot 3.5, Spring Security, JPA/Hibernate, Flyway, Bean Validation, springdoc-openapi (Swagger) |
-| **Frontend** | React 19, TypeScript, Vite, Material UI 6, TanStack Query, Zustand, ECharts |
+| **Frontend** | React 19, TypeScript, Vite, Material UI 9, TanStack Query, Zustand, ECharts |
 | **Dados** | PostgreSQL 16, gerador Python (biblioteca padrão) |
 | **Testes** | JUnit 5, AssertJ, Testcontainers (backend); Vitest, Testing Library (frontend) |
 | **DevOps** | Docker Compose, GitHub Actions, Dependabot |
