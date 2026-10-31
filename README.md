@@ -148,7 +148,7 @@ Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 | Camada | Tecnologias |
 |---|---|
 | **Backend** | Java 21, Spring Boot 3.5, Spring Security, JPA/Hibernate, Flyway, Bean Validation, springdoc-openapi (Swagger) |
-| **Frontend** | React 18, TypeScript, Vite, Material UI 6, TanStack Query, Zustand, ECharts |
+| **Frontend** | React 19, TypeScript, Vite, Material UI 6, TanStack Query, Zustand, ECharts |
 | **Dados** | PostgreSQL 16, gerador Python (biblioteca padrão) |
 | **Testes** | JUnit 5, AssertJ, Testcontainers (backend); Vitest, Testing Library (frontend) |
 | **DevOps** | Docker Compose, GitHub Actions, Dependabot |
