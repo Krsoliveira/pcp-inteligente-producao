@@ -10,6 +10,18 @@ updates:
     target-branch: develop
     schedule:
       interval: weekly
+    # Pacotes que só funcionam juntos sobem no mesmo PR (antes vinham React sem react-dom e ícones sem o
+    # @mui/material, e nenhum instalava). Nada é ignorado: o ignore também bloquearia correções de segurança.
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      mui:
+        patterns: ["@mui/*", "@emotion/*"]
+      build-e-testes:
+        patterns: ["vite", "@vitejs/*", "vitest", "@vitest/*", "jsdom", "@testing-library/*"]
+      demais-correcoes:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
   - package-ecosystem: github-actions
     directory: /
     target-branch: develop
