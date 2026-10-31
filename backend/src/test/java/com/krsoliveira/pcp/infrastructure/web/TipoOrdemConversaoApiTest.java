@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -39,11 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SuppressWarnings({"unchecked", "rawtypes"})
+@AutoConfigureTestRestTemplate
 class TipoOrdemConversaoApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     private static final String TIPOS = "/api/v1/tipos-ordem";
 
@@ -85,7 +87,7 @@ class TipoOrdemConversaoApiTest {
         ResponseEntity<Map> alteracao = rest.exchange(TIPOS + "/" + idDaConversao, HttpMethod.PUT,
                 comAuth(Map.of("nome", "Outro nome", "cor", "#000000")), Map.class);
 
-        assertThat(alteracao.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(alteracao.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(tipos()).anySatisfy(t -> assertThat(t).containsEntry("id", idDaConversao).containsEntry("nome", "Conversão"));
     }
 
@@ -93,7 +95,7 @@ class TipoOrdemConversaoApiTest {
     @DisplayName("lista de produto acabado não aceita produto acabado como componente (422); a de semiacabado aceita")
     void listaComAcabado() {
         ResponseEntity<Map> recusada = listaComComponente(acabado, acabado, "v1");
-        assertThat(recusada.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(recusada.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
 
         assertThat(listaComComponente(semiacabado, acabado, "v1").getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
@@ -104,7 +106,7 @@ class TipoOrdemConversaoApiTest {
         String lista = idDe(listaComComponente(semiacabado, acabado, "v2"));
         rest.exchange("/api/v1/listas-tecnicas/" + lista + "/ativar", HttpMethod.PATCH, comAuth(null), Void.class);
 
-        assertThat(criarOrdem("OP-CV-1", semiacabado, lista, null).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(criarOrdem("OP-CV-1", semiacabado, lista, null).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(criarOrdem("OP-CV-2", semiacabado, lista, idDaConversao).getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
@@ -114,7 +116,7 @@ class TipoOrdemConversaoApiTest {
         String lista = idDe(listaComComponente(acabado, materiaPrima, "v1"));
         rest.exchange("/api/v1/listas-tecnicas/" + lista + "/ativar", HttpMethod.PATCH, comAuth(null), Void.class);
 
-        assertThat(criarOrdem("OP-CV-3", acabado, lista, idDaConversao).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(criarOrdem("OP-CV-3", acabado, lista, idDaConversao).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(criarOrdem("OP-CV-4", acabado, lista, null).getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 

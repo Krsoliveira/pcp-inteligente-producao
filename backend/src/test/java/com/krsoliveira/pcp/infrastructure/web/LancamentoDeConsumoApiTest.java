@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -43,11 +44,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SuppressWarnings({"unchecked", "rawtypes"})
+@AutoConfigureTestRestTemplate
 class LancamentoDeConsumoApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     private static final String ORDENS = "/api/v1/ordens-producao";
     private static final String SENHA = "Senha@123";
@@ -110,7 +112,7 @@ class LancamentoDeConsumoApiTest {
         ResponseEntity<Map> recusado = lancarComoMapa(token, ordem, corpo(List.of(linha(ordem, aco, "25", null)),
                 List.of(item(cola, "4", null))));
 
-        assertThat(recusado.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(recusado.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat((String) recusado.getBody().get("detail")).contains("Material").contains("Justificativa");
         assertThat(saldo(aco)).as("o aço da linha válida não pode ter sido baixado").isEqualByComparingTo(acoAntes);
         assertThat(saldo(cola)).isEqualByComparingTo(colaAntes);
@@ -129,7 +131,7 @@ class LancamentoDeConsumoApiTest {
 
         ResponseEntity<Map> resposta = lancarComoMapa(token, ordem, corpo(List.of(linha(ordem, aco, "26", null)), List.of()));
 
-        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat((String) resposta.getBody().get("detail")).startsWith("Material ");
         assertThat(saldo(aco)).isEqualByComparingTo(acoAntes);
     }
@@ -139,11 +141,11 @@ class LancamentoDeConsumoApiTest {
     void regrasDaOrdem() {
         String planejada = criarOrdem();
         assertThat(lancarComoMapa(token, planejada, corpo(List.of(), List.of(item(cola, "1", "x")))).getStatusCode())
-                .isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                .isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(lancarComoMapa(token, "00000000-0000-0000-0000-0000000000bb", corpo(List.of(), List.of(item(cola, "1", "x")))).getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(lancarComoMapa(token, ordemEmProducao(), corpo(List.of(), List.of())).getStatusCode())
-                .isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                .isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @Test

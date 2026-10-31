@@ -20,15 +20,22 @@ import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.acesso.AcessoNegadoException;
 import com.krsoliveira.pcp.infrastructure.security.CorpoGrandeDemaisException;
 import com.krsoliveira.pcp.infrastructure.security.UsuarioDetailsService;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
+import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -44,11 +51,34 @@ import java.util.Map;
  *  - 422: regra de negócio violada
  */
 @RestControllerAdvice
-public class TratadorGlobalDeErros {
+public class TratadorGlobalDeErros implements ResponseBodyAdvice<ProblemDetail> {
+
+    /** Valor de {@code type} quando o erro não tem documentação própria (RFC 9457, seção 4.2.1). */
+    private static final URI TIPO_PADRAO = URI.create("about:blank");
+
+    @Override
+    public boolean supports(MethodParameter tipoDeRetorno, Class<? extends HttpMessageConverter<?>> conversor) {
+        return ProblemDetail.class.isAssignableFrom(tipoDeRetorno.getParameterType());
+    }
+
+    /**
+     * Mantém o {@code type} em toda resposta de erro. Até o Spring Framework 6 o {@code ProblemDetail} já nascia com
+     * {@code about:blank}; no 7 o campo começa vazio e o JSON deixa de trazê-lo. O contrato de {@code /api/v1} só
+     * cresce, então o campo continua presente (ADR-0030).
+     */
+    @Override
+    public ProblemDetail beforeBodyWrite(ProblemDetail problema, MethodParameter tipoDeRetorno, MediaType tipoDeConteudo,
+                                         Class<? extends HttpMessageConverter<?>> conversor,
+                                         ServerHttpRequest requisicao, ServerHttpResponse resposta) {
+        if (problema != null && problema.getType() == null) {
+            problema.setType(TIPO_PADRAO);
+        }
+        return problema;
+    }
 
     @ExceptionHandler(RegraDeNegocioException.class)
     public ProblemDetail regraDeNegocio(RegraDeNegocioException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
         problema.setTitle("Regra de negócio violada");
         problema.setDetail(ex.getMessage());
         return problema;
@@ -199,7 +229,7 @@ public class TratadorGlobalDeErros {
 
     @ExceptionHandler(CorpoGrandeDemaisException.class)
     public ProblemDetail corpoGrandeDemais(CorpoGrandeDemaisException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.PAYLOAD_TOO_LARGE);
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONTENT_TOO_LARGE);
         problema.setTitle("Conteúdo grande demais");
         problema.setDetail(ex.getMessage());
         return problema;

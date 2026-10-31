@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -41,11 +42,12 @@ import static org.assertj.core.api.Assertions.assertThat;
         })
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@AutoConfigureTestRestTemplate
 class VersoesDeListaTecnicaApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     private static final String LISTAS = "/api/v1/listas-tecnicas";
     private static final String ORDENS = "/api/v1/ordens-producao";
@@ -109,8 +111,8 @@ class VersoesDeListaTecnicaApiTest {
     void escolhaDaVersaoNaOrdem() {
         assertThat(criarOrdem("OP-V-001", idViga, idV1).getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(criarOrdem("OP-V-002", idViga, idV2).getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(criarOrdem("OP-V-003", idViga, idV3).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-        assertThat(criarOrdem("OP-V-004", idViga, idChapaV1).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(criarOrdem("OP-V-003", idViga, idV3).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(criarOrdem("OP-V-004", idViga, idChapaV1).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @Test
@@ -147,8 +149,8 @@ class VersoesDeListaTecnicaApiTest {
     @Test
     @DisplayName("comparar versões de listas diferentes ou a mesma versão duas vezes devolve 422")
     void comparacaoInvalida() {
-        assertThat(comparar(idV1, idChapaV1).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-        assertThat(comparar(idV1, idV1).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(comparar(idV1, idChapaV1).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(comparar(idV1, idV1).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @Test
@@ -174,14 +176,14 @@ class VersoesDeListaTecnicaApiTest {
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         assertThat(buscar(idV4)).containsEntry("status", "OBSOLETA");
         assertThat(buscar(idV2)).containsEntry("status", "ATIVA");
-        assertThat(criarOrdem("OP-V-011", idViga, idV4).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(criarOrdem("OP-V-011", idViga, idV4).getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @Test
     @DisplayName("retirar de uso uma versão que não está ativa devolve 422; versão inexistente, 404; sem token, 401")
     void retirarDeUsoInvalido() {
         assertThat(rest.exchange(LISTAS + "/" + idV3 + "/retirar-de-uso", HttpMethod.PATCH, comAuth(null), Map.class)
-                .getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                .getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(rest.exchange(LISTAS + "/00000000-0000-0000-0000-000000000000/retirar-de-uso", HttpMethod.PATCH,
                 comAuth(null), Map.class).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(rest.exchange(LISTAS + "/" + idV1 + "/retirar-de-uso", HttpMethod.PATCH, semAuth(null), Map.class)
