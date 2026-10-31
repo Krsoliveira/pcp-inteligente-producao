@@ -148,7 +148,9 @@ export function PerfilDialog({ aberto, onFechar, perfil, catalogo, permissoesDoU
 
         <Divider sx={{ my: 2.5 }} />
         <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Permissões</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+        <Typography
+          variant="caption"
+          sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
           Marque o que quem tiver este perfil poderá fazer. Você só pode marcar o que você mesmo possui.
         </Typography>
 
@@ -160,7 +162,7 @@ export function PerfilDialog({ aberto, onFechar, perfil, catalogo, permissoesDoU
             return (
               <Box key={area} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
                 <FormControlLabel
-                  label={<Typography variant="body2" fontWeight={600}>{area}</Typography>}
+                  label={<Typography variant="body2" sx={{ fontWeight: 600 }}>{area}</Typography>}
                   control={
                     <Checkbox
                       size="small"

@@ -8,7 +8,7 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
-import Grid from '@mui/material/Grid2'
+import Grid from '@mui/material/Grid'
 import Skeleton from '@mui/material/Skeleton'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
@@ -21,7 +21,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
 import BlockIcon from '@mui/icons-material/Block'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ativarListaTecnica, buscarListaTecnicaPorId, listarListasTecnicas } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
@@ -122,7 +122,9 @@ export function ListaTecnicaDetalhePage() {
                 </InfoRow>
                 <InfoRow label="Quantidade base">
                   {`${formatarQuantidade(lista.quantidadeBase, material?.unidadeDeMedida)}`}
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'text.secondary', display: 'block' }}>
                     Os componentes valem para produzir essa quantidade.
                   </Typography>
                 </InfoRow>
@@ -130,11 +132,11 @@ export function ListaTecnicaDetalhePage() {
                 <InfoRow label="Componentes">{String(lista.itens.length)}</InfoRow>
                 <InfoRow label="Criada">
                   <Typography variant="body2">{formatarDataHora(lista.criadaEm)}</Typography>
-                  <Typography variant="caption" color="text.secondary">{lista.criadaPor}</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>{lista.criadaPor}</Typography>
                 </InfoRow>
                 <InfoRow label="Alterada">
                   <Typography variant="body2">{formatarDataHora(lista.atualizadaEm)}</Typography>
-                  <Typography variant="caption" color="text.secondary">{lista.atualizadaPor}</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>{lista.atualizadaPor}</Typography>
                 </InfoRow>
               </Grid>
             </CardContent>
@@ -162,9 +164,12 @@ export function ListaTecnicaDetalhePage() {
                     const componente = materialPorId.get(item.materialComponenteId)
                     return (
                       <TableRow key={item.id} hover>
-                        <TableCell><Typography variant="body2" color="text.secondary">{i + 1}</Typography></TableCell>
+                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{i + 1}</Typography></TableCell>
                         <TableCell>
-                          <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }} noWrap>
+                          <Typography
+                            variant="body2"
+                            noWrap
+                            sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
                             {componente ? formatarCodigoMaterial(componente.codigo) : '—'}
                           </Typography>
                         </TableCell>

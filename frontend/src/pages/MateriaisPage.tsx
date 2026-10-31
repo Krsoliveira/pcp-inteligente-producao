@@ -20,7 +20,7 @@ import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
-import Grid from '@mui/material/Grid2'
+import Grid from '@mui/material/Grid'
 import AddIcon from '@mui/icons-material/Add'
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -135,7 +135,7 @@ function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         <Grid container spacing={2} sx={{ mt: 0 }}>
           <Grid size={12}>
-            <TextField label="Descrição *" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} fullWidth inputProps={{ maxLength: 200 }} autoFocus />
+            <TextField label="Descrição *" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} fullWidth autoFocus slotProps={{ htmlInput: { maxLength: 200 } }} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField select label="Tipo *" value={form.tipo} onChange={(e) => setForm(p => ({ ...p, tipo: e.target.value as TipoMaterial }))} fullWidth helperText={`Código gerado automaticamente: ${FAIXA_CODIGO[form.tipo]}`}>
@@ -145,7 +145,7 @@ function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Unidade de Medida *" value={form.unidadeDeMedida} onChange={(e) => setForm(p => ({ ...p, unidadeDeMedida: e.target.value }))} fullWidth inputProps={{ maxLength: 10 }} placeholder="un, kg, m…" helperText={form.tipo === 'MATERIA_PRIMA' ? 'Matéria-prima não possui lista técnica.' : ''} />
+            <TextField label="Unidade de Medida *" value={form.unidadeDeMedida} onChange={(e) => setForm(p => ({ ...p, unidadeDeMedida: e.target.value }))} fullWidth placeholder="un, kg, m…" helperText={form.tipo === 'MATERIA_PRIMA' ? 'Matéria-prima não possui lista técnica.' : ''} slotProps={{ htmlInput: { maxLength: 10 } }} />
           </Grid>
         </Grid>
       </DialogContent>

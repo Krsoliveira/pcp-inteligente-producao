@@ -76,7 +76,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
               sx={{ cursor: 'pointer' }}
             >
               <TableCell>
-                <Typography variant="body2" fontWeight={600} color="primary" noWrap>
+                <Typography variant="body2" color="primary" noWrap sx={{ fontWeight: 600 }}>
                   {ordem.codigo}
                 </Typography>
               </TableCell>
@@ -87,12 +87,12 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
                 <Typography variant="body2">{ordem.quantidade.toLocaleString('pt-BR')}</Typography>
               </TableCell>
               <TableCell>
-                <Typography variant="body2" color="text.secondary" noWrap>
+                <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
                   {formatarData(ordem.inicioPlanejado)}
                 </Typography>
               </TableCell>
               <TableCell>
-                <Typography variant="body2" color="text.secondary" noWrap>
+                <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
                   {formatarData(ordem.fimPlanejado)}
                 </Typography>
               </TableCell>

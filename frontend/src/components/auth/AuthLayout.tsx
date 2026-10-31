@@ -42,17 +42,17 @@ export function AuthLayout({ titulo, children, rodape }: AuthLayoutProps) {
           >
             <FactoryIcon sx={{ color: 'white', fontSize: 36 }} aria-hidden />
           </Box>
-          <Typography variant="h5" component="p" fontWeight={700}>
+          <Typography variant="h5" component="p" sx={{ fontWeight: 700 }}>
             PCP Inteligente
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Plataforma de Produção com IA
           </Typography>
         </Box>
 
         <Card>
           <CardContent sx={{ p: 4 }}>
-            <Typography variant="h6" component="h1" fontWeight={600} gutterBottom>
+            <Typography variant="h6" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
               {titulo}
             </Typography>
             {children}
@@ -62,9 +62,7 @@ export function AuthLayout({ titulo, children, rodape }: AuthLayoutProps) {
         {rodape && (
           <Typography
             variant="body2"
-            color="text.secondary"
-            sx={{ display: 'block', textAlign: 'center', mt: 3 }}
-          >
+            sx={{ color: 'text.secondary', display: 'block', textAlign: 'center', mt: 3 }}>
             {rodape}
           </Typography>
         )}

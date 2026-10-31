@@ -16,8 +16,8 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import AddIcon from '@mui/icons-material/AddCircleOutline'
-import DeleteIcon from '@mui/icons-material/DeleteOutline'
+import AddIcon from '@mui/icons-material/AddCircleOutlineOutlined'
+import DeleteIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { lancarConsumo, listarConsumosPorOrdem } from '../api/consumos'
 import { listarMateriais } from '../api/materiais'
@@ -150,7 +150,7 @@ export function LancamentoDeConsumoPage() {
                   </TableHead>
                   <TableBody>
                     {pendentes.length === 0 && adicionados.length === 0 && (
-                      <TableRow><TableCell colSpan={4}><Typography variant="body2" color="text.secondary">Todas as linhas da lista já foram lançadas.</Typography></TableCell></TableRow>
+                      <TableRow><TableCell colSpan={4}><Typography variant="body2" sx={{ color: 'text.secondary' }}>Todas as linhas da lista já foram lançadas.</Typography></TableCell></TableRow>
                     )}
                     {pendentes.map((c) => (
                       <LinhaDaLista key={c.id} consumo={c} material={materialPorId.get(c.materialId)}
@@ -172,7 +172,9 @@ export function LancamentoDeConsumoPage() {
           )}
 
           {lancados.length > 0 && (
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mb: 2 }}>
               Já lançados ({lancados.length}): {lancados.map((c) => rotulo(c.materialId)).join(', ')}.
             </Typography>
           )}
@@ -205,8 +207,8 @@ function LinhaDaLista({ consumo, material, rascunho, onChange }: LinhaDaListaPro
     <>
       <TableRow sx={ESPACO_PARA_AJUDA}>
         <TableCell>
-          <Typography variant="body2" fontWeight={600}>{nome}</Typography>
-          {material && <Typography variant="caption" color="text.secondary">{material.descricao}</Typography>}
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{nome}</Typography>
+          {material && <Typography variant="caption" sx={{ color: 'text.secondary' }}>{material.descricao}</Typography>}
         </TableCell>
         <TableCell align="right"><Typography variant="body2">{formatarQuantidade(consumo.quantidadePlanejada, consumo.unidadeDeMedida)}</Typography></TableCell>
         <TableCell>
@@ -256,7 +258,7 @@ function LinhaAdicionada({ item, opcoes, materialPorId, onChange, onRemover }: L
             ))}
           </TextField>
         </TableCell>
-        <TableCell align="right"><Typography variant="body2" color="text.secondary">0 (não planejado)</Typography></TableCell>
+        <TableCell align="right"><Typography variant="body2" sx={{ color: 'text.secondary' }}>0 (não planejado)</Typography></TableCell>
         <TableCell>
           <TextField size="small" value={item.qtd} onChange={(e) => onChange({ qtd: e.target.value })} placeholder="Qtd"
             slotProps={{ ...AJUDA_SEM_DESLOCAR, htmlInput: { inputMode: 'decimal', 'aria-label': 'Quantidade consumida do item adicionado' } }}

@@ -169,7 +169,10 @@ export function ListaTecnicaComparacaoPage() {
                           <Chip label={rotulo} size="small" sx={{ bgcolor: `${cor}14`, color: cor, fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }} noWrap>
+                          <Typography
+                            variant="body2"
+                            noWrap
+                            sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
                             {componente ? formatarCodigoMaterial(componente.codigo) : '—'}
                           </Typography>
                         </TableCell>

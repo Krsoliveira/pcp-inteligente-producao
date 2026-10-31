@@ -25,14 +25,16 @@ export function KpiCard({ titulo, valor, subtitulo, Icone, cor, link }: KpiCardP
     <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
         <Box sx={{ minWidth: 0 }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
+          <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary' }}>
             {titulo}
           </Typography>
-          <Typography variant="h4" fontWeight={700} color={corDoValor ?? 'text.primary'}>
+          <Typography variant="h4" sx={{ color: corDoValor ?? 'text.primary', fontWeight: 700 }}>
             {valor}
           </Typography>
           {subtitulo && (
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block' }}>
               {subtitulo}
             </Typography>
           )}
@@ -45,7 +47,7 @@ export function KpiCard({ titulo, valor, subtitulo, Icone, cor, link }: KpiCardP
       </Box>
       {link && (
         <Box className="kpi-acao" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 'auto', pt: 1.5, color: 'text.secondary' }}>
-          <Typography variant="caption" fontWeight={600}>{link.rotulo}</Typography>
+          <Typography variant="caption" sx={{ fontWeight: 600 }}>{link.rotulo}</Typography>
           <ArrowForwardIcon sx={{ fontSize: 14 }} />
         </Box>
       )}

@@ -145,7 +145,7 @@ function Detalhes({ evento }: { evento: EventoAuditoria }) {
     <Box component="dl" sx={{ m: 0, mt: 0.5, display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: 1.5, rowGap: 0.25 }}>
       {entradas.map(([campo, valor]) => (
         <Box key={campo} sx={{ display: 'contents' }}>
-          <Typography component="dt" variant="caption" color="text.secondary">
+          <Typography component="dt" variant="caption" sx={{ color: 'text.secondary' }}>
             {CAMPO_LABEL[campo] ?? campo}
           </Typography>
           <Typography component="dd" variant="caption" sx={{ m: 0, overflowWrap: 'anywhere' }}>
@@ -191,7 +191,7 @@ export function HistoricoAuditoria({ tipoEntidade, entidadeId, titulo = 'Histór
           <HistoryIcon color="action" fontSize="small" />
           <Typography variant="subtitle2">{titulo}</Typography>
           {data && data.total > 0 && (
-            <Typography variant="caption" color="text.secondary">({data.total})</Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>({data.total})</Typography>
           )}
         </Box>
         <Divider sx={{ mb: 2 }} />
@@ -201,7 +201,9 @@ export function HistoricoAuditoria({ tipoEntidade, entidadeId, titulo = 'Histór
         ) : isError ? (
           <Alert severity="error">Não foi possível carregar o histórico.</Alert>
         ) : eventos.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>
             Nenhum evento registrado. Registros criados antes da trilha de auditoria não têm histórico.
           </Typography>
         ) : (
@@ -215,8 +217,8 @@ export function HistoricoAuditoria({ tipoEntidade, entidadeId, titulo = 'Histór
                 </Box>
                 <Box sx={{ pb: 2, minWidth: 0, flex: 1 }}>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 1 }}>
-                    <Typography variant="body2" fontWeight={600}>{ACAO_LABEL[evento.acao] ?? evento.acao}</Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{ACAO_LABEL[evento.acao] ?? evento.acao}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                       {formatarDataHora(evento.ocorridoEm)} · {evento.usuario}
                     </Typography>
                   </Box>

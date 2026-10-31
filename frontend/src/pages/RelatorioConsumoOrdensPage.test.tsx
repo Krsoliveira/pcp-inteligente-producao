@@ -1,3 +1,4 @@
+import { createTheme } from '@mui/material/styles'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -75,6 +76,18 @@ describe('RelatorioConsumoOrdensPage', () => {
     expect(linhaDaChapa.getByText('26 kg')).toBeInTheDocument() // consumido (a soma dos lotes)
     expect(linhaDaChapa.getByText('1 kg')).toBeInTheDocument() // desvio
     expect(within(screen.getByText('Parafuso M8').closest('tr') as HTMLElement).getByText('-2 un')).toBeInTheDocument()
+  })
+
+  it('o desvio é colorido: acima do planejado em vermelho, abaixo em laranja, sem desvio em cinza', async () => {
+    // Regressão da migração para o MUI 9: o `color` calculado na Typography deixou de pintar o texto.
+    const { palette } = createTheme()
+    montar(`${ROTA}?de=2026-09-01&ate=2026-09-30`)
+    const desvioDe = async (componente: string, texto: string) =>
+      within((await screen.findAllByText(componente))[0].closest('tr') as HTMLElement).getByText(texto)
+
+    expect(await desvioDe('Chapa de aço', '1 kg')).toHaveStyle({ color: palette.error.main })
+    expect(await desvioDe('Parafuso M8', '-2 un')).toHaveStyle({ color: palette.warning.main })
+    expect(await desvioDe('Carcaça usinada', '0 un')).toHaveStyle({ color: palette.text.secondary })
   })
 
   it('o código da ordem abre a ordem para quem pode vê-la', async () => {

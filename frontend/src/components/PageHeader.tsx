@@ -66,14 +66,14 @@ export function PageHeader({ titulo, subtitulo, breadcrumbs, action }: PageHeade
                 <Link
                   key={bc.label}
                   underline="hover"
-                  color="text.secondary"
-                  sx={{ fontSize: '0.75rem', cursor: 'pointer' }}
                   onClick={() => navigate(bc.href!)}
-                >
+                  sx={{ color: 'text.secondary', fontSize: '0.75rem', cursor: 'pointer' }}>
                   {bc.label}
                 </Link>
               ) : (
-                <Typography key={bc.label} color="text.primary" sx={{ fontSize: '0.75rem' }}>
+                <Typography
+                  key={bc.label}
+                  sx={{ color: 'text.primary', fontSize: '0.75rem' }}>
                   {bc.label}
                 </Typography>
               )
@@ -82,7 +82,9 @@ export function PageHeader({ titulo, subtitulo, breadcrumbs, action }: PageHeade
         )}
         <Typography variant="h5">{titulo}</Typography>
         {subtitulo && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', mt: 0.25 }}>
             {subtitulo}
           </Typography>
         )}

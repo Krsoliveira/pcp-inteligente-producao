@@ -154,10 +154,7 @@ export function Layout() {
                     </ListItemIcon>
                     <ListItemText
                       primary={item.label}
-                      primaryTypographyProps={{
-                        fontSize: '0.825rem',
-                        fontWeight: ativo ? 600 : 400,
-                      }}
+                      slotProps={{ primary: { sx: { fontSize: '0.825rem', fontWeight: ativo ? 600 : 400 } } }}
                     />
                   </ListItemButton>
                 )
@@ -197,7 +194,7 @@ export function Layout() {
             }}
           >
             <ListItemIcon sx={{ minWidth: 32 }}><PasswordIcon fontSize="small" /></ListItemIcon>
-            <ListItemText primary="Alterar minha senha" primaryTypographyProps={{ fontSize: '0.825rem' }} />
+            <ListItemText primary="Alterar minha senha" slotProps={{ primary: { sx: { fontSize: '0.825rem' } } }} />
           </ListItemButton>
         )}
         <ListItemButton
@@ -220,7 +217,7 @@ export function Layout() {
           </ListItemIcon>
           <ListItemText
             primary="Sair"
-            primaryTypographyProps={{ fontSize: '0.825rem' }}
+            slotProps={{ primary: { sx: { fontSize: '0.825rem' } } }}
           />
         </ListItemButton>
       </List>
@@ -260,7 +257,7 @@ export function Layout() {
           >
             <FactoryIcon sx={{ color: 'white', fontSize: 16 }} />
           </Box>
-          <Typography variant="subtitle2" fontWeight={700}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             PCP Inteligente
           </Typography>
           <Box sx={{ flexGrow: 1 }} />

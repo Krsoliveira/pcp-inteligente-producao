@@ -62,7 +62,10 @@ export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
             return (
               <TableRow key={p.materialId} hover onClick={() => navigate(`/estoque/${p.materialId}`)} sx={{ cursor: 'pointer' }}>
                 <TableCell>
-                  <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }} noWrap>
+                  <Typography
+                    variant="body2"
+                    noWrap
+                    sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
                     {formatarCodigoMaterial(p.codigo)}
                   </Typography>
                 </TableCell>
@@ -71,29 +74,27 @@ export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
                   <Chip size="small" variant="outlined" label={TIPO_MATERIAL_LABEL[p.tipo]} sx={{ fontSize: '0.7rem' }} />
                 </TableCell>
                 <TableCell align="right">
-                  <Typography variant="body2" fontWeight={600} noWrap
-                    color={p.saldoDisponivel > 0 ? 'text.primary' : 'text.disabled'}>
+                  <Typography variant="body2" noWrap sx={{ color: p.saldoDisponivel > 0 ? 'text.primary' : 'text.disabled', fontWeight: 600 }}>
                     {formatarQuantidade(p.saldoDisponivel, p.unidadeDeMedida)}
                   </Typography>
                 </TableCell>
                 <TableCell align="center">{p.lotesDisponiveis}</TableCell>
                 <TableCell align="right">
-                  <Typography variant="body2" noWrap color={p.saldoIndisponivel > 0 ? 'warning.main' : 'text.disabled'}>
+                  <Typography variant="body2" noWrap sx={{ color: p.saldoIndisponivel > 0 ? 'warning.main' : 'text.disabled' }}>
                     {formatarQuantidade(p.saldoIndisponivel, p.unidadeDeMedida)}
                   </Typography>
                 </TableCell>
                 <TableCell>
                   {p.proximoVencimento ? (
                     <Tooltip title={alerta ? `Vence em ${dias} dias` : ''}>
-                      <Typography variant="body2" noWrap color={alerta ? 'warning.main' : 'text.secondary'}
-                        fontWeight={alerta ? 600 : 400}>
+                      <Typography variant="body2" noWrap sx={{ color: alerta ? 'warning.main' : 'text.secondary', fontWeight: alerta ? 600 : 400 }}>
                         {formatarData(p.proximoVencimento)}
                       </Typography>
                     </Tooltip>
-                  ) : <Typography variant="body2" color="text.disabled">—</Typography>}
+                  ) : <Typography variant="body2" sx={{ color: 'text.disabled' }}>—</Typography>}
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary" noWrap>{formatarDataHora(p.ultimaEntrada)}</Typography>
+                  <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>{formatarDataHora(p.ultimaEntrada)}</Typography>
                 </TableCell>
               </TableRow>
             )

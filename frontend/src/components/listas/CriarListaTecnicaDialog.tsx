@@ -7,13 +7,13 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
 import Divider from '@mui/material/Divider'
-import Grid from '@mui/material/Grid2'
+import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutlineOutlined'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { cadastrarListaTecnica } from '../../api/listasTecnicas'
 import { listarMateriais } from '../../api/materiais'
@@ -151,7 +151,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
               helperText={`Os componentes valem para produzir ${base.trim() || '…'} ${donoUnidade}.`} />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField label="Versão *" value={versao} onChange={(e) => setVersao(e.target.value)} fullWidth placeholder="v1, v2-rev-a…" inputProps={{ maxLength: 50 }} />
+            <TextField label="Versão *" value={versao} onChange={(e) => setVersao(e.target.value)} fullWidth placeholder="v1, v2-rev-a…" slotProps={{ htmlInput: { maxLength: 50 } }} />
           </Grid>
         </Grid>
 
@@ -160,7 +160,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
           <Box>
             <Typography variant="subtitle2">Componentes</Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {donoEhSemiacabado
                 ? 'Esta lista pode consumir produto acabado (conversão); a ordem precisará ser do tipo Conversão.'
                 : 'Matéria-prima e semiacabado. Produto acabado só entra em lista de semiacabado (conversão).'}
@@ -176,8 +176,8 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
                 <MenuItem key={m.id} value={m.id}>{formatarCodigoMaterial(m.codigo)} — {m.descricao}</MenuItem>
               ))}
             </TextField>
-            <TextField label="Qtd" type="number" value={item.quantidadePlanejada} onChange={(e) => updateItem(idx, 'quantidadePlanejada', e.target.value)} sx={{ width: 90 }} inputProps={{ min: 0.0001, step: 0.0001 }} />
-            <TextField label="Un." value={item.unidadeDeMedida} onChange={(e) => updateItem(idx, 'unidadeDeMedida', e.target.value)} sx={{ width: 70 }} inputProps={{ maxLength: 10 }} />
+            <TextField label="Qtd" type="number" value={item.quantidadePlanejada} onChange={(e) => updateItem(idx, 'quantidadePlanejada', e.target.value)} sx={{ width: 90 }} slotProps={{ htmlInput: { min: 0.0001, step: 0.0001 } }} />
+            <TextField label="Un." value={item.unidadeDeMedida} onChange={(e) => updateItem(idx, 'unidadeDeMedida', e.target.value)} sx={{ width: 70 }} slotProps={{ htmlInput: { maxLength: 10 } }} />
             <IconButton aria-label={`Remover componente ${idx + 1}`} onClick={() => removeItem(idx)} disabled={itens.length === 1} sx={{ mt: 0.5 }}>
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
