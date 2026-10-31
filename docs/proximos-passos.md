@@ -203,8 +203,9 @@ _Várias versões em uso por lista técnica, retirar de uso, escolha da versão 
       **"caminho de migalhas" de alterações**: linha do tempo de quem mudou o quê e quando,
       navegável a partir do registro. A trilha de auditoria (ADR-0011) e o componente
       `HistoricoAuditoria` já existem em ordem e lote e são o ponto de partida. Exige ADR.
-- [ ] Subir o Node do CI para 22+ (o Node 20 saiu de suporte) e atualizar Vitest, jsdom e
-      jest-dom, que hoje estão presos a versões compatíveis com Node 20 (ADR-0017).
+- [x] Subir o Node do CI para 22 (o Node 20 saiu de suporte em abril de 2026).
+- [ ] Atualizar jsdom (30), Vite (8, com `@vitejs/plugin-react` 6), Vitest e jest-dom, presos a versões
+      compatíveis com Node 20 (ADR-0017). O jsdom 30 exige Node 22.22+ ou 24.15+ também na máquina local.
 - [ ] Os lotes de um material (tela de estoque do material) e a posição de estoque ainda
       baixam o conjunto inteiro: lotes por material paginam só na tela, e a agregação do estoque
       roda sobre todos os materiais. Migrar para pesquisa/filtro em SQL se passarem de ~1000

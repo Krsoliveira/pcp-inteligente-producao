@@ -84,6 +84,9 @@ public class ConfiguracaoSeguranca {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // CSRF depende de o navegador anexar a credencial sozinho (cookie de sessão). Aqui o JWT vai no
+                // cabeçalho Authorization, que outro site não consegue fazer o navegador enviar, e não há sessão.
+                // Se o token um dia for para cookie, a proteção CSRF precisa voltar.
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
