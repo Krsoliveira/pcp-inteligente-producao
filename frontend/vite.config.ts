@@ -5,13 +5,17 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          mui: ['@mui/material', '@mui/icons-material'],
-          echarts: ['echarts', 'echarts-for-react'],
-          query: ['@tanstack/react-query'],
+        // Bibliotecas em pedaços próprios: mudam pouco e ficam em cache no navegador entre versões da aplicação.
+        // O Vite 8 (Rolldown) trocou o manualChunks em objeto por grupos que casam o caminho do módulo.
+        codeSplitting: {
+          groups: [
+            { name: 'react', test: /node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/ },
+            { name: 'mui', test: /node_modules[\\/](@mui|@emotion)[\\/]/ },
+            { name: 'echarts', test: /node_modules[\\/](echarts|echarts-for-react|zrender)[\\/]/ },
+            { name: 'query', test: /node_modules[\\/]@tanstack[\\/]/ },
+          ],
         },
       },
     },
