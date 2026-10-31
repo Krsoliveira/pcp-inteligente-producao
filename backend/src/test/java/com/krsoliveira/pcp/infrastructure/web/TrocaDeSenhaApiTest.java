@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -15,7 +16,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -44,11 +45,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SuppressWarnings({"unchecked", "rawtypes"})
+@AutoConfigureTestRestTemplate
 class TrocaDeSenhaApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
 
     private static final String ACESSOS = "/api/v1/acessos";
     private static final String PROVISORIA = "Provisoria#2026";
@@ -125,9 +127,9 @@ class TrocaDeSenhaApiTest {
         String email = criarUsuario(admin, "valida", idDoPerfil("Visualizador"));
         String token = login(email, PROVISORIA);
 
-        assertThat(trocar(token, "errada12345", "MinhaNovaSenha1").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(trocar(token, "errada12345", "MinhaNovaSenha1").getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         ResponseEntity<Map> igual = trocar(token, PROVISORIA, PROVISORIA);
-        assertThat(igual.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(igual.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(igual.getBody().get("detail").toString()).contains("diferente da atual");
         assertThat(trocar(token, PROVISORIA, "curta").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(trocar(token, PROVISORIA, "a".repeat(73)).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
