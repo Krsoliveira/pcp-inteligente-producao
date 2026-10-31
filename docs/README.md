@@ -61,3 +61,4 @@ Regras dos ADRs deste projeto:
 | [0026](adr/0026-lancamento-de-consumo-por-ordem.md) | Lançamento do consumo por ordem, com todos os componentes e tudo ou nada | Aceito |
 | [0027](adr/0027-quantidade-base-da-lista-tecnica.md) | Quantidade base da lista técnica | Aceito |
 | [0028](adr/0028-etiqueta-do-lote-com-qr-code.md) | Etiqueta do lote com QR code | Aceito |
+| [0029](adr/0029-migracao-mui-6-para-9.md) | Migração do Material UI 6 para o 9 | Aceito |

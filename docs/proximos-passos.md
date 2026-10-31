@@ -233,8 +233,8 @@ _Várias versões em uso por lista técnica, retirar de uso, escolha da versão 
 3. **Deploy** — adiado por decisão: será feito em planos pagos (provedor a definir).
    Ver a seção [Deploy: preparação pendente](#deploy-preparação-pendente).
 4. **Migrações de versão principal** (fechadas no Dependabot, a fazer em PRs próprios):
-   Spring Boot 4 + springdoc 3, MUI 6 → 9 (com ADR).
-   Já feitas: React 19, React Router 7, ECharts 6, Vite 8 + plugin-react 6, Vitest 5, jsdom 30, jest-dom 7,
+   Spring Boot 4 + springdoc 3 (com ADR).
+   Já feitas: MUI 9 (ADR-0029), React 19, React Router 7, ECharts 6, Vite 8 + plugin-react 6, Vitest 5, jsdom 30, jest-dom 7,
    TypeScript 7 (compilador nativo; o VS Code usa o próprio TypeScript, a não ser com a extensão oficial "TypeScript (Native Preview)").
 5. Depois:
    - etapa de qualidade após a produção (inspeção e laudo do lote);

@@ -84,7 +84,9 @@ export function EtiquetaDoLoteDialog({ lote, material, aberto, onFechar }: Etiqu
     <Dialog open={aberto} onClose={onFechar} maxWidth="sm">
       <DialogTitle>Etiqueta do lote</DialogTitle>
       <DialogContent>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography
+          variant="body2"
+          sx={{ color: 'text.secondary', mb: 2 }}>
           O QR code abre este lote no sistema (com login). Tamanho: 100 × 50 mm.
         </Typography>
         <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, width: 'fit-content', mx: 'auto' }}>

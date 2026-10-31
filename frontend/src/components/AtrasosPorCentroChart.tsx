@@ -36,12 +36,15 @@ export function AtrasosPorCentroChart({ atrasos = [], onSelecionar }: AtrasosPor
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 3, height: '100%' }}>
-        <Typography variant="subtitle1" fontWeight={600}>Atrasos por centro de trabalho</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Atrasos por centro de trabalho</Typography>
+        <Typography
+          variant="caption"
+          sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
           Ordens abertas depois do fim planejado{onSelecionar ? ' · clique numa barra para ver as ordens' : ''}
         </Typography>
         {atrasos.length === 0 ? (
-          <Typography color="text.secondary" sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography
+            sx={{ color: 'text.secondary', mt: 4, textAlign: 'center' }}>
             Nenhum centro com ordens atrasadas
           </Typography>
         ) : (

@@ -59,7 +59,7 @@ describe('EstoqueResultadosPage', () => {
     montar()
     await screen.findByText('Aço inox')
 
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Só com saldo' }))
+    await userEvent.click(screen.getByRole('switch', { name: 'Só com saldo' }))
     await userEvent.click(screen.getByRole('button', { name: 'Pesquisar' }))
 
     await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(`${ROTA}?somenteComSaldo=true`))
@@ -84,7 +84,7 @@ describe('EstoqueResultadosPage', () => {
 
     await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(ROTA))
     expect(screen.getByTestId('rota')).not.toHaveTextContent('busca')
-    expect(screen.getByRole('checkbox', { name: 'Só com saldo' })).not.toBeChecked()
+    expect(screen.getByRole('switch', { name: 'Só com saldo' })).not.toBeChecked()
   })
 
   it('mostra uma mensagem quando nenhum material atende aos filtros', async () => {

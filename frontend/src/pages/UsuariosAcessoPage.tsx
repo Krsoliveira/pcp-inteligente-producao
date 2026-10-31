@@ -93,8 +93,8 @@ export function UsuariosAcessoPage() {
                 <TableBody>
                   {tabela.linhas.map((u) => (
                     <TableRow key={u.id} hover>
-                      <TableCell><Typography variant="body2" fontWeight={600}>{u.nome}</Typography></TableCell>
-                      <TableCell><Typography variant="body2" color="text.secondary">{u.email}</Typography></TableCell>
+                      <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{u.nome}</Typography></TableCell>
+                      <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{u.email}</Typography></TableCell>
                       <TableCell>{u.perfilNome ?? '—'}</TableCell>
                       <TableCell><Typography variant="body2" noWrap>{formatarDataHora(u.criadoEm)}</Typography></TableCell>
                       <TableCell align="center">

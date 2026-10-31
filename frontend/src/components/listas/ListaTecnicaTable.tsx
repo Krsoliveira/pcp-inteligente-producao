@@ -10,7 +10,7 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined'
 import BlockIcon from '@mui/icons-material/Block'
 import { StatusListaBadge, rotuloDoStatusDeLista } from '../StatusBadge'
 import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
@@ -66,7 +66,10 @@ export function ListaTecnicaTable({ listas, materialPorId, onAtivar, onRetirarDe
             return (
               <TableRow key={l.id} hover onClick={() => navigate(`/listas-tecnicas/${l.id}`)} sx={{ cursor: 'pointer' }}>
                 <TableCell>
-                  <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }} noWrap>
+                  <Typography
+                    variant="body2"
+                    noWrap
+                    sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
                     {material ? formatarCodigoMaterial(material.codigo) : '—'}
                   </Typography>
                 </TableCell>

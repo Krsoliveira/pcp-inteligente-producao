@@ -60,16 +60,18 @@ export function NotaFiscalTable({ notas, materialPorId, controle }: NotaFiscalTa
           {notas.map((nota) => (
             <TableRow key={nota.id} hover onClick={() => navigate(`/notas-fiscais/${nota.id}`)} sx={{ cursor: 'pointer' }}>
               <TableCell>
-                <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>{nota.numero}</Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, fontFamily: 'monospace' }}>{nota.numero}</Typography>
               </TableCell>
               <TableCell><Typography variant="body2">{nota.fornecedor}</Typography></TableCell>
-              <TableCell><Typography variant="body2" color="text.secondary">{formatarData(nota.dataEmissao)}</Typography></TableCell>
+              <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{formatarData(nota.dataEmissao)}</Typography></TableCell>
               <TableCell><Typography variant="body2">{formatarData(nota.dataRecebimento)}</Typography></TableCell>
               <TableCell align="center">{nota.quantidadeItens}</TableCell>
-              <TableCell><Typography variant="body2" color="text.secondary" noWrap>{resumoMateriais(nota)}</Typography></TableCell>
+              <TableCell><Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>{resumoMateriais(nota)}</Typography></TableCell>
               <TableCell>
                 <Typography variant="body2" noWrap>{formatarDataHora(nota.registradaEm)}</Typography>
-                <Typography variant="caption" color="text.secondary">{nota.registradaPor}</Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>{nota.registradaPor}</Typography>
               </TableCell>
             </TableRow>
           ))}

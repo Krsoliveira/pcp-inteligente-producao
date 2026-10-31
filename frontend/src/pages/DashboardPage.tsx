@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Grid from '@mui/material/Grid2'
+import Grid from '@mui/material/Grid'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -179,7 +179,7 @@ export function DashboardPage() {
         <Grid size={{ xs: 12, xl: 7 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
                 Ordens Recentes
               </Typography>
               {isLoading ? (

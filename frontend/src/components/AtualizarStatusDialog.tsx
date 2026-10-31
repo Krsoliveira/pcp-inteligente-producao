@@ -76,16 +76,16 @@ export function AtualizarStatusDialog({ ordem, onFechar }: AtualizarStatusDialog
           </Alert>
         )}
         <Box sx={{ mb: 2 }}>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             Ordem
           </Typography>
-          <Typography fontWeight={600}>{ordem?.codigo}</Typography>
+          <Typography sx={{ fontWeight: 600 }}>{ordem?.codigo}</Typography>
         </Box>
         <Box sx={{ mb: 2 }}>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             Status atual
           </Typography>
-          <Typography fontWeight={500}>
+          <Typography sx={{ fontWeight: 500 }}>
             {ordem ? STATUS_LABEL[ordem.status] : ''}
           </Typography>
         </Box>

@@ -18,7 +18,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import TextField from '@mui/material/TextField'
-import Grid from '@mui/material/Grid2'
+import Grid from '@mui/material/Grid'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
@@ -98,7 +98,7 @@ export function TiposOrdemPage() {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" color="text.secondary">{t.descricao ?? '—'}</Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>{t.descricao ?? '—'}</Typography>
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -189,13 +189,15 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         <Grid container spacing={2} sx={{ mt: 0 }}>
           <Grid size={12}>
-            <TextField label="Nome *" value={form.nome} onChange={(e) => setForm(p => ({ ...p, nome: e.target.value }))} fullWidth inputProps={{ maxLength: 60 }} placeholder="Ex.: Produção Normal" />
+            <TextField label="Nome *" value={form.nome} onChange={(e) => setForm(p => ({ ...p, nome: e.target.value }))} fullWidth placeholder="Ex.: Produção Normal" slotProps={{ htmlInput: { maxLength: 60 } }} />
           </Grid>
           <Grid size={12}>
-            <TextField label="Descrição" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} fullWidth multiline rows={2} inputProps={{ maxLength: 200 }} />
+            <TextField label="Descrição" value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} fullWidth multiline rows={2} slotProps={{ htmlInput: { maxLength: 200 } }} />
           </Grid>
           <Grid size={12}>
-            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>Cor do badge</Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', mb: 1, display: 'block' }}>Cor do badge</Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
               {CORES_SUGERIDAS.map((cor) => (
                 <Box
@@ -211,7 +213,7 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
             </Box>
             <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ width: 28, height: 28, borderRadius: 1, bgcolor: form.cor, flexShrink: 0 }} />
-              <TextField label="Hex" value={form.cor} onChange={(e) => setForm(p => ({ ...p, cor: e.target.value }))} size="small" inputProps={{ maxLength: 7 }} sx={{ width: 110 }} />
+              <TextField label="Hex" value={form.cor} onChange={(e) => setForm(p => ({ ...p, cor: e.target.value }))} size="small" sx={{ width: 110 }} slotProps={{ htmlInput: { maxLength: 7 } }} />
               <Box sx={{ ml: 'auto' }}><TipoOrdemBadge nome={form.nome || 'Preview'} cor={form.cor} /></Box>
             </Box>
           </Grid>

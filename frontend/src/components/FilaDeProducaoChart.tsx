@@ -42,15 +42,18 @@ export function FilaDeProducaoChart({ contagem = {}, onSelecionar }: FilaDeProdu
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 3, height: '100%' }}>
-        <Typography variant="subtitle1" fontWeight={600}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           Fila de produção
         </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+        <Typography
+          variant="caption"
+          sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
           {totalAberto} {totalAberto === 1 ? 'ordem aberta' : 'ordens abertas'}
           {onSelecionar ? ' · clique numa barra para ver as ordens' : ''}
         </Typography>
         {totalAberto === 0 ? (
-          <Typography color="text.secondary" sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography
+            sx={{ color: 'text.secondary', mt: 4, textAlign: 'center' }}>
             Nenhuma ordem em andamento
           </Typography>
         ) : (
@@ -60,7 +63,9 @@ export function FilaDeProducaoChart({ contagem = {}, onSelecionar }: FilaDeProdu
             onEvents={onSelecionar ? { click: (e: { dataIndex: number }) => onSelecionar(ETAPAS_DA_FILA[e.dataIndex].status) } : undefined}
           />
         )}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+        <Typography
+          variant="caption"
+          sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
           {encerradas} {encerradas === 1 ? 'ordem encerrada' : 'ordens encerradas'} (concluídas ou canceladas) não entram na fila.
         </Typography>
       </CardContent>

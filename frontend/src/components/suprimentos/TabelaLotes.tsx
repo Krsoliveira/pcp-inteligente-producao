@@ -44,13 +44,16 @@ export function TabelaLotes({ lotes, coluna, materialPorId }: TabelaLotesProps) 
             return (
               <TableRow key={lote.id} hover onClick={() => navigate(`/lotes/${lote.id}`)} sx={{ cursor: 'pointer' }}>
                 <TableCell>
-                  <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }} noWrap>{lote.numeroLote}</Typography>
+                  <Typography
+                    variant="body2"
+                    noWrap
+                    sx={{ fontWeight: 600, fontFamily: 'monospace' }}>{lote.numeroLote}</Typography>
                 </TableCell>
                 <TableCell>
                   {coluna === 'material' ? (
                     <Typography variant="body2" noWrap>
                       {formatarCodigoMaterial(material?.codigo)}
-                      <Typography component="span" variant="caption" color="text.secondary">
+                      <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>
                         {material ? ` · ${material.descricao}` : ''}
                       </Typography>
                     </Typography>
@@ -59,7 +62,7 @@ export function TabelaLotes({ lotes, coluna, materialPorId }: TabelaLotesProps) 
                       <Typography variant="body2" noWrap>Compra · NF {lote.notaFiscal}</Typography>
                     </Tooltip>
                   ) : (
-                    <Typography variant="body2" color="text.secondary">Produção</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Produção</Typography>
                   )}
                 </TableCell>
                 <TableCell align="right">
@@ -69,11 +72,11 @@ export function TabelaLotes({ lotes, coluna, materialPorId }: TabelaLotesProps) 
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary">{formatarData(lote.dataFabricacao)}</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>{formatarData(lote.dataFabricacao)}</Typography>
                 </TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                    <Typography variant="body2" color={vencendo ? 'warning.main' : 'text.secondary'} fontWeight={vencendo ? 600 : 400}>
+                    <Typography variant="body2" sx={{ color: vencendo ? 'warning.main' : 'text.secondary', fontWeight: vencendo ? 600 : 400 }}>
                       {formatarData(lote.dataValidade)}
                     </Typography>
                     {vencendo && (

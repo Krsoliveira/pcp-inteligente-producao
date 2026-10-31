@@ -48,15 +48,18 @@ export function EntregasPorMesChart({ entregas = [], acaoDoCabecalho, onSelecion
       <CardContent sx={{ p: 3, height: '100%' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
           <Box>
-            <Typography variant="subtitle1" fontWeight={600}>Entregas por mês</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Entregas por mês</Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
               Ordens pelo mês do fim planejado, sem as canceladas{onSelecionarMes ? ' · clique num mês para ver as ordens' : ''}
             </Typography>
           </Box>
           {acaoDoCabecalho}
         </Box>
         {total === 0 ? (
-          <Typography color="text.secondary" sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography
+            sx={{ color: 'text.secondary', mt: 4, textAlign: 'center' }}>
             Nenhuma ordem com fim planejado neste período
           </Typography>
         ) : (

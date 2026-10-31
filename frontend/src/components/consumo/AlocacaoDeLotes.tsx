@@ -59,7 +59,9 @@ export function AlocacaoDeLotes({ materialId, quantidade, unidade, alocado, onCh
   return (
     <Box sx={{ pl: 2, py: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 0.5 }}>
-        <Typography variant="caption" color="text.secondary" fontWeight={600}>De quais lotes saiu?</Typography>
+        <Typography
+          variant="caption"
+          sx={{ color: 'text.secondary', fontWeight: 600 }}>De quais lotes saiu?</Typography>
         <Button size="small" startIcon={<AutoFixHighIcon />} disabled={lotes.length === 0} onClick={() => setManual(false)}>
           Distribuir (FEFO)
         </Button>
@@ -97,11 +99,11 @@ export function AlocacaoDeLotes({ materialId, quantidade, unidade, alocado, onCh
             </TableBody>
           </Table>
           <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-            <Typography variant="caption" color={diferenca === 0 ? 'success.main' : 'warning.main'} fontWeight={600}>
+            <Typography variant="caption" sx={{ color: diferenca === 0 ? 'success.main' : 'warning.main', fontWeight: 600 }}>
               Alocado {formatarQuantidade(deUnidades(totalAlocado))} de {formatarQuantidade(quantidade, unidade)}
             </Typography>
             {paraUnidades(quantidade) > saldoDisponivel && (
-              <Typography variant="caption" color="error.main">Saldo disponível: {formatarQuantidade(deUnidades(saldoDisponivel), unidade)}</Typography>
+              <Typography variant="caption" sx={{ color: 'error.main' }}>Saldo disponível: {formatarQuantidade(deUnidades(saldoDisponivel), unidade)}</Typography>
             )}
           </Box>
         </>
