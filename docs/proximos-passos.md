@@ -204,8 +204,9 @@ _Várias versões em uso por lista técnica, retirar de uso, escolha da versão 
       navegável a partir do registro. A trilha de auditoria (ADR-0011) e o componente
       `HistoricoAuditoria` já existem em ordem e lote e são o ponto de partida. Exige ADR.
 - [x] Subir o Node do CI para 22 (o Node 20 saiu de suporte em abril de 2026).
-- [ ] Atualizar jsdom (30), Vite (8, com `@vitejs/plugin-react` 6), Vitest e jest-dom, presos a versões
-      compatíveis com Node 20 (ADR-0017). O jsdom 30 exige Node 22.22+ ou 24.15+ também na máquina local.
+- [x] Atualizar jsdom (27 → 30), Vite (6 → 8, com `@vitejs/plugin-react` 6), Vitest (4 → 5) e jest-dom
+      (6 → 7), que estavam presos ao Node 20 (ADR-0017). O jsdom 30 exige Node 22.22+ ou 24.15+ também na
+      máquina local. O Vite 8 empacota com Rolldown: a divisão em pedaços foi para `codeSplitting`.
 - [ ] Os lotes de um material (tela de estoque do material) e a posição de estoque ainda
       baixam o conjunto inteiro: lotes por material paginam só na tela, e a agregação do estoque
       roda sobre todos os materiais. Migrar para pesquisa/filtro em SQL se passarem de ~1000
@@ -232,11 +233,11 @@ _Várias versões em uso por lista técnica, retirar de uso, escolha da versão 
 3. **Deploy** — adiado por decisão: será feito em planos pagos (provedor a definir).
    Ver a seção [Deploy: preparação pendente](#deploy-preparação-pendente).
 4. **Migrações de versão principal** (fechadas no Dependabot, a fazer em PRs próprios):
-   Spring Boot 4 + springdoc 3, React 19, React Router 7, Vite 8 + plugin-react 6,
-   ECharts 6.
+   Spring Boot 4 + springdoc 3, MUI 6 → 9 (com ADR).
+   Já feitas: React 19, React Router 7, ECharts 6, Vite 8 + plugin-react 6, Vitest 5, jsdom 30, jest-dom 7,
+   TypeScript 7 (compilador nativo; o VS Code usa o próprio TypeScript, a não ser com a extensão oficial "TypeScript (Native Preview)").
 5. Depois:
    - etapa de qualidade após a produção (inspeção e laudo do lote);
-   - testes automatizados de frontend (Vitest);
    - carregar o ECharts sob demanda (bundle de ~1 MB).
 
 ## Deploy: preparação pendente

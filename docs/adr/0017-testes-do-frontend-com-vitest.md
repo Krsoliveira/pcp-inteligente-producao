@@ -51,3 +51,10 @@ tem referências, então a checagem real de tipos era a do `npm run build`.
     jsdom e jest-dom; reavaliar junto.
   - Testes com temporizadores simulados exigem cuidado (um `act` por segundo); os da tela
     de login documentam o padrão.
+
+## Atualização — 2026-10-31
+
+O CI passou a rodar o frontend em Node 22 (#83), o que destravou as versões descartadas acima: Vitest 4.1 → 5.0,
+jsdom 27 → 30 e jest-dom 6 → 7, junto com Vite 6 → 8 (e `@vitejs/plugin-react` 4 → 6), que o Vitest usa. Nenhum teste
+precisou mudar. O jsdom 30 exige Node 22.22+ ou 24.15+, também na máquina de desenvolvimento. O Vite 8 empacota com
+Rolldown; a divisão do build em pedaços passou de `manualChunks` para `rolldownOptions.output.codeSplitting`.

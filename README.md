@@ -10,8 +10,8 @@ consumo real × planejado e base de dados preparada para análise com IA.
 [![CI](https://github.com/Krsoliveira/pcp-inteligente-producao/actions/workflows/ci.yml/badge.svg)](https://github.com/Krsoliveira/pcp-inteligente-producao/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=springboot&logoColor=white)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 
 <img src="docs/imagens/dashboard-2026-10.png" alt="Dashboard com indicadores clicáveis, fila de produção e entregas por mês" width="900">
@@ -148,14 +148,14 @@ Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 | Camada | Tecnologias |
 |---|---|
 | **Backend** | Java 21, Spring Boot 3.5, Spring Security, JPA/Hibernate, Flyway, Bean Validation, springdoc-openapi (Swagger) |
-| **Frontend** | React 18, TypeScript, Vite, Material UI 6, TanStack Query, Zustand, ECharts |
+| **Frontend** | React 19, TypeScript, Vite, Material UI 6, TanStack Query, Zustand, ECharts |
 | **Dados** | PostgreSQL 16, gerador Python (biblioteca padrão) |
 | **Testes** | JUnit 5, AssertJ, Testcontainers (backend); Vitest, Testing Library (frontend) |
 | **DevOps** | Docker Compose, GitHub Actions, Dependabot |
 
 ## Como rodar
 
-**Pré-requisitos:** Docker Desktop, JDK 21, Maven e Node.js 22+.
+**Pré-requisitos:** Docker Desktop, JDK 21, Maven e Node.js 22.22+ ou 24.15+ (exigência do jsdom 30, usado nos testes).
 
 ```bash
 # 1. Infraestrutura
