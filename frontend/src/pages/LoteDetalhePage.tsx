@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useParams, Link as RouterLink } from 'react-router-dom'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
@@ -21,6 +23,7 @@ import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturi
 import InventoryIcon from '@mui/icons-material/Inventory2Outlined'
 import ScienceIcon from '@mui/icons-material/ScienceOutlined'
 import CallSplitIcon from '@mui/icons-material/CallSplit'
+import QrCodeIcon from '@mui/icons-material/QrCode2'
 import LinearProgress from '@mui/material/LinearProgress'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -32,6 +35,7 @@ import { listarMateriais } from '../api/materiais'
 import { PageHeader } from '../components/PageHeader'
 import { InfoRow } from '../components/InfoRow'
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
+import { EtiquetaDoLoteDialog } from '../components/lotes/EtiquetaDoLote'
 import { StatusLoteBadge, StatusOrdemBadge } from '../components/StatusBadge'
 import { diasAte, formatarCodigoMaterial, formatarData, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import type { ConsumoMaterial, LoteOrigem, Lote, Material, RastreabilidadeLote } from '../types'
@@ -45,6 +49,7 @@ import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
  */
 export function LoteDetalhePage() {
   const { id } = useParams<{ id: string }>()
+  const [etiquetaAberta, setEtiquetaAberta] = useState(false)
 
   const loteQuery = useQuery({
     queryKey: ['lote', id],
@@ -91,7 +96,9 @@ export function LoteDetalhePage() {
           { label: material ? formatarCodigoMaterial(material.codigo) : 'Material', href: `/estoque/${lote.materialId}` },
           { label: lote.numeroLote },
         ]}
+        action={<Button variant="outlined" startIcon={<QrCodeIcon />} onClick={() => setEtiquetaAberta(true)}>Imprimir etiqueta</Button>}
       />
+      <EtiquetaDoLoteDialog lote={lote} material={material} aberto={etiquetaAberta} onFechar={() => setEtiquetaAberta(false)} />
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>

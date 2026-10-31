@@ -152,6 +152,7 @@ ADR-0021._
 - [x] **Tela de lançamento de consumo por ordem** (ADR-0026): entregue, com "Adicionar item fora da lista" e lançamento
       tudo ou nada.
 - [x] **Quantidade base da lista técnica** (ADR-0027, V17): entregue; padrão 1, comparação por unidade produzida.
+- [x] **Etiqueta do lote com QR code** (ADR-0028): entregue; QR com o link do lote, 100 × 50 mm, login volta para a página pedida. Pendente: várias etiquetas de uma vez e leitura do QR dentro do sistema.
 - [ ] **Prévia do consumo planejado** ao escolher a versão da lista na criação da ordem (hoje só se vê depois de criada).
 - [ ] **Relatórios, próximos passos**: exportar o consumo de ordens (CSV/Excel) e outros relatórios na mesma área.
 - [ ] **Autorização antes da validação** (opcional): hoje um corpo inválido de quem não tem permissão devolve

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
 import type { ReactElement } from 'react'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation, type InitialEntry } from 'react-router-dom'
 import { CHAVE_USUARIO_LOGADO } from '../hooks/usePermissoes'
 import type { Permissao, UsuarioLogado } from '../types'
 import { TODAS_AS_PERMISSOES, usuarioLogado } from './fabricas'
@@ -13,8 +13,8 @@ export function SondaDeRota() {
 }
 
 interface Opcoes {
-  /** Entradas do histórico; a última é a tela atual. */
-  rotas?: string[]
+  /** Entradas do histórico (caminho, ou caminho com estado); a última é a tela atual. */
+  rotas?: InitialEntry[]
   /** Padrão de rota da tela renderizada (ex.: "/listas-tecnicas/:id"). */
   padrao?: string
   /**

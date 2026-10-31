@@ -60,3 +60,4 @@ Regras dos ADRs deste projeto:
 | [0025](adr/0025-item-adicionado-ao-consumo.md) | Item adicionado ao consumo de uma ordem, fora da lista técnica | Aceito |
 | [0026](adr/0026-lancamento-de-consumo-por-ordem.md) | Lançamento do consumo por ordem, com todos os componentes e tudo ou nada | Aceito |
 | [0027](adr/0027-quantidade-base-da-lista-tecnica.md) | Quantidade base da lista técnica | Aceito |
+| [0028](adr/0028-etiqueta-do-lote-com-qr-code.md) | Etiqueta do lote com QR code | Aceito |
