@@ -155,7 +155,7 @@ Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 
 ## Como rodar
 
-**Pré-requisitos:** Docker Desktop, JDK 21, Maven e Node.js 20+.
+**Pré-requisitos:** Docker Desktop, JDK 21, Maven e Node.js 22+.
 
 ```bash
 # 1. Infraestrutura
