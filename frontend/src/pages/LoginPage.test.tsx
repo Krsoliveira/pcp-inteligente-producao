@@ -11,10 +11,12 @@ vi.mock('../api/auth', () => ({ login: vi.fn(), registrar: vi.fn() }))
 
 const loginMock = vi.mocked(login)
 
-function montar() {
+/** `origem` é a página que a pessoa tentou abrir antes de ser mandada ao login (estado da rota). */
+function montar(origem?: unknown) {
   // Com os temporizadores simulados, o relógio do usuário simulado precisa avançar junto.
   const usuario = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-  renderizarTela(<LoginPage />, { rotas: ['/login'], padrao: '/login' })
+  const rota = origem === undefined ? '/login' : { pathname: '/login', state: { from: origem } }
+  renderizarTela(<LoginPage />, { rotas: [rota], padrao: '/login' })
   return usuario
 }
 
@@ -49,6 +51,31 @@ describe('LoginPage', () => {
 
     await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent('/dashboard'))
     expect(useAuthStore.getState().token).toBe('jwt-123')
+  })
+
+  it('volta para a página que a pessoa tentou abrir (ex.: o QR code de um lote)', async () => {
+    loginMock.mockResolvedValue({ token: 'jwt-123' } as Awaited<ReturnType<typeof login>>)
+    const usuario = montar('/lotes/l-1?aba=consumos')
+
+    await entrar(usuario)
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent('/lotes/l-1?aba=consumos'))
+  })
+
+  it.each([
+    ['endereço de outro site', 'https://malicioso.example/login'],
+    ['caminho sem barra no início', 'lotes/l-1'],
+    ['endereço com duas barras (outro site)', '//malicioso.example'],
+    ['barra invertida (outro site em alguns navegadores)', '/\\malicioso.example'],
+    ['a própria tela de login', '/login'],
+    ['valor que não é texto', { pathname: '/lotes/l-1' }],
+  ])('origem inválida (%s) vai para o dashboard', async (_caso, origem) => {
+    loginMock.mockResolvedValue({ token: 'jwt-123' } as Awaited<ReturnType<typeof login>>)
+    const usuario = montar(origem)
+
+    await entrar(usuario)
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(/^\/dashboard$/))
   })
 
   it('avisa e-mail ou senha incorretos no 401', async () => {
