@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
@@ -11,6 +11,7 @@ import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 import { mensagemDeEspera, mensagemDeErroDaApi, segundosDeEspera } from '../utils/mensagensDeErro'
 import { useContagemRegressiva } from '../hooks/useContagemRegressiva'
+import { destinoAposLogin } from '../utils/destinoAposLogin'
 import { login } from '../api/auth'
 import { useAuthStore } from '../store/authStore'
 import { AuthLayout } from '../components/auth/AuthLayout'
@@ -18,6 +19,7 @@ import { CampoSenha } from '../components/auth/CampoSenha'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const loginStore = useAuthStore((s) => s.login)
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -28,7 +30,7 @@ export function LoginPage() {
     mutationFn: login,
     onSuccess: (data) => {
       loginStore(data.token)
-      navigate('/dashboard')
+      navigate(destinoAposLogin(location.state))
     },
     onError: (error: unknown) => {
       const espera = segundosDeEspera(error)
