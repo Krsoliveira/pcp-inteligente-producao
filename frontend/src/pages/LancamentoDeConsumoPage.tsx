@@ -27,6 +27,7 @@ import { AlocacaoDeLotes } from '../components/consumo/AlocacaoDeLotes'
 import { lerQuantidade } from '../components/consumo/alocacao'
 import { RASCUNHO_VAZIO, lerQuantidadeOpcional, montarLancamento, type ItemAdicionado, type Rascunho } from '../components/consumo/lancamento'
 import { PageHeader } from '../components/PageHeader'
+import { rotuloDoStatusDeOrdem } from '../components/StatusBadge'
 import { usePermissoes } from '../hooks/usePermissoes'
 import { formatarCodigoMaterial, formatarQuantidade } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
@@ -126,7 +127,7 @@ export function LancamentoDeConsumoPage() {
 
       {ordem.status !== 'EM_PRODUCAO' ? (
         <Alert severity="info" action={<Button component={RouterLink} to={voltar} size="small">Voltar à ordem</Button>}>
-          O consumo só pode ser lançado em ordens em produção.
+          Esta ordem está {rotuloDoStatusDeOrdem(ordem.status).toLowerCase()}. O consumo só pode ser lançado em ordens em produção.
         </Alert>
       ) : (
         <>
