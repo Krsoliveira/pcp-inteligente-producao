@@ -39,7 +39,7 @@ beforeEach(() => {
 })
 
 describe('botões de cadastro por permissão', () => {
-  it('Ordens: "Nova Ordem" só com ORDEM_CRIAR; o lápis de status só com ORDEM_ATUALIZAR_STATUS', async () => {
+  it('Ordens: "Nova Ordem" só com ORDEM_CRIAR; o botão de status só com ORDEM_ATUALIZAR_STATUS', async () => {
     const { unmount } = renderizarTela(<OrdensPage />)
     await screen.findByText('OP-1')
     expect(screen.getByRole('button', { name: 'Nova Ordem' })).toBeInTheDocument()
