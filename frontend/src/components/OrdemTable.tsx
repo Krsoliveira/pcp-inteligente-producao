@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { usePermissoes } from '../hooks/usePermissoes'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
@@ -10,6 +10,7 @@ import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
+import PlaylistAddOutlinedIcon from '@mui/icons-material/PlaylistAddOutlined'
 import EditIcon from '@mui/icons-material/Edit'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
@@ -109,6 +110,13 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
               {mostrarAcoes && (
               <TableCell align="center" onClick={(e) => e.stopPropagation()}>
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                  {ordem.status === 'EM_PRODUCAO' && tem('CONSUMO_REGISTRAR') && (
+                    <Tooltip title="Lançar consumo">
+                      <IconButton size="small" color="primary" component={RouterLink} to={`/ordens/${ordem.id}/lancar-consumo`}>
+                        <PlaylistAddOutlinedIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && tem('ORDEM_ATUALIZAR_STATUS') && (
                     <Tooltip title="Atualizar status">
                       <IconButton
