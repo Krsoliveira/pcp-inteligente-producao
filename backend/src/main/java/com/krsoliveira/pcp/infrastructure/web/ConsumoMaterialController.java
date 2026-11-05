@@ -93,7 +93,7 @@ public class ConsumoMaterialController {
     @PreAuthorize("hasAuthority('CONSUMO_REGISTRAR')")
     @PatchMapping("/{consumoId}")
     @Operation(summary = "Registrar consumo real",
-            description = "Informa a quantidade efetivamente consumida. "
+            description = "Informa a quantidade efetivamente consumida; a ordem precisa estar em produção. "
                     + "Se houver desvio em relação ao planejado, a justificativa é obrigatória. "
                     + "Informe em alocacoes de quais lotes saiu o material (a soma deve ser igual à "
                     + "quantidade consumida). O responsável é o usuário logado.")
@@ -102,6 +102,6 @@ public class ConsumoMaterialController {
                                                               @RequestBody @Valid RegistrarConsumoRequest request) {
         return ResponseEntity.ok(
                 ConsumoMaterialResponse.de(
-                        registrarConsumoMaterial.executar(request.paraComando(consumoId))));
+                        registrarConsumoMaterial.executar(ordemId, request.paraComando(consumoId))));
     }
 }

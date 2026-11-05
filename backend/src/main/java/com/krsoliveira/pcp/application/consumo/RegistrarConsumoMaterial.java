@@ -33,7 +33,7 @@ import java.util.UUID;
  * Caso de uso: registrar o consumo real de um material numa ordem, informando de quais
  * lotes ele saiu (genealogia — ADR-0011).
  *
- * Regras: a ordem está em produção; a soma das alocações é igual à quantidade consumida (consumo zero não aloca);
+ * Regras: o consumo é da ordem informada e ela está em produção; a soma das alocações é igual à quantidade consumida (consumo zero não aloca);
  * cada lote é do mesmo material, está disponível, dentro da validade e tem saldo. Os lotes
  * são lidos com bloqueio, então consumos simultâneos não ultrapassam o saldo. O
  * responsável é o usuário logado; consumo, baixas de saldo e eventos são gravados juntos.
@@ -77,9 +77,10 @@ public class RegistrarConsumoMaterial {
         }
     }
 
-    public ConsumoMaterial executar(Comando comando) {
+    public ConsumoMaterial executar(UUID ordemProducaoId, Comando comando) {
         return execucao.executar(ctx -> {
             ConsumoMaterial consumo = consumoRepository.buscarPorId(comando.consumoMaterialId())
+                    .filter(c -> c.getOrdemProducaoId().equals(ordemProducaoId))
                     .orElseThrow(() -> new ConsumoMaterialNaoEncontradoException(
                             comando.consumoMaterialId()));
             OrdemProducao ordem = ordemRepository.buscarPorId(consumo.getOrdemProducaoId())

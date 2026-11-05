@@ -109,7 +109,7 @@ class RegistrarConsumoMaterialTest {
                     new BigDecimal("50"), "kg", USUARIO_TESTE);
             consumos.salvar(daOrdem);
 
-            assertThatThrownBy(() -> casoDeUso.executar(new RegistrarConsumoMaterial.Comando(daOrdem.getId(),
+            assertThatThrownBy(() -> casoDeUso.executar(foraDeProducao.getId(), new RegistrarConsumoMaterial.Comando(daOrdem.getId(),
                     new BigDecimal("50"), null, List.of(de(loteB, "50")))))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("ordem em produção");
@@ -146,7 +146,7 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("sem desvio, de um lote: baixa o saldo e grava a genealogia")
         void umLote() {
-            ConsumoMaterial resultado = casoDeUso.executar(comando("50", null, de(loteB, "50")));
+            ConsumoMaterial resultado = casoDeUso.executar(ordem.getId(), comando("50", null, de(loteB, "50")));
 
             assertThat(resultado.estaRegistrado()).isTrue();
             assertThat(loteB.getSaldo()).isEqualByComparingTo("50");
@@ -162,7 +162,7 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("com desvio, de dois lotes: o lote zerado vira CONSUMIDO e tudo entra na trilha")
         void doisLotes() {
-            casoDeUso.executar(comando("55", "Perda no setup", de(loteA, "30"), de(loteB, "25")));
+            casoDeUso.executar(ordem.getId(), comando("55", "Perda no setup", de(loteA, "30"), de(loteB, "25")));
 
             assertThat(loteA.getSaldo()).isEqualByComparingTo("0");
             assertThat(loteA.getStatus()).isEqualTo(StatusLote.CONSUMIDO);
@@ -187,7 +187,7 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("consumo zero não aloca lotes")
         void consumoZero() {
-            casoDeUso.executar(comando("0", "Material substituído"));
+            casoDeUso.executar(ordem.getId(), comando("0", "Material substituído"));
 
             assertThat(consumo.estaRegistrado()).isTrue();
             assertThat(alocacoes.todas()).isEmpty();
@@ -201,7 +201,7 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("soma das alocações diferente do consumido é recusada e nada muda")
         void somaDiferente() {
-            assertThatThrownBy(() -> casoDeUso.executar(comando("50", null, de(loteB, "40"))))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("50", null, de(loteB, "40"))))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("soma");
             assertNadaMudou();
@@ -210,7 +210,7 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("consumo maior que zero exige alocação")
         void semAlocacao() {
-            assertThatThrownBy(() -> casoDeUso.executar(comando("50", null)))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("50", null)))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("de quais lotes");
             assertNadaMudou();
@@ -219,14 +219,14 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("consumo zero com lote informado é recusado")
         void zeroComLote() {
-            assertThatThrownBy(() -> casoDeUso.executar(comando("0", "x", de(loteB, "1"))))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("0", "x", de(loteB, "1"))))
                     .isInstanceOf(RegraDeNegocioException.class);
         }
 
         @Test
         @DisplayName("mesmo lote duas vezes é recusado")
         void loteRepetido() {
-            assertThatThrownBy(() -> casoDeUso.executar(comando("50", null, de(loteB, "25"), de(loteB, "25"))))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("50", null, de(loteB, "25"), de(loteB, "25"))))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("mais de uma vez");
         }
@@ -234,7 +234,7 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("saldo insuficiente é recusado")
         void saldoInsuficiente() {
-            assertThatThrownBy(() -> casoDeUso.executar(comando("50", null, de(loteA, "50"))))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("50", null, de(loteA, "50"))))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("Saldo insuficiente");
         }
@@ -245,7 +245,7 @@ class RegistrarConsumoMaterialTest {
             Material aluminio = Material.criar("110000002", "Alumínio", TipoMaterial.MATERIA_PRIMA, "kg", USUARIO_TESTE);
             Lote loteAluminio = loteDeCompra(aluminio, "NF-X", "100", HOJE.plusMonths(6));
 
-            assertThatThrownBy(() -> casoDeUso.executar(comando("50", null, de(loteAluminio, "50"))))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("50", null, de(loteAluminio, "50"))))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("não é do material");
         }
@@ -255,7 +255,7 @@ class RegistrarConsumoMaterialTest {
         void loteVencido() {
             Lote vencido = loteDeCompra(aco, "NF-V", "100", HOJE.minusDays(1));
 
-            assertThatThrownBy(() -> casoDeUso.executar(comando("50", null, de(vencido, "50"))))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("50", null, de(vencido, "50"))))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("venceu");
         }
@@ -265,7 +265,7 @@ class RegistrarConsumoMaterialTest {
         void loteBloqueado() {
             loteB.bloquear(USUARIO_TESTE);
 
-            assertThatThrownBy(() -> casoDeUso.executar(comando("50", null, de(loteB, "50"))))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("50", null, de(loteB, "50"))))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("não está disponível");
         }
@@ -273,7 +273,7 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("lote inexistente gera não encontrado")
         void loteInexistente() {
-            assertThatThrownBy(() -> casoDeUso.executar(new RegistrarConsumoMaterial.Comando(consumo.getId(),
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), new RegistrarConsumoMaterial.Comando(consumo.getId(),
                     new BigDecimal("50"), null, List.of(new RegistrarConsumoMaterial.Alocacao(UUID.randomUUID(),
                     new BigDecimal("50"))))))
                     .isInstanceOf(LoteNaoEncontradoException.class);
@@ -282,9 +282,9 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("consumo já registrado não pode ser registrado de novo")
         void jaRegistrado() {
-            casoDeUso.executar(comando("50", null, de(loteB, "50")));
+            casoDeUso.executar(ordem.getId(), comando("50", null, de(loteB, "50")));
 
-            assertThatThrownBy(() -> casoDeUso.executar(comando("50", null, de(loteB, "50"))))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("50", null, de(loteB, "50"))))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("já foi registrado");
             assertThat(loteB.getSaldo()).isEqualByComparingTo("50");
@@ -293,7 +293,7 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("desvio sem justificativa é recusado pelo domínio")
         void desvioSemJustificativa() {
-            assertThatThrownBy(() -> casoDeUso.executar(comando("60", null, de(loteB, "60"))))
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), comando("60", null, de(loteB, "60"))))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("Justificativa");
             assertNadaMudou();
@@ -302,9 +302,17 @@ class RegistrarConsumoMaterialTest {
         @Test
         @DisplayName("consumo inexistente gera não encontrado")
         void consumoInexistente() {
-            assertThatThrownBy(() -> casoDeUso.executar(new RegistrarConsumoMaterial.Comando(
+            assertThatThrownBy(() -> casoDeUso.executar(ordem.getId(), new RegistrarConsumoMaterial.Comando(
                     UUID.randomUUID(), new BigDecimal("10"), null, List.of())))
                     .isInstanceOf(ConsumoMaterialNaoEncontradoException.class);
+        }
+
+        @Test
+        @DisplayName("consumo de outra ordem gera não encontrado e nada muda")
+        void consumoDeOutraOrdem() {
+            assertThatThrownBy(() -> casoDeUso.executar(UUID.randomUUID(), comando("50", null, de(loteB, "50"))))
+                    .isInstanceOf(ConsumoMaterialNaoEncontradoException.class);
+            assertNadaMudou();
         }
 
         private void assertNadaMudou() {
