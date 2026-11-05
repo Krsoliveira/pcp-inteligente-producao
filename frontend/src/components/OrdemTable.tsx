@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { usePermissoes } from '../hooks/usePermissoes'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
@@ -10,7 +10,8 @@ import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import EditIcon from '@mui/icons-material/Edit'
+import PlaylistAddOutlinedIcon from '@mui/icons-material/PlaylistAddOutlined'
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import ListAltIcon from '@mui/icons-material/ListAlt'
@@ -64,7 +65,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
             <CelulaDeCabecalho chave="fim" rotulo="Fim" controle={controle} />
             <CelulaDeCabecalho chave="status" rotulo="Status" controle={controle} />
             <TableCell align="center" sx={{ width: 40 }}></TableCell>
-            {mostrarAcoes && <TableCell align="center" sx={{ width: 80 }}>Ações</TableCell>}
+            {mostrarAcoes && <TableCell align="right" sx={{ width: 80 }}>Ações</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -107,8 +108,15 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
                 )}
               </TableCell>
               {mostrarAcoes && (
-              <TableCell align="center" onClick={(e) => e.stopPropagation()}>
-                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+              <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                  {ordem.status === 'EM_PRODUCAO' && tem('CONSUMO_REGISTRAR') && (
+                    <Tooltip title="Lançar consumo">
+                      <IconButton size="small" color="primary" component={RouterLink} to={`/ordens/${ordem.id}/lancar-consumo`}>
+                        <PlaylistAddOutlinedIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && tem('ORDEM_ATUALIZAR_STATUS') && (
                     <Tooltip title="Atualizar status">
                       <IconButton
@@ -116,7 +124,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
                         onClick={(e) => { e.stopPropagation(); onAtualizarStatus(ordem) }}
                         color="primary"
                       >
-                        <EditIcon sx={{ fontSize: 16 }} />
+                        <SwapHorizIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
                   )}
