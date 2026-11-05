@@ -56,7 +56,7 @@ O usuário pode **adicionar um item** ao consumo de uma ordem em produção ao l
   - Restaurar o `CHECK > 0` só é possível se não houver linhas com planejado 0; depois que existirem, a volta é
     manual, com decisão sobre essas linhas.
   - Perfis existentes não ganham a permissão sozinhos.
-  - O endpoint antigo de registro de consumo (`PATCH`) não confere se a ordem está em produção; o novo confere.
+  - O endpoint antigo de registro de consumo (`PATCH`) não conferia se a ordem está em produção; o novo confere. (Corrigido em 2026-11-05: o `PATCH` também confere.)
     Registrado como dívida, fora do escopo desta mudança.
 - **Rollback**: reverter o código é seguro. Desfazer a V16 exige tratar as linhas com planejado 0 antes.
 - **Pendências**: tela de lançamento por ordem (todos os componentes de uma vez, tudo ou nada), com "Adicionar item".

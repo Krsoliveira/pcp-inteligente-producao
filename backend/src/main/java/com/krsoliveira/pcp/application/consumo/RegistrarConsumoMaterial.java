@@ -3,6 +3,7 @@ package com.krsoliveira.pcp.application.consumo;
 import com.krsoliveira.pcp.application.comum.Detalhes;
 import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
 import com.krsoliveira.pcp.application.lote.LoteNaoEncontradoException;
+import com.krsoliveira.pcp.application.ordem.OrdemProducaoNaoEncontradaException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
@@ -17,6 +18,7 @@ import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
+import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -31,7 +33,7 @@ import java.util.UUID;
  * Caso de uso: registrar o consumo real de um material numa ordem, informando de quais
  * lotes ele saiu (genealogia — ADR-0011).
  *
- * Regras: a soma das alocações é igual à quantidade consumida (consumo zero não aloca);
+ * Regras: o consumo é da ordem informada e ela está em produção; a soma das alocações é igual à quantidade consumida (consumo zero não aloca);
  * cada lote é do mesmo material, está disponível, dentro da validade e tem saldo. Os lotes
  * são lidos com bloqueio, então consumos simultâneos não ultrapassam o saldo. O
  * responsável é o usuário logado; consumo, baixas de saldo e eventos são gravados juntos.
@@ -75,11 +77,17 @@ public class RegistrarConsumoMaterial {
         }
     }
 
-    public ConsumoMaterial executar(Comando comando) {
+    public ConsumoMaterial executar(UUID ordemProducaoId, Comando comando) {
         return execucao.executar(ctx -> {
             ConsumoMaterial consumo = consumoRepository.buscarPorId(comando.consumoMaterialId())
+                    .filter(c -> c.getOrdemProducaoId().equals(ordemProducaoId))
                     .orElseThrow(() -> new ConsumoMaterialNaoEncontradoException(
                             comando.consumoMaterialId()));
+            OrdemProducao ordem = ordemRepository.buscarPorId(consumo.getOrdemProducaoId())
+                    .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(consumo.getOrdemProducaoId()));
+            if (ordem.getStatus() != StatusOrdemProducao.EM_PRODUCAO) {
+                throw new RegraDeNegocioException("Só é possível registrar o consumo de uma ordem em produção.");
+            }
             return registrarNoContexto(ctx, consumo, comando, AcaoAuditoria.CONSUMO_REGISTRADO);
         });
     }

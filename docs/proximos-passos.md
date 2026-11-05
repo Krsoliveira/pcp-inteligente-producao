@@ -148,7 +148,7 @@ ADR-0021._
       ainda usam ícones coloridos.
 - [x] **Regra do produto acabado (ADR-0024)** e **item adicionado ao consumo (ADR-0025, V16)**: entregues no
       backend (endpoint, permissão `CONSUMO_ADICIONAR_ITEM`, auditoria). Falta a tela (abaixo).
-- [ ] **Dívida**: o `PATCH` de registro de consumo não confere se a ordem está em produção (o item adicionado confere).
+- [x] **Dívida**: o `PATCH` de registro de consumo agora confere se a ordem está em produção (422) e se o consumo é da ordem da URL (404).
 - [x] **Tela de lançamento de consumo por ordem** (ADR-0026): entregue, com "Adicionar item fora da lista" e lançamento
       tudo ou nada.
 - [x] **Quantidade base da lista técnica** (ADR-0027, V17): entregue; padrão 1, comparação por unidade produzida.

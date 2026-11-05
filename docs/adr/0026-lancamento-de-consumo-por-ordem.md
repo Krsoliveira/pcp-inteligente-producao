@@ -31,7 +31,7 @@ botão "Lançar consumo" da ordem em produção.
   (um perfil sem ela recebe 403 ao enviar itens, mas pode lançar as linhas da lista).
 - **Regras reaproveitadas:** cada linha usa o mesmo código do registro individual (`registrarNoContexto`) e do item
   adicionado, então a regra dos lotes e do saldo é uma só. O lançamento em lote confere que a ordem está em produção
-  (o `PATCH` individual antigo não confere: dívida registrada no ADR-0025).
+  (o `PATCH` individual antigo passou a conferir em 2026-11-05; dívida registrada no ADR-0025).
 - **API (só cresce):** endpoint novo; nada foi alterado ou removido. O registro individual (ícone de lápis) continua
   existindo.
 
