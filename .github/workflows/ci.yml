@@ -164,10 +164,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # O nome é histórico: este job varre as dependências declaradas no repositório, não uma imagem. Continua assim
-  # porque é um check obrigatório da regra protect-main; renomear exige mudar a regra junto.
-  container-scan:
-    name: Container scan (Trivy)
+  # Check obrigatório da regra protect-main: renomear exige mudar a regra junto.
+  dependency-scan:
+    name: Dependency scan (Trivy)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
