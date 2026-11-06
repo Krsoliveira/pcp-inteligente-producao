@@ -198,6 +198,48 @@ class LancamentoDeConsumoApiTest {
         return new BigDecimal(String.valueOf(lotesDisponiveis(materialId).get(0).get("saldo")));
     }
 
+    @Test
+    @DisplayName("registrar uma linha só (PATCH): recusa ordem que não está em produção, sem baixar lote")
+    void registrarLinhaForaDeProducao() {
+        String ordem = criarOrdem();
+        String consumo = (String) consumosDa(ordem).get(0).get("id");
+        BigDecimal acoAntes = saldo(aco);
+
+        ResponseEntity<Map> recusado = rest.exchange(ORDENS + "/" + ordem + "/consumos/" + consumo, HttpMethod.PATCH,
+                comAuth(corpoDoRegistro()), Map.class);
+
+        assertThat(recusado.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat((String) recusado.getBody().get("detail")).contains("ordem em produção");
+        assertThat(saldo(aco)).isEqualByComparingTo(acoAntes);
+        assertThat(consumosDa(ordem)).allSatisfy(c -> assertThat(c).containsEntry("registrado", false));
+
+        avancar(ordem, "LIBERADA");
+        avancar(ordem, "EM_PRODUCAO");
+        assertThat(rest.exchange(ORDENS + "/" + ordem + "/consumos/" + consumo, HttpMethod.PATCH,
+                comAuth(corpoDoRegistro()), Map.class).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @DisplayName("registrar uma linha só (PATCH): consumo de outra ordem na URL responde 404, sem baixar lote")
+    void registrarLinhaDeOutraOrdem() {
+        String ordemA = ordemEmProducao();
+        String ordemB = ordemEmProducao();
+        String consumoDaB = (String) consumosDa(ordemB).get(0).get("id");
+        BigDecimal acoAntes = saldo(aco);
+
+        ResponseEntity<Map> recusado = rest.exchange(ORDENS + "/" + ordemA + "/consumos/" + consumoDaB, HttpMethod.PATCH,
+                comAuth(corpoDoRegistro()), Map.class);
+
+        assertThat(recusado.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(saldo(aco)).isEqualByComparingTo(acoAntes);
+        assertThat(consumosDa(ordemB)).allSatisfy(c -> assertThat(c).containsEntry("registrado", false));
+    }
+
+    private Map<String, Object> corpoDoRegistro() {
+        String lote = (String) lotesDisponiveis(aco).get(0).get("id");
+        return Map.of("quantidadeConsumida", 25, "alocacoes", List.of(Map.of("loteId", lote, "quantidade", 25)));
+    }
+
     private List<Map<String, Object>> lotesDisponiveis(String materialId) {
         return rest.exchange("/api/v1/lotes?materialId=" + materialId + "&disponiveis=true", HttpMethod.GET, comAuth(null), List.class).getBody();
     }

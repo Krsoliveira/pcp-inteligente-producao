@@ -251,6 +251,21 @@ class PesquisaDeOrdensApiTest {
     // ------------------------------------------------------------------ apoio
 
     @SuppressWarnings("unchecked")
+    @Test
+    @DisplayName("a listagem sem paginação continua devolvendo todas as ordens, e o OpenAPI a marca como obsoleta")
+    void listagemSemPaginacaoObsoleta() {
+        ResponseEntity<List> todas = rest.exchange("/api/v1/ordens-producao", HttpMethod.GET, comAuth(null), List.class);
+        assertThat(todas.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(todas.getBody()).hasSize(7);
+
+        Map<String, Map<String, Map<String, Object>>> caminhos =
+                (Map<String, Map<String, Map<String, Object>>>) rest.getForObject("/v3/api-docs", Map.class).get("paths");
+        Map<String, Object> listagem = caminhos.get("/api/v1/ordens-producao").get("get");
+        assertThat(listagem).containsEntry("deprecated", true);
+        assertThat((String) listagem.get("description")).contains("/api/v1/ordens-producao/pesquisa");
+        assertThat(caminhos.get("/api/v1/ordens-producao/pesquisa").get("get")).doesNotContainKey("deprecated");
+    }
+
     private ResponseEntity<Map> pesquisar(String consulta) {
         return rest.exchange(ORDENS + "/pesquisa" + consulta, HttpMethod.GET, comAuth(null), Map.class);
     }

@@ -27,6 +27,8 @@ tempo de uso do sistema, então o custo também cresceria.
 - O texto da busca é parâmetro de consulta (Criteria API) e `%`, `_` e `\` digitados são
   tratados como texto comum, não como curingas do `LIKE`.
 - **Contrato só cresce:** `GET /api/v1/ordens-producao` continua existindo, sem mudança.
+  Atualização de 2026-11-05: passou a constar como obsoleto no OpenAPI, apontando para `/pesquisa`; a resposta
+  não mudou e a interface não o usa mais. A remoção fica para um eventual `/v2`.
 - As listas de notas fiscais e de lotes por material **não** ganharam endpoint novo: a
   busca de notas olha o lote dentro dos itens e as duas listas têm centenas de linhas, não
   milhares. Elas ganharam paginação na tela (25 por vez). Reavaliar se passarem de ~1000.

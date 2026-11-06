@@ -39,7 +39,7 @@ beforeEach(() => {
 })
 
 describe('botões de cadastro por permissão', () => {
-  it('Ordens: "Nova Ordem" só com ORDEM_CRIAR; o lápis de status só com ORDEM_ATUALIZAR_STATUS', async () => {
+  it('Ordens: "Nova Ordem" só com ORDEM_CRIAR; o botão de status só com ORDEM_ATUALIZAR_STATUS', async () => {
     const { unmount } = renderizarTela(<OrdensPage />)
     await screen.findByText('OP-1')
     expect(screen.getByRole('button', { name: 'Nova Ordem' })).toBeInTheDocument()
@@ -50,6 +50,27 @@ describe('botões de cadastro por permissão', () => {
     await screen.findByText('OP-1')
     expect(screen.queryByRole('button', { name: 'Nova Ordem' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Atualizar status' })).not.toBeInTheDocument()
+  })
+
+  it.each(['PLANEJADA', 'LIBERADA', 'CONCLUIDA', 'CANCELADA'] as const)('Ordens: ordem %s não oferece o atalho "Lançar consumo"', async (status) => {
+    vi.mocked(pesquisarOrdens).mockResolvedValue(pagina([ordem({ id: 'o-1', codigo: 'OP-1', status })]))
+    renderizarTela(<OrdensPage />)
+    await screen.findByText('OP-1')
+    expect(screen.queryByRole('link', { name: 'Lançar consumo' })).not.toBeInTheDocument()
+  })
+
+  it('Ordens: ordem em produção oferece o atalho "Lançar consumo", que abre a tela de lançamento da ordem', async () => {
+    vi.mocked(pesquisarOrdens).mockResolvedValue(pagina([ordem({ id: 'o-1', codigo: 'OP-1', status: 'EM_PRODUCAO' })]))
+    renderizarTela(<OrdensPage />)
+    await screen.findByText('OP-1')
+    expect(screen.getByRole('link', { name: 'Lançar consumo' })).toHaveAttribute('href', '/ordens/o-1/lancar-consumo')
+  })
+
+  it('Ordens: sem CONSUMO_REGISTRAR a ordem em produção não oferece o atalho "Lançar consumo"', async () => {
+    vi.mocked(pesquisarOrdens).mockResolvedValue(pagina([ordem({ id: 'o-1', codigo: 'OP-1', status: 'EM_PRODUCAO' })]))
+    renderizarTela(<OrdensPage />, { permissoes: sem('CONSUMO_REGISTRAR') })
+    await screen.findByText('OP-1')
+    expect(screen.queryByRole('link', { name: 'Lançar consumo' })).not.toBeInTheDocument()
   })
 
   it('Ordens: sem ORDEM_CRIAR o estado vazio não oferece "Criar primeira ordem"', async () => {

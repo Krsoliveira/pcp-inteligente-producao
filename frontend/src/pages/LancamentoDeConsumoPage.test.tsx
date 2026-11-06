@@ -222,11 +222,16 @@ describe('LancamentoDeConsumoPage', () => {
     })
   })
 
-  it('ordem que não está em produção explica e não mostra a tabela de lançamento', async () => {
-    vi.mocked(buscarOrdemPorId).mockResolvedValue(ordem({ id: 'o-1', codigo: 'OP-1', status: 'PLANEJADA' }))
+  it.each([
+    ['PLANEJADA', 'planejada'],
+    ['LIBERADA', 'liberada'],
+    ['CONCLUIDA', 'concluída'],
+    ['CANCELADA', 'cancelada'],
+  ] as const)('ordem %s diz em que status está, explica e não mostra a tabela de lançamento', async (status, rotulo) => {
+    vi.mocked(buscarOrdemPorId).mockResolvedValue(ordem({ id: 'o-1', codigo: 'OP-1', status }))
     montar()
 
-    expect(await screen.findByText('O consumo só pode ser lançado em ordens em produção.')).toBeInTheDocument()
+    expect(await screen.findByText(`Esta ordem está ${rotulo}. O consumo só pode ser lançado em ordens em produção.`)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Lançar consumo' })).not.toBeInTheDocument()
   })
 

@@ -72,7 +72,10 @@ public class OrdemProducaoController {
 
     @PreAuthorize("hasAuthority('ORDEM_VISUALIZAR')")
     @GetMapping
-    @Operation(summary = "Lista todas as ordens de produção")
+    @Operation(summary = "Lista todas as ordens de produção, sem paginação (obsoleto)",
+            deprecated = true,
+            description = "Devolve todas as ordens de uma vez. Use GET /api/v1/ordens-producao/pesquisa, que filtra e "
+                    + "pagina no servidor. Continua disponível em /api/v1 porque o contrato só cresce (ADR-0015).")
     public List<OrdemProducaoResponse> listar() {
         return consultarOrdensProducao.listar().stream()
                 .map(OrdemProducaoResponse::de)
