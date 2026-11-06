@@ -20,22 +20,35 @@ import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.acesso.AcessoNegadoException;
 import com.krsoliveira.pcp.infrastructure.security.CorpoGrandeDemaisException;
 import com.krsoliveira.pcp.infrastructure.security.UsuarioDetailsService;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -44,14 +57,15 @@ import java.util.Map;
  * (RFC 9457) — um JSON com {@code title}, {@code status} e {@code detail}.
  *
  * Mapa de erros:
- *  - 400: requisição malformada (falha de Bean Validation)
+ *  - 400: requisição malformada (falha de Bean Validation, valor de tipo errado, parâmetro ausente, JSON ilegível)
  *  - 404: recurso não encontrado
+ *  - 405: método não permitido
  *  - 409: conflito (código de ordem duplicado)
  *  - 413: corpo da requisição acima do limite (lido sem Content-Length)
  *  - 422: regra de negócio violada
  */
 @RestControllerAdvice
-public class TratadorGlobalDeErros implements ResponseBodyAdvice<ProblemDetail> {
+public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implements ResponseBodyAdvice<ProblemDetail> {
 
     /** Valor de {@code type} quando o erro não tem documentação própria (RFC 9457, seção 4.2.1). */
     private static final URI TIPO_PADRAO = URI.create("about:blank");
@@ -235,8 +249,9 @@ public class TratadorGlobalDeErros implements ResponseBodyAdvice<ProblemDetail> 
         return problema;
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail requisicaoInvalida(MethodArgumentNotValidException ex) {
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders cabecalhos,
+                                                                  HttpStatusCode status, WebRequest requisicao) {
         Map<String, String> erros = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(erro -> erros.put(erro.getField(), erro.getDefaultMessage()));
@@ -245,6 +260,59 @@ public class TratadorGlobalDeErros implements ResponseBodyAdvice<ProblemDetail> 
         problema.setTitle("Requisição inválida");
         problema.setDetail("Um ou mais campos são inválidos.");
         problema.setProperty("erros", erros);
-        return problema;
+        return handleExceptionInternal(ex, problema, cabecalhos, status, requisicao);
+    }
+
+    /**
+     * Erros do próprio Spring MVC (tipo errado, parâmetro ausente, JSON ilegível, método não permitido...). Antes saíam
+     * no formato padrão do Spring ({@code timestamp}, {@code status}, {@code error}, {@code path}). Passam ao RFC 9457,
+     * e os campos antigos continuam porque o contrato de {@code /api/v1} só cresce.
+     */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object corpo, HttpHeaders cabecalhos,
+                                                             HttpStatusCode status, WebRequest requisicao) {
+        ResponseEntity<Object> resposta = super.handleExceptionInternal(ex, corpo, cabecalhos, status, requisicao);
+        if (resposta != null && resposta.getBody() instanceof ProblemDetail problema) {
+            completarErroDoFramework(problema, ex, status, requisicao);
+        }
+        return resposta;
+    }
+
+    private static void completarErroDoFramework(ProblemDetail problema, Exception ex, HttpStatusCode status, WebRequest requisicao) {
+        // O corpo chega aqui dentro de ResponseEntity, que o beforeBodyWrite acima não alcança.
+        problema.setType(TIPO_PADRAO);
+        problema.setTitle(tituloDoErro(status, problema.getTitle()));
+        String mensagem = mensagemDoErro(ex);
+        if (mensagem != null) {
+            problema.setDetail(mensagem);
+        }
+        problema.setProperty("timestamp", Instant.now().toString());
+        HttpStatus conhecido = HttpStatus.resolve(status.value());
+        problema.setProperty("error", conhecido == null ? null : conhecido.getReasonPhrase());
+        if (requisicao instanceof ServletWebRequest servlet) {
+            problema.setProperty("path", servlet.getRequest().getRequestURI());
+        }
+    }
+
+    private static String tituloDoErro(HttpStatusCode status, String padrao) {
+        return switch (status.value()) {
+            case 400 -> "Requisição inválida";
+            case 404 -> "Recurso não encontrado";
+            case 405 -> "Método não permitido";
+            default -> padrao;
+        };
+    }
+
+    /** A mensagem não repete o valor enviado pelo cliente, só o nome do parâmetro, que vem do código. */
+    private static String mensagemDoErro(Exception ex) {
+        return switch (ex) {
+            case MethodArgumentTypeMismatchException tipoErrado -> "O valor informado para '%s' é inválido.".formatted(tipoErrado.getName());
+            case TypeMismatchException tipoErrado -> "Um dos valores informados é inválido.";
+            case MissingServletRequestParameterException ausente -> "O parâmetro '%s' é obrigatório.".formatted(ausente.getParameterName());
+            case HttpMessageNotReadableException ilegivel -> "O corpo da requisição não pôde ser lido. Confira o formato dos dados.";
+            case HttpRequestMethodNotSupportedException metodo -> "Este método não é permitido neste endereço.";
+            case NoResourceFoundException inexistente -> "O endereço pedido não existe.";
+            default -> null;
+        };
     }
 }
