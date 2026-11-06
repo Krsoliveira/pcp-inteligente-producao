@@ -6,6 +6,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
@@ -30,7 +31,7 @@ interface AlocacaoDeLotesProps {
 }
 
 /**
- * De quais lotes saiu o material (genealogia, ADR-0011), dentro de uma linha do lançamento. Enquanto o usuário não
+ * De quais lotes saiu o material (genealogia, ADR-0011), no lançamento da ordem e no registro de uma linha. Enquanto o usuário não
  * mexe nos lotes, a distribuição acompanha a quantidade pela regra FEFO (vence primeiro, sai primeiro); a soma precisa
  * bater com a quantidade consumida.
  */
@@ -57,7 +58,7 @@ export function AlocacaoDeLotes({ materialId, quantidade, unidade, alocado, onCh
   if (quantidade <= 0) return null
 
   return (
-    <Box sx={{ pl: 2, py: 1 }}>
+    <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 0.5 }}>
         <Typography
           variant="caption"
@@ -71,33 +72,43 @@ export function AlocacaoDeLotes({ materialId, quantidade, unidade, alocado, onCh
       ) : isError ? (
         <Alert severity="error">Não foi possível carregar os lotes disponíveis.</Alert>
       ) : lotes.length === 0 ? (
-        <Alert severity="warning">Não há lote disponível deste material.</Alert>
+        <Alert severity="warning">
+          Não há lote disponível deste material. Registre uma entrada de material (matéria-prima)
+          ou conclua uma ordem que o produza (semiacabado).
+        </Alert>
       ) : (
         <>
-          <Table size="small" sx={{ '& th, & td': { py: 0.5 }, '& th': { whiteSpace: 'nowrap' } }}>
-            <TableHead>
-              <TableRow>
-                <TableCell>Lote</TableCell>
-                <TableCell>Validade</TableCell>
-                <TableCell align="right">Saldo</TableCell>
-                <TableCell align="right" sx={{ width: 120 }}>Usar</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {lotes.map((lote) => (
-                <TableRow key={lote.id}>
-                  <TableCell><Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{lote.numeroLote}</Typography></TableCell>
-                  <TableCell><Typography variant="body2" noWrap>{formatarData(lote.dataValidade)}</Typography></TableCell>
-                  <TableCell align="right"><Typography variant="body2" noWrap>{formatarQuantidade(lote.saldo)}</Typography></TableCell>
-                  <TableCell align="right">
-                    <TextField size="small" value={alocado[lote.id] ?? ''} placeholder="0"
-                      onChange={(e) => { setManual(true); onChange({ ...alocado, [lote.id]: e.target.value }) }}
-                      slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': `Quantidade do lote ${lote.numeroLote}`, style: { textAlign: 'right' } } }} />
-                  </TableCell>
+          <TableContainer sx={{ maxHeight: 260 }}>
+            <Table size="small" stickyHeader sx={{ '& th, & td': { py: 0.5 }, '& th': { whiteSpace: 'nowrap' } }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Lote</TableCell>
+                  <TableCell>Validade</TableCell>
+                  <TableCell align="right">Saldo</TableCell>
+                  <TableCell align="right" sx={{ width: 120 }}>Usar</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {lotes.map((lote) => (
+                  <TableRow key={lote.id}>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{lote.numeroLote}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {lote.origem === 'COMPRA' ? `NF ${lote.notaFiscal}` : 'Produção'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell><Typography variant="body2" noWrap>{formatarData(lote.dataValidade)}</Typography></TableCell>
+                    <TableCell align="right"><Typography variant="body2" noWrap>{formatarQuantidade(lote.saldo)}</Typography></TableCell>
+                    <TableCell align="right">
+                      <TextField size="small" value={alocado[lote.id] ?? ''} placeholder="0"
+                        onChange={(e) => { setManual(true); onChange({ ...alocado, [lote.id]: e.target.value }) }}
+                        slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': `Quantidade do lote ${lote.numeroLote}`, style: { textAlign: 'right' } } }} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
           <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
             <Typography variant="caption" sx={{ color: diferenca === 0 ? 'success.main' : 'warning.main', fontWeight: 600 }}>
               Alocado {formatarQuantidade(deUnidades(totalAlocado))} de {formatarQuantidade(quantidade, unidade)}

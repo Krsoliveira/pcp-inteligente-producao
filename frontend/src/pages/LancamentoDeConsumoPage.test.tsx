@@ -235,6 +235,19 @@ describe('LancamentoDeConsumoPage', () => {
     expect(screen.queryByRole('button', { name: 'Lançar consumo' })).not.toBeInTheDocument()
   })
 
+  it('mostra de onde veio cada lote: a nota fiscal ou a produção', async () => {
+    vi.mocked(listarLotesDisponiveis).mockResolvedValue([
+      lote({ id: 'l-1', numeroLote: 'L1', materialId: 'm-aco', saldo: 20, origem: 'COMPRA', notaFiscal: 'NF-77' }),
+      lote({ id: 'l-2', numeroLote: 'L2', materialId: 'm-aco', saldo: 50, origem: 'PRODUCAO' }),
+    ])
+    montar()
+    await userEvent.setup().type(await screen.findByLabelText('Quantidade consumida de 110.000.001'), '25')
+
+    expect(await screen.findByText('NF NF-77')).toBeInTheDocument()
+    const linhaDoLote = screen.getByLabelText('Quantidade do lote L2').closest('tr') as HTMLElement
+    expect(within(linhaDoLote).getByText('Produção')).toBeInTheDocument()
+  })
+
   it('as linhas já lançadas aparecem só como resumo, não como campos', async () => {
     vi.mocked(listarConsumosPorOrdem).mockResolvedValue([
       consumo({ id: 'c-aco', materialId: 'm-aco', registrado: true, quantidadeConsumida: 25 }),

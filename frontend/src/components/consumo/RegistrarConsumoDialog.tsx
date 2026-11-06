@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -7,26 +7,16 @@ import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Grid from '@mui/material/Grid'
-import Skeleton from '@mui/material/Skeleton'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { registrarConsumo } from '../../api/consumos'
 import { listarLotesDisponiveis } from '../../api/lotes'
-import { formatarCodigoMaterial, formatarData, formatarQuantidade } from '../../utils/formatacao'
-import { deUnidades, lerQuantidade, paraUnidades, sugerirFefo } from './alocacao'
-import type { ConsumoMaterial, Lote, Material, RegistrarConsumoRequest } from '../../types'
+import { formatarCodigoMaterial, formatarQuantidade } from '../../utils/formatacao'
+import { AlocacaoDeLotes } from './AlocacaoDeLotes'
+import { lerQuantidade, paraUnidades } from './alocacao'
+import type { ConsumoMaterial, Material, RegistrarConsumoRequest } from '../../types'
 import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
-
-/** Referência estável: um `[]` novo a cada render dispararia o efeito de sugestão sem parar. */
-const SEM_LOTES: Lote[] = []
 
 interface RegistrarConsumoDialogProps {
   consumo: ConsumoMaterial | null
@@ -38,14 +28,12 @@ interface RegistrarConsumoDialogProps {
 
 /**
  * Registro do consumo real de um material, com os lotes de onde ele saiu (genealogia).
- * A distribuição entre lotes é sugerida pela regra FEFO (vence primeiro, sai primeiro)
- * e pode ser ajustada; a soma precisa bater com a quantidade consumida.
+ * A distribuição fica em {@link AlocacaoDeLotes}; aqui só se confere o que ela devolveu.
  */
 export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, onSucesso }: RegistrarConsumoDialogProps) {
   const [qtd, setQtd] = useState('')
   const [justificativa, setJustificativa] = useState('')
   const [alocado, setAlocado] = useState<Record<string, string>>({})
-  const [ajusteManual, setAjusteManual] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   const quantidade = lerQuantidade(qtd)
@@ -53,27 +41,17 @@ export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, o
   const temDesvio = Math.abs(desvio) > 0.0001
   const unidade = consumo?.unidadeDeMedida
 
-  const { data, isLoading: carregandoLotes, isError: erroLotes } = useQuery({
+  // Mesma chave de AlocacaoDeLotes: a consulta é uma só. Aqui serve para conferir o saldo ao registrar.
+  const { data: lotes = [] } = useQuery({
     queryKey: ['lotes-disponiveis', consumo?.materialId],
     queryFn: () => listarLotesDisponiveis(consumo!.materialId),
     enabled: !!consumo,
   })
-  const lotes = data ?? SEM_LOTES
-
-  const saldoDisponivel = useMemo(() => lotes.reduce((t, l) => t + paraUnidades(l.saldo), 0), [lotes])
   const totalAlocado = Object.values(alocado).reduce((t, v) => t + paraUnidades(lerQuantidade(v)), 0)
   const diferenca = paraUnidades(quantidade) - totalAlocado
-  const saldoInsuficiente = paraUnidades(quantidade) > saldoDisponivel
-
-  // Enquanto o usuário não mexe nos lotes, a distribuição acompanha a quantidade (FEFO).
-  useEffect(() => {
-    if (ajusteManual) return
-    const sugestao = sugerirFefo(lotes, quantidade)
-    setAlocado(Object.fromEntries(Object.entries(sugestao).map(([id, v]) => [id, String(v)])))
-  }, [quantidade, lotes, ajusteManual])
 
   const limpar = () => {
-    setQtd(''); setJustificativa(''); setAlocado({}); setAjusteManual(false); setErro(null)
+    setQtd(''); setJustificativa(''); setAlocado({}); setErro(null)
   }
   const fechar = () => { limpar(); onFechar() }
 
@@ -126,70 +104,10 @@ export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, o
           )}
         </Grid>
 
-        {quantidade > 0 && (
+        {consumo && quantidade > 0 && (
           <Box sx={{ mt: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1 }}>
-              <Typography variant="subtitle2">De quais lotes saiu?</Typography>
-              <Button size="small" startIcon={<AutoFixHighIcon />} disabled={lotes.length === 0}
-                onClick={() => { setAjusteManual(false) }}>
-                Distribuir (FEFO)
-              </Button>
-            </Box>
-
-            {carregandoLotes ? (
-              <Skeleton variant="rounded" height={100} />
-            ) : erroLotes ? (
-              <Alert severity="error">Não foi possível carregar os lotes disponíveis.</Alert>
-            ) : lotes.length === 0 ? (
-              <Alert severity="warning">
-                Não há lote disponível deste material. Registre uma entrada de material (matéria-prima)
-                ou conclua uma ordem que o produza (semiacabado).
-              </Alert>
-            ) : (
-              <>
-                <TableContainer sx={{ maxHeight: 260 }}>
-                  <Table size="small" stickyHeader sx={{ '& th': { whiteSpace: 'nowrap' } }}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Lote</TableCell>
-                        <TableCell>Validade</TableCell>
-                        <TableCell align="right">Saldo</TableCell>
-                        <TableCell align="right" sx={{ width: 130 }}>Usar</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {lotes.map((lote) => (
-                        <TableRow key={lote.id}>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{lote.numeroLote}</Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              {lote.origem === 'COMPRA' ? `NF ${lote.notaFiscal}` : 'Produção'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell><Typography variant="body2" noWrap>{formatarData(lote.dataValidade)}</Typography></TableCell>
-                          <TableCell align="right"><Typography variant="body2" noWrap>{formatarQuantidade(lote.saldo)}</Typography></TableCell>
-                          <TableCell align="right">
-                            <TextField size="small" value={alocado[lote.id] ?? ''} placeholder="0"
-                              onChange={(e) => { setAjusteManual(true); setAlocado((a) => ({ ...a, [lote.id]: e.target.value })) }}
-                              slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': `Quantidade do lote ${lote.numeroLote}`, style: { textAlign: 'right' } } }} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                  <Typography variant="body2" sx={{ color: diferenca === 0 ? 'success.main' : 'warning.main', fontWeight: 600 }}>
-                    Alocado {formatarQuantidade(deUnidades(totalAlocado))} de {formatarQuantidade(quantidade, unidade)}
-                  </Typography>
-                  {saldoInsuficiente && (
-                    <Typography variant="body2" sx={{ color: 'error.main' }}>
-                      Saldo disponível: {formatarQuantidade(deUnidades(saldoDisponivel), unidade)}
-                    </Typography>
-                  )}
-                </Box>
-              </>
-            )}
+            <AlocacaoDeLotes materialId={consumo.materialId} quantidade={quantidade} unidade={unidade ?? ''}
+              alocado={alocado} onChange={setAlocado} />
           </Box>
         )}
       </DialogContent>
