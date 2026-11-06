@@ -9,7 +9,6 @@ import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
 import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
@@ -95,7 +94,7 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
         Sort ordenacao = Sort.by(Sort.Order.desc("criadaEm"), Sort.Order.desc("codigo"));
 
         Page<OrdemProducaoJpaEntity> pagina = springData.findAll(criterios,
-                PageRequest.of(pedido.pagina(), pedido.tamanho(), ordenacao));
+                PesquisaJpa.pagina(pedido.pagina(), pedido.tamanho(), ordenacao));
 
         return new Pagina<>(pagina.getContent().stream().map(OrdemProducaoJpaEntity::paraDominio).toList(),
                 pedido.pagina(), pedido.tamanho(), pagina.getTotalElements());
