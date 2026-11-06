@@ -9,6 +9,8 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { trocarMinhaSenha } from '../api/acessos'
+import { login } from '../api/auth'
+import { useAuthStore } from '../store/authStore'
 import { PageHeader } from '../components/PageHeader'
 import { CHAVE_USUARIO_LOGADO, usePermissoes } from '../hooks/usePermissoes'
 import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
@@ -46,6 +48,15 @@ export function TrocarSenhaPage() {
     mutationFn: () => trocarMinhaSenha(atual, nova),
     onSuccess: async () => {
       setErro(null)
+      // O servidor derruba os tokens anteriores à troca, inclusive este: entra de novo com a senha nova.
+      try {
+        const { token } = await login({ email: usuario?.email ?? '', senha: nova })
+        useAuthStore.getState().login(token)
+      } catch {
+        useAuthStore.getState().logout()
+        navigate('/login', { replace: true })
+        return
+      }
       await queryClient.invalidateQueries({ queryKey: CHAVE_USUARIO_LOGADO })
       if (obrigatoria) {
         navigate('/', { replace: true })

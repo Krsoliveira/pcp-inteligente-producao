@@ -156,6 +156,8 @@ class TrocaDeSenhaApiTest {
         assertThat(login("admin@pcp.com", "OutraSenhaDoAdmin2")).isNotBlank();
         String novoToken = login("admin@pcp.com", "OutraSenhaDoAdmin2");
         assertThat(trocar(novoToken, "OutraSenhaDoAdmin2", SENHA_ADMIN).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        // A troca derruba os tokens anteriores, inclusive o que os outros testes usam.
+        admin = login("admin@pcp.com", SENHA_ADMIN);
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.temporal.ChronoUnit;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
@@ -43,10 +44,21 @@ public class JwtService {
         return claims(token).getSubject();
     }
 
-    /** Verifica assinatura, e-mail e expiração. */
+    /** Verifica assinatura, e-mail, expiração e se o token não é anterior à última mudança de senha. */
     public boolean isValido(String token, UserDetails userDetails) {
         String email = extrairEmail(token);
-        return email.equals(userDetails.getUsername()) && !isExpirado(token);
+        return email.equals(userDetails.getUsername()) && !isExpirado(token) && !anteriorAMudancaDeSenha(token, userDetails);
+    }
+
+    /**
+     * A emissão do token é guardada em segundos, por isso a comparação também é: quem entra logo depois de trocar a senha,
+     * no mesmo segundo, não pode ficar de fora. O que sobra é um token emitido nesse mesmo segundo, antes da troca.
+     */
+    private boolean anteriorAMudancaDeSenha(String token, UserDetails userDetails) {
+        if (!(userDetails instanceof UsuarioAutenticado usuario) || usuario.getSenhaAlteradaEm() == null) {
+            return false;
+        }
+        return claims(token).getIssuedAt().toInstant().isBefore(usuario.getSenhaAlteradaEm().truncatedTo(ChronoUnit.SECONDS));
     }
 
     private boolean isExpirado(String token) {

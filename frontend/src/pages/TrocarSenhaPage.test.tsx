@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useAuthStore } from '../store/authStore'
 import { erroHttp } from '../test/erros'
 import { renderizarTela } from '../test/renderizar'
 import { TrocarSenhaPage, validarNovaSenha } from './TrocarSenhaPage'
@@ -14,6 +15,16 @@ vi.mock('../api/acessos', () => ({
     return rejeitarCom ? Promise.reject(rejeitarCom) : Promise.resolve()
   },
   consultarUsuarioLogado: vi.fn(),
+}))
+
+// Também função simples, pelo mesmo motivo.
+let loginFalha = false
+const loginMock = vi.fn()
+vi.mock('../api/auth', () => ({
+  login: (...args: unknown[]) => {
+    loginMock(...args)
+    return loginFalha ? Promise.reject(new Error('falha')) : Promise.resolve({ token: 'token-novo' })
+  },
 }))
 
 function montar(obrigatoria: boolean) {
@@ -46,7 +57,7 @@ describe('validarNovaSenha', () => {
 })
 
 describe('TrocarSenhaPage', () => {
-  beforeEach(() => { trocarMock.mockReset(); rejeitarCom = null })
+  beforeEach(() => { trocarMock.mockReset(); rejeitarCom = null; loginMock.mockClear(); loginFalha = false })
 
   it('no primeiro acesso explica que a senha é provisória e pede a provisória como senha atual', () => {
     montar(true)
@@ -75,6 +86,30 @@ describe('TrocarSenhaPage', () => {
     await waitFor(() => expect(trocarMock).toHaveBeenCalled())
     expect(trocarMock.mock.calls[0].slice(0, 2)).toEqual(['provisoria1', 'minhaNovaSenha'])
     await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(/^\/$/))
+  })
+
+  it('a troca derruba o token em uso: entra de novo com a senha nova e guarda o token novo', async () => {
+    useAuthStore.getState().login('token-antigo')
+    montar(false)
+
+    await preencher('senhaAtual1', 'minhaNovaSenha', 'minhaNovaSenha')
+    await userEvent.click(screen.getByRole('button', { name: 'Alterar senha' }))
+
+    await screen.findByText('Senha alterada.')
+    expect(loginMock.mock.calls[0][0]).toMatchObject({ senha: 'minhaNovaSenha' })
+    expect(useAuthStore.getState().token).toBe('token-novo')
+  })
+
+  it('se o novo login falhar, a senha já mudou: sai e leva ao login, sem deixar o token antigo', async () => {
+    loginFalha = true
+    useAuthStore.getState().login('token-antigo')
+    montar(false)
+
+    await preencher('senhaAtual1', 'minhaNovaSenha', 'minhaNovaSenha')
+    await userEvent.click(screen.getByRole('button', { name: 'Alterar senha' }))
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent('/login'))
+    expect(useAuthStore.getState().token).toBeNull()
   })
 
   it('alterar voluntariamente fica na tela, avisa "Senha alterada" e limpa os campos', async () => {

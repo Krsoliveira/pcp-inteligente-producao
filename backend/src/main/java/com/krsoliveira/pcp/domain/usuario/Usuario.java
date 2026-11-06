@@ -16,9 +16,10 @@ public class Usuario {
     private UUID perfilId;
     private boolean deveTrocarSenha;
     private final Instant criadoEm;
+    private Instant senhaAlteradaEm;
 
     private Usuario(UUID id, String nome, String email, String senhaHash,
-                    UUID perfilId, boolean deveTrocarSenha, Instant criadoEm) {
+                    UUID perfilId, boolean deveTrocarSenha, Instant criadoEm, Instant senhaAlteradaEm) {
         this.id = id;
         this.nome = nome;
         this.email = email;
@@ -26,6 +27,7 @@ public class Usuario {
         this.perfilId = perfilId;
         this.deveTrocarSenha = deveTrocarSenha;
         this.criadoEm = criadoEm;
+        this.senhaAlteradaEm = senhaAlteradaEm;
     }
 
     /**
@@ -46,7 +48,7 @@ public class Usuario {
             throw new IllegalArgumentException("Perfil é obrigatório.");
         }
         return new Usuario(UUID.randomUUID(), nome.trim(), email.trim().toLowerCase(),
-                senhaHash, perfilId, false, Instant.now());
+                senhaHash, perfilId, false, Instant.now(), null);
     }
 
     /**
@@ -64,8 +66,8 @@ public class Usuario {
      * Não revalida invariantes: os dados já passaram por {@link #criar}.
      */
     public static Usuario reconstituir(UUID id, String nome, String email, String senhaHash,
-                                       UUID perfilId, boolean deveTrocarSenha, Instant criadoEm) {
-        return new Usuario(id, nome, email, senhaHash, perfilId, deveTrocarSenha, criadoEm);
+                                       UUID perfilId, boolean deveTrocarSenha, Instant criadoEm, Instant senhaAlteradaEm) {
+        return new Usuario(id, nome, email, senhaHash, perfilId, deveTrocarSenha, criadoEm, senhaAlteradaEm);
     }
 
     /** O próprio usuário definiu uma senha nova: a troca obrigatória, se havia, deixa de valer. */
@@ -73,6 +75,7 @@ public class Usuario {
         exigirHash(novoHash);
         this.senhaHash = novoHash;
         this.deveTrocarSenha = false;
+        this.senhaAlteradaEm = Instant.now();
     }
 
     /** Um gestor definiu uma senha provisória nova: o usuário precisa trocá-la no próximo acesso. */
@@ -80,6 +83,7 @@ public class Usuario {
         exigirHash(novoHash);
         this.senhaHash = novoHash;
         this.deveTrocarSenha = true;
+        this.senhaAlteradaEm = Instant.now();
     }
 
     private static void exigirHash(String hash) {
@@ -103,4 +107,6 @@ public class Usuario {
     public UUID getPerfilId() { return perfilId; }
     public boolean isDeveTrocarSenha() { return deveTrocarSenha; }
     public Instant getCriadoEm() { return criadoEm; }
+    /** Última mudança de senha; nula se não mudou desde que isso passou a ser guardado. Token emitido antes não vale. */
+    public Instant getSenhaAlteradaEm() { return senhaAlteradaEm; }
 }
