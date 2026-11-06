@@ -53,6 +53,15 @@ class ConfiguracaoDeProducaoTest {
         assertThat(resolvedorDeProducao(Map.of()).getProperty("springdoc.api-docs.enabled")).isEqualTo("false");
     }
 
+    @Test
+    @DisplayName("o autocadastro nasce desligado em produção, e só a variável de ambiente o liga")
+    void autocadastroDesligado() throws IOException {
+        String propriedade = "pcp.seguranca.autocadastro-habilitado";
+
+        assertThat(resolvedorDeProducao(Map.of()).getProperty(propriedade)).isEqualTo("false");
+        assertThat(resolvedorDeProducao(Map.of("AUTOCADASTRO_HABILITADO", "true")).getProperty(propriedade)).isEqualTo("true");
+    }
+
     /** Só os dois YAMLs e o ambiente informado, na ordem do Spring: o perfil vence o arquivo base. */
     private static PropertySourcesPropertyResolver resolvedorDeProducao(Map<String, Object> ambiente) throws IOException {
         MutablePropertySources fontes = new MutablePropertySources();

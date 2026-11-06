@@ -7,6 +7,7 @@ import com.krsoliveira.pcp.domain.acesso.PerfilAcesso;
 import com.krsoliveira.pcp.domain.acesso.PerfilAcessoRepository;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.usuario.CodificadorDeSenha;
+import com.krsoliveira.pcp.domain.acesso.AcessoNegadoException;
 import com.krsoliveira.pcp.domain.usuario.PoliticaDeSenha;
 import com.krsoliveira.pcp.domain.usuario.Usuario;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
@@ -23,22 +24,36 @@ public class RegistrarUsuario {
     private final PerfilAcessoRepository perfilRepository;
     private final CodificadorDeSenha codificadorDeSenha;
     private final ExecucaoAuditada execucao;
+    private final boolean autocadastroHabilitado;
 
     public RegistrarUsuario(UsuarioRepository usuarioRepository,
                             PerfilAcessoRepository perfilRepository,
                             CodificadorDeSenha codificadorDeSenha,
                             ExecucaoAuditada execucao) {
+        this(usuarioRepository, perfilRepository, codificadorDeSenha, execucao, true);
+    }
+
+    public RegistrarUsuario(UsuarioRepository usuarioRepository,
+                            PerfilAcessoRepository perfilRepository,
+                            CodificadorDeSenha codificadorDeSenha,
+                            ExecucaoAuditada execucao,
+                            boolean autocadastroHabilitado) {
         this.usuarioRepository = usuarioRepository;
         this.perfilRepository = perfilRepository;
         this.codificadorDeSenha = codificadorDeSenha;
         this.execucao = execucao;
+        this.autocadastroHabilitado = autocadastroHabilitado;
     }
 
     /**
      * Autocadastro: a própria pessoa é a responsável pela criação da conta, que recebe o perfil
-     * padrão do autocadastro.
+     * padrão do autocadastro. Desligado (ADR-0031), recusa antes de olhar os dados: a resposta é a mesma para qualquer
+     * e-mail, e não dá para descobrir quem tem conta.
      */
     public Usuario autocadastrar(String nome, String email, String senhaPlana) {
+        if (!autocadastroHabilitado) {
+            throw new AcessoNegadoException("O cadastro público está desligado. Peça o seu acesso a um gestor.");
+        }
         PoliticaDeSenha.validar(senhaPlana);
         PerfilAcesso padrao = perfilRepository.buscarPadraoDoAutocadastro()
                 .orElseThrow(() -> new IllegalStateException("Perfil padrão do autocadastro não encontrado."));
