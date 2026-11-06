@@ -20,6 +20,24 @@ function montar(origem?: unknown) {
   return usuario
 }
 
+describe('LoginPage: oferta do cadastro público', () => {
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('oferece criar conta quando o autocadastro está ligado', () => {
+    montar()
+
+    expect(screen.getByRole('link', { name: 'Criar conta' })).toHaveAttribute('href', '/cadastro')
+  })
+
+  it('orienta a falar com um gestor quando o autocadastro está desligado', () => {
+    vi.stubEnv('VITE_AUTOCADASTRO', 'false')
+    montar()
+
+    expect(screen.queryByRole('link', { name: 'Criar conta' })).not.toBeInTheDocument()
+    expect(screen.getByText('Para ter acesso, fale com um gestor do sistema.')).toBeInTheDocument()
+  })
+})
+
 async function entrar(usuario: ReturnType<typeof userEvent.setup>) {
   await usuario.type(screen.getByLabelText('E-mail'), 'ana@pcp.com')
   await usuario.type(screen.getByLabelText('Senha'), 'Senha@123')

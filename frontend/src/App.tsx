@@ -3,7 +3,7 @@ import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ExigirPermissao } from './components/ExigirPermissao'
 import { LoginPage } from './pages/LoginPage'
-import { CadastroPage } from './pages/CadastroPage'
+import { RotaDoAutocadastro } from './components/auth/RotaDoAutocadastro'
 import { DashboardPage } from './pages/DashboardPage'
 import { OrdensPage } from './pages/OrdensPage'
 import { OrdensResultadosPage } from './pages/OrdensResultadosPage'
@@ -35,7 +35,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/cadastro',
-    element: <CadastroPage />,
+    element: <RotaDoAutocadastro />,
   },
   {
     element: <ProtectedRoute />,

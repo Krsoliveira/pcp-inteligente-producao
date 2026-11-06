@@ -31,7 +31,7 @@ public class TrilhaDeAuditoriaAdapter implements TrilhaDeAuditoria {
 
     @Override
     public Pagina<EventoAuditoria> consultar(FiltroEventos filtro, int pagina, int tamanho) {
-        PageRequest paginacao = PageRequest.of(pagina, tamanho,
+        PageRequest paginacao = PesquisaJpa.pagina(pagina, tamanho,
                 Sort.by(Sort.Order.desc("ocorridoEm"), Sort.Order.desc("id")));
         Page<EventoAuditoriaJpaEntity> resultado = springData.findAll(especificacao(filtro), paginacao);
         return new Pagina<>(resultado.map(EventoAuditoriaJpaEntity::paraDominio).getContent(),

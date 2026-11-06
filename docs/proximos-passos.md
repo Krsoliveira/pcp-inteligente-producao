@@ -148,6 +148,7 @@ ADR-0021._
       ainda usam ícones coloridos.
 - [x] **Regra do produto acabado (ADR-0024)** e **item adicionado ao consumo (ADR-0025, V16)**: entregues no
       backend (endpoint, permissão `CONSUMO_ADICIONAR_ITEM`, auditoria). Falta a tela (abaixo).
+- [x] **Dívida**: erros do próprio Spring MVC (UUID inválido, valor fora da lista, parâmetro ausente, JSON ilegível, 404 e 405) saem no RFC 9457, mantendo `timestamp`, `error` e `path`.
 - [x] **Dívida**: `GET /ordens-producao` (lista sem paginação) marcado como obsoleto no OpenAPI, em favor de `/pesquisa`; a remoção fica para um eventual `/v2` (ADR-0015).
 - [x] **Dívida**: o `PATCH` de registro de consumo agora confere se a ordem está em produção (422) e se o consumo é da ordem da URL (404).
 - [x] **Tela de lançamento de consumo por ordem** (ADR-0026): entregue, com "Adicionar item fora da lista" e lançamento
@@ -252,7 +253,7 @@ Lacunas identificadas no código, **independentes do provedor** escolhido:
 | Sem perfil de produção | Banco gerenciado exige SSL; `JWT_SECRET` tem valor padrão de dev | Perfil `prod`: conexão com `sslmode=require` e `JWT_SECRET` obrigatório (sem padrão) |
 
 Depois do código pronto: arquivo de configuração do provedor escolhido, guia
-`docs/deploy.md`, variáveis de ambiente (banco, `JWT_SECRET`, `ADMIN_*`, origens do CORS)
+`docs/deploy.md`, variáveis de ambiente (banco, `JWT_SECRET`, `ADMIN_*`, origens do CORS; sem `JWT_SECRET` ou `DB_PASSWORD` o perfil `prod` não sobe)
 e link "ver online" no README.
 
 Pontos de atenção por provedor:

@@ -56,6 +56,7 @@ import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
 import com.krsoliveira.pcp.domain.ordem.TipoOrdemRepository;
 import com.krsoliveira.pcp.domain.usuario.CodificadorDeSenha;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import java.time.Clock;
@@ -347,7 +348,8 @@ public class ConfiguracaoCasosDeUso {
     RegistrarUsuario registrarUsuario(UsuarioRepository usuarioRepository,
                                       PerfilAcessoRepository perfilRepository,
                                       CodificadorDeSenha codificadorDeSenha,
-                                      ExecucaoAuditada execucao) {
-        return new RegistrarUsuario(usuarioRepository, perfilRepository, codificadorDeSenha, execucao);
+                                      ExecucaoAuditada execucao,
+                                      @Value("${pcp.seguranca.autocadastro-habilitado:true}") boolean autocadastroHabilitado) {
+        return new RegistrarUsuario(usuarioRepository, perfilRepository, codificadorDeSenha, execucao, autocadastroHabilitado);
     }
 }

@@ -103,7 +103,7 @@ class TrocaDeSenhaApiTest {
     }
 
     @Test
-    @DisplayName("trocar a senha libera o mesmo token na hora; a provisória deixa de valer e a nova passa a valer")
+    @DisplayName("trocar a senha libera o acesso com a senha nova; a provisória deixa de valer")
     void trocaLibera() {
         String email = criarUsuario(admin, "troca", idDoPerfil("Visualizador"));
         String token = login(email, PROVISORIA);
@@ -112,13 +112,13 @@ class TrocaDeSenhaApiTest {
                 json(token, Map.of("senhaAtual", PROVISORIA, "novaSenha", "MinhaNovaSenha1")), Void.class);
 
         assertThat(troca.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        Map<String, Object> eu = chamar(token, HttpMethod.GET, ACESSOS + "/eu", null).getBody();
+        String novoToken = login(email, "MinhaNovaSenha1");
+        Map<String, Object> eu = chamar(novoToken, HttpMethod.GET, ACESSOS + "/eu", null).getBody();
         assertThat(eu).containsEntry("deveTrocarSenha", false);
         assertThat((List<String>) eu.get("permissoes")).contains("ORDEM_VISUALIZAR");
-        assertThat(chamar(token, HttpMethod.GET, "/api/v1/ordens-producao/pesquisa", null).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(chamar(novoToken, HttpMethod.GET, "/api/v1/ordens-producao/pesquisa", null).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(rest.postForEntity("/api/v1/auth/login", json(null, Map.of("email", email, "senha", PROVISORIA)), Map.class).getStatusCode())
                 .isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(login(email, "MinhaNovaSenha1")).isNotBlank();
     }
 
     @Test
@@ -156,6 +156,8 @@ class TrocaDeSenhaApiTest {
         assertThat(login("admin@pcp.com", "OutraSenhaDoAdmin2")).isNotBlank();
         String novoToken = login("admin@pcp.com", "OutraSenhaDoAdmin2");
         assertThat(trocar(novoToken, "OutraSenhaDoAdmin2", SENHA_ADMIN).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        // A troca derruba os tokens anteriores, inclusive o que os outros testes usam.
+        admin = login("admin@pcp.com", SENHA_ADMIN);
     }
 
     @Test
@@ -169,24 +171,27 @@ class TrocaDeSenhaApiTest {
     // ------------------------------------------------------------------ redefinição pelo gestor
 
     @Test
-    @DisplayName("redefinir trava o usuário na hora (mesmo token), a senha antiga deixa de valer e a provisória nova abre só a troca")
+    @DisplayName("redefinir trava o usuário na hora, a senha antiga deixa de valer e a provisória nova abre só a troca")
     void redefinicao() {
         String email = criarUsuario(admin, "redef", idDoPerfil("Visualizador"));
-        String token = login(email, PROVISORIA);
-        trocar(token, PROVISORIA, "MinhaSenhaEscolhida1");
+        trocar(login(email, PROVISORIA), PROVISORIA, "MinhaSenhaEscolhida1");
+        String token = login(email, "MinhaSenhaEscolhida1");
         assertThat(chamar(token, HttpMethod.GET, "/api/v1/ordens-producao/pesquisa", null).getStatusCode()).isEqualTo(HttpStatus.OK);
 
         ResponseEntity<Void> reset = rest.exchange(ACESSOS + "/usuarios/" + idDoUsuario(email) + "/redefinir-senha", HttpMethod.POST,
                 json(admin, Map.of("senhaProvisoria", "NovaProvisoria#1")), Void.class);
 
         assertThat(reset.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        ResponseEntity<Map> bloqueado = chamar(token, HttpMethod.GET, "/api/v1/ordens-producao/pesquisa", null);
-        assertThat(bloqueado.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(bloqueado.getBody()).containsEntry("codigo", "TROCAR_SENHA");
+        // O token antigo não acessa mais: 401 se foi emitido em segundo anterior; 403 se no mesmo, pois a conta já está travada.
+        assertThat(chamar(token, HttpMethod.GET, "/api/v1/ordens-producao/pesquisa", null).getStatusCode())
+                .isIn(HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN);
         assertThat(rest.postForEntity("/api/v1/auth/login", json(null, Map.of("email", email, "senha", "MinhaSenhaEscolhida1")), Map.class)
                 .getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         String novoToken = login(email, "NovaProvisoria#1");
         assertThat(chamar(novoToken, HttpMethod.GET, ACESSOS + "/eu", null).getBody()).containsEntry("deveTrocarSenha", true);
+        ResponseEntity<Map> bloqueado = chamar(novoToken, HttpMethod.GET, "/api/v1/ordens-producao/pesquisa", null);
+        assertThat(bloqueado.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(bloqueado.getBody()).containsEntry("codigo", "TROCAR_SENHA");
     }
 
     @Test

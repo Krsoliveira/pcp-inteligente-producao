@@ -36,6 +36,8 @@ import type { ConsumoMaterial, Material } from '../types'
 let contadorDeItens = 0
 
 /** O texto de ajuda fica sob o campo sem ocupar espaço: aparecer ou sumir não desloca o campo na linha. */
+const CELULA_DE_LOTES = { bgcolor: 'grey.50', pl: 3.5, py: 1.5 }
+
 const AJUDA_SEM_DESLOCAR = { formHelperText: { sx: { position: 'absolute', top: '100%', mx: 0, mt: 0.25, whiteSpace: 'nowrap' } } } as const
 /** Espaço fixo sob os campos da linha para o texto de ajuda, igual em todas as células para mantê-las alinhadas. */
 const ESPACO_PARA_AJUDA = { '& > td': { pb: 3.5 } } as const
@@ -226,7 +228,7 @@ function LinhaDaLista({ consumo, material, rascunho, onChange }: LinhaDaListaPro
       </TableRow>
       {informada && quantidade > 0 && (
         <TableRow>
-          <TableCell colSpan={4} sx={{ bgcolor: 'grey.50' }}>
+          <TableCell colSpan={4} sx={CELULA_DE_LOTES}>
             <AlocacaoDeLotes materialId={consumo.materialId} quantidade={lerQuantidade(rascunho.qtd)} unidade={consumo.unidadeDeMedida}
               alocado={rascunho.alocado} onChange={(alocado) => onChange({ alocado })} />
           </TableCell>
@@ -275,7 +277,7 @@ function LinhaAdicionada({ item, opcoes, materialPorId, onChange, onRemover }: L
       </TableRow>
       {item.materialId && quantidade > 0 && (
         <TableRow>
-          <TableCell colSpan={4} sx={{ bgcolor: 'grey.50' }}>
+          <TableCell colSpan={4} sx={CELULA_DE_LOTES}>
             <AlocacaoDeLotes materialId={item.materialId} quantidade={quantidade} unidade={material?.unidadeDeMedida ?? ''}
               alocado={item.alocado} onChange={(alocado) => onChange({ alocado })} />
           </TableCell>

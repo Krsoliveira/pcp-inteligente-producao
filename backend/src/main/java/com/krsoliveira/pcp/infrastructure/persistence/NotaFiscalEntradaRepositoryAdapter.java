@@ -9,7 +9,6 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
@@ -74,7 +73,7 @@ public class NotaFiscalEntradaRepositoryAdapter implements NotaFiscalEntradaRepo
         Sort ordenacao = Sort.by(Sort.Order.desc("dataRecebimento"), Sort.Order.desc("criadoEm"));
 
         Page<NotaFiscalEntradaJpaEntity> pagina = springData.findAll(criterios,
-                PageRequest.of(pedido.pagina(), pedido.tamanho(), ordenacao));
+                PesquisaJpa.pagina(pedido.pagina(), pedido.tamanho(), ordenacao));
 
         return new Pagina<>(pagina.getContent().stream().map(NotaFiscalEntradaJpaEntity::paraDominio).toList(),
                 pedido.pagina(), pedido.tamanho(), pagina.getTotalElements());

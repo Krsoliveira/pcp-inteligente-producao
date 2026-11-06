@@ -91,6 +91,21 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("registrar: senha acima de 72 bytes retorna 422 com a mensagem da política, e a conta não é criada")
+    void registrarSenhaLongaDemais() {
+        // 72 caracteres, mas 140 bytes: a validação por caracteres deixaria passar; o BCrypt não aceita.
+        String senha = "Aa1!" + "é".repeat(68);
+        ResponseEntity<Map> resposta = rest.postForEntity("/api/v1/auth/registrar",
+                json(Map.of("nome", "Longa", "email", "senha.longa@teste.local", "senha", senha)), Map.class);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat((String) resposta.getBody().get("detail")).contains("72 bytes");
+        assertThat(rest.postForEntity("/api/v1/auth/login",
+                json(Map.of("email", "senha.longa@teste.local", "senha", senha)), Map.class).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     @DisplayName("registrar: campo obrigatório ausente retorna 400")
     void registrarCampoAusente() {
         ResponseEntity<Map> response = rest.postForEntity(

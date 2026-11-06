@@ -6,9 +6,22 @@
 #   PROXIES_CONFIAVEIS  (opcional) regex dos IPs do proxy reverso; o padrão cobre redes privadas
 #   ADMIN_EMAIL, ADMIN_NOME, ADMIN_SENHA  (primeiro usuário, com o perfil Administrador)
 
+# Sem valor padrão de propósito: os de application.yml são de desenvolvimento e estão no repositório. Faltando a
+# variável, a aplicação não sobe.
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+
 spring:
+  datasource:
+    password: ${DB_PASSWORD}
   jpa:
     show-sql: false
+
+# Conta nova em produção só por um gestor (ADR-0031).
+pcp:
+  seguranca:
+    autocadastro-habilitado: ${AUTOCADASTRO_HABILITADO:false}
 
 # Atrás de proxy reverso (Railway), o Tomcat aplica X-Forwarded-For/-Proto somente
 # quando a conexão vem de um proxy confiável. Sem isso, o IP visto seria o do proxy
