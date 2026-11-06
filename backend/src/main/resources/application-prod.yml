@@ -6,7 +6,15 @@
 #   PROXIES_CONFIAVEIS  (opcional) regex dos IPs do proxy reverso; o padrão cobre redes privadas
 #   ADMIN_EMAIL, ADMIN_NOME, ADMIN_SENHA  (primeiro usuário, com o perfil Administrador)
 
+# Sem valor padrão de propósito: os de application.yml são de desenvolvimento e estão no repositório. Faltando a
+# variável, a aplicação não sobe.
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+
 spring:
+  datasource:
+    password: ${DB_PASSWORD}
   jpa:
     show-sql: false
 
