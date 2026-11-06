@@ -18,6 +18,11 @@ spring:
   jpa:
     show-sql: false
 
+# Conta nova em produção só por um gestor (ADR-0031).
+pcp:
+  seguranca:
+    autocadastro-habilitado: ${AUTOCADASTRO_HABILITADO:false}
+
 # Atrás de proxy reverso (Railway), o Tomcat aplica X-Forwarded-For/-Proto somente
 # quando a conexão vem de um proxy confiável. Sem isso, o IP visto seria o do proxy
 # e o HSTS não seria emitido (a requisição chega como HTTP). Confirmar a faixa de IPs

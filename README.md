@@ -80,7 +80,7 @@ fornecedor até o lote do produto acabado. É a base de dados sobre a qual o mó
   componentes, planejado, consumido e desvio, com filtro e ordenação por coluna.
 - **Controle de acesso** — cada usuário tem um perfil, e o perfil é um conjunto de permissões por área.
   O Administrador cria perfis e usuários; quem gerencia só concede o que ele mesmo tem; menus, telas e
-  API respeitam as permissões. Quem se cadastra sozinho entra como Visualizador (só consulta).
+  API respeitam as permissões. Quem se cadastra sozinho entra como Visualizador (só consulta); em produção o cadastro público fica desligado (ADR-0031).
 - **Senhas** — o usuário criado por um gestor entra com senha provisória e é obrigado a trocá-la antes de
   usar o sistema; há "Alterar minha senha" no menu e "Redefinir senha" para o gestor. Nenhuma senha
   aparece na trilha de auditoria.
