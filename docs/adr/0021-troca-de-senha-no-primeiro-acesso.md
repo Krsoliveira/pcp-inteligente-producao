@@ -75,3 +75,9 @@ senha é trocada. A resposta 403 desse caso leva o código `TROCAR_SENHA` para a
   perda de dados.
 - **Pendências**: desativar usuário sem excluí-lo; exceções de permissão por usuário; recuperação de senha por
   e-mail, quando houver envio.
+
+## Atualização de 2026-11-06
+
+Trocar a própria senha, ou um gestor redefini-la, agora derruba os tokens emitidos antes (`usuario.senha_alterada_em`, V18). A tela
+de troca entra de novo com a senha nova, para a pessoa seguir logada. Mudar o perfil não derruba o token: as permissões já são
+relidas a cada requisição.
