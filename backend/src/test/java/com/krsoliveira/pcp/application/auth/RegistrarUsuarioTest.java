@@ -63,7 +63,7 @@ class RegistrarUsuarioTest {
     @Test
     @DisplayName("autocadastro: persiste o usuário no repositório")
     void autocadastroPersistNoRepositorio() {
-        useCase.autocadastrar("João Lima", "joao@exemplo.com", "s3cr3t");
+        useCase.autocadastrar("João Lima", "joao@exemplo.com", "senha-valida-1");
 
         assertThat(usuarioRepository.todos()).hasSize(1);
         assertThat(usuarioRepository.porEmail("joao@exemplo.com")).isPresent();
@@ -72,7 +72,7 @@ class RegistrarUsuarioTest {
     @Test
     @DisplayName("autocadastro: registra evento de auditoria USUARIO_REGISTRADO")
     void autocadastroRegistraEventoDeAuditoria() {
-        useCase.autocadastrar("Maria Souza", "maria@exemplo.com", "pw");
+        useCase.autocadastrar("Maria Souza", "maria@exemplo.com", "senha-valida");
 
         var eventos = trilha.eventos(AcaoAuditoria.USUARIO_REGISTRADO);
         assertThat(eventos).hasSize(1);
@@ -86,20 +86,20 @@ class RegistrarUsuarioTest {
     @Test
     @DisplayName("rejeita cadastro com e-mail já utilizado (exato)")
     void rejeitalEmailDuplicadoExato() {
-        useCase.autocadastrar("Primeiro", "dup@exemplo.com", "pw1");
+        useCase.autocadastrar("Primeiro", "dup@exemplo.com", "senha-valida-1");
 
         assertThatThrownBy(
-                () -> useCase.autocadastrar("Segundo", "dup@exemplo.com", "pw2"))
+                () -> useCase.autocadastrar("Segundo", "dup@exemplo.com", "senha-valida-2"))
                 .isInstanceOf(EmailJaUtilizadoException.class);
     }
 
     @Test
     @DisplayName("rejeita cadastro com e-mail já utilizado (diferença de caixa)")
     void rejeitaEmailDuplicadoCaseDiferente() {
-        useCase.autocadastrar("Primeiro", "dup@exemplo.com", "pw1");
+        useCase.autocadastrar("Primeiro", "dup@exemplo.com", "senha-valida-1");
 
         assertThatThrownBy(
-                () -> useCase.autocadastrar("Segundo", "DUP@EXEMPLO.COM", "pw2"))
+                () -> useCase.autocadastrar("Segundo", "DUP@EXEMPLO.COM", "senha-valida-2"))
                 .isInstanceOf(EmailJaUtilizadoException.class);
     }
 
@@ -111,7 +111,7 @@ class RegistrarUsuarioTest {
     @DisplayName("rejeita nome em branco")
     void rejeitaNomeEmBranco() {
         assertThatThrownBy(
-                () -> useCase.autocadastrar("  ", "x@exemplo.com", "pw"))
+                () -> useCase.autocadastrar("  ", "x@exemplo.com", "senha-valida"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Nome");
     }
