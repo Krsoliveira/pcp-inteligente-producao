@@ -22,6 +22,7 @@ import com.krsoliveira.pcp.infrastructure.security.CorpoGrandeDemaisException;
 import com.krsoliveira.pcp.infrastructure.security.UsuarioDetailsService;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -48,6 +49,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.net.URI;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -69,6 +71,9 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
 
     /** Valor de {@code type} quando o erro não tem documentação própria (RFC 9457, seção 4.2.1). */
     private static final URI TIPO_PADRAO = URI.create("about:blank");
+
+    /** Classe 22 do SQLSTATE, "exceção de dados": número acima da coluna, byte nulo em texto. */
+    private static final String CLASSE_SQL_DADO_RECUSADO = "22";
 
     @Override
     public boolean supports(MethodParameter tipoDeRetorno, Class<? extends HttpMessageConverter<?>> conversor) {
@@ -158,6 +163,23 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problema.setTitle("Conflito");
         problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    /**
+     * Valor que passou pela validação do corpo, mas o banco não aceita. É erro de quem chamou: responde 400, sem repetir o
+     * valor. Os demais erros de acesso a dados (banco fora do ar, por exemplo) seguem como erro do sistema.
+     */
+    @ExceptionHandler(DataAccessException.class)
+    public ProblemDetail dadoRecusadoPeloBanco(DataAccessException ex) {
+        if (!(ex.getMostSpecificCause() instanceof SQLException erroSql) || erroSql.getSQLState() == null
+                || !erroSql.getSQLState().startsWith(CLASSE_SQL_DADO_RECUSADO)) {
+            throw ex;
+        }
+        logger.warn("Dado recusado pelo banco, SQLSTATE " + erroSql.getSQLState());
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problema.setTitle("Requisição inválida");
+        problema.setDetail("Um dos valores informados está fora do limite ou do formato aceito.");
         return problema;
     }
 

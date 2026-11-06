@@ -9,7 +9,6 @@ import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 import com.krsoliveira.pcp.domain.material.FiltroMateriais;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
@@ -79,7 +78,7 @@ public class MaterialRepositoryAdapter implements MaterialRepository {
         Sort ordenacao = Sort.by(Sort.Order.desc("criadoEm"), Sort.Order.desc("codigo"));
 
         Page<MaterialJpaEntity> pagina = springDataRepository.findAll(criterios,
-                PageRequest.of(pedido.pagina(), pedido.tamanho(), ordenacao));
+                PesquisaJpa.pagina(pedido.pagina(), pedido.tamanho(), ordenacao));
 
         return new Pagina<>(pagina.getContent().stream().map(MaterialJpaEntity::paraDominio).toList(),
                 pedido.pagina(), pedido.tamanho(), pagina.getTotalElements());
