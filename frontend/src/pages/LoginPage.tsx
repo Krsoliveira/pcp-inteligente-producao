@@ -9,6 +9,7 @@ import InputAdornment from '@mui/material/InputAdornment'
 import EmailIcon from '@mui/icons-material/Email'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
+import { autocadastroHabilitado } from '../utils/autocadastro'
 import { mensagemDeEspera, mensagemDeErroDaApi, segundosDeEspera } from '../utils/mensagensDeErro'
 import { useContagemRegressiva } from '../hooks/useContagemRegressiva'
 import { destinoAposLogin } from '../utils/destinoAposLogin'
@@ -60,14 +61,16 @@ export function LoginPage() {
   return (
     <AuthLayout
       titulo="Entrar na plataforma"
-      rodape={
+      rodape={autocadastroHabilitado() ? (
         <>
           Não tem conta?{' '}
           <Link component={RouterLink} to="/cadastro">
             Criar conta
           </Link>
         </>
-      }
+      ) : (
+        'Para ter acesso, fale com um gestor do sistema.'
+      )}
     >
       {restante > 0 ? (
         <Alert severity="warning" sx={{ mb: 2 }}>
