@@ -253,7 +253,7 @@ Lacunas identificadas no código, **independentes do provedor** escolhido:
 | Sem perfil de produção | Banco gerenciado exige SSL; `JWT_SECRET` tem valor padrão de dev | Perfil `prod`: conexão com `sslmode=require` e `JWT_SECRET` obrigatório (sem padrão) |
 
 Depois do código pronto: arquivo de configuração do provedor escolhido, guia
-`docs/deploy.md`, variáveis de ambiente (banco, `JWT_SECRET`, `ADMIN_*`, origens do CORS)
+`docs/deploy.md`, variáveis de ambiente (banco, `JWT_SECRET`, `ADMIN_*`, origens do CORS; sem `JWT_SECRET` ou `DB_PASSWORD` o perfil `prod` não sobe)
 e link "ver online" no README.
 
 Pontos de atenção por provedor:
