@@ -78,6 +78,7 @@ jobs:
   frontend:
     name: Frontend (React)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
@@ -105,15 +106,17 @@ jobs:
   sast:
     name: SAST (Semgrep)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: semgrep/semgrep-action@v1
+      - uses: semgrep/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
         with:
           config: p/default
 
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       security-events: write
     strategy:
@@ -143,11 +146,12 @@ jobs:
   secret-scan:
     name: Secret scanning (Gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
