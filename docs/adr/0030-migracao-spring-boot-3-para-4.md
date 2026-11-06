@@ -85,7 +85,7 @@ worktree), com o backend novo na porta 8081 e o mesmo banco, sem parar o ambient
 - **Spring Security 7**: o `DaoAuthenticationProvider` recebe o serviço de usuários no construtor; `permissionsPolicy`
   ficou obsoleto e virou `permissionsPolicyHeader`, trocado só depois de um teste novo garantir os cabeçalhos de
   segurança (passou nas duas formas e falhou com a política alterada de propósito).
-- **springdoc 3.2** já traz o swagger-ui 5.34: a sobreposição manual do webjar saiu. A especificação OpenAPI continua
+- **springdoc 3.2** já traz o swagger-ui 5.34: a sobreposição manual do webjar saiu (voltou em 2026-11-06, com o swagger-ui 5.34.1, por causa do DOMPurify). A especificação OpenAPI continua
   com os mesmos 43 caminhos; em produção o Swagger segue desligado.
 - **Testes**: `@AutoConfigureTestRestTemplate` nos 15 testes que usam o `TestRestTemplate`; o `PostgreSQLContainer`
   do pacote novo (o antigo está obsoleto no Testcontainers 2).

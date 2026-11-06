@@ -91,11 +91,82 @@ class FormatoDosErrosApiTest {
                 .containsKeys("title", "detail", "instance", "erros");
     }
 
+    @Test
+    @DisplayName("400: identificador que não é UUID traz o RFC 9457, sem repetir o valor enviado, e mantém os campos antigos")
+    void identificadorInvalido() {
+        ResponseEntity<Map> resposta = chamarComResposta(HttpMethod.GET, "/api/v1/ordens-producao/nao-e-um-uuid", null);
+
+        assertErroDoFramework(resposta, 400, "Requisição inválida", "/api/v1/ordens-producao/nao-e-um-uuid");
+        assertThat(resposta.getBody()).containsEntry("detail", "O valor informado para 'id' é inválido.");
+        assertThat(resposta.getBody().get("detail").toString()).doesNotContain("nao-e-um-uuid");
+    }
+
+    @Test
+    @DisplayName("400: valor fora da lista num parâmetro traz o RFC 9457 e mantém os campos antigos")
+    void parametroComValorInvalido() {
+        ResponseEntity<Map> resposta = chamarComResposta(HttpMethod.GET, "/api/v1/ordens-producao/pesquisa?status=INEXISTENTE", null);
+
+        assertErroDoFramework(resposta, 400, "Requisição inválida", "/api/v1/ordens-producao/pesquisa");
+        assertThat(resposta.getBody()).containsEntry("detail", "O valor informado para 'status' é inválido.");
+    }
+
+    @Test
+    @DisplayName("400: parâmetro obrigatório ausente traz o RFC 9457 e mantém os campos antigos")
+    void parametroAusente() {
+        ResponseEntity<Map> resposta = chamarComResposta(HttpMethod.GET, "/api/v1/relatorios/consumo-de-ordens", null);
+
+        assertErroDoFramework(resposta, 400, "Requisição inválida", "/api/v1/relatorios/consumo-de-ordens");
+        assertThat(resposta.getBody()).containsEntry("detail", "O parâmetro 'de' é obrigatório.");
+    }
+
+    @Test
+    @DisplayName("400: JSON malformado traz o RFC 9457 e mantém os campos antigos")
+    void jsonMalformado() {
+        ResponseEntity<Map> resposta = chamarComResposta(HttpMethod.POST, "/api/v1/materiais", "{isto nao e json");
+
+        assertErroDoFramework(resposta, 400, "Requisição inválida", "/api/v1/materiais");
+        assertThat(resposta.getBody()).containsEntry("detail", "O corpo da requisição não pôde ser lido. Confira o formato dos dados.");
+    }
+
+    @Test
+    @DisplayName("405: método não permitido traz o RFC 9457 e mantém os campos antigos")
+    void metodoNaoPermitido() {
+        ResponseEntity<Map> resposta = chamarComResposta(HttpMethod.DELETE, "/api/v1/materiais", null);
+
+        assertErroDoFramework(resposta, 405, "Método não permitido", "/api/v1/materiais");
+        assertThat(resposta.getBody()).containsEntry("detail", "Este método não é permitido neste endereço.");
+    }
+
+    @Test
+    @DisplayName("404: endereço que não existe traz o RFC 9457 e mantém os campos antigos")
+    void enderecoInexistente() {
+        ResponseEntity<Map> resposta = chamarComResposta(HttpMethod.GET, "/api/v1/nao-existe", null);
+
+        assertErroDoFramework(resposta, 404, "Recurso não encontrado", "/api/v1/nao-existe");
+        assertThat(resposta.getBody()).containsEntry("detail", "O endereço pedido não existe.");
+    }
+
+    /** Campos do RFC 9457 e, como o contrato só cresce, os que o erro padrão do Spring já devolvia. */
+    private static void assertErroDoFramework(ResponseEntity<Map> resposta, int status, String titulo, String caminho) {
+        assertThat(resposta.getStatusCode().value()).isEqualTo(status);
+        assertThat(resposta.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
+        assertThat(resposta.getBody()).containsEntry("type", "about:blank").containsEntry("status", status)
+                .containsEntry("title", titulo).containsEntry("instance", caminho).containsKey("detail")
+                .containsEntry("path", caminho).containsKeys("timestamp", "error");
+    }
+
     private Map<String, Object> chamar(HttpMethod metodo, String caminho, Object corpo) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(token);
         ResponseEntity<Map> resposta = rest.exchange(caminho, metodo, new HttpEntity<>(corpo, headers), Map.class);
         return resposta.getBody();
+    }
+
+    private ResponseEntity<Map> chamarComResposta(HttpMethod metodo, String caminho, Object corpo) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(token);
+        return rest.exchange(caminho, metodo, new HttpEntity<>(corpo, headers), Map.class);
     }
 }
