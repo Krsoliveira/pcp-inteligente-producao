@@ -7,6 +7,7 @@ import com.krsoliveira.pcp.domain.acesso.PerfilAcesso;
 import com.krsoliveira.pcp.domain.acesso.PerfilAcessoRepository;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.domain.usuario.CodificadorDeSenha;
+import com.krsoliveira.pcp.domain.usuario.PoliticaDeSenha;
 import com.krsoliveira.pcp.domain.usuario.Usuario;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
 
@@ -38,6 +39,7 @@ public class RegistrarUsuario {
      * padrão do autocadastro.
      */
     public Usuario autocadastrar(String nome, String email, String senhaPlana) {
+        PoliticaDeSenha.validar(senhaPlana);
         PerfilAcesso padrao = perfilRepository.buscarPadraoDoAutocadastro()
                 .orElseThrow(() -> new IllegalStateException("Perfil padrão do autocadastro não encontrado."));
         return executar(nome, email, senhaPlana, padrao, normalizar(email));

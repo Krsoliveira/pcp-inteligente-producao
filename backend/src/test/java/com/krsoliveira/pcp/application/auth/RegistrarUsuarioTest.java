@@ -38,6 +38,17 @@ class RegistrarUsuarioTest {
     // -------------------------------------------------------------------------
 
     @Test
+    @DisplayName("autocadastro: senha acima de 72 bytes é recusada pela política e nada é gravado")
+    void autocadastroRecusaSenhaLongaDemais() {
+        assertThatThrownBy(() -> useCase.autocadastrar("Ana Silva", "ana@exemplo.com", "é".repeat(37)))
+                .isInstanceOf(com.krsoliveira.pcp.domain.RegraDeNegocioException.class)
+                .hasMessageContaining("72 bytes");
+
+        assertThat(usuarioRepository.porEmail("ana@exemplo.com")).isEmpty();
+        assertThat(trilha.eventos()).isEmpty();
+    }
+
+    @Test
     @DisplayName("autocadastro: salva usuário com e-mail normalizado, senha codificada e o perfil padrão")
     void autocadastroSalvaUsuarioCorretamente() {
         Usuario criado = useCase.autocadastrar("Ana Silva", " ANA@exemplo.com ", "senha123");
