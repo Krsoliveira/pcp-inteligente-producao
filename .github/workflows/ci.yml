@@ -30,14 +30,18 @@ jobs:
         working-directory: backend
         run: mvn -B verify
 
-  # A base da NVD (~400 mil CVEs) é lenta e instável: fica fora do job do backend
-  # para não travar o PR. Roda semanalmente e sob demanda.
+  # A API da NVD não terminava em 30 min (~415 mil registros, recomeçando do zero a cada execução). O espelho mantido
+  # pelo próprio projeto baixa tudo em minutos, então não precisa de chave nem de cache. Roda semanalmente e sob demanda,
+  # sem bloquear merge: quem bloqueia PR é o Trivy. Ele complementa o Trivy porque olha também o JavaScript dentro dos jars.
   dependency-check:
     name: OWASP Dependency-Check
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     continue-on-error: true
+    env:
+      NVD_ESPELHO: https://dependency-check.github.io/DependencyCheck_Builder/nvd_cache/nvdcve-{0}.json.gz
+      DIAS_MAXIMOS_DO_ESPELHO: 7
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 21
@@ -46,34 +50,39 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Restaurar base NVD
-        id: nvd-cache
-        uses: actions/cache/restore@v6
-        with:
-          path: /tmp/owasp-nvd
-          key: owasp-nvd-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: owasp-nvd-${{ runner.os }}-
       - name: OWASP Dependency-Check
         working-directory: backend
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
-          if [ -z "$NVD_API_KEY" ]; then
-            echo "⚠️  NVD_API_KEY não configurada — OWASP Dependency-Check ignorado."
-            echo "Para habilitar, configure o secret NVD_API_KEY em Settings → Secrets."
-          else
-            mvn -B org.owasp:dependency-check-maven:check \
-              -DnvdApiKey="$NVD_API_KEY" \
-              -DdataDirectory=/tmp/owasp-nvd \
-              -DfailOnError=false
+          mvn -B -ntp org.owasp:dependency-check-maven:13.0.0:check \
+            -DnvdDatafeedUrl="$NVD_ESPELHO" \
+            -DossindexAnalyzerEnabled=false \
+            -Dformats=HTML,JSON \
+            -Dodc.outputDirectory=relatorio-owasp
+      # O espelho é atualizado no "melhor esforço": base velha não pode passar como se estivesse em dia.
+      - name: Resumir o resultado e conferir a idade da base
+        working-directory: backend/relatorio-owasp
+        run: |
+          atualizada_em=$(jq -r '.scanInfo.dataSource[] | select(.name == "NVD Cache Last Modified") | .timestamp' dependency-check-report.json)
+          dias=$(( ($(date +%s) - $(date -d "$atualizada_em" +%s)) / 86400 ))
+          {
+            echo "### OWASP Dependency-Check"
+            echo "Base atualizada em $atualizada_em ($dias dia(s))."
+            echo
+            echo "| Severidade | CVE | Dependência |"
+            echo "|---|---|---|"
+            jq -r '[.dependencies[] | .fileName as $arquivo | .vulnerabilities[]? | "| \(.severity) | \(.name) | \($arquivo) |"] | unique | .[]' dependency-check-report.json
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$dias" -gt "$DIAS_MAXIMOS_DO_ESPELHO" ]; then
+            echo "::error::A base do espelho da NVD tem $dias dias."
+            exit 1
           fi
-      # always(): grava o cache parcial mesmo se o timeout cortar o job
-      - name: Salvar base NVD
+      - name: Publicar o relatório
         if: always()
-        uses: actions/cache/save@v6
+        uses: actions/upload-artifact@v4
         with:
-          path: /tmp/owasp-nvd
-          key: owasp-nvd-${{ runner.os }}-${{ github.run_id }}
+          name: relatorio-owasp
+          path: backend/relatorio-owasp
+          retention-days: 30
 
   frontend:
     name: Frontend (React)
