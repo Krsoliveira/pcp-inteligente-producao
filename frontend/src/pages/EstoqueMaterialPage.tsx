@@ -65,18 +65,18 @@ export function EstoqueMaterialPage() {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KpiCard titulo="Disponível" valor={formatarQuantidade(posicao.saldoDisponivel, unidade)}
             subtitulo={`${posicao.lotesDisponiveis} ${posicao.lotesDisponiveis === 1 ? 'lote' : 'lotes'}`}
-            Icone={CheckCircleIcon} cor="#059669" />
+            Icone={CheckCircleIcon} cor="#047857" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KpiCard titulo="Indisponível" valor={formatarQuantidade(posicao.saldoIndisponivel, unidade)}
-            subtitulo="Bloqueado ou vencido" Icone={BlockIcon} cor="#D97706" />
+            subtitulo="Bloqueado ou vencido" Icone={BlockIcon} cor="#B45309" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KpiCard titulo="Próximo vencimento" valor={formatarData(posicao.proximoVencimento)}
             subtitulo="Entre os lotes disponíveis" Icone={EventIcon} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KpiCard titulo="Lotes" valor={String(lotes.length)} subtitulo="De qualquer status" Icone={AllInboxIcon} cor="#455a64" />
+          <KpiCard titulo="Lotes" valor={String(lotes.length)} subtitulo="De qualquer status" Icone={AllInboxIcon} cor="#475569" />
         </Grid>
       </Grid>
 

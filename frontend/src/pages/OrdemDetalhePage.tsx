@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { alpha } from '@mui/material/styles'
 import { usePermissoes } from '../hooks/usePermissoes'
 import { useParams, Link as RouterLink } from 'react-router-dom'
 import Link from '@mui/material/Link'
@@ -316,7 +317,7 @@ export function OrdemDetalhePage() {
                             <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{c.unidadeDeMedida}</Typography></TableCell>
                             <TableCell>
                               {!c.registrado ? (
-                                <Chip label="Pendente" size="small" sx={{ bgcolor: 'rgba(217,119,6,0.10)', color: '#B45309', fontSize: '0.65rem', height: 18, border: 'none' }} />
+                                <Chip label="Pendente" size="small" sx={{ bgcolor: (t) => alpha(t.palette.warning.main, 0.08), color: 'warning.dark', fontSize: '0.65rem', height: 18, border: 'none' }} />
                               ) : !c.justificado ? (
                                 <Tooltip title="Desvio sem justificativa"><Chip icon={<WarningAmberIcon sx={{ fontSize: '12px !important' }} />} label="Sem justif." size="small" color="error" sx={{ fontSize: '0.65rem', height: 18 }} /></Tooltip>
                               ) : (

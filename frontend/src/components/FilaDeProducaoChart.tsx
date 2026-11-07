@@ -9,7 +9,7 @@ import { DadosDoGrafico } from './DadosDoGrafico'
 /** As ordens que ainda estão no chão de fábrica, na ordem em que andam. Concluídas e canceladas ficam de fora. */
 export const ETAPAS_DA_FILA: { status: StatusOrdem; rotulo: string; cor: string }[] = [
   { status: 'PLANEJADA', rotulo: 'Planejada', cor: '#94A3B8' },
-  { status: 'LIBERADA', rotulo: 'Liberada', cor: '#4F46E5' },
+  { status: 'LIBERADA', rotulo: 'Liberada', cor: '#2563EB' },
   { status: 'EM_PRODUCAO', rotulo: 'Em produção', cor: '#D97706' },
 ]
 
