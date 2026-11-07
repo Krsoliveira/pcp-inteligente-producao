@@ -65,3 +65,5 @@ Regras dos ADRs deste projeto:
 | [0030](adr/0030-migracao-spring-boot-3-para-4.md) | Migração do Spring Boot 3.5 para o 4.1 | Aceito |
 | [0031](adr/0031-autocadastro-desligado-em-producao.md) | Autocadastro desligado em produção | Aceito |
 | [0032](adr/0032-oxlint-no-frontend.md) | Oxlint como linter do frontend | Aceito |
+| [0033](adr/0033-deploy-railway-pro-com-nginx.md) | Deploy no Railway Pro, com o Nginx do frontend na frente da API | Aceito |
+| [0034](adr/0034-bloqueio-otimista-na-edicao.md) | Bloqueio otimista na edição de perfil de acesso e tipo de ordem | Aceito |
