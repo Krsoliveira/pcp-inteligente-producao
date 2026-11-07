@@ -4,7 +4,7 @@ import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Skeleton from '@mui/material/Skeleton'
 import AccountTreeIcon from '@mui/icons-material/AccountTreeOutlined'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ativarListaTecnica, pesquisarListasTecnicas } from '../api/listasTecnicas'
 import { listarMateriais } from '../api/materiais'
 import { ListaTecnicaTable, colunasDeListas } from '../components/listas/ListaTecnicaTable'
@@ -16,6 +16,7 @@ import { EmptyState } from '../components/EmptyState'
 import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
 import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
+import { usePesquisaPaginada } from '../hooks/usePesquisaPaginada'
 import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import type { ListaTecnica, StatusListaTecnica } from '../types'
 import { contagem } from '../utils/formatacao'
@@ -27,8 +28,6 @@ export function ListasTecnicasResultadosPage() {
   const materialAplicado = url.texto('materialId')
   const statusBruto = url.texto('status') as StatusListaTecnica
   const statusAplicado = STATUS_LISTA_VALIDOS.includes(statusBruto) ? statusBruto : undefined
-  const pagina = url.numero('pagina', 0)
-  const tamanho = url.numero('tamanho', 25)
 
   const [materialId, setMaterialId] = useState(materialAplicado)
   const [status, setStatus] = useState<StatusListaTecnica | 'TODOS'>(statusAplicado ?? 'TODOS')
@@ -40,14 +39,11 @@ export function ListasTecnicasResultadosPage() {
   const [retirando, setRetirando] = useState<ListaTecnica | null>(null)
   const materialRetirando = retirando ? materialPorId.get(retirando.materialId) : undefined
 
-  const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
-    queryKey: ['listas-tecnicas', 'pesquisa', materialAplicado, statusAplicado, pagina, tamanho],
-    queryFn: () => pesquisarListasTecnicas({ materialId: materialAplicado || undefined, status: statusAplicado, pagina, tamanho }),
-    placeholderData: keepPreviousData,
+  const { itens: listas, total, pagina, tamanho, isLoading, isError, error, isPlaceholderData, falhouSemDados } = usePesquisaPaginada({
+    url,
+    chave: ['listas-tecnicas', 'pesquisa', materialAplicado, statusAplicado],
+    consultar: ({ pagina, tamanho }) => pesquisarListasTecnicas({ materialId: materialAplicado || undefined, status: statusAplicado, pagina, tamanho }),
   })
-  const listas = data?.itens ?? []
-  const total = data?.total ?? 0
-  const falhouSemDados = isError && !data
   const tabela = useTabelaInterativa(listas, colunasDeListas(materialPorId))
   const filtrando = materialAplicado !== '' || statusAplicado !== undefined
 
@@ -55,12 +51,6 @@ export function ListasTecnicasResultadosPage() {
     mutationFn: ativarListaTecnica,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['listas-tecnicas'] }),
   })
-
-  useEffect(() => {
-    if (data && data.itens.length === 0 && data.total > 0 && pagina > 0) {
-      url.atualizar({ pagina: Math.max(0, data.totalPaginas - 1) })
-    }
-  }, [data, pagina]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pesquisar = () => url.atualizar({ materialId: materialId || undefined, status: status === 'TODOS' ? undefined : status, pagina: undefined })
   const limpar = () => { setMaterialId(''); setStatus('TODOS'); url.atualizar({ materialId: undefined, status: undefined, pagina: undefined }) }
