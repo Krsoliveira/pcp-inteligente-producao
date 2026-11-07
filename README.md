@@ -12,7 +12,7 @@ consumo real × planejado e base de dados preparada para análise com IA.
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?logo=springboot&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
 
 <img src="docs/imagens/dashboard-2026-10.png" alt="Dashboard com indicadores clicáveis, fila de produção e entregas por mês" width="900">
 
@@ -122,7 +122,7 @@ flowchart LR
         JPA[infrastructure/persistence<br/>Adaptadores JPA] -. implementa .-> DOM
     end
     RQ -->|HTTPS · JSON · JWT| WEB
-    JPA --> DB[(PostgreSQL 16<br/>Flyway V1–V17)]
+    JPA --> DB[(PostgreSQL 18<br/>Flyway V1–V19)]
 ```
 
 ### Modelo de domínio
@@ -149,7 +149,7 @@ Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 |---|---|
 | **Backend** | Java 21, Spring Boot 4.1, Spring Security, JPA/Hibernate, Flyway, Bean Validation, springdoc-openapi (Swagger) |
 | **Frontend** | React 19, TypeScript, Vite, Material UI 9, TanStack Query, Zustand, ECharts |
-| **Dados** | PostgreSQL 16, gerador Python (biblioteca padrão) |
+| **Dados** | PostgreSQL 18, gerador Python (biblioteca padrão) |
 | **Testes** | JUnit 5, AssertJ, Testcontainers (backend); Vitest, Testing Library (frontend) |
 | **DevOps** | Docker Compose, GitHub Actions, Dependabot |
 

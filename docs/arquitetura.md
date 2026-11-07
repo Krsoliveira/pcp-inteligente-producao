@@ -128,7 +128,7 @@ docker compose up -d
 
 | Serviço | Porta (host) | Para quê |
 |---|---|---|
-| PostgreSQL 16 | `5433` (evita conflito com PostgreSQL nativo na 5432) | Banco de dados |
+| PostgreSQL 18 | `5433` (evita conflito com PostgreSQL nativo na 5432) | Banco de dados |
 | Redis 7 | `6379` | Cache |
 | RabbitMQ 3 | `5672` / UI: `15672` | Mensageria (interface web de administração na 15672) |
 
