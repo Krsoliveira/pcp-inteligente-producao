@@ -1,5 +1,13 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import java.util.ArrayList;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import jakarta.persistence.criteria.Predicate;
+import com.krsoliveira.pcp.domain.lote.FiltroLotes;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
 import com.krsoliveira.pcp.domain.lote.StatusLote;
@@ -63,6 +71,27 @@ public class LoteRepositoryAdapter implements LoteRepository {
     @Override
     public long contarPorStatus(StatusLote status) {
         return springData.countByStatus(status);
+    }
+
+    @Override
+    public Pagina<Lote> pesquisar(FiltroLotes filtro, PedidoDePagina pedido) {
+        Specification<LoteJpaEntity> criterios = (lote, consulta, cb) -> {
+            List<Predicate> condicoes = new ArrayList<>();
+            if (filtro.status() != null) {
+                condicoes.add(cb.equal(lote.get("status"), filtro.status()));
+            }
+            if (filtro.materialId() != null) {
+                condicoes.add(cb.equal(lote.get("materialId"), filtro.materialId()));
+            }
+            if (filtro.busca() != null) {
+                condicoes.add(cb.like(cb.lower(lote.get("numeroLote")), PesquisaJpa.contem(filtro.busca()), PesquisaJpa.ESCAPE));
+            }
+            return cb.and(condicoes.toArray(new Predicate[0]));
+        };
+        Sort ordenacao = Sort.by(Sort.Order.desc("criadoEm"), Sort.Order.desc("numeroLote"));
+        Page<LoteJpaEntity> pagina = springData.findAll(criterios, PesquisaJpa.pagina(pedido.pagina(), pedido.tamanho(), ordenacao));
+        return new Pagina<>(pagina.getContent().stream().map(LoteJpaEntity::paraDominio).toList(),
+                pedido.pagina(), pedido.tamanho(), pagina.getTotalElements());
     }
 
     @Override
