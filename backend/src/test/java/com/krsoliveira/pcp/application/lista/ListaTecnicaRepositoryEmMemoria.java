@@ -24,6 +24,16 @@ public class ListaTecnicaRepositoryEmMemoria implements ListaTecnicaRepository {
     }
 
     @Override
+    public Optional<ListaTecnica> buscarPorIdParaAtualizar(UUID id) {
+        return buscarPorId(id);
+    }
+
+    @Override
+    public Optional<ListaTecnica> buscarPorIdParaUso(UUID id) {
+        return buscarPorId(id);
+    }
+
+    @Override
     public Optional<ListaTecnica> buscarPorId(UUID id) {
         return Optional.ofNullable(dados.get(id));
     }
