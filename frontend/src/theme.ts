@@ -46,6 +46,14 @@ export const theme = createTheme(
       borderRadius: 8,
     },
     components: {
+      // Foco por teclado visível em tudo que é clicável: o padrão do MUI é só uma sombra clara (WCAG 2.4.7).
+      MuiButtonBase: {
+        styleOverrides: {
+          root: {
+            '&.Mui-focusVisible': { outline: '2px solid #4F46E5', outlineOffset: 2 },
+          },
+        },
+      },
       MuiCard: {
         defaultProps: { elevation: 0 },
         styleOverrides: {

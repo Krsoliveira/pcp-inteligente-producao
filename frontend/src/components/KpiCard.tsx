@@ -60,8 +60,7 @@ export function KpiCard({ titulo, valor, subtitulo, Icone, cor, link }: KpiCardP
         <CardActionArea
           component={RouterLink}
           to={link.para}
-          aria-label={`${titulo}: ${valor}. ${link.rotulo}`}
-          sx={{ height: '100%', '&:hover .kpi-acao, &:focus-visible .kpi-acao': { color: 'primary.main' } }}
+          sx={{ height: '100%', '&.Mui-focusVisible': { outlineOffset: -2 }, '&:hover .kpi-acao, &:focus-visible .kpi-acao': { color: 'primary.main' } }}
         >
           {conteudo}
         </CardActionArea>
