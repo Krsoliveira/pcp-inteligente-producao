@@ -34,6 +34,8 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.time.Clock;
+import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 
 /**
  * Porta de ENTRADA HTTP: traduz requisições em chamadas aos casos de uso e
@@ -48,15 +50,18 @@ public class OrdemProducaoController {
     private final ConsultarOrdensProducao consultarOrdensProducao;
     private final AtualizarStatusOrdemProducao atualizarStatusOrdemProducao;
     private final ConcluirOrdemProducao concluirOrdemProducao;
+    private final Clock relogio;
 
     public OrdemProducaoController(CriarOrdemProducao criarOrdemProducao,
                                    ConsultarOrdensProducao consultarOrdensProducao,
                                    AtualizarStatusOrdemProducao atualizarStatusOrdemProducao,
-                                   ConcluirOrdemProducao concluirOrdemProducao) {
+                                   ConcluirOrdemProducao concluirOrdemProducao,
+                                   Clock relogio) {
         this.criarOrdemProducao = criarOrdemProducao;
         this.consultarOrdensProducao = consultarOrdensProducao;
         this.atualizarStatusOrdemProducao = atualizarStatusOrdemProducao;
         this.concluirOrdemProducao = concluirOrdemProducao;
+        this.relogio = relogio;
     }
 
     @PreAuthorize("hasAuthority('ORDEM_CRIAR')")
@@ -67,7 +72,7 @@ public class OrdemProducaoController {
                                                        UriComponentsBuilder uriBuilder) {
         var ordem = criarOrdemProducao.executar(request.paraComando());
         URI location = uriBuilder.path("/api/v1/ordens-producao/{id}").buildAndExpand(ordem.getId()).toUri();
-        return ResponseEntity.created(location).body(OrdemProducaoResponse.de(ordem));
+        return ResponseEntity.created(location).body(resposta(ordem));
     }
 
     @PreAuthorize("hasAuthority('ORDEM_VISUALIZAR')")
@@ -78,7 +83,7 @@ public class OrdemProducaoController {
                     + "pagina no servidor. Continua disponível em /api/v1 porque o contrato só cresce (ADR-0015).")
     public List<OrdemProducaoResponse> listar() {
         return consultarOrdensProducao.listar().stream()
-                .map(OrdemProducaoResponse::de)
+                .map(this::resposta)
                 .toList();
     }
 
@@ -102,17 +107,17 @@ public class OrdemProducaoController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fimAte,
             @RequestParam(required = false) Integer pagina,
             @RequestParam(required = false) Integer tamanho) {
-        LocalDate atrasadasEm = Boolean.TRUE.equals(atrasadas) ? LocalDate.now() : null;
+        LocalDate atrasadasEm = Boolean.TRUE.equals(atrasadas) ? LocalDate.now(relogio) : null;
         var resultado = consultarOrdensProducao.pesquisar(
                 new FiltroOrdens(busca, status, de, ate, atrasadasEm, centro, fimDe, fimAte), PedidoDePagina.de(pagina, tamanho));
-        return PaginaResponse.de(resultado, OrdemProducaoResponse::de);
+        return PaginaResponse.de(resultado, this::resposta);
     }
 
     @PreAuthorize("hasAuthority('ORDEM_VISUALIZAR')")
     @GetMapping("/{id}")
     @Operation(summary = "Busca uma ordem de produção pelo id")
     public OrdemProducaoResponse porId(@PathVariable UUID id) {
-        return OrdemProducaoResponse.de(consultarOrdensProducao.porId(id));
+        return resposta(consultarOrdensProducao.porId(id));
     }
 
     @PreAuthorize("hasAuthority('ORDEM_ATUALIZAR_STATUS')")
@@ -123,7 +128,7 @@ public class OrdemProducaoController {
                     + "Para concluir, use POST /{id}/concluir.")
     public OrdemProducaoResponse atualizarStatus(@PathVariable UUID id,
                                                  @Valid @RequestBody AtualizarStatusRequest request) {
-        return OrdemProducaoResponse.de(atualizarStatusOrdemProducao.executar(id, request.status()));
+        return resposta(atualizarStatusOrdemProducao.executar(id, request.status()));
     }
 
     @PreAuthorize("hasAuthority('ORDEM_CONCLUIR')")
@@ -135,6 +140,10 @@ public class OrdemProducaoController {
                                                            @Valid @RequestBody ConcluirOrdemRequest request) {
         ConcluirOrdemProducao.Resultado resultado =
                 concluirOrdemProducao.executar(request.paraComando(id));
-        return ResponseEntity.ok(ConcluirOrdemResponse.de(resultado));
+        return ResponseEntity.ok(ConcluirOrdemResponse.de(resultado, LocalDate.now(relogio)));
+    }
+
+    private OrdemProducaoResponse resposta(OrdemProducao ordem) {
+        return OrdemProducaoResponse.de(ordem, LocalDate.now(relogio));
     }
 }

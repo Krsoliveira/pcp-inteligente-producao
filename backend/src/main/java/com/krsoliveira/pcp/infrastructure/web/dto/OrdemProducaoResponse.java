@@ -33,7 +33,7 @@ public record OrdemProducaoResponse(UUID id,
                                     String criadaPor,
                                     String atualizadaPor) {
 
-    public static OrdemProducaoResponse de(OrdemProducao ordem) {
+    public static OrdemProducaoResponse de(OrdemProducao ordem, LocalDate hoje) {
         return new OrdemProducaoResponse(
                 ordem.getId(),
                 ordem.getCodigo(),
@@ -46,7 +46,7 @@ public record OrdemProducaoResponse(UUID id,
                 ordem.getInicioPlanejado(),
                 ordem.getFimPlanejado(),
                 ordem.getStatus(),
-                ordem.estaAtrasada(LocalDate.now()),
+                ordem.estaAtrasada(hoje),
                 ordem.getCriadaEm(),
                 ordem.getAtualizadaEm(),
                 ordem.getAssinatura().criadoPor(),

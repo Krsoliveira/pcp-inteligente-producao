@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.time.Clock;
 
 /** Estoque por material (ADR-0012): saldo calculado a partir dos lotes. */
 @RestController
@@ -28,9 +29,11 @@ import java.util.List;
 public class EstoqueController {
 
     private final ConsultarEstoque consultarEstoque;
+    private final Clock relogio;
 
-    public EstoqueController(ConsultarEstoque consultarEstoque) {
+    public EstoqueController(ConsultarEstoque consultarEstoque, Clock relogio) {
         this.consultarEstoque = consultarEstoque;
+        this.relogio = relogio;
     }
 
     @GetMapping
@@ -38,7 +41,7 @@ public class EstoqueController {
             description = "Todos os materiais com saldo disponível (lotes disponíveis e dentro da validade), "
                     + "saldo indisponível (bloqueado ou vencido), próximo vencimento e última entrada.")
     public ResponseEntity<List<EstoqueResponse>> listar() {
-        return ResponseEntity.ok(consultarEstoque.executar(LocalDate.now()).stream()
+        return ResponseEntity.ok(consultarEstoque.executar(LocalDate.now(relogio)).stream()
                 .map(EstoqueResponse::de).toList());
     }
 
@@ -54,7 +57,7 @@ public class EstoqueController {
             @RequestParam(required = false) Integer pagina,
             @RequestParam(required = false) Integer tamanho) {
         var filtro = new FiltroEstoque(new FiltroMateriais(busca, tipo), Boolean.TRUE.equals(somenteComSaldo));
-        var resultado = consultarEstoque.pesquisar(filtro, PedidoDePagina.de(pagina, tamanho), LocalDate.now());
+        var resultado = consultarEstoque.pesquisar(filtro, PedidoDePagina.de(pagina, tamanho), LocalDate.now(relogio));
         return PaginaResponse.de(resultado, EstoqueResponse::de);
     }
 
@@ -62,6 +65,6 @@ public class EstoqueController {
     @Operation(summary = "Alertas do estoque",
             description = "Materiais com lote vencendo nos próximos 30 dias e matérias-primas sem saldo disponível.")
     public ResumoEstoqueResponse resumo() {
-        return ResumoEstoqueResponse.de(consultarEstoque.resumo(LocalDate.now()));
+        return ResumoEstoqueResponse.de(consultarEstoque.resumo(LocalDate.now(relogio)));
     }
 }

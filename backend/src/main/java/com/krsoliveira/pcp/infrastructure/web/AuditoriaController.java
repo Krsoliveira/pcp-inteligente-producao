@@ -9,7 +9,6 @@ import com.krsoliveira.pcp.infrastructure.web.dto.EventoAuditoriaResponse;
 import com.krsoliveira.pcp.infrastructure.web.dto.PaginaResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +20,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
+import java.time.Clock;
 
 /**
  * Trilha de auditoria: quem fez o quê, em qual registro e quando (ADR-0011).
@@ -36,9 +36,9 @@ public class AuditoriaController {
     private final ZoneId fusoHorario;
 
     public AuditoriaController(ConsultarTrilhaDeAuditoria consultarTrilha,
-                               @Value("${pcp.fuso-horario:America/Sao_Paulo}") String fusoHorario) {
+                               Clock relogio) {
         this.consultarTrilha = consultarTrilha;
-        this.fusoHorario = ZoneId.of(fusoHorario);
+        this.fusoHorario = relogio.getZone();
     }
 
     @GetMapping("/eventos")

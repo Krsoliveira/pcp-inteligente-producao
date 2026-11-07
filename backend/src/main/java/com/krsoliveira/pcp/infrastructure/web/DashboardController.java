@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
+import java.time.Clock;
 
 /** Totais do painel principal, calculados no banco. */
 @RestController
@@ -28,13 +28,16 @@ public class DashboardController {
     private final ConsultarResumoProducao consultarResumoProducao;
     private final ConsultarEntregasPorMes consultarEntregasPorMes;
     private final ConsultarAtrasosPorCentro consultarAtrasosPorCentro;
+    private final Clock relogio;
 
     public DashboardController(ConsultarResumoProducao consultarResumoProducao,
                                ConsultarEntregasPorMes consultarEntregasPorMes,
-                               ConsultarAtrasosPorCentro consultarAtrasosPorCentro) {
+                               ConsultarAtrasosPorCentro consultarAtrasosPorCentro,
+                               Clock relogio) {
         this.consultarResumoProducao = consultarResumoProducao;
         this.consultarEntregasPorMes = consultarEntregasPorMes;
         this.consultarAtrasosPorCentro = consultarAtrasosPorCentro;
+        this.relogio = relogio;
     }
 
     @GetMapping("/resumo")
@@ -42,7 +45,7 @@ public class DashboardController {
             description = "Total de ordens, ordens por status, ordens atrasadas e lotes disponíveis. "
                     + "Substitui baixar todas as ordens e lotes só para contá-los.")
     public ResumoProducaoResponse resumo() {
-        return ResumoProducaoResponse.de(consultarResumoProducao.executar(LocalDate.now()));
+        return ResumoProducaoResponse.de(consultarResumoProducao.executar(LocalDate.now(relogio)));
     }
 
     @GetMapping("/entregas-por-mes")
@@ -52,7 +55,7 @@ public class DashboardController {
                     + "\"No prazo\" usa o instante em que o sistema registrou a conclusão, não a data de fabricação do lote. "
                     + "meses: 1 a 24 (padrão 12); fora disso é corrigido.")
     public List<EntregasDoMesResponse> entregasPorMes(@RequestParam(required = false) Integer meses) {
-        return consultarEntregasPorMes.executar(LocalDate.now(), ZoneId.systemDefault(), meses).stream()
+        return consultarEntregasPorMes.executar(LocalDate.now(relogio), relogio.getZone(), meses).stream()
                 .map(EntregasDoMesResponse::de)
                 .toList();
     }
@@ -62,7 +65,7 @@ public class DashboardController {
             description = "Só centros com ordens abertas depois do fim planejado, do que tem mais atrasadas para o que "
                     + "tem menos, com há quantos dias a mais antiga está atrasada.")
     public List<AtrasoDoCentroResponse> atrasosPorCentro() {
-        return consultarAtrasosPorCentro.executar(LocalDate.now()).stream()
+        return consultarAtrasosPorCentro.executar(LocalDate.now(relogio)).stream()
                 .map(AtrasoDoCentroResponse::de)
                 .toList();
     }

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.time.Clock;
 
 /**
  * Lotes nascem ao concluir ordens de produção ou nos itens das notas fiscais de entrada
@@ -31,10 +32,12 @@ public class LoteController {
 
     private final ConsultarLotes consultarLotes;
     private final RastrearLote rastrearLote;
+    private final Clock relogio;
 
-    public LoteController(ConsultarLotes consultarLotes, RastrearLote rastrearLote) {
+    public LoteController(ConsultarLotes consultarLotes, RastrearLote rastrearLote, Clock relogio) {
         this.consultarLotes = consultarLotes;
         this.rastrearLote = rastrearLote;
+        this.relogio = relogio;
     }
 
     @GetMapping
@@ -51,7 +54,7 @@ public class LoteController {
         if (ordemProducaoId != null) {
             lotes = consultarLotes.listarPorOrdem(ordemProducaoId);
         } else if (materialId != null && disponiveis) {
-            lotes = consultarLotes.listarDisponiveisParaConsumo(materialId, LocalDate.now());
+            lotes = consultarLotes.listarDisponiveisParaConsumo(materialId, LocalDate.now(relogio));
         } else if (materialId != null) {
             lotes = consultarLotes.listarPorMaterial(materialId);
         } else {
