@@ -1,0 +1,73 @@
+# Modelo do Nginx do frontend (ADR-0033). Na subida, a imagem troca ${PORT}, ${BACKEND_ENDERECO},
+# ${BORDA_CONFIAVEL} e ${NGINX_LOCAL_RESOLVERS} e grava o resultado em /etc/nginx/conf.d/default.conf. Variáveis do
+# Nginx ($host, $uri...) não são tocadas: o filtro do Dockerfile só deixa passar essas quatro.
+
+# O protocolo que o cliente usou chega da borda da plataforma; sem ela (teste local), vale o desta conexão.
+map $http_x_forwarded_proto $protocolo_original {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
+server {
+    listen ${PORT};
+    listen [::]:${PORT};
+    server_name _;
+    root /usr/share/nginx/html;
+
+    server_tokens off;
+    # O mesmo limite do backend (pcp.seguranca.corpo-maximo-bytes): acima disso, 413 já aqui.
+    client_max_body_size 1m;
+
+    # Quem é o cliente. O X-Forwarded-For só vale quando vem da borda da plataforma (BORDA_CONFIAVEL, uma faixa
+    # CIDR); de qualquer outro remetente, é texto do cliente e é ignorado. Faixa errada nunca abre brecha: no pior
+    # caso, todos aparecem com o IP da borda e dividem o mesmo limite de tentativas.
+    set_real_ip_from ${BORDA_CONFIAVEL};
+    real_ip_header X-Forwarded-For;
+    real_ip_recursive on;
+
+    # DNS do contêiner, consultado de novo a cada 10 s: a API muda de IP quando é reimplantada.
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+    resolver_timeout 5s;
+
+    gzip on;
+    gzip_min_length 1024;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # Verificação de vida da plataforma: só diz que o Nginx responde, sem depender da API.
+    location = /saude {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok";
+    }
+
+    # A API, pela rede privada. Com o endereço numa variável, o Nginx resolve o nome a cada consulta ao DNS acima,
+    # em vez de uma vez só na subida; o caminho original (/api/v1/...) segue inteiro.
+    location /api/ {
+        set $api http://${BACKEND_ENDERECO};
+        proxy_pass $api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        # Um único IP, o cliente resolvido acima: nada do que o cliente escreveu no cabeçalho chega à API. O backend
+        # só aceita este cabeçalho do Nginx (PROXIES_CONFIAVEIS).
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $protocolo_original;
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Arquivos gerados pelo Vite levam o hash do conteúdo no nome: podem ficar em cache por um ano.
+    location /assets/ {
+        include /etc/nginx/snippets/cabecalhos-de-seguranca.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    # Qualquer outra rota é da aplicação (React Router): recarregar /ordens devolve o index.html. O index.html não
+    # fica em cache, para a versão nova chegar logo depois de um deploy.
+    location / {
+        include /etc/nginx/snippets/cabecalhos-de-seguranca.conf;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri $uri/ /index.html;
+    }
+}
