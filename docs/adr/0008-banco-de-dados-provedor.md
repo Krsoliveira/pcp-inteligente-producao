@@ -1,6 +1,6 @@
 # ADR-0008 — Estratégia de banco de dados: ambiente local e provedor de produção
 
-**Status:** Aceito  
+**Status:** Aceito; a versão (16) e o provedor (Neon) foram revistos pelos ADR-0013 e ADR-0033 (PostgreSQL 18 no Railway)  
 **Data:** 2026-08-23  
 **Fase:** Infraestrutura — preparação para deploy das Fases 5a/5b e além
 

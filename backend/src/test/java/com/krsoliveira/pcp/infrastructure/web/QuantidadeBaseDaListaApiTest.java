@@ -48,7 +48,7 @@ class QuantidadeBaseDaListaApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     private static final String LISTAS = "/api/v1/listas-tecnicas";
     private static final String ORDENS = "/api/v1/ordens-producao";

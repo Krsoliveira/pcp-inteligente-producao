@@ -4,7 +4,7 @@
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: pcp-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-pcp}
@@ -15,7 +15,9 @@ services:
       # PostgreSQL nativo ocupando a 5432; usamos 5433 para evitar conflito.
       - "127.0.0.1:5433:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # O Postgres 18 guarda os dados em /var/lib/postgresql/18/docker e pede o volume em /var/lib/postgresql.
+      # Volume novo: o antigo (postgres-data, do 16) não abre no 18 e fica intacto, caso precise dos dados.
+      - postgres-data-18:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pcp} -d ${POSTGRES_DB:-pcp}"]
       interval: 5s
@@ -49,4 +51,4 @@ services:
       retries: 10
 
 volumes:
-  postgres-data:
+  postgres-data-18:
