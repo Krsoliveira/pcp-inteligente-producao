@@ -17,6 +17,11 @@ interface PerfilAcessoSpringDataRepository extends JpaRepository<PerfilAcessoJpa
     @Query("SELECT p FROM PerfilAcessoJpaEntity p WHERE p.id = :id")
     Optional<PerfilAcessoJpaEntity> buscarParaAtualizar(@Param("id") UUID id);
 
+    /** SELECT ... FOR SHARE: outras leituras travadas passam; quem quer excluir espera o fim da transação. */
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    @Query("SELECT p FROM PerfilAcessoJpaEntity p WHERE p.id = :id")
+    Optional<PerfilAcessoJpaEntity> buscarParaUso(@Param("id") UUID id);
+
     Optional<PerfilAcessoJpaEntity> findByNomeIgnoreCase(String nome);
 
     Optional<PerfilAcessoJpaEntity> findByAdministradorTrue();

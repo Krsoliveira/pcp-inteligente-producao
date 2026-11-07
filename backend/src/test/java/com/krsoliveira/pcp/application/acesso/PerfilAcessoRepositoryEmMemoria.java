@@ -48,6 +48,11 @@ public class PerfilAcessoRepositoryEmMemoria implements PerfilAcessoRepository {
     }
 
     @Override
+    public Optional<PerfilAcesso> buscarPorIdParaUso(UUID id) {
+        return buscarPorId(id);
+    }
+
+    @Override
     public Optional<PerfilAcesso> buscarPorNome(String nome) {
         return perfis.stream().filter(p -> p.getNome().equalsIgnoreCase(nome)).findFirst();
     }

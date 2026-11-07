@@ -14,6 +14,12 @@ public interface PerfilAcessoRepository {
     /** Bloqueia o perfil até o fim da transação: quem depende de quantos usuários ele tem conta sem concorrência. */
     Optional<PerfilAcesso> buscarPorIdParaAtualizar(UUID id);
 
+    /**
+     * Busca com trava compartilhada (SELECT ... FOR SHARE): o perfil pode ser atribuído a vários usuários ao mesmo
+     * tempo, mas ninguém o exclui antes de a atribuição ser gravada.
+     */
+    Optional<PerfilAcesso> buscarPorIdParaUso(UUID id);
+
     /** Procura pelo nome sem diferenciar maiúsculas e minúsculas. */
     Optional<PerfilAcesso> buscarPorNome(String nome);
 

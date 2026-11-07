@@ -46,7 +46,7 @@ public class AtribuirPerfilAoUsuario {
         return execucao.executar(ctx -> {
             Usuario usuario = usuarioRepository.porId(usuarioId)
                     .orElseThrow(() -> new UsuarioNaoEncontradoException(usuarioId));
-            PerfilAcesso novo = perfilRepository.buscarPorId(novoPerfilId)
+            PerfilAcesso novo = perfilRepository.buscarPorIdParaUso(novoPerfilId)
                     .orElseThrow(() -> new PerfilNaoEncontradoException(novoPerfilId));
             PerfilAcesso atual = perfilRepository.buscarPorId(usuario.getPerfilId())
                     .orElseThrow(() -> new PerfilNaoEncontradoException(usuario.getPerfilId()));
