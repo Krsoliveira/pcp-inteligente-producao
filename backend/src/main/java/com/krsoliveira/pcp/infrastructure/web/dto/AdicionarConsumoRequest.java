@@ -26,8 +26,7 @@ public record AdicionarConsumoRequest(
 
         String justificativa,
 
-        @Valid
-        List<RegistrarConsumoRequest.AlocacaoRequest> alocacoes) {
+        List<RegistrarConsumoRequest.@Valid AlocacaoRequest> alocacoes) {
 
     public AdicionarConsumoMaterial.Comando paraComando(UUID ordemId) {
         List<RegistrarConsumoMaterial.Alocacao> lotes = alocacoes == null ? List.of()

@@ -23,8 +23,7 @@ public record RegistrarConsumoRequest(
 
         String justificativa,
 
-        @Valid
-        List<AlocacaoRequest> alocacoes) {
+        List<@Valid AlocacaoRequest> alocacoes) {
 
     public record AlocacaoRequest(
             @NotNull(message = "loteId é obrigatório")
