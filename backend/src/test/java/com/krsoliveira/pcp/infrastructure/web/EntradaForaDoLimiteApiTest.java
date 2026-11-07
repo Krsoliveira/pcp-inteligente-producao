@@ -47,7 +47,7 @@ class EntradaForaDoLimiteApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     private static final String ORDENS = "/api/v1/ordens-producao";
     private static final String MENSAGEM = "Um dos valores informados está fora do limite ou do formato aceito.";

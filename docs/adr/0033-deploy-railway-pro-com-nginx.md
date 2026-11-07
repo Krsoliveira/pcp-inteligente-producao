@@ -32,6 +32,7 @@ O ADR-0013 escolheu o Railway antes de existir qualquer artefato de deploy. Desd
 - **Configuração no painel do Railway, registrada em `docs/deploy.md`**, em vez de arquivo da plataforma: o Config as Code está obsoleto e o IaC não cobre o nosso caso.
 - **Segurança das imagens.** As duas rodam sem root. O frontend usa a variante `alpine-slim` do Nginx (21 pacotes em vez de 71) e atualiza os pacotes na geração da imagem. Na primeira varredura, o Trivy encontrou 54 vulnerabilidades HIGH/CRITICAL com correção na imagem Nginx completa e zero depois da troca; o backend saiu limpo.
 - **Cabeçalhos das páginas no Nginx.** CSP só com scripts da própria origem, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` e HSTS. As respostas da API mantêm os cabeçalhos do backend.
+- **PostgreSQL 18 em todos os ambientes.** O banco do Railway nasce no 18. O projeto, que usava o 16 (ADR-0008), passa ao 18 no desenvolvimento (`docker-compose.yml`, com volume novo, porque o 18 guarda os dados em outro caminho e não abre a pasta do 16), no ensaio (`docker-compose.prod.yml`) e nos testes com Testcontainers. O que passa nos testes é o que roda em produção.
 - **Autocadastro desligado em produção**, como no ADR-0031: contas criadas pelo Administrador.
 - **Backup:** backup agendado do volume do Postgres e recuperação a um instante (PITR), recursos do Railway, ligados no painel.
 
@@ -44,6 +45,7 @@ O ADR-0013 escolheu o Railway antes de existir qualquer artefato de deploy. Desd
 | `railway.json` / `railway.toml` | Obsoleto; serviços novos não podem usar |
 | `.railway/railway.ts` (IaC) | Recente; a referência não documenta Dockerfile em subpasta. Reavaliar quando documentar |
 | Repassar a cadeia do `X-Forwarded-For` e decidir só no backend | Exigiria que a lista de proxies confiáveis do backend cobrisse a borda e o Nginx; um erro nela abre a brecha de forjar o IP |
+| Recriar o banco do Railway no PostgreSQL 16 | O volume já tinha sido iniciado pelo 18 e não volta de versão; subir o projeto ao 18, com o banco ainda vazio, deixa os ambientes iguais na versão mais nova |
 | Imagem `nginx-unprivileged:alpine` completa | 54 vulnerabilidades HIGH/CRITICAL com correção na data da decisão |
 
 ## Consequências

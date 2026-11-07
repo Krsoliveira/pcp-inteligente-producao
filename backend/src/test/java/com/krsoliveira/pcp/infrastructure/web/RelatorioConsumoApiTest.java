@@ -47,7 +47,7 @@ class RelatorioConsumoApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     private static final String RELATORIO = "/api/v1/relatorios/consumo-de-ordens";
     private static final String FIM = "2026-09-10";
