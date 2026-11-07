@@ -45,6 +45,10 @@ springdoc:
 
 # Ajusta o nível de log para reduzir ruído em produção.
 logging:
+  # JSON, com o requestId de cada requisição, para a plataforma de logs filtrar sem expressão regular.
+  structured:
+    format:
+      console: ecs
   level:
     root: WARN
     com.krsoliveira: INFO

@@ -61,7 +61,7 @@ Família: `"Inter", "Roboto", "Helvetica", "Arial", sans-serif`.
 - **Caixa de frase em tudo:** "Nova ordem", "Alterar status", "Listas técnicas", "Em produção".
 - Botão com verbo e objeto: "Registrar consumo", não "OK".
 - Contagens por `contagem(total, 'material', 'materiais')`, que acerta o singular.
-- Rótulo de status de ordem na tela: `rotuloDoStatusDeOrdem`, de `StatusBadge.tsx`.
+- Rótulo de status: `rotuloDoStatusDeOrdem` ou `ROTULOS_DE_STATUS`, de `StatusBadge.tsx`.
 
 ## Espaçamento e layout
 
@@ -85,6 +85,7 @@ Família: `"Inter", "Roboto", "Helvetica", "Arial", sans-serif`.
 | `utils/formatacao.ts` | `formatarData`, `formatarDataHora`, `formatarQuantidade`, `formatarCodigoMaterial`, `contagem`, `hojeIso` |
 | `utils/mensagensDeErro.ts` | `mensagemDeErroDaApi`, `mensagemDeErroAoCarregar`, espera do 429 |
 | `hooks/useParametrosDaUrl`, `usePaginacaoLocal`, `usePermissoes` | Filtros na URL, paginação local, permissões |
+| `hooks/usePesquisaPaginada` | Tela de resultados: página na URL, consulta e falha sem dados |
 
 Nunca formate data, número ou erro à mão na tela:
 
@@ -130,7 +131,7 @@ A cor do tipo de ordem é escolhida pelo usuário e nem toda é legível como te
 Toda tela que busca dados trata os quatro estados:
 
 ```tsx
-const falhouSemDados = isError && !data
+const { itens, total, isLoading, isError, error, falhouSemDados } = usePesquisaPaginada({ url, chave, consultar })
 
 {isError && <Alert severity="error">{mensagemDeErroAoCarregar(error, 'Não foi possível carregar as ordens.')}</Alert>}
 {!falhouSemDados && (

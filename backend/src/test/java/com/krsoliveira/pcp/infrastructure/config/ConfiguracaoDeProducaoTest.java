@@ -71,6 +71,16 @@ class ConfiguracaoDeProducaoTest {
         return new PropertySourcesPropertyResolver(fontes);
     }
 
+    @Test
+    @DisplayName("em produção, os logs saem em JSON e nenhuma espera ao banco fica no padrão da biblioteca")
+    void logsETimeouts() throws IOException {
+        var producao = resolvedorDeProducao(Map.of());
+
+        assertThat(producao.getProperty("logging.structured.format.console")).isEqualTo("ecs");
+        assertThat(producao.getProperty("spring.datasource.hikari.connection-timeout")).isEqualTo("5000");
+        assertThat(producao.getProperty("spring.jpa.properties.jakarta.persistence.query.timeout")).isEqualTo("30000");
+    }
+
     private static List<PropertySource<?>> carregar(String arquivo) throws IOException {
         return new YamlPropertySourceLoader().load(arquivo, new ClassPathResource(arquivo));
     }
