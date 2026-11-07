@@ -12,8 +12,8 @@ import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consul
 
 export const TIPO_COR: Record<TipoMaterial, string> = {
   PRODUTO_ACABADO: '#4F46E5',
-  SEMIACABADO:     '#D97706',
-  MATERIA_PRIMA:   '#059669',
+  SEMIACABADO:     '#92400E',
+  MATERIA_PRIMA:   '#047857',
 }
 
 /** Colunas que a tela de resultados ordena e filtra; o texto é o que aparece na célula. */

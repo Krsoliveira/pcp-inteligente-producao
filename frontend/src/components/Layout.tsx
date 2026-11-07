@@ -29,7 +29,7 @@ const DRAWER_WIDTH = 248
 // Sidebar usa fundo escuro (#0F172A) — padrão de enterprise dashboards.
 const SIDEBAR_BG = '#0F172A'
 const SIDEBAR_TEXT = 'rgba(255,255,255,0.65)'
-const SIDEBAR_SUBHEADER = 'rgba(255,255,255,0.35)'
+const SIDEBAR_SUBHEADER = 'rgba(255,255,255,0.6)'
 const SIDEBAR_DIVIDER = 'rgba(255,255,255,0.08)'
 const SIDEBAR_ACTIVE_BG = '#4F46E5'
 const SIDEBAR_HOVER_BG = 'rgba(255,255,255,0.06)'

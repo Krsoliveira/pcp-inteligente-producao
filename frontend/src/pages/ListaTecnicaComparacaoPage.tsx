@@ -29,7 +29,7 @@ import type { ComparacaoDeVersoes, ItemComparado } from '../types'
 type Situacao = 'alterado' | 'adicionado' | 'removido' | 'igual'
 
 const SITUACAO: Record<Situacao, { rotulo: string; cor: string }> = {
-  alterado: { rotulo: 'Alterado', cor: '#B45309' },
+  alterado: { rotulo: 'Alterado', cor: '#92400E' },
   adicionado: { rotulo: 'Adicionado em B', cor: '#047857' },
   removido: { rotulo: 'Removido em B', cor: '#B91C1C' },
   igual: { rotulo: 'Igual', cor: '#64748B' },

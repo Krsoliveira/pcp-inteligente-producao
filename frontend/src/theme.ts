@@ -12,11 +12,13 @@ export const theme = createTheme(
       secondary: {
         main: '#0F766E',
       },
+      // Tons com contraste AA sobre branco, porque também pintam texto. Ponto de status e barra de gráfico,
+      // que não são texto, podem usar os tons mais vivos (ver StatusBadge e os gráficos).
       success: {
-        main: '#059669',
+        main: '#047857',
       },
       warning: {
-        main: '#D97706',
+        main: '#B45309',
       },
       error: {
         main: '#DC2626',

@@ -303,7 +303,7 @@ export function OrdemDetalhePage() {
                               {c.registrado ? (
                                 <Typography variant="body2">{formatarQuantidade(c.quantidadeConsumida)}</Typography>
                               ) : (
-                                <Typography variant="body2" sx={{ color: 'text.disabled' }}>—</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>—</Typography>
                               )}
                             </TableCell>
                             <TableCell align="right">
