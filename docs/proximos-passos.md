@@ -139,8 +139,8 @@ telas): concluído, ver ADR-0020._
 _Troca de senha obrigatória no primeiro acesso, "Alterar minha senha" e redefinição pelo gestor: concluído, ver
 ADR-0021._
 
-- [ ] **Acessos, o que sobrou**: desativar um usuário sem excluí-lo; exceções de permissão por usuário e vários
-      perfis por usuário, se o uso pedir.
+- [x] **Desativar usuário sem excluí-lo** (ADR-0020, atualização de 2026-11-07; V21).
+- [ ] **Acessos, o que sobrou**: exceções de permissão por usuário e vários perfis por usuário, se o uso pedir.
 - [ ] **Listas técnicas autossuficientes**: as respostas trazerem `materialCodigo` e `materialDescricao` para que
       `LISTA_VISUALIZAR_*` funcione sem `MATERIAL_VISUALIZAR` (contrato só cresce).
 - [ ] **Dashboard acionável, fase 3** (ADR-0022; as fases 1 e 2 estão entregues): painel "precisa de atenção"
