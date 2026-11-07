@@ -40,6 +40,9 @@ export interface ControleDaTabela<T> {
   filtrando: boolean
 }
 
+/** Com o ícone de 16 px, dá o alvo mínimo de 24 x 24 px (WCAG 2.5.8). */
+const ALVO_DO_ICONE = 0.5
+
 const comparador = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' })
 const vazio = (v: unknown) => v == null || v === ''
 const textoDa = <T,>(coluna: Coluna<T>, item: T) => coluna.texto?.(item) ?? String(coluna.valor(item) ?? '')
@@ -108,19 +111,21 @@ export function CelulaDeCabecalho<T>({ chave, controle, rotulo, align }: CelulaD
   const IconeDeOrdem = !ativa ? UnfoldMoreIcon : controle.crescente ? ArrowUpwardIcon : ArrowDownwardIcon
 
   return (
-    <TableCell align={align} sortDirection={ativa ? (controle.crescente ? 'asc' : 'desc') : false}>
-      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+    // Em coluna à esquerda, o ícone já marca o fim do título: menos respiro à direita compensa os alvos de 24 px
+    // e a tabela de 8 colunas continua cabendo em 1440 px.
+    <TableCell align={align} sortDirection={ativa ? (controle.crescente ? 'asc' : 'desc') : false} sx={align === 'right' ? undefined : { pr: 0.5 }}>
+      <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
         {rotulo}
         {!coluna.semOrdenacao && (
           <Tooltip title={ativa ? (controle.crescente ? 'Crescente — clique para inverter' : 'Decrescente — clique para remover') : 'Ordenar'}>
-            <IconButton size="small" sx={{ p: 0.25 }} aria-label={`Ordenar ${rotulo}`} color={ativa ? 'primary' : 'default'} onClick={() => controle.alternarOrdem(chave)}>
+            <IconButton size="small" sx={{ p: ALVO_DO_ICONE }} aria-label={`Ordenar ${rotulo}`} color={ativa ? 'primary' : 'default'} onClick={() => controle.alternarOrdem(chave)}>
               <IconeDeOrdem sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
         )}
         {!coluna.semFiltro && (
           <Tooltip title="Filtrar">
-            <IconButton size="small" sx={{ p: 0.25 }} aria-label={`Filtrar ${rotulo}`} color={filtroAtivo ? 'primary' : 'default'} onClick={(e) => setAncora(e.currentTarget)}>
+            <IconButton size="small" sx={{ p: ALVO_DO_ICONE }} aria-label={`Filtrar ${rotulo}`} color={filtroAtivo ? 'primary' : 'default'} onClick={(e) => setAncora(e.currentTarget)}>
               {filtroAtivo ? <FilterAltIcon sx={{ fontSize: 16 }} /> : <FilterAltOutlinedIcon sx={{ fontSize: 16 }} />}
             </IconButton>
           </Tooltip>
