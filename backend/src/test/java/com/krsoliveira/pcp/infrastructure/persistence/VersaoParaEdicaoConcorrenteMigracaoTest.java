@@ -1,16 +1,13 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import com.krsoliveira.pcp.BancoDeTesteIsolado;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.Map;
 
@@ -22,12 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "app.admin.email=admin@pcp.com",
         "app.admin.senha=Senha@123"
 })
-@Testcontainers
+@BancoDeTesteIsolado
 class VersaoParaEdicaoConcorrenteMigracaoTest {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     @Autowired
     private JdbcTemplate jdbc;

@@ -1,15 +1,12 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import com.krsoliveira.pcp.BancoDeTesteIsolado;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,16 +20,12 @@ import static org.assertj.core.api.Assertions.assertThat;
         "app.admin.email=admin@pcp.com",
         "app.admin.senha=Senha@123"
 })
-@Testcontainers
+@BancoDeTesteIsolado
 class ConcessaoDoRelatorioAoVisualizadorMigracaoTest {
 
     private static final String VISUALIZADOR = "00000000-0000-0000-0000-000000000002";
     private static final String PERMISSAO = "RELATORIO_CONSUMO_VISUALIZAR";
     private static final String MIGRACAO = "sistema:migracao-v19";
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     @Autowired
     private JdbcTemplate jdbc;
