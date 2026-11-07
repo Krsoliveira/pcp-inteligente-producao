@@ -54,6 +54,12 @@ export const theme = createTheme(
           },
         },
       },
+      // Título de cartão e de seção vem logo abaixo do título da página (h1), sem pular nível.
+      MuiTypography: {
+        defaultProps: {
+          variantMapping: { h6: 'h2', subtitle1: 'h2', subtitle2: 'h2' },
+        },
+      },
       MuiCard: {
         defaultProps: { elevation: 0 },
         styleOverrides: {

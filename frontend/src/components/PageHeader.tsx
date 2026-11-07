@@ -80,7 +80,7 @@ export function PageHeader({ titulo, subtitulo, breadcrumbs, action }: PageHeade
             )}
           </Breadcrumbs>
         )}
-        <Typography variant="h5">{titulo}</Typography>
+        <Typography variant="h5" component="h1">{titulo}</Typography>
         {subtitulo && (
           <Typography
             variant="body2"

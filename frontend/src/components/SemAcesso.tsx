@@ -15,7 +15,7 @@ export function SemAcesso({ rotaInicial }: SemAcessoProps) {
   return (
     <Box sx={{ textAlign: 'center', py: 8 }}>
       <LockOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-      <Typography variant="h6" gutterBottom>Você não tem acesso a esta tela</Typography>
+      <Typography variant="h6" component="h1" gutterBottom>Você não tem acesso a esta tela</Typography>
       <Typography
         sx={{ color: 'text.secondary', maxWidth: 460, mx: 'auto', mb: 3 }}>
         {rotaInicial
