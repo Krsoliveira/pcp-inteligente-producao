@@ -98,9 +98,10 @@ public class ConfiguracaoCasosDeUso {
                                                       MaterialRepository materialRepository,
                                                       LoteRepository loteRepository,
                                                       AlocacaoLoteRepository alocacaoRepository,
-                                                      ExecucaoAuditada execucao) {
+                                                      ExecucaoAuditada execucao,
+                                                      Clock relogio) {
         return new RegistrarConsumoMaterial(consumoRepository, ordemRepository, materialRepository,
-                loteRepository, alocacaoRepository, execucao, Clock.systemDefaultZone());
+                loteRepository, alocacaoRepository, execucao, relogio);
     }
 
     @Bean
