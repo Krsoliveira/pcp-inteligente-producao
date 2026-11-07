@@ -113,6 +113,24 @@ export function StatusLoteBadge({ status }: { status: StatusLote }) {
   )
 }
 
+// ---- Situação do usuário ----
+
+const SITUACAO_USUARIO_CONFIG: Record<'ATIVO' | 'DESATIVADO', { label: string; dot: string; bg: string; color: string }> = {
+  ATIVO:      { label: 'Ativo',      dot: TOM_VIVO.sucesso, bg: 'rgba(5,150,105,0.10)',   color: '#047857' },
+  DESATIVADO: { label: 'Desativado', dot: TOM_VIVO.neutro,  bg: 'rgba(148,163,184,0.12)', color: '#475569' },
+}
+
+export function SituacaoUsuarioBadge({ ativo }: { ativo: boolean }) {
+  const cfg = SITUACAO_USUARIO_CONFIG[ativo ? 'ATIVO' : 'DESATIVADO']
+  return (
+    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.6, px: 1, py: 0.25, borderRadius: 99,
+      bgcolor: cfg.bg, color: cfg.color, fontSize: '0.7rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+      <Box component="span" sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: cfg.dot, flexShrink: 0 }} />
+      {cfg.label}
+    </Box>
+  )
+}
+
 // ---- Tipo de ordem (badge colorido conforme cadastro) ----
 
 interface TipoOrdemBadgeProps {

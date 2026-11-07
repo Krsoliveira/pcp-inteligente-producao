@@ -9,7 +9,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import MenuItem from '@mui/material/MenuItem'
 import TextField from '@mui/material/TextField'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { atribuirPerfil, criarUsuario, redefinirSenha } from '../../api/acessos'
+import { atribuirPerfil, criarUsuario, desativarUsuario, reativarUsuario, redefinirSenha } from '../../api/acessos'
 import type { PerfilAcesso, Permissao, UsuarioAcesso } from '../../types'
 import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
 import { useSincronizarAoMudar } from '../../hooks/useSincronizarAoMudar'
@@ -177,6 +177,51 @@ export function RedefinirSenhaDialog({ usuario, onFechar }: RedefinirSenhaDialog
         <Button onClick={onFechar} disabled={isPending}>Cancelar</Button>
         <Button color="warning" variant="contained" onClick={salvar} disabled={isPending}>
           {isPending ? 'Redefinindo…' : 'Redefinir senha'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+interface SituacaoDoUsuarioDialogProps {
+  usuario: UsuarioAcesso | null
+  onFechar: () => void
+}
+
+/** Confirma desativar ou reativar, dizendo quem e o que acontece. */
+export function SituacaoDoUsuarioDialog({ usuario, onFechar }: SituacaoDoUsuarioDialogProps) {
+  const queryClient = useQueryClient()
+  const [erro, setErro] = useState<string | null>(null)
+  const desativando = usuario?.ativo ?? false
+
+  useSincronizarAoMudar([usuario?.id], () => setErro(null))
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => (desativando ? desativarUsuario(usuario!.id) : reativarUsuario(usuario!.id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['acessos'] })
+      onFechar()
+    },
+    onError: (e: unknown) => setErro(mensagemDeErroDaApi(e, desativando
+      ? 'Não foi possível desativar o usuário.' : 'Não foi possível reativar o usuário.')),
+  })
+
+  return (
+    <Dialog open={usuario !== null} onClose={isPending ? undefined : onFechar} fullWidth maxWidth="xs">
+      <DialogTitle>{desativando ? `Desativar o usuário ${usuario?.nome}?` : `Reativar o usuário ${usuario?.nome}?`}</DialogTitle>
+      <DialogContent>
+        {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
+        <DialogContentText>
+          {desativando
+            ? `${usuario?.email} deixa de entrar e perde a sessão aberta agora. O usuário e o histórico dele continuam; dá para reativar depois.`
+            : `${usuario?.email} volta a entrar com o mesmo perfil e a mesma senha.`}
+          {' '}A mudança fica registrada no histórico.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onFechar} disabled={isPending}>Cancelar</Button>
+        <Button color={desativando ? 'error' : 'primary'} variant="contained" onClick={() => mutate()} disabled={isPending}>
+          {isPending ? (desativando ? 'Desativando…' : 'Reativando…') : (desativando ? 'Desativar' : 'Reativar')}
         </Button>
       </DialogActions>
     </Dialog>
