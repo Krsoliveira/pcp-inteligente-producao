@@ -22,6 +22,7 @@ import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -165,8 +166,9 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
         return problema;
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ProblemDetail credenciaisInvalidas(BadCredentialsException ex) {
+    /** Usuário desativado recebe a mesma resposta de senha errada: não se revela que a conta existe. */
+    @ExceptionHandler({BadCredentialsException.class, DisabledException.class})
+    public ProblemDetail credenciaisInvalidas(RuntimeException ex) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         problema.setTitle("Credenciais inválidas");
         problema.setDetail("E-mail ou senha incorretos.");
