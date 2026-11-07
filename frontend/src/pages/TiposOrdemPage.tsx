@@ -115,7 +115,7 @@ export function TiposOrdemPage() {
                         <SePermitido qualquer={['TIPO_ORDEM_GERENCIAR']}>
                           {!t.conversao && (
                             <Tooltip title="Editar">
-                              <IconButton size="small" onClick={() => setEditando(t)}>
+                              <IconButton size="small" onClick={() => setEditando(t)} aria-label={`Editar tipo ${t.nome}`}>
                                 <EditIcon sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>

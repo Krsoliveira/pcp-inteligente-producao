@@ -37,7 +37,7 @@ export function KpiCard({ titulo, valor, subtitulo, tom, link }: KpiCardProps) {
         <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary' }}>
           {titulo}
         </Typography>
-        <Typography variant="h4" component="p" sx={{ color: corDoValor ?? 'text.primary', fontWeight: 700 }}>
+        <Typography variant="h4" component="p" sx={{ color: corDoValor ?? 'text.primary', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
           {valor}
         </Typography>
         {subtitulo && (
