@@ -41,7 +41,7 @@ Barra de gráfico e ponto de status não são texto, então podem usar os tons v
 
 ## Tipografia
 
-Família: `"Inter", "Roboto", "Helvetica", "Arial", sans-serif`.
+Família: `"Inter Variable", "Inter", "Roboto", "Helvetica", "Arial", sans-serif`. A Inter é servida pela própria aplicação (`@fontsource-variable/inter`, importada no `main.tsx`), sem Google Fonts.
 
 | Variante | Peso | Elemento | Uso |
 |---|---|---|---|
