@@ -42,7 +42,7 @@ import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { InfoRow } from '../components/InfoRow'
 import { RegistrarConsumoDialog } from '../components/consumo/RegistrarConsumoDialog'
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
-import { formatarCodigoMaterial, formatarDataHora } from '../utils/formatacao'
+import { formatarCodigoMaterial, formatarDataHora, hojeIso } from '../utils/formatacao'
 import type { ConsumoMaterial, ConcluirOrdemRequest } from '../types'
 import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
@@ -418,7 +418,7 @@ interface ConcluirOrdemDialogProps {
 }
 
 function ConcluirOrdemDialog({ aberto, ordemId, onFechar, onSucesso }: ConcluirOrdemDialogProps) {
-  const hoje = new Date().toISOString().split('T')[0]
+  const hoje = hojeIso()
   const [form, setForm] = useState<ConcluirOrdemRequest>({ quantidadeProduzida: 0, dataFabricacao: hoje, dataValidade: '' })
   const [erro, setErro] = useState<string | null>(null)
 

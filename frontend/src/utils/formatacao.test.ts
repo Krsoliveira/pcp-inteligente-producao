@@ -5,6 +5,7 @@ import {
   formatarCodigoMaterial,
   formatarData,
   formatarQuantidade,
+  hojeIso,
 } from './formatacao'
 
 describe('formatarData', () => {
@@ -50,6 +51,21 @@ describe('codigoMaterialCorresponde', () => {
 
   it('texto sem dígitos não casa com o código por acidente', () => {
     expect(codigoMaterialCorresponde('103000001', 'viga')).toBe(false)
+  })
+})
+
+describe('hojeIso', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllEnvs()
+  })
+
+  it('usa o dia local: às 22h em Brasília, em UTC já é o dia seguinte', () => {
+    vi.stubEnv('TZ', 'America/Sao_Paulo')
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-11-07T01:00:00Z'))
+
+    expect(hojeIso()).toBe('2026-11-06')
   })
 })
 

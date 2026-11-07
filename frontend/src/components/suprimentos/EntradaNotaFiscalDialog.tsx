@@ -27,12 +27,12 @@ import {
   type ErrosFormulario,
   type ItemFormulario,
   errosDoServidor,
-  hojeIso,
   paraRequisicao,
   temErros,
   validarNotaFiscal,
 } from './notaFiscalFormulario'
 import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
+import { hojeIso } from '../../utils/formatacao'
 
 interface EntradaNotaFiscalDialogProps {
   aberto: boolean
