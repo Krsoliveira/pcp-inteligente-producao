@@ -34,7 +34,7 @@ public class ExcluirPerfilAcesso {
 
     public void executar(UUID id) {
         execucao.executar(ctx -> {
-            PerfilAcesso perfil = perfilRepository.buscarPorId(id)
+            PerfilAcesso perfil = perfilRepository.buscarPorIdParaAtualizar(id)
                     .orElseThrow(() -> new PerfilNaoEncontradoException(id));
             if (!perfil.podeSerExcluido()) {
                 throw new RegraDeNegocioException(
