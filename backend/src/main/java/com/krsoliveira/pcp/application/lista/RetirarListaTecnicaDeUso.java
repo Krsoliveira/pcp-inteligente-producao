@@ -31,7 +31,7 @@ public class RetirarListaTecnicaDeUso {
 
     public void executar(UUID listaTecnicaId) {
         execucao.executar(ctx -> {
-            ListaTecnica lista = listaTecnicaRepository.buscarPorId(listaTecnicaId)
+            ListaTecnica lista = listaTecnicaRepository.buscarPorIdParaAtualizar(listaTecnicaId)
                     .orElseThrow(() -> new ListaTecnicaNaoEncontradaException(listaTecnicaId));
             String codigoMaterial = materialRepository.buscarPorId(lista.getMaterialId())
                     .map(Material::getCodigo).orElse("?");

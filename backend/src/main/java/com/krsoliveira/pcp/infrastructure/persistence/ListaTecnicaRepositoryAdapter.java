@@ -40,6 +40,16 @@ public class ListaTecnicaRepositoryAdapter implements ListaTecnicaRepository {
     }
 
     @Override
+    public Optional<ListaTecnica> buscarPorIdParaAtualizar(UUID id) {
+        return springDataRepository.buscarParaAtualizar(id).map(ListaTecnicaJpaEntity::paraDominio);
+    }
+
+    @Override
+    public Optional<ListaTecnica> buscarPorIdParaUso(UUID id) {
+        return springDataRepository.buscarParaUso(id).map(ListaTecnicaJpaEntity::paraDominio);
+    }
+
+    @Override
     public List<ListaTecnica> listarTodas() {
         return springDataRepository.findAll().stream()
                 .map(ListaTecnicaJpaEntity::paraDominio)

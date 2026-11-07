@@ -114,7 +114,7 @@ public class CriarOrdemProducao {
      * versões podem estar ativas ao mesmo tempo (ADR-0019), a escolha é explícita e validada aqui.
      */
     private ListaTecnica validarVersaoDaLista(Comando comando) {
-        ListaTecnica lista = listaTecnicaRepository.buscarPorId(comando.listaTecnicaId())
+        ListaTecnica lista = listaTecnicaRepository.buscarPorIdParaUso(comando.listaTecnicaId())
                 .orElseThrow(() -> new ListaTecnicaNaoEncontradaException(comando.listaTecnicaId()));
         if (!lista.getMaterialId().equals(comando.materialId())) {
             throw new RegraDeNegocioException("A versão da lista técnica escolhida não é do material da ordem.");
