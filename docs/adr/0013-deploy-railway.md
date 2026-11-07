@@ -1,6 +1,6 @@
 # ADR-0013: Railway como plataforma de deploy
 
-- **Status**: Aceito
+- **Status**: Aceito; revisado pelo ADR-0033 (2026-11-07), que vale onde os dois divergem
 - **Data**: 2026-10-20
 - **Substitui**: ADR-0004 (Render como hospedagem do backend)
 
