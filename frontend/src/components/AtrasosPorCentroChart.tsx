@@ -1,8 +1,10 @@
 import ReactECharts from 'echarts-for-react'
+import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import type { AtrasoDoCentro } from '../types'
+import { DadosDoGrafico } from './DadosDoGrafico'
 
 interface AtrasosPorCentroChartProps {
   atrasos?: AtrasoDoCentro[]
@@ -48,11 +50,25 @@ export function AtrasosPorCentroChart({ atrasos = [], onSelecionar }: AtrasosPor
             Nenhum centro com ordens atrasadas
           </Typography>
         ) : (
-          <ReactECharts
-            option={option}
-            style={{ height: Math.max(160, atrasos.length * 44 + 24) }}
-            onEvents={onSelecionar ? { click: (e: { dataIndex: number }) => onSelecionar(atrasos[e.dataIndex].centroDeTrabalho) } : undefined}
-          />
+          <>
+            <Box role="img" aria-label={`Atrasos por centro de trabalho: ${atrasos.map((a) => `${a.centroDeTrabalho} ${a.ordensAtrasadas}`).join(', ')}.`}>
+              <ReactECharts
+                option={option}
+                style={{ height: Math.max(160, atrasos.length * 44 + 24) }}
+                onEvents={onSelecionar ? { click: (e: { dataIndex: number }) => onSelecionar(atrasos[e.dataIndex].centroDeTrabalho) } : undefined}
+              />
+            </Box>
+            <DadosDoGrafico
+              titulo="Atrasos por centro de trabalho"
+              rotuloDaColuna="Centro de trabalho"
+              colunas={['Ordens atrasadas', 'Dias da mais antiga']}
+              linhas={atrasos.map((a) => ({
+                rotulo: a.centroDeTrabalho,
+                valores: [a.ordensAtrasadas, a.diasDeAtrasoDaMaisAntiga],
+                onSelecionar: onSelecionar && (() => onSelecionar(a.centroDeTrabalho)),
+              }))}
+            />
+          </>
         )}
       </CardContent>
     </Card>
