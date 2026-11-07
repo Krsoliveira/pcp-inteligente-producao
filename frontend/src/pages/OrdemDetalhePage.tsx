@@ -42,7 +42,7 @@ import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { InfoRow } from '../components/InfoRow'
 import { RegistrarConsumoDialog } from '../components/consumo/RegistrarConsumoDialog'
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
-import { formatarCodigoMaterial, formatarDataHora } from '../utils/formatacao'
+import { formatarCodigoMaterial, formatarDataHora, formatarQuantidade, hojeIso } from '../utils/formatacao'
 import type { ConsumoMaterial, ConcluirOrdemRequest } from '../types'
 import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
@@ -172,13 +172,13 @@ export function OrdemDetalhePage() {
                 <InfoRow label="Material">{material ? `${formatarCodigoMaterial(material.codigo)} — ${material.descricao}` : <Skeleton width={140} />}</InfoRow>
                 <InfoRow label="Lista Técnica"><Chip label={listaTecnica?.versao ?? '…'} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} /></InfoRow>
                 <InfoRow label="Centro de Trabalho">{ordem.centroDeTrabalho}</InfoRow>
-                <InfoRow label="Quantidade planejada">{ordem.quantidade.toLocaleString('pt-BR')} {material?.unidadeDeMedida}</InfoRow>
+                <InfoRow label="Quantidade planejada">{formatarQuantidade(ordem.quantidade, material?.unidadeDeMedida)}</InfoRow>
                 {ordem.quantidadeProduzida != null && (
                   <InfoRow label="Quantidade produzida">
                     <Typography
                       variant="body2"
                       sx={{ fontWeight: 600, color: 'success.main' }}>
-                      {Number(ordem.quantidadeProduzida).toLocaleString('pt-BR')} {material?.unidadeDeMedida}
+                      {formatarQuantidade(ordem.quantidadeProduzida, material?.unidadeDeMedida)}
                     </Typography>
                   </InfoRow>
                 )}
@@ -221,7 +221,7 @@ export function OrdemDetalhePage() {
                             {rotuloMaterial(item.materialComponenteId)}
                           </TableCell>
                           <TableCell align="right">
-                            <Typography variant="body2">{Number(item.quantidadePlanejada).toLocaleString('pt-BR')}</Typography>
+                            <Typography variant="body2">{formatarQuantidade(item.quantidadePlanejada)}</Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>{item.unidadeDeMedida}</Typography>
@@ -298,10 +298,10 @@ export function OrdemDetalhePage() {
                                 </Tooltip>
                               )}
                             </TableCell>
-                            <TableCell align="right"><Typography variant="body2">{c.quantidadePlanejada.toLocaleString('pt-BR')}</Typography></TableCell>
+                            <TableCell align="right"><Typography variant="body2">{formatarQuantidade(c.quantidadePlanejada)}</Typography></TableCell>
                             <TableCell align="right">
                               {c.registrado ? (
-                                <Typography variant="body2">{c.quantidadeConsumida?.toLocaleString('pt-BR')}</Typography>
+                                <Typography variant="body2">{formatarQuantidade(c.quantidadeConsumida)}</Typography>
                               ) : (
                                 <Typography variant="body2" sx={{ color: 'text.disabled' }}>—</Typography>
                               )}
@@ -309,7 +309,7 @@ export function OrdemDetalhePage() {
                             <TableCell align="right">
                               {c.registrado && (
                                 <Typography variant="body2" sx={{ color: temDesvio ? (desvio > 0 ? 'error.main' : 'warning.main') : 'text.secondary', fontWeight: temDesvio ? 600 : 400 }}>
-                                  {desvio > 0 ? '+' : ''}{desvio.toLocaleString('pt-BR')}
+                                  {desvio > 0 ? '+' : ''}{formatarQuantidade(desvio)}
                                 </Typography>
                               )}
                             </TableCell>
@@ -366,7 +366,7 @@ export function OrdemDetalhePage() {
                         {lote.numeroLote}
                       </Link>
                     </InfoRow>
-                    <InfoRow label="Quantidade">{Number(lote.quantidade).toLocaleString('pt-BR')} {lote.unidadeDeMedida}</InfoRow>
+                    <InfoRow label="Quantidade">{formatarQuantidade(lote.quantidade, lote.unidadeDeMedida)}</InfoRow>
                     <InfoRow label="Fabricação">{formatarData(lote.dataFabricacao)}</InfoRow>
                     <InfoRow label="Validade">{formatarData(lote.dataValidade)}</InfoRow>
                     <InfoRow label="Status"><StatusLoteBadge status={lote.status} /></InfoRow>
@@ -418,7 +418,7 @@ interface ConcluirOrdemDialogProps {
 }
 
 function ConcluirOrdemDialog({ aberto, ordemId, onFechar, onSucesso }: ConcluirOrdemDialogProps) {
-  const hoje = new Date().toISOString().split('T')[0]
+  const hoje = hojeIso()
   const [form, setForm] = useState<ConcluirOrdemRequest>({ quantidadeProduzida: 0, dataFabricacao: hoje, dataValidade: '' })
   const [erro, setErro] = useState<string | null>(null)
 

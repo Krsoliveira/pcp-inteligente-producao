@@ -72,6 +72,7 @@ export function RelatorioConsumoOrdensPage() {
     placeholderData: keepPreviousData,
   })
   const linhas = data?.linhas ?? []
+  const falhouSemDados = isError && !data
   const tabela = useTabelaInterativa(linhas, colunas)
 
   const mensagemDoRascunho = periodoInvertido(de, ate)
@@ -103,76 +104,78 @@ export function RelatorioConsumoOrdensPage() {
       )}
       {isError && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(error, 'Não foi possível gerar o relatório.')}</Alert>}
 
-      <Card>
-        {!periodoValido ? (
-          <EmptyState
-            Icone={AssessmentIcon}
-            titulo="Escolha o período"
-            descricao="Informe o início e o fim do período do fim planejado das ordens e clique em Pesquisar."
-          />
-        ) : isLoading ? (
-          <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : linhas.length === 0 ? (
-          <EmptyState
-            Icone={AssessmentIcon}
-            titulo="Nenhuma ordem concluída neste período"
-            descricao="Só entram ordens concluídas com o fim planejado entre as datas escolhidas."
-          />
-        ) : (
-          <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={linhas.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
-            <TableContainer>
-              <Table size="small">
-                <TableHead sx={{ '& th': { whiteSpace: 'nowrap' } }}>
-                  <TableRow>
-                    <CelulaDeCabecalho chave="ordem" rotulo="Ordem" controle={tabela.controle} />
-                    <CelulaDeCabecalho chave="fim" rotulo="Fim planejado" controle={tabela.controle} />
-                    <CelulaDeCabecalho chave="produto" rotulo="Produto" controle={tabela.controle} />
-                    <CelulaDeCabecalho chave="componente" rotulo="Componente" controle={tabela.controle} />
-                    <CelulaDeCabecalho chave="descricao" rotulo="Descrição" controle={tabela.controle} />
-                    <CelulaDeCabecalho chave="planejado" rotulo="Planejado" controle={tabela.controle} align="right" />
-                    <CelulaDeCabecalho chave="consumido" rotulo="Consumido" controle={tabela.controle} align="right" />
-                    <CelulaDeCabecalho chave="desvio" rotulo="Desvio" controle={tabela.controle} align="right" />
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {tabela.linhas.map((l) => (
-                    <TableRow key={`${l.ordemId}-${l.componenteCodigo}`} hover>
-                      <TableCell>
-                        {tem('ORDEM_VISUALIZAR') ? (
-                          <Link component={RouterLink} to={`/ordens/${l.ordemId}`} underline="hover" variant="body2" noWrap sx={{ fontWeight: 600 }}>
-                            {l.ordemCodigo}
-                          </Link>
-                        ) : (
-                          <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>{l.ordemCodigo}</Typography>
-                        )}
-                      </TableCell>
-                      <TableCell><Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>{formatarData(l.fimPlanejado)}</Typography></TableCell>
-                      <TableCell>
-                        <Tooltip title={l.produtoDescricao}>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>{formatarCodigoMaterial(l.produtoCodigo)}</Typography>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell><Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>{formatarCodigoMaterial(l.componenteCodigo)}</Typography></TableCell>
-                      <TableCell sx={{ minWidth: 160 }}><Typography variant="body2">{l.componenteDescricao}</Typography></TableCell>
-                      <TableCell align="right"><Typography variant="body2">{formatarQuantidade(l.quantidadePlanejada, l.unidadeDeMedida)}</Typography></TableCell>
-                      <TableCell align="right"><Typography variant="body2" sx={{ fontWeight: 600 }}>{formatarQuantidade(l.quantidadeConsumida, l.unidadeDeMedida)}</Typography></TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" sx={{ color: corDoDesvio(l.desvio) }}>{formatarQuantidade(l.desvio, l.unidadeDeMedida)}</Typography>
-                      </TableCell>
+      {!falhouSemDados && (
+        <Card>
+          {!periodoValido ? (
+            <EmptyState
+              Icone={AssessmentIcon}
+              titulo="Escolha o período"
+              descricao="Informe o início e o fim do período do fim planejado das ordens e clique em Pesquisar."
+            />
+          ) : isLoading ? (
+            <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
+          ) : linhas.length === 0 ? (
+            <EmptyState
+              Icone={AssessmentIcon}
+              titulo="Nenhuma ordem concluída neste período"
+              descricao="Só entram ordens concluídas com o fim planejado entre as datas escolhidas."
+            />
+          ) : (
+            <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
+              <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={linhas.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+              <TableContainer>
+                <Table size="small">
+                  <TableHead sx={{ '& th': { whiteSpace: 'nowrap' } }}>
+                    <TableRow>
+                      <CelulaDeCabecalho chave="ordem" rotulo="Ordem" controle={tabela.controle} />
+                      <CelulaDeCabecalho chave="fim" rotulo="Fim planejado" controle={tabela.controle} />
+                      <CelulaDeCabecalho chave="produto" rotulo="Produto" controle={tabela.controle} />
+                      <CelulaDeCabecalho chave="componente" rotulo="Componente" controle={tabela.controle} />
+                      <CelulaDeCabecalho chave="descricao" rotulo="Descrição" controle={tabela.controle} />
+                      <CelulaDeCabecalho chave="planejado" rotulo="Planejado" controle={tabela.controle} align="right" />
+                      <CelulaDeCabecalho chave="consumido" rotulo="Consumido" controle={tabela.controle} align="right" />
+                      <CelulaDeCabecalho chave="desvio" rotulo="Desvio" controle={tabela.controle} align="right" />
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', display: 'block', p: 2 }}>
-              Consumo total por componente (a soma dos lotes). Para ver de quais lotes saiu, abra a ordem.
-            </Typography>
-          </Box>
-        )}
-      </Card>
+                  </TableHead>
+                  <TableBody>
+                    {tabela.linhas.map((l) => (
+                      <TableRow key={`${l.ordemId}-${l.componenteCodigo}`} hover>
+                        <TableCell>
+                          {tem('ORDEM_VISUALIZAR') ? (
+                            <Link component={RouterLink} to={`/ordens/${l.ordemId}`} underline="hover" variant="body2" noWrap sx={{ fontWeight: 600 }}>
+                              {l.ordemCodigo}
+                            </Link>
+                          ) : (
+                            <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>{l.ordemCodigo}</Typography>
+                          )}
+                        </TableCell>
+                        <TableCell><Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>{formatarData(l.fimPlanejado)}</Typography></TableCell>
+                        <TableCell>
+                          <Tooltip title={l.produtoDescricao}>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>{formatarCodigoMaterial(l.produtoCodigo)}</Typography>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell><Typography variant="body2" sx={{ fontFamily: 'monospace' }} noWrap>{formatarCodigoMaterial(l.componenteCodigo)}</Typography></TableCell>
+                        <TableCell sx={{ minWidth: 160 }}><Typography variant="body2">{l.componenteDescricao}</Typography></TableCell>
+                        <TableCell align="right"><Typography variant="body2">{formatarQuantidade(l.quantidadePlanejada, l.unidadeDeMedida)}</Typography></TableCell>
+                        <TableCell align="right"><Typography variant="body2" sx={{ fontWeight: 600 }}>{formatarQuantidade(l.quantidadeConsumida, l.unidadeDeMedida)}</Typography></TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" sx={{ color: corDoDesvio(l.desvio) }}>{formatarQuantidade(l.desvio, l.unidadeDeMedida)}</Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', display: 'block', p: 2 }}>
+                Consumo total por componente (a soma dos lotes). Para ver de quais lotes saiu, abra a ordem.
+              </Typography>
+            </Box>
+          )}
+        </Card>
+      )}
     </Box>
   )
 }

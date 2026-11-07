@@ -31,7 +31,7 @@ import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { TipoOrdemBadge } from '../components/StatusBadge'
 import type { TipoOrdem, CadastrarTipoOrdemRequest } from '../types'
-import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
+import { mensagemDeErroDaApi, mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 
 const CORES_SUGERIDAS = [
   '#4F46E5', '#2563EB', '#0F766E', '#059669',
@@ -44,10 +44,11 @@ export function TiposOrdemPage() {
   const [dialogAberto, setDialogAberto] = useState(false)
   const [editando, setEditando] = useState<TipoOrdem | null>(null)
 
-  const { data: tipos = [], isLoading, isError } = useQuery({
+  const { data: tipos = [], isLoading, isError, error } = useQuery({
     queryKey: ['tipos-ordem'],
     queryFn: listarTiposOrdem,
   })
+  const falhouSemDados = isError && tipos.length === 0
 
   return (
     <Box>
@@ -64,68 +65,70 @@ export function TiposOrdemPage() {
         }
       />
 
-      {isError && <Alert severity="error" sx={{ mb: 2 }}>Não foi possível carregar os tipos de ordem.</Alert>}
+      {isError && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(error, 'Não foi possível carregar os tipos de ordem.')}</Alert>}
 
-      <Card>
-        {isLoading ? (
-          <Skeleton variant="rounded" height={280} sx={{ m: 2 }} />
-        ) : tipos.length === 0 ? (
-          <EmptyState
-            Icone={LabelOutlinedIcon}
-            titulo="Nenhum tipo de ordem cadastrado"
-            descricao="Crie categorias como Produção Normal, Manutenção, Revenda ou Retrabalho para classificar suas ordens."
-            acaoLabel={tem('TIPO_ORDEM_GERENCIAR') ? 'Criar primeiro tipo' : undefined}
-            onAcao={() => setDialogAberto(true)}
-          />
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nome</TableCell>
-                  <TableCell>Descrição</TableCell>
-                  <TableCell>Cor</TableCell>
-                  <TableCell align="center" sx={{ width: 60 }}>Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {tipos.map((t) => (
-                  <TableRow key={t.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <TipoOrdemBadge nome={t.nome} cor={t.cor} />
-                        {t.conversao && <Chip size="small" variant="outlined" label="Sistema" />}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>{t.descricao ?? '—'}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ width: 16, height: 16, borderRadius: 0.5, bgcolor: t.cor, flexShrink: 0 }} />
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary' }}>
-                          {t.cor}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell align="center">
-                      <SePermitido qualquer={['TIPO_ORDEM_GERENCIAR']}>
-                        {!t.conversao && (
-                          <Tooltip title="Editar">
-                            <IconButton size="small" onClick={() => setEditando(t)}>
-                              <EditIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </SePermitido>
-                    </TableCell>
+      {!falhouSemDados && (
+        <Card>
+          {isLoading ? (
+            <Skeleton variant="rounded" height={280} sx={{ m: 2 }} />
+          ) : tipos.length === 0 ? (
+            <EmptyState
+              Icone={LabelOutlinedIcon}
+              titulo="Nenhum tipo de ordem cadastrado"
+              descricao="Crie categorias como Produção Normal, Manutenção, Revenda ou Retrabalho para classificar suas ordens."
+              acaoLabel={tem('TIPO_ORDEM_GERENCIAR') ? 'Criar primeiro tipo' : undefined}
+              onAcao={() => setDialogAberto(true)}
+            />
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Nome</TableCell>
+                    <TableCell>Descrição</TableCell>
+                    <TableCell>Cor</TableCell>
+                    <TableCell align="center" sx={{ width: 60 }}>Ações</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Card>
+                </TableHead>
+                <TableBody>
+                  {tipos.map((t) => (
+                    <TableRow key={t.id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <TipoOrdemBadge nome={t.nome} cor={t.cor} />
+                          {t.conversao && <Chip size="small" variant="outlined" label="Sistema" />}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>{t.descricao ?? '—'}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ width: 16, height: 16, borderRadius: 0.5, bgcolor: t.cor, flexShrink: 0 }} />
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary' }}>
+                            {t.cor}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center">
+                        <SePermitido qualquer={['TIPO_ORDEM_GERENCIAR']}>
+                          {!t.conversao && (
+                            <Tooltip title="Editar">
+                              <IconButton size="small" onClick={() => setEditando(t)}>
+                                <EditIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </SePermitido>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Card>
+      )}
 
       <TipoOrdemDialog
         aberto={dialogAberto || editando !== null}

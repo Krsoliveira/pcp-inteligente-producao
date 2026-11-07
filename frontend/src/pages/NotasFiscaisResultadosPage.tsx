@@ -44,6 +44,7 @@ export function NotasFiscaisResultadosPage() {
   })
   const notas = data?.itens ?? []
   const total = data?.total ?? 0
+  const falhouSemDados = isError && !data
   const tabela = useTabelaInterativa(notas, colunasDeNotas(materialPorId))
   const filtrando = deAplicado !== '' || ateAplicado !== ''
 
@@ -66,7 +67,7 @@ export function NotasFiscaisResultadosPage() {
     <Box>
       <PageHeader
         titulo="Entrada de notas"
-        subtitulo={isLoading ? '…' : `${total} ${total === 1 ? 'nota fiscal' : 'notas fiscais'}${filtrando ? ' encontradas' : ' registradas'}`}
+        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${total} ${total === 1 ? 'nota fiscal' : 'notas fiscais'}${filtrando ? ' encontradas' : ' registradas'}`}
         breadcrumbs={[{ label: 'Suprimentos' }, { label: 'Entrada de notas', href: '/notas-fiscais' }, { label: 'Resultados' }]}
       />
 
@@ -77,29 +78,31 @@ export function NotasFiscaisResultadosPage() {
       {!periodoValido && <Alert severity="warning" sx={{ mb: 2 }}>O fim do período não pode ser anterior ao início.</Alert>}
       {isError && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(error, 'Não foi possível carregar as notas fiscais.')}</Alert>}
 
-      <Card>
-        {isLoading && periodoValido ? (
-          <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : notas.length === 0 ? (
-          <EmptyState
-            Icone={ReceiptLongIcon}
-            titulo={filtrando ? 'Nenhuma nota fiscal encontrada com os filtros' : 'Nenhuma nota fiscal registrada'}
-            descricao={filtrando ? 'Ajuste o período.' : undefined}
-          />
-        ) : (
-          <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={notas.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
-            <NotaFiscalTable notas={tabela.linhas} materialPorId={materialPorId} controle={tabela.controle} />
-            <PaginacaoTabela
-              total={total}
-              pagina={pagina}
-              tamanho={tamanho}
-              onPagina={(nova) => url.atualizar({ pagina: nova })}
-              onTamanho={(novo) => url.atualizar({ tamanho: novo, pagina: undefined })}
+      {!falhouSemDados && (
+        <Card>
+          {isLoading && periodoValido ? (
+            <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
+          ) : notas.length === 0 ? (
+            <EmptyState
+              Icone={ReceiptLongIcon}
+              titulo={filtrando ? 'Nenhuma nota fiscal encontrada com os filtros' : 'Nenhuma nota fiscal registrada'}
+              descricao={filtrando ? 'Ajuste o período.' : undefined}
             />
-          </Box>
-        )}
-      </Card>
+          ) : (
+            <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
+              <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={notas.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+              <NotaFiscalTable notas={tabela.linhas} materialPorId={materialPorId} controle={tabela.controle} />
+              <PaginacaoTabela
+                total={total}
+                pagina={pagina}
+                tamanho={tamanho}
+                onPagina={(nova) => url.atualizar({ pagina: nova })}
+                onTamanho={(novo) => url.atualizar({ tamanho: novo, pagina: undefined })}
+              />
+            </Box>
+          )}
+        </Card>
+      )}
     </Box>
   )
 }

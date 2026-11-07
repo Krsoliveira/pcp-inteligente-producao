@@ -67,6 +67,7 @@ export function OrdensResultadosPage() {
   })
   const ordens = data?.itens ?? []
   const total = data?.total ?? 0
+  const falhouSemDados = isError && !data
   const tabela = useTabelaInterativa(ordens, colunasDeOrdens)
   const filtrando = buscaAplicada !== '' || statusAplicado !== undefined || deAplicado !== '' || ateAplicado !== '' || atrasadasAplicado
     || centroAplicado !== '' || fimDeAplicado !== '' || fimAteAplicado !== ''
@@ -91,7 +92,7 @@ export function OrdensResultadosPage() {
     <Box>
       <PageHeader
         titulo="Ordens de Produção"
-        subtitulo={isLoading ? '…' : `${total} ${filtrando ? 'ordens encontradas' : 'ordens cadastradas'}`}
+        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${total} ${filtrando ? 'ordens encontradas' : 'ordens cadastradas'}`}
         breadcrumbs={[{ label: 'Produção' }, { label: 'Ordens', href: '/ordens' }, { label: 'Resultados' }]}
       />
 
@@ -116,29 +117,31 @@ export function OrdensResultadosPage() {
       {!periodoValido && <Alert severity="warning" sx={{ mb: 2 }}>O fim do período não pode ser anterior ao início.</Alert>}
       {isError && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(error, 'Não foi possível carregar as ordens.')}</Alert>}
 
-      <Card>
-        {isLoading && periodoValido ? (
-          <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : ordens.length === 0 ? (
-          <EmptyState
-            Icone={ListAltIcon}
-            titulo={filtrando ? 'Nenhuma ordem encontrada com os filtros' : 'Nenhuma ordem cadastrada'}
-            descricao={filtrando ? 'Tente ajustar os filtros de busca.' : undefined}
-          />
-        ) : (
-          <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={ordens.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
-            <OrdemTable ordens={tabela.linhas} onAtualizarStatus={setOrdemSelecionada} controle={tabela.controle} />
-            <PaginacaoTabela
-              total={total}
-              pagina={pagina}
-              tamanho={tamanho}
-              onPagina={(nova) => url.atualizar({ pagina: nova })}
-              onTamanho={(novo) => url.atualizar({ tamanho: novo, pagina: undefined })}
+      {!falhouSemDados && (
+        <Card>
+          {isLoading && periodoValido ? (
+            <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
+          ) : ordens.length === 0 ? (
+            <EmptyState
+              Icone={ListAltIcon}
+              titulo={filtrando ? 'Nenhuma ordem encontrada com os filtros' : 'Nenhuma ordem cadastrada'}
+              descricao={filtrando ? 'Tente ajustar os filtros de busca.' : undefined}
             />
-          </Box>
-        )}
-      </Card>
+          ) : (
+            <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
+              <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={ordens.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+              <OrdemTable ordens={tabela.linhas} onAtualizarStatus={setOrdemSelecionada} controle={tabela.controle} />
+              <PaginacaoTabela
+                total={total}
+                pagina={pagina}
+                tamanho={tamanho}
+                onPagina={(nova) => url.atualizar({ pagina: nova })}
+                onTamanho={(novo) => url.atualizar({ tamanho: novo, pagina: undefined })}
+              />
+            </Box>
+          )}
+        </Card>
+      )}
 
       <AtualizarStatusDialog ordem={ordemSelecionada} onFechar={() => setOrdemSelecionada(null)} />
     </Box>

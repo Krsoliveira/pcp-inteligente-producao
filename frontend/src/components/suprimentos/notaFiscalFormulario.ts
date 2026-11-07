@@ -1,4 +1,5 @@
 import type { RegistrarNotaFiscalRequest } from '../../types'
+import { hojeIso } from '../../utils/formatacao'
 
 /** Estado do formulário de entrada de nota fiscal: tudo como texto, convertido no envio. */
 export interface ItemFormulario {
@@ -28,11 +29,6 @@ export interface ErrosFormulario {
 
 /** Mesmo padrão do backend (Lote.normalizarNumero): até 20 letras, dígitos e . / - */
 export const NUMERO_LOTE_VALIDO = /^[A-Z0-9./-]{1,20}$/
-
-export const hojeIso = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
 
 export const normalizarLote = (valor: string) => valor.trim().toUpperCase()
 

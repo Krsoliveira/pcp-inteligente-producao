@@ -44,6 +44,7 @@ export function EstoqueResultadosPage() {
   })
   const posicoes = data?.itens ?? []
   const total = data?.total ?? 0
+  const falhouSemDados = isError && !data
   const tabela = useTabelaInterativa(posicoes, colunasDeEstoque)
   const filtrando = buscaAplicada !== '' || tipoAplicado !== undefined || saldoAplicado
 
@@ -68,7 +69,7 @@ export function EstoqueResultadosPage() {
     <Box>
       <PageHeader
         titulo="Estoque"
-        subtitulo={isLoading ? '…' : `${total} ${filtrando ? 'materiais encontrados' : 'materiais'} · saldo calculado a partir dos lotes`}
+        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${total} ${filtrando ? 'materiais encontrados' : 'materiais'} · saldo calculado a partir dos lotes`}
         breadcrumbs={[{ label: 'Suprimentos' }, { label: 'Estoque', href: '/estoque' }, { label: 'Resultados' }]}
       />
 
@@ -81,29 +82,31 @@ export function EstoqueResultadosPage() {
 
       {isError && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(error, 'Não foi possível carregar o estoque.')}</Alert>}
 
-      <Card>
-        {isLoading ? (
-          <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : posicoes.length === 0 ? (
-          <EmptyState
-            Icone={WarehouseIcon}
-            titulo={filtrando ? 'Nenhum material encontrado com os filtros' : 'Nenhum material cadastrado'}
-            descricao={filtrando ? 'Tente ajustar os filtros de busca.' : 'O estoque nasce das entradas de notas fiscais e das ordens de produção concluídas.'}
-          />
-        ) : (
-          <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={posicoes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
-            <EstoqueTable posicoes={tabela.linhas} controle={tabela.controle} />
-            <PaginacaoTabela
-              total={total}
-              pagina={pagina}
-              tamanho={tamanho}
-              onPagina={(nova) => url.atualizar({ pagina: nova })}
-              onTamanho={(novo) => url.atualizar({ tamanho: novo, pagina: undefined })}
+      {!falhouSemDados && (
+        <Card>
+          {isLoading ? (
+            <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
+          ) : posicoes.length === 0 ? (
+            <EmptyState
+              Icone={WarehouseIcon}
+              titulo={filtrando ? 'Nenhum material encontrado com os filtros' : 'Nenhum material cadastrado'}
+              descricao={filtrando ? 'Tente ajustar os filtros de busca.' : 'O estoque nasce das entradas de notas fiscais e das ordens de produção concluídas.'}
             />
-          </Box>
-        )}
-      </Card>
+          ) : (
+            <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
+              <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={posicoes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+              <EstoqueTable posicoes={tabela.linhas} controle={tabela.controle} />
+              <PaginacaoTabela
+                total={total}
+                pagina={pagina}
+                tamanho={tamanho}
+                onPagina={(nova) => url.atualizar({ pagina: nova })}
+                onTamanho={(novo) => url.atualizar({ tamanho: novo, pagina: undefined })}
+              />
+            </Box>
+          )}
+        </Card>
+      )}
     </Box>
   )
 }

@@ -46,6 +46,7 @@ export function ListasTecnicasResultadosPage() {
   })
   const listas = data?.itens ?? []
   const total = data?.total ?? 0
+  const falhouSemDados = isError && !data
   const tabela = useTabelaInterativa(listas, colunasDeListas(materialPorId))
   const filtrando = materialAplicado !== '' || statusAplicado !== undefined
 
@@ -67,7 +68,7 @@ export function ListasTecnicasResultadosPage() {
     <Box>
       <PageHeader
         titulo="Listas Técnicas"
-        subtitulo={isLoading ? '…' : `${total} ${filtrando ? 'versões encontradas' : 'versões cadastradas'}`}
+        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${total} ${filtrando ? 'versões encontradas' : 'versões cadastradas'}`}
         breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas Técnicas', href: '/listas-tecnicas' }, { label: 'Resultados' }]}
       />
 
@@ -78,29 +79,31 @@ export function ListasTecnicasResultadosPage() {
       {isError && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(error, 'Não foi possível carregar as listas técnicas.')}</Alert>}
       {erroAtivar && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroDaApi(erroAtivar, 'Não foi possível ativar a lista técnica.')}</Alert>}
 
-      <Card>
-        {isLoading ? (
-          <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
-        ) : listas.length === 0 ? (
-          <EmptyState
-            Icone={AccountTreeIcon}
-            titulo={filtrando ? 'Nenhuma lista técnica encontrada com os filtros' : 'Nenhuma lista técnica cadastrada'}
-            descricao={filtrando ? 'Tente ajustar os filtros de busca.' : undefined}
-          />
-        ) : (
-          <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
-            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={listas.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
-            <ListaTecnicaTable listas={tabela.linhas} materialPorId={materialPorId} onAtivar={ativar} onRetirarDeUso={setRetirando} controle={tabela.controle} />
-            <PaginacaoTabela
-              total={total}
-              pagina={pagina}
-              tamanho={tamanho}
-              onPagina={(nova) => url.atualizar({ pagina: nova })}
-              onTamanho={(novo) => url.atualizar({ tamanho: novo, pagina: undefined })}
+      {!falhouSemDados && (
+        <Card>
+          {isLoading ? (
+            <Skeleton variant="rounded" height={320} sx={{ m: 2 }} />
+          ) : listas.length === 0 ? (
+            <EmptyState
+              Icone={AccountTreeIcon}
+              titulo={filtrando ? 'Nenhuma lista técnica encontrada com os filtros' : 'Nenhuma lista técnica cadastrada'}
+              descricao={filtrando ? 'Tente ajustar os filtros de busca.' : undefined}
             />
-          </Box>
-        )}
-      </Card>
+          ) : (
+            <Box sx={{ opacity: isPlaceholderData ? 0.6 : 1, transition: 'opacity 150ms' }}>
+              <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={listas.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+              <ListaTecnicaTable listas={tabela.linhas} materialPorId={materialPorId} onAtivar={ativar} onRetirarDeUso={setRetirando} controle={tabela.controle} />
+              <PaginacaoTabela
+                total={total}
+                pagina={pagina}
+                tamanho={tamanho}
+                onPagina={(nova) => url.atualizar({ pagina: nova })}
+                onTamanho={(novo) => url.atualizar({ tamanho: novo, pagina: undefined })}
+              />
+            </Box>
+          )}
+        </Card>
+      )}
       <RetirarDeUsoDialog
         lista={retirando}
         nomeDoMaterial={materialRetirando ? nomeDoMaterial(materialRetirando) : 'Material'}
