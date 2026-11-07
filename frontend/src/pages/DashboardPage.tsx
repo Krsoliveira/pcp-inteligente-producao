@@ -111,7 +111,7 @@ export function DashboardPage() {
               <KpiCard titulo="Total de ordens" valor={total} link={linkDeOrdens()} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
-              <KpiCard titulo="Atrasadas" valor={atrasadas} cor={atrasadas > 0 ? '#DC2626' : undefined}
+              <KpiCard titulo="Atrasadas" valor={atrasadas} tom={atrasadas > 0 ? 'erro' : undefined}
                 subtitulo={atrasadas > 0 ? 'Abertas depois do fim planejado' : 'Nenhuma ordem atrasada'}
                 link={linkDeOrdens({ atrasadas: 'true' })} />
             </Grid>

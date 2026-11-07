@@ -16,6 +16,9 @@ import type { Lote, Material } from '../../types'
 
 /** Classe da área que vai para a impressora; todo o resto da página some na impressão. */
 const AREA_DE_IMPRESSAO = 'etiqueta-area-de-impressao'
+/** A etiqueta é impressa: preto no branco, qualquer que seja o tema da tela, para o QR ser lido. */
+const FUNDO_DA_ETIQUETA = '#fff'
+const TINTA_DA_ETIQUETA = '#000'
 
 /** Endereço que o QR code abre: a tela do lote no próprio sistema (pede login; ADR-0028). */
 export function enderecoDoLote(loteId: string): string {
@@ -41,7 +44,7 @@ function Etiqueta({ lote, material }: EtiquetaProps) {
 
   return (
     <Box sx={{ width: '100mm', height: '50mm', boxSizing: 'border-box', p: '3mm', display: 'flex', gap: '3mm',
-      bgcolor: '#fff', color: '#000', fontFamily: 'Arial, Helvetica, sans-serif', overflow: 'hidden' }}>
+      bgcolor: FUNDO_DA_ETIQUETA, color: TINTA_DA_ETIQUETA, fontFamily: 'Arial, Helvetica, sans-serif', overflow: 'hidden' }}>
       <Box sx={{ flexShrink: 0, width: '44mm', height: '44mm' }}>
         <QRCodeSVG value={enderecoDoLote(lote.id)} level="M" marginSize={0} title={`QR code do lote ${lote.numeroLote}`}
           style={{ width: '100%', height: '100%' }} />
