@@ -3,7 +3,6 @@ package com.krsoliveira.pcp.application.lista;
 import com.krsoliveira.pcp.domain.lista.ListaTecnica;
 import com.krsoliveira.pcp.domain.lista.ListaTecnicaRepository;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
