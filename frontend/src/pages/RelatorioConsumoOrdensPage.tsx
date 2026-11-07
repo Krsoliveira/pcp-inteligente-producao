@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -26,6 +26,7 @@ import { usePermissoes } from '../hooks/usePermissoes'
 import { formatarCodigoMaterial, formatarData, formatarQuantidade } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import type { LinhaDeConsumoDeOrdem } from '../types'
+import { useSincronizarAoMudar } from '../hooks/useSincronizarAoMudar'
 
 /** Mesmo limite do servidor (366 dias, inclusive); checar aqui evita ir ao servidor só para ouvir 422. */
 const MAXIMO_DE_DIAS = 366
@@ -63,7 +64,7 @@ export function RelatorioConsumoOrdensPage() {
   // Os campos editam um rascunho; o relatório só muda ao clicar em Pesquisar.
   const [de, setDe] = useState(deAplicado)
   const [ate, setAte] = useState(ateAplicado)
-  useEffect(() => { setDe(deAplicado); setAte(ateAplicado) }, [deAplicado, ateAplicado])
+  useSincronizarAoMudar([deAplicado, ateAplicado], () => { setDe(deAplicado); setAte(ateAplicado) })
 
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
     queryKey: ['relatorios', 'consumo-de-ordens', deAplicado, ateAplicado],

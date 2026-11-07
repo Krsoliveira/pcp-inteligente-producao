@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { usePermissoes } from '../hooks/usePermissoes'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
@@ -21,6 +21,7 @@ import { listarTiposOrdem } from '../api/tiposOrdem'
 import { formatarCodigoMaterial } from '../utils/formatacao'
 import type { CriarOrdemRequest } from '../types'
 import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
+import { useSincronizarAoMudar } from '../hooks/useSincronizarAoMudar'
 
 interface CriarOrdemDialogProps {
   aberto: boolean
@@ -84,13 +85,13 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
   // Só versões em uso (ATIVA) podem ser escolhidas; o servidor recusa as demais (ADR-0019).
   const versoesEmUso = listasTecnicas.filter((l) => l.status === 'ATIVA')
 
-  // Com uma única versão em uso ela já vem selecionada; com mais de uma, o usuário escolhe. A
-  // dependência é o id (texto), não o array: com a consulta desativada, `data = []` cria um array
-  // novo a cada render e o efeito entraria em loop (setForm → render → efeito...), travando a página.
+  // Com uma única versão em uso ela já vem selecionada; com mais de uma, o usuário escolhe. Compara o id
+  // (texto), não o array: com a consulta desativada, `data = []` cria um array novo a cada render, e cada
+  // um contaria como mudança, em loop, travando a página.
   const versaoUnicaId = versoesEmUso.length === 1 ? versoesEmUso[0].id : ''
-  useEffect(() => {
+  useSincronizarAoMudar([versaoUnicaId], () => {
     setForm((prev) => (prev.listaTecnicaId === versaoUnicaId ? prev : { ...prev, listaTecnicaId: versaoUnicaId }))
-  }, [versaoUnicaId])
+  })
 
   const { mutate, isPending } = useMutation({
     mutationFn: criarOrdem,

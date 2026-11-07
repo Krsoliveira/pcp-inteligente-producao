@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -20,6 +20,7 @@ import { usePesquisaPaginada } from '../hooks/usePesquisaPaginada'
 import { contagem, formatarData } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import type { OrdemProducao, StatusOrdem } from '../types'
+import { useSincronizarAoMudar } from '../hooks/useSincronizarAoMudar'
 
 /** Texto do chip do filtro por fim planejado (um dos lados pode faltar). */
 function rotuloDoFim(de: string, ate: string) {
@@ -47,9 +48,9 @@ export function OrdensResultadosPage() {
   const [status, setStatus] = useState<StatusOrdem | 'TODAS'>(statusAplicado ?? 'TODAS')
   const [de, setDe] = useState(deAplicado)
   const [ate, setAte] = useState(ateAplicado)
-  useEffect(() => {
+  useSincronizarAoMudar([buscaAplicada, statusAplicado, deAplicado, ateAplicado], () => {
     setBusca(buscaAplicada); setStatus(statusAplicado ?? 'TODAS'); setDe(deAplicado); setAte(ateAplicado)
-  }, [buscaAplicada, statusAplicado, deAplicado, ateAplicado])
+  })
 
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemProducao | null>(null)
 

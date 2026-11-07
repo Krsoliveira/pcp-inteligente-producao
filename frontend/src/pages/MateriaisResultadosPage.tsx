@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -17,6 +17,7 @@ import { usePesquisaPaginada } from '../hooks/usePesquisaPaginada'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import { type TipoMaterial } from '../types'
 import { contagem } from '../utils/formatacao'
+import { useSincronizarAoMudar } from '../hooks/useSincronizarAoMudar'
 
 /** Segunda etapa: o resultado da consulta de materiais, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function MateriaisResultadosPage() {
@@ -27,7 +28,7 @@ export function MateriaisResultadosPage() {
 
   const [busca, setBusca] = useState(buscaAplicada)
   const [tipo, setTipo] = useState<TipoMaterial | 'TODOS'>(tipoAplicado ?? 'TODOS')
-  useEffect(() => { setBusca(buscaAplicada); setTipo(tipoAplicado ?? 'TODOS') }, [buscaAplicada, tipoAplicado])
+  useSincronizarAoMudar([buscaAplicada, tipoAplicado], () => { setBusca(buscaAplicada); setTipo(tipoAplicado ?? 'TODOS') })
 
   const { itens: materiais, total, pagina, tamanho, isLoading, isError, error, isPlaceholderData, falhouSemDados } = usePesquisaPaginada({
     url,

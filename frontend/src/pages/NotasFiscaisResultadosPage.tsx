@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -19,6 +19,7 @@ import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
 import { usePesquisaPaginada } from '../hooks/usePesquisaPaginada'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import { contagem } from '../utils/formatacao'
+import { useSincronizarAoMudar } from '../hooks/useSincronizarAoMudar'
 
 /** Segunda etapa: o resultado da consulta de notas, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function NotasFiscaisResultadosPage() {
@@ -29,7 +30,7 @@ export function NotasFiscaisResultadosPage() {
 
   const [de, setDe] = useState(deAplicado)
   const [ate, setAte] = useState(ateAplicado)
-  useEffect(() => { setDe(deAplicado); setAte(ateAplicado) }, [deAplicado, ateAplicado])
+  useSincronizarAoMudar([deAplicado, ateAplicado], () => { setDe(deAplicado); setAte(ateAplicado) })
 
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const materialPorId = new Map(materiais.map((m) => [m.id, m]))
