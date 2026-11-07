@@ -16,6 +16,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import ListAltIcon from '@mui/icons-material/ListAlt'
 import { StatusOrdemBadge, rotuloDoStatusDeOrdem } from './StatusBadge'
+import { LinkDaLinha } from './consulta/LinkDaLinha'
 import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from './consulta/TabelaInterativa'
 
 import { EmptyState } from './EmptyState'
@@ -78,9 +79,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
               sx={{ cursor: 'pointer' }}
             >
               <TableCell>
-                <Typography variant="body2" color="primary" noWrap sx={{ fontWeight: 600 }}>
-                  {ordem.codigo}
-                </Typography>
+                <LinkDaLinha para={`/ordens/${ordem.id}`}>{ordem.codigo}</LinkDaLinha>
               </TableCell>
               <TableCell>
                 <Typography variant="body2">{ordem.centroDeTrabalho}</Typography>

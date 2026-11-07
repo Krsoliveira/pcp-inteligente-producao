@@ -24,6 +24,14 @@ function montar(props: Partial<React.ComponentProps<typeof ListaTecnicaTable>> =
   return { onAtivar, onRetirarDeUso }
 }
 
+describe('ListaTecnicaTable: acesso sem mouse', () => {
+  it('cada versão abre por um link de verdade', () => {
+    montar()
+
+    expect(screen.getByRole('link', { name: '103.000.001' })).toHaveAttribute('href', '/listas-tecnicas/l-1')
+  })
+})
+
 describe('ListaTecnicaTable', () => {
   it('mostra o código do material e a descrição em colunas separadas', () => {
     montar()

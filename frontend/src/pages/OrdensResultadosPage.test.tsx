@@ -55,6 +55,12 @@ describe('OrdensResultadosPage', () => {
     expect(pesquisarMock).toHaveBeenCalledWith(expect.objectContaining({ status: undefined }))
   })
 
+  it('cada ordem abre por um link de verdade, sem depender do mouse', async () => {
+    montar()
+
+    expect((await screen.findByRole('link', { name: 'OP-2026-0002' })).getAttribute('href')).toMatch(/^\/ordens\/.+/)
+  })
+
   it('mostra as ordens e o total encontrado', async () => {
     montar(`${ROTA}?busca=OP`)
 

@@ -27,6 +27,12 @@ describe('EstoqueResultadosPage', () => {
     vi.mocked(consultarResumoEstoque).mockResolvedValue({ totalMateriais: 2, materiaisVencendo: 0, materiasPrimasSemSaldo: 1 })
   })
 
+  it('cada material abre por um link de verdade, sem depender do mouse', async () => {
+    montar()
+
+    expect(await screen.findByRole('link', { name: '110.000.001' })).toHaveAttribute('href', '/estoque/m-2')
+  })
+
   it('consulta o servidor com os filtros e a página da URL', async () => {
     montar(`${ROTA}?busca=aço&tipo=MATERIA_PRIMA&somenteComSaldo=true&pagina=2&tamanho=50`)
 

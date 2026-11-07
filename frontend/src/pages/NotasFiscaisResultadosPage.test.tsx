@@ -54,6 +54,12 @@ describe('NotasFiscaisResultadosPage', () => {
     expect(pesquisarMock).not.toHaveBeenCalled()
   })
 
+  it('cada nota abre por um link de verdade, sem depender do mouse', async () => {
+    montar()
+
+    expect((await screen.findByRole('link', { name: 'NF-002' })).getAttribute('href')).toMatch(/^\/notas-fiscais\/.+/)
+  })
+
   it('mostra as notas, o total e o código do material de cada uma', async () => {
     montar(`${ROTA}?de=2026-09-01`)
 
