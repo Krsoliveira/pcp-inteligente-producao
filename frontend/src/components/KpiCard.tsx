@@ -28,7 +28,7 @@ export function KpiCard({ titulo, valor, subtitulo, Icone, cor, link }: KpiCardP
           <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary' }}>
             {titulo}
           </Typography>
-          <Typography variant="h4" sx={{ color: corDoValor ?? 'text.primary', fontWeight: 700 }}>
+          <Typography variant="h4" component="p" sx={{ color: corDoValor ?? 'text.primary', fontWeight: 700 }}>
             {valor}
           </Typography>
           {subtitulo && (
@@ -60,8 +60,7 @@ export function KpiCard({ titulo, valor, subtitulo, Icone, cor, link }: KpiCardP
         <CardActionArea
           component={RouterLink}
           to={link.para}
-          aria-label={`${titulo}: ${valor}. ${link.rotulo}`}
-          sx={{ height: '100%', '&:hover .kpi-acao, &:focus-visible .kpi-acao': { color: 'primary.main' } }}
+          sx={{ height: '100%', '&.Mui-focusVisible': { outlineOffset: -2 }, '&:hover .kpi-acao, &:focus-visible .kpi-acao': { color: 'primary.main' } }}
         >
           {conteudo}
         </CardActionArea>

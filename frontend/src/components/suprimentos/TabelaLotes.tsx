@@ -9,6 +9,7 @@ import TableRow from '@mui/material/TableRow'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import { LinkDaLinha } from '../consulta/LinkDaLinha'
 import { StatusLoteBadge } from '../StatusBadge'
 import { diasAte, formatarCodigoMaterial, formatarData, formatarQuantidade } from '../../utils/formatacao'
 import type { Lote, Material } from '../../types'
@@ -44,10 +45,7 @@ export function TabelaLotes({ lotes, coluna, materialPorId }: TabelaLotesProps) 
             return (
               <TableRow key={lote.id} hover onClick={() => navigate(`/lotes/${lote.id}`)} sx={{ cursor: 'pointer' }}>
                 <TableCell>
-                  <Typography
-                    variant="body2"
-                    noWrap
-                    sx={{ fontWeight: 600, fontFamily: 'monospace' }}>{lote.numeroLote}</Typography>
+                  <LinkDaLinha para={`/lotes/${lote.id}`} monoespacado>{lote.numeroLote}</LinkDaLinha>
                 </TableCell>
                 <TableCell>
                   {coluna === 'material' ? (

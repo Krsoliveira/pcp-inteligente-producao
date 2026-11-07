@@ -16,6 +16,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import ListAltIcon from '@mui/icons-material/ListAlt'
 import { StatusOrdemBadge, rotuloDoStatusDeOrdem } from './StatusBadge'
+import { LinkDaLinha } from './consulta/LinkDaLinha'
 import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from './consulta/TabelaInterativa'
 
 import { EmptyState } from './EmptyState'
@@ -31,6 +32,8 @@ interface OrdemTableProps {
 }
 
 /** Colunas que a tela de resultados ordena e filtra; o texto é o que aparece na célula. */
+const SO_PARA_LEITOR_DE_TELA = { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }
+
 export const colunasDeOrdens: Coluna<OrdemProducao>[] = [
   { chave: 'codigo', rotulo: 'Código', valor: (o) => o.codigo },
   { chave: 'centro', rotulo: 'Centro de Trabalho', valor: (o) => o.centroDeTrabalho },
@@ -65,7 +68,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
             <CelulaDeCabecalho chave="inicio" rotulo="Início" controle={controle} />
             <CelulaDeCabecalho chave="fim" rotulo="Fim" controle={controle} />
             <CelulaDeCabecalho chave="status" rotulo="Status" controle={controle} />
-            <TableCell align="center" sx={{ width: 40 }}></TableCell>
+            <TableCell align="center" sx={{ width: 40, position: 'relative' }}><Box component="span" sx={SO_PARA_LEITOR_DE_TELA}>Atraso</Box></TableCell>
             {mostrarAcoes && <TableCell align="right" sx={{ width: 80 }}>Ações</TableCell>}
           </TableRow>
         </TableHead>
@@ -78,9 +81,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
               sx={{ cursor: 'pointer' }}
             >
               <TableCell>
-                <Typography variant="body2" color="primary" noWrap sx={{ fontWeight: 600 }}>
-                  {ordem.codigo}
-                </Typography>
+                <LinkDaLinha para={`/ordens/${ordem.id}`}>{ordem.codigo}</LinkDaLinha>
               </TableCell>
               <TableCell>
                 <Typography variant="body2">{ordem.centroDeTrabalho}</Typography>

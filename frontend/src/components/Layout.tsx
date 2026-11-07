@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Link as RouterLink, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Drawer from '@mui/material/Drawer'
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import List from '@mui/material/List'
+import Link from '@mui/material/Link'
+import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
@@ -31,6 +33,14 @@ const SIDEBAR_SUBHEADER = 'rgba(255,255,255,0.35)'
 const SIDEBAR_DIVIDER = 'rgba(255,255,255,0.08)'
 const SIDEBAR_ACTIVE_BG = '#4F46E5'
 const SIDEBAR_HOVER_BG = 'rgba(255,255,255,0.06)'
+const ID_DO_CONTEUDO = 'conteudo'
+
+// Sobre o fundo escuro, o foco do tema não aparece.
+const FOCO_NO_MENU = {
+  '&.Mui-focusVisible': { outline: '2px solid white', outlineOffset: -2 },
+  '&:not(.Mui-selected).Mui-focusVisible': { bgcolor: SIDEBAR_HOVER_BG },
+  '&.Mui-selected.Mui-focusVisible': { bgcolor: SIDEBAR_ACTIVE_BG },
+}
 
 export function Layout() {
   const navigate = useNavigate()
@@ -59,7 +69,7 @@ export function Layout() {
       : [rota, ...ativoTambem].some((r) => location.pathname.startsWith(r))
 
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: SIDEBAR_BG }}>
+    <Box component="aside" aria-label="Menu lateral" sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: SIDEBAR_BG }}>
       {/* Logo */}
       <Box sx={{ px: 2.5, py: 2.5, display: 'flex', alignItems: 'center', gap: 1.25 }}>
         <Box
@@ -79,6 +89,7 @@ export function Layout() {
         <Box>
           <Typography
             variant="subtitle2"
+            component="div"
             sx={{ lineHeight: 1.2, color: 'white', fontSize: '0.85rem', fontWeight: 600 }}
           >
             PCP Inteligente
@@ -92,7 +103,7 @@ export function Layout() {
       <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
 
       {/* Seções de navegação */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto', py: 1 }}>
+      <Box component="nav" aria-label="Navegação principal" sx={{ flexGrow: 1, overflow: 'auto', py: 1 }}>
         {secoes.map((section, sIdx) => (
           <Box key={section.titulo}>
             {sIdx > 0 && <Divider sx={{ my: 0.5, mx: 2, borderColor: SIDEBAR_DIVIDER }} />}
@@ -120,18 +131,19 @@ export function Layout() {
               {section.itens.map((item) => {
                 const ativo = isAtivo(item)
                 return (
+                  <ListItem key={item.rota} disablePadding>
                   <ListItemButton
-                    key={item.rota}
+                    component={RouterLink}
+                    to={item.rota}
                     selected={ativo}
-                    onClick={() => {
-                      navigate(item.rota)
-                      setMobileOpen(false)
-                    }}
+                    aria-current={ativo ? 'page' : undefined}
+                    onClick={() => setMobileOpen(false)}
                     sx={{
                       borderRadius: 1.5,
                       mb: 0.25,
                       px: 1.5,
                       py: 0.75,
+                      ...FOCO_NO_MENU,
                       '&.Mui-selected': {
                         bgcolor: SIDEBAR_ACTIVE_BG,
                         color: 'white',
@@ -157,6 +169,7 @@ export function Layout() {
                       slotProps={{ primary: { sx: { fontSize: '0.825rem', fontWeight: ativo ? 600 : 400 } } }}
                     />
                   </ListItemButton>
+                  </ListItem>
                 )
               })}
             </List>
@@ -183,10 +196,15 @@ export function Layout() {
       <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
       <List sx={{ px: 1, py: 0.5 }}>
         {usuario && !usuario.deveTrocarSenha && (
+          <ListItem disablePadding>
           <ListItemButton
+            component={RouterLink}
+            to="/minha-senha"
             selected={location.pathname === '/minha-senha'}
-            onClick={() => { navigate('/minha-senha'); setMobileOpen(false) }}
+            aria-current={location.pathname === '/minha-senha' ? 'page' : undefined}
+            onClick={() => setMobileOpen(false)}
             sx={{
+              ...FOCO_NO_MENU,
               borderRadius: 1.5, px: 1.5, py: 0.75, color: SIDEBAR_TEXT,
               '& .MuiListItemIcon-root': { color: SIDEBAR_TEXT },
               '&.Mui-selected': { bgcolor: SIDEBAR_ACTIVE_BG, color: 'white', '& .MuiListItemIcon-root': { color: 'white' } },
@@ -196,10 +214,13 @@ export function Layout() {
             <ListItemIcon sx={{ minWidth: 32 }}><PasswordIcon fontSize="small" /></ListItemIcon>
             <ListItemText primary="Alterar minha senha" slotProps={{ primary: { sx: { fontSize: '0.825rem' } } }} />
           </ListItemButton>
+          </ListItem>
         )}
+        <ListItem disablePadding>
         <ListItemButton
           onClick={handleLogout}
           sx={{
+            ...FOCO_NO_MENU,
             borderRadius: 1.5,
             px: 1.5,
             py: 0.75,
@@ -220,12 +241,26 @@ export function Layout() {
             slotProps={{ primary: { sx: { fontSize: '0.825rem' } } }}
           />
         </ListItemButton>
+        </ListItem>
       </List>
     </Box>
   )
 
   return (
     <Box sx={{ display: 'flex' }}>
+      {/* Só aparece ao receber foco: quem usa teclado não precisa passar por todo o menu a cada tela. */}
+      <Link
+        href={`#${ID_DO_CONTEUDO}`}
+        onClick={(e) => { e.preventDefault(); document.getElementById(ID_DO_CONTEUDO)?.focus() }}
+        sx={{
+          position: 'fixed', left: 8, top: -64, zIndex: (t) => t.zIndex.tooltip,
+          px: 2, py: 1, borderRadius: 1, bgcolor: 'background.paper', fontWeight: 600,
+          '&:focus': { top: 8 },
+        }}
+      >
+        Pular para o conteúdo
+      </Link>
+
       {/* AppBar (mobile) — mantém fundo claro para contraste com o conteúdo */}
       <AppBar
         position="fixed"
@@ -240,7 +275,7 @@ export function Layout() {
         }}
       >
         <Toolbar sx={{ minHeight: '56px !important' }}>
-          <IconButton edge="start" onClick={() => setMobileOpen(!mobileOpen)} sx={{ mr: 1.5 }}>
+          <IconButton edge="start" aria-label="Abrir menu de navegação" aria-expanded={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)} sx={{ mr: 1.5 }}>
             <MenuIcon />
           </IconButton>
           <Box
@@ -257,7 +292,7 @@ export function Layout() {
           >
             <FactoryIcon sx={{ color: 'white', fontSize: 16 }} />
           </Box>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+          <Typography variant="subtitle2" component="div" sx={{ fontWeight: 700 }}>
             PCP Inteligente
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
@@ -308,7 +343,10 @@ export function Layout() {
       {/* Conteúdo */}
       <Box
         component="main"
+        id={ID_DO_CONTEUDO}
+        tabIndex={-1}
         sx={{
+          '&:focus': { outline: 'none' },
           flexGrow: 1,
           minWidth: 0,
           minHeight: '100vh',

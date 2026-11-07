@@ -60,7 +60,7 @@ function montar(permissoes?: Permissao[]) {
 }
 
 /** Cartão de indicador pelo título (o link tem o título no nome acessível). */
-const cartao = (titulo: string) => screen.getByRole('link', { name: new RegExp(`^${titulo}:`) })
+const cartao = (titulo: string) => screen.getByRole('link', { name: new RegExp(`^${titulo}\\s`) })
 
 describe('aderenciaAoPrazo', () => {
   it('é o percentual de concluídas no prazo sobre as concluídas do período', () => {
@@ -88,7 +88,7 @@ describe('DashboardPage', () => {
   it('mostra os totais do servidor', async () => {
     montar()
 
-    expect(await screen.findByRole('link', { name: /^Atrasadas: 34/ })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: /^Atrasadas\s*34/ })).toBeInTheDocument()
     expect(cartao('Total de ordens')).toHaveTextContent('845')
     expect(cartao('Em produção')).toHaveTextContent('18')
     expect(cartao('Concluídas')).toHaveTextContent('746')

@@ -16,6 +16,7 @@ import {
   formatarDataHora,
   formatarQuantidade,
 } from '../../utils/formatacao'
+import { LinkDaLinha } from '../consulta/LinkDaLinha'
 import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
 
 /** Colunas que a tela de resultados ordena e filtra; o texto é o que aparece na célula. */
@@ -62,12 +63,7 @@ export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
             return (
               <TableRow key={p.materialId} hover onClick={() => navigate(`/estoque/${p.materialId}`)} sx={{ cursor: 'pointer' }}>
                 <TableCell>
-                  <Typography
-                    variant="body2"
-                    noWrap
-                    sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
-                    {formatarCodigoMaterial(p.codigo)}
-                  </Typography>
+                  <LinkDaLinha para={`/estoque/${p.materialId}`} monoespacado>{formatarCodigoMaterial(p.codigo)}</LinkDaLinha>
                 </TableCell>
                 <TableCell><Typography variant="body2">{p.descricao}</Typography></TableCell>
                 <TableCell>
