@@ -26,9 +26,13 @@ O ADR-0013 escolheu o Railway antes de existir qualquer artefato de deploy. Desd
 - **Mesmo endereço para tela e API.** O Nginx serve a aplicação e encaminha `/api/` ao backend pela rede privada, então não há CORS entre domínios. Recarregar uma rota da aplicação devolve o `index.html`.
 - **O Nginx consulta o DNS de novo a cada 10 s.** O resolvedor vem do próprio contêiner (`NGINX_ENTRYPOINT_LOCAL_RESOLVERS`), porque o backend muda de IP a cada deploy.
 - **O Nginx decide quem é o cliente, e o backend confia só no Nginx.**
-  - O módulo `realip` aceita o `X-Forwarded-For` apenas da faixa da borda, em `BORDA_CONFIAVEL`. Por padrão, de ninguém.
+  - O módulo `realip` lê o IP do cliente de um cabeçalho (`CABECALHO_DO_CLIENTE`) e só o aceita da faixa da borda (`BORDA_CONFIAVEL`). Por padrão, de ninguém.
   - Ele repassa à API um único IP. O backend aceita esse cabeçalho somente do Nginx (`PROXIES_CONFIAVEIS`).
-  - Faixa errada nunca abre brecha: no pior caso, todos dividem o mesmo limite. A faixa real é medida no primeiro deploy (`docs/deploy.md`).
+  - Faixa errada nunca abre brecha: no pior caso, todos dividem o mesmo limite.
+  - **Medido no primeiro deploy (2026-11-07):**
+    - A borda do Railway tem duas camadas: uma pública (`46.151.194.x`), que muda, e uma interna (`100.64.0.0/10`), que é quem conecta no Nginx.
+    - A borda descarta o `X-Forwarded-For` do cliente e preenche o `X-Real-IP`, por isso o Nginx usa `X-Real-IP` vindo de `100.64.0.0/10`.
+    - O Nginx chega à API por IPv4 (`10.*`) e por IPv6 privado (`fd..`). O padrão de `PROXIES_CONFIAVEIS` não cobria o IPv6, e a API deixava de confiar no Nginx (sem HSTS, cliente visto como o Nginx). Agora cobre `fc00::/7`.
 - **Configuração no painel do Railway, registrada em `docs/deploy.md`**, em vez de arquivo da plataforma: o Config as Code está obsoleto e o IaC não cobre o nosso caso.
 - **Segurança das imagens.** As duas rodam sem root. O frontend usa a variante `alpine-slim` do Nginx (21 pacotes em vez de 71) e atualiza os pacotes na geração da imagem. Na primeira varredura, o Trivy encontrou 54 vulnerabilidades HIGH/CRITICAL com correção na imagem Nginx completa e zero depois da troca; o backend saiu limpo.
 - **Cabeçalhos das páginas no Nginx.** CSP só com scripts da própria origem, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` e HSTS. As respostas da API mantêm os cabeçalhos do backend.

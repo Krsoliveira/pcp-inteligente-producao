@@ -77,7 +77,7 @@ Em **Create → Database → PostgreSQL**, mantenha o nome `Postgres`. Depois:
 | `JWT_SECRET` | segredo aleatório com 48 caracteres ou mais, gerado na hora; nunca reutilize |
 | `ADMIN_EMAIL`, `ADMIN_NOME`, `ADMIN_SENHA` | o primeiro usuário (perfil Administrador); guarde a senha num cofre de senhas |
 | `CORS_ORIGINS` | `https://pcp.krsoliveira.com.br` |
-| `PROXIES_CONFIAVEIS` | não defina no início; veja o passo 4 |
+| `PROXIES_CONFIAVEIS` | **não defina**: o padrão já cobre a rede privada do Railway (IPv4 `10.*` e IPv6 `fd..`); veja o passo 4 |
 
 Sem `JWT_SECRET` ou `DB_PASSWORD`, o perfil `prod` não sobe, e isso é proposital. O autocadastro fica desligado (ADR-0031); não defina `AUTOCADASTRO_HABILITADO`.
 
@@ -100,7 +100,8 @@ Sem `JWT_SECRET` ou `DB_PASSWORD`, o perfil `prod` não sobe, e isso é proposit
 | Variável | Valor |
 |---|---|
 | `BACKEND_ENDERECO` | `${{backend.RAILWAY_PRIVATE_DOMAIN}}:8080`; com ela, o frontend também espera o backend subir |
-| `BORDA_CONFIAVEL` | não defina no início; veja o passo 4 |
+| `BORDA_CONFIAVEL` | `100.64.0.0/10`: a faixa interna da borda do Railway, medida (passo 4) |
+| `CABECALHO_DO_CLIENTE` | `X-Real-IP`: o cabeçalho em que a borda põe o IP do cliente |
 
 O `PORT` do frontend é o Railway quem informa, e o Nginx escuta nele.
 
@@ -114,30 +115,36 @@ Cada projeto seu usa um subdomínio próprio do mesmo jeito. O domínio puro (`k
 
 ## 4. Primeiro deploy: o IP do cliente
 
-O limite de tentativas de login vale por IP. Para ele separar um cliente do outro, duas faixas precisam estar certas:
+O limite de tentativas de login vale por IP. Para ele separar um cliente do outro, o Nginx precisa saber quem é o cliente, e a API precisa confiar no Nginx.
 
-| Variável | Serviço | O que é |
+**O caminho medido em 2026-11-07:**
+
+```
+cliente → borda pública do Railway (46.151.194.x) → proxy interno (100.64.0.x) → Nginx → API
+```
+
+- **Quem conecta no Nginx:** sempre um endereço `100.64.0.0/10`.
+- **`X-Forwarded-For`:** a borda descarta o valor que o cliente manda e escreve "cliente, borda pública". Como a borda pública tem mais de uma faixa e pode mudar, ela não é a fonte usada.
+- **`X-Real-IP`:** a borda o preenche com o IP do cliente, conforme a documentação do Railway, e o Nginx o lê, aceitando-o só de quem vem de `100.64.0.0/10`.
+- **Nginx → API:** a conexão chega ora por IPv4 privado (`10.*`), ora por IPv6 privado (`fd..`). O padrão de `PROXIES_CONFIAVEIS` cobre os dois.
+
+| Variável | Serviço | Valor |
 |---|---|---|
-| `BORDA_CONFIAVEL` | frontend | Faixa CIDR da borda do Railway: o Nginx só aceita `X-Forwarded-For` vindo dela |
-| `PROXIES_CONFIAVEIS` | backend | Expressão regular com o IP privado do Nginx: a API só aceita o cabeçalho vindo dele. O padrão cobre `10.*`, `192.168.*`, `169.254.*` e `127.*` |
+| `BORDA_CONFIAVEL` | frontend | `100.64.0.0/10` |
+| `CABECALHO_DO_CLIENTE` | frontend | `X-Real-IP` |
+| `PROXIES_CONFIAVEIS` | backend | não definir: vale o padrão do perfil `prod` |
 
-Enquanto não estiverem certas, **ninguém consegue forjar o IP**. O efeito é só que todos os clientes dividem o mesmo limite.
+Com faixa errada, **ninguém consegue forjar o IP**; o efeito é só que todos os clientes dividem o mesmo limite. **Nunca use `0.0.0.0/0` nem `::/0`**: isso devolve ao cliente o poder de escolher o próprio IP.
 
-**Medir a faixa da borda.** Abra o site e veja os logs do `frontend`, na aba **Deploy Logs**. O primeiro campo de cada linha de acesso é o endereço da borda. Com alguns acessos, a faixa fica clara.
-
-- Defina `BORDA_CONFIAVEL` com a faixa mais estreita que cubra esses endereços, por exemplo `100.64.0.0/10` se for a faixa de CGNAT.
-- **Nunca use `0.0.0.0/0` nem `::/0`**: isso devolve ao cliente o poder de escolher o próprio IP.
-
-**Conferir o IP privado do Nginx.** Se ele não estiver na faixa padrão do backend, ajuste `PROXIES_CONFIAVEIS`. Um endereço IPv6 privado, por exemplo, pede algo como `fd[0-9a-f]{2}:.*`.
+**Medir de novo**, se o Railway mudar a rede: nos logs do `frontend` (**Deploy Logs**), o primeiro campo de cada linha de acesso é o IP que o Nginx considerou como cliente. Ele deve ser o seu IP real, mesmo quando você manda um `X-Real-IP` forjado.
 
 **Provar em produção:**
 
 1. Do seu computador, erre a senha seis vezes seguidas: a sexta deve dar "muitas tentativas" (`429`).
-2. Logo em seguida, de outra rede (o celular no 4G), tente entrar: deve funcionar.
-   - Se o celular também foi bloqueado, uma das faixas ainda está errada, e todos dividem o mesmo limite.
-3. Repita o passo 1 mandando um `X-Forwarded-For` diferente em cada tentativa (`curl -H "X-Forwarded-For: 203.0.113.N"`). A sexta deve continuar bloqueada.
-
-Depois de medidas, registre as faixas usadas na seção "Faixas em uso" no fim deste guia.
+2. Repita mandando um `X-Real-IP` e um `X-Forwarded-For` diferentes em cada tentativa (`curl -H "X-Real-IP: 203.0.113.N"`): a sexta deve continuar bloqueada.
+3. Logo em seguida, de outra rede (o celular no 4G), tente entrar: deve funcionar.
+   - Se o celular também foi bloqueado, a faixa ou o cabeçalho estão errados, e todos dividem o mesmo limite.
+4. A resposta da API (`/api/...`) traz `Strict-Transport-Security`: sinal de que a API confiou no Nginx.
 
 ## 5. Atualizar e desfazer
 
@@ -154,4 +161,4 @@ O plano Pro inclui US$ 20 de uso por mês, somando todos os projetos da conta. A
 
 | Data | `BORDA_CONFIAVEL` | `PROXIES_CONFIAVEIS` | Medido por |
 |---|---|---|---|
-| (preencher no primeiro deploy) | | | |
+| 2026-11-07 | `100.64.0.0/10`, com `CABECALHO_DO_CLIENTE=X-Real-IP` | padrão do perfil `prod` (inclui `10.*` e `fd..`) | logs de acesso do Nginx e fluxos de rede do backend |
