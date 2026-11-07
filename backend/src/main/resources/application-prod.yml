@@ -28,6 +28,8 @@ pcp:
 # e o HSTS não seria emitido (a requisição chega como HTTP). Confirmar a faixa de IPs
 # do proxy da plataforma no primeiro deploy (ADR-0013).
 server:
+  # A plataforma informa a porta em PORT (é nela que o health check bate); 8080 fora dela.
+  port: ${PORT:8080}
   forward-headers-strategy: native
   tomcat:
     remoteip:
