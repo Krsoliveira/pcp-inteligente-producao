@@ -11,7 +11,7 @@ O projeto usa TypeScript 7.0. O `typescript-eslint` 8.72 exige TypeScript abaixo
 
 ## Decisão
 
-Usar Oxlint, com versão fixa, em `npm run lint` e no CI. A regra `react/set-state-in-effect` fica como aviso, com teto em `--max-warnings`, que deve diminuir à medida que esses efeitos forem refeitos.
+Usar Oxlint, com versão fixa, em `npm run lint` e no CI. A regra `react/set-state-in-effect` começou como aviso, com teto de 12 em `--max-warnings`. Em 2026-11-07 esses efeitos deram lugar ao hook `useSincronizarAoMudar`, e a regra passou a ser erro, com teto zero.
 
 ## Alternativas consideradas
 

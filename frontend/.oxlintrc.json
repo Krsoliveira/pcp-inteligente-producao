@@ -8,9 +8,8 @@
     "no-console": "error",
     "eqeqeq": ["error", "smart"],
 
-    // Efeito que copia a URL ou o registro para o formulário: funciona, mas é dívida. Fica como aviso, com teto em
-    // package.json (--max-warnings), para não crescer.
-    "react/set-state-in-effect": "warn",
+    // Copiar a URL ou o registro para o formulário em efeito pinta a tela com o valor antigo: use useSincronizarAoMudar.
+    "react/set-state-in-effect": "error",
 
     // Pede <output> e <img> onde o papel está num Box do MUI ao redor de um canvas: não se aplica.
     "jsx-a11y/prefer-tag-over-role": "off",
