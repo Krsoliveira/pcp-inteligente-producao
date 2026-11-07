@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { erroDeRede, erroHttp } from '../test/erros'
 import {
+  ehEdicaoConcorrente,
   mensagemDeEspera,
   mensagemDeErroAoCarregar,
   mensagemDeErroDaApi,
@@ -101,5 +102,18 @@ describe('mensagemDeErroAoCarregar', () => {
 
   it('usa uma frase genérica de carregamento para outros erros', () => {
     expect(mensagemDeErroAoCarregar(erroHttp(403), 'Lote não encontrado.')).toMatch(/carregar os dados/i)
+  })
+})
+
+describe('ehEdicaoConcorrente', () => {
+  it('reconhece o 409 marcado pelo servidor como edição sobre uma versão antiga', () => {
+    expect(ehEdicaoConcorrente(erroHttp(409, { detail: 'alterado', codigo: 'EDICAO_CONCORRENTE' }))).toBe(true)
+  })
+
+  it('não confunde com outros conflitos, outros status nem falha de rede', () => {
+    expect(ehEdicaoConcorrente(erroHttp(409, { detail: 'Nome repetido' }))).toBe(false)
+    expect(ehEdicaoConcorrente(erroHttp(422, { codigo: 'EDICAO_CONCORRENTE' }))).toBe(false)
+    expect(ehEdicaoConcorrente(erroDeRede())).toBe(false)
+    expect(ehEdicaoConcorrente(new Error('qualquer'))).toBe(false)
   })
 })

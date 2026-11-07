@@ -56,12 +56,19 @@ export interface TipoOrdem {
   atualizadoEm: string
   criadoPor: string
   atualizadoPor: string
+  /** Soma 1 a cada alteração; vai de volta no PUT para recusar a edição sobre dados antigos (ADR-0034). */
+  versao: number
 }
 
 export interface CadastrarTipoOrdemRequest {
   nome: string
   descricao?: string
   cor: string
+}
+
+export interface AtualizarTipoOrdemRequest extends CadastrarTipoOrdemRequest {
+  /** Versão lida ao abrir a edição: se outra pessoa salvou antes, o servidor responde 409. */
+  versao?: number
 }
 
 // ---- Material ----
@@ -585,12 +592,16 @@ export interface PerfilAcesso {
   quantidadeDeUsuarios: number
   atualizadoEm: string
   atualizadoPor: string
+  /** Soma 1 a cada alteração; vai de volta no PUT para recusar a edição sobre dados antigos (ADR-0034). */
+  versao: number
 }
 
 export interface SalvarPerfilRequest {
   nome: string
   descricao: string
   permissoes: Permissao[]
+  /** Só na alteração: versão lida ao abrir a edição. Se outra pessoa salvou antes, o servidor responde 409. */
+  versao?: number
 }
 
 export interface UsuarioAcesso {

@@ -27,12 +27,12 @@ import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listarTiposOrdem, cadastrarTipoOrdem, atualizarTipoOrdem } from '../api/tiposOrdem'
+import { listarTiposOrdem, cadastrarTipoOrdem, atualizarTipoOrdem, buscarTipoOrdem } from '../api/tiposOrdem'
 import { PageHeader } from '../components/PageHeader'
 import { EmptyState } from '../components/EmptyState'
 import { TipoOrdemBadge } from '../components/StatusBadge'
 import type { TipoOrdem, CadastrarTipoOrdemRequest } from '../types'
-import { mensagemDeErroDaApi, mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
+import { ehEdicaoConcorrente, mensagemDeErroDaApi, mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 
 const CORES_SUGERIDAS = [
   '#4F46E5', '#2563EB', '#0F766E', '#059669',
@@ -153,13 +153,19 @@ const COR_PADRAO = '#4F46E5'
 function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogProps) {
   const [form, setForm] = useState<CadastrarTipoOrdemRequest>({ nome: '', descricao: '', cor: COR_PADRAO })
   const [erro, setErro] = useState<string | null>(null)
+  /** Versão lida ao abrir; o servidor recusa (409) se outra pessoa salvou depois (ADR-0034). */
+  const [versao, setVersao] = useState<number | undefined>(undefined)
+  const [conflito, setConflito] = useState(false)
+  const [recarregando, setRecarregando] = useState(false)
   const queryClient = useQueryClient()
 
   const preencher = (origem: TipoOrdem | null) => {
     setErro(null)
+    setConflito(false)
     setForm(origem
       ? { nome: origem.nome, descricao: origem.descricao ?? '', cor: origem.cor }
       : { nome: '', descricao: '', cor: COR_PADRAO })
+    setVersao(origem?.versao)
   }
 
   // O diálogo fica montado: preenche a cada abertura, com o tipo escolhido ou vazio para um novo.
@@ -176,12 +182,28 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
   })
 
   const { mutate: editar, isPending: editando } = useMutation({
-    mutationFn: (payload: CadastrarTipoOrdemRequest) => atualizarTipoOrdem(tipoExistente!.id, payload),
+    mutationFn: (payload: CadastrarTipoOrdemRequest) => atualizarTipoOrdem(tipoExistente!.id, { ...payload, versao }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tipos-ordem'] }); onFechar(); setErro(null) },
     onError: (err: unknown) => {
+      // O que foi digitado fica no formulário; a lista atrás do diálogo passa a mostrar o tipo atual.
+      setConflito(ehEdicaoConcorrente(err))
+      if (ehEdicaoConcorrente(err)) queryClient.invalidateQueries({ queryKey: ['tipos-ordem'] })
       setErro(mensagemDeErroDaApi(err, 'Não foi possível atualizar o tipo de ordem. Tente novamente.'))
     },
   })
+
+  /** Troca o formulário pelo tipo como está agora no servidor, com a versão atual. */
+  const carregarVersaoAtual = async () => {
+    if (!tipoExistente) return
+    setRecarregando(true)
+    try {
+      preencher(await buscarTipoOrdem(tipoExistente.id))
+    } catch (err: unknown) {
+      setErro(mensagemDeErroDaApi(err, 'Não foi possível carregar a versão atual do tipo de ordem. Tente novamente.'))
+    } finally {
+      setRecarregando(false)
+    }
+  }
 
   const isPending = criando || editando
 
@@ -195,7 +217,16 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
     <Dialog open={aberto} onClose={onFechar} fullWidth maxWidth="xs">
       <DialogTitle>{tipoExistente ? 'Editar tipo de Ordem' : 'Novo tipo de Ordem'}</DialogTitle>
       <DialogContent dividers>
-        {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
+        {erro && (
+          <Alert severity={conflito ? 'warning' : 'error'} sx={{ mb: 2 }}
+            action={conflito ? (
+              <Button color="inherit" size="small" onClick={carregarVersaoAtual} disabled={recarregando}>
+                {recarregando ? 'Carregando…' : 'Carregar versão atual'}
+              </Button>
+            ) : undefined}>
+            {erro}
+          </Alert>
+        )}
         <Grid container spacing={2} sx={{ mt: 0 }}>
           <Grid size={12}>
             <TextField label="Nome *" value={form.nome} onChange={(e) => setForm(p => ({ ...p, nome: e.target.value }))} fullWidth placeholder="Ex.: Produção Normal" slotProps={{ htmlInput: { maxLength: 60 } }} />
@@ -230,7 +261,7 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onFechar} disabled={isPending}>Cancelar</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={isPending}>{isPending ? 'Salvando…' : tipoExistente ? 'Salvar' : 'Criar'}</Button>
+        <Button variant="contained" onClick={handleSubmit} disabled={isPending || recarregando}>{isPending ? 'Salvando…' : tipoExistente ? 'Salvar' : 'Criar'}</Button>
       </DialogActions>
     </Dialog>
   )
