@@ -29,6 +29,11 @@ public class PerfilAcessoRepositoryAdapter implements PerfilAcessoRepository {
     }
 
     @Override
+    public Optional<PerfilAcesso> buscarPorIdParaAtualizar(UUID id) {
+        return springData.buscarParaAtualizar(id).map(PerfilAcessoJpaEntity::paraDominio);
+    }
+
+    @Override
     public Optional<PerfilAcesso> buscarPorNome(String nome) {
         return springData.findByNomeIgnoreCase(nome).map(PerfilAcessoJpaEntity::paraDominio);
     }

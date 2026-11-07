@@ -11,6 +11,9 @@ public interface PerfilAcessoRepository {
 
     Optional<PerfilAcesso> buscarPorId(UUID id);
 
+    /** Bloqueia o perfil até o fim da transação: quem depende de quantos usuários ele tem conta sem concorrência. */
+    Optional<PerfilAcesso> buscarPorIdParaAtualizar(UUID id);
+
     /** Procura pelo nome sem diferenciar maiúsculas e minúsculas. */
     Optional<PerfilAcesso> buscarPorNome(String nome);
 
