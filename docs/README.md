@@ -64,3 +64,4 @@ Regras dos ADRs deste projeto:
 | [0029](adr/0029-migracao-mui-6-para-9.md) | Migração do Material UI 6 para o 9 | Aceito |
 | [0030](adr/0030-migracao-spring-boot-3-para-4.md) | Migração do Spring Boot 3.5 para o 4.1 | Aceito |
 | [0031](adr/0031-autocadastro-desligado-em-producao.md) | Autocadastro desligado em produção | Aceito |
+| [0032](adr/0032-oxlint-no-frontend.md) | Oxlint como linter do frontend | Aceito |
