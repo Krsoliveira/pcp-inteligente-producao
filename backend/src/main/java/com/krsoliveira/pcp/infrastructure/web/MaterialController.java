@@ -52,7 +52,8 @@ public class MaterialController {
 
     @PreAuthorize("hasAuthority('MATERIAL_VISUALIZAR')")
     @GetMapping
-    @Operation(summary = "Listar materiais", description = "Retorna todos os materiais cadastrados.")
+    @Operation(summary = "Listar materiais", description = "O catálogo completo de materiais, que as telas usam para mostrar código e descrição. "
+                    + "Para consultar, use GET /api/v1/materiais/pesquisa, que filtra e pagina no servidor (ADR-0015).")
     public ResponseEntity<List<MaterialResponse>> listar() {
         List<MaterialResponse> resposta = consultarMateriais.listarTodos()
                 .stream().map(MaterialResponse::de).toList();

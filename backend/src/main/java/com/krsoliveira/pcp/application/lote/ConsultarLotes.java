@@ -1,5 +1,8 @@
 package com.krsoliveira.pcp.application.lote;
 
+import com.krsoliveira.pcp.domain.lote.FiltroLotes;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
 
@@ -20,6 +23,10 @@ public class ConsultarLotes {
 
     public List<Lote> listarTodos() {
         return loteRepository.listarTodos();
+    }
+
+    public Pagina<Lote> pesquisar(FiltroLotes filtro, PedidoDePagina pedido) {
+        return loteRepository.pesquisar(filtro, pedido);
     }
 
     public Lote porId(UUID id) {

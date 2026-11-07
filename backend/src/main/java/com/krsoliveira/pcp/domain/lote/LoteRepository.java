@@ -1,5 +1,7 @@
 package com.krsoliveira.pcp.domain.lote;
 
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -30,6 +32,9 @@ public interface LoteRepository {
     List<Lote> listarDisponiveisPorMaterial(UUID materialId);
 
     List<Lote> listarTodos();
+
+    /** Uma página de lotes que atendem ao filtro, dos mais recentes para os mais antigos. */
+    Pagina<Lote> pesquisar(FiltroLotes filtro, PedidoDePagina pedido);
 
     long contarPorStatus(StatusLote status);
 

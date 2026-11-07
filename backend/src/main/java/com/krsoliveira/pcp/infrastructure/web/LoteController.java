@@ -1,5 +1,9 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import com.krsoliveira.pcp.infrastructure.web.dto.PaginaResponse;
+import com.krsoliveira.pcp.domain.lote.StatusLote;
+import com.krsoliveira.pcp.domain.lote.FiltroLotes;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.lote.ConsultarLotes;
 import com.krsoliveira.pcp.application.lote.RastrearLote;
@@ -42,7 +46,9 @@ public class LoteController {
 
     @GetMapping
     @Operation(summary = "Listar lotes",
-            description = "Retorna todos os lotes. Filtros: ordemProducaoId (lote gerado pela ordem); "
+            description = "Sem filtro, devolve todos os lotes de uma vez: esse uso é obsoleto, prefira GET /api/v1/lotes/pesquisa, "
+                    + "que filtra e pagina no servidor. Continua disponível porque o contrato só cresce (ADR-0015). "
+                    + "Filtros: ordemProducaoId (lote gerado pela ordem); "
                     + "materialId (todos os lotes do material, do mais novo ao mais antigo); "
                     + "materialId com disponiveis=true (lotes que podem ser alocados a um consumo: "
                     + "disponíveis, com saldo e dentro da validade, em ordem FEFO).")
@@ -61,6 +67,20 @@ public class LoteController {
             lotes = consultarLotes.listarTodos();
         }
         return ResponseEntity.ok(lotes.stream().map(LoteResponse::de).toList());
+    }
+
+    @GetMapping("/pesquisa")
+    @Operation(summary = "Pesquisa lotes com filtro e paginação",
+            description = "Filtra no servidor por trecho do número do lote (busca), por status e por material, dos mais "
+                    + "recentes para os mais antigos. Tamanho padrão 25, máximo 100; valores fora desses limites são corrigidos.")
+    public PaginaResponse<LoteResponse> pesquisar(
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) StatusLote status,
+            @RequestParam(required = false) UUID materialId,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamanho) {
+        var resultado = consultarLotes.pesquisar(new FiltroLotes(busca, status, materialId), PedidoDePagina.de(pagina, tamanho));
+        return PaginaResponse.de(resultado, LoteResponse::de);
     }
 
     @GetMapping("/{id}/rastreabilidade")
