@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography'
 import HistoryIcon from '@mui/icons-material/History'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { consultarEventosAuditoria } from '../api/auditoria'
-import { formatarDataHora, formatarQuantidade } from '../utils/formatacao'
+import { formatarCodigoMaterial, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import type { AcaoAuditoria, EventoAuditoria, MudancaAuditoria, TipoEntidade } from '../types'
 
 const ACAO_LABEL: Record<AcaoAuditoria, string> = {
@@ -124,6 +124,7 @@ function formatarValor(campo: string, valor: unknown): string {
   if (valor == null || valor === '') return '—'
   if (typeof valor === 'boolean') return valor ? 'Sim' : 'Não'
   const texto = String(valor)
+  if (campo === 'material') return formatarCodigoMaterial(texto)
   if (CAMPOS_DE_PERMISSOES.has(campo)) return texto.split(',').map((p) => constanteLegivel(p.trim())).join(', ')
   if (CAMPOS_NUMERICOS.has(campo) && !Number.isNaN(Number(texto))) {
     return formatarQuantidade(Number(texto))
