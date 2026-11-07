@@ -36,6 +36,12 @@ tempo de uso do sistema, então o custo também cresceria.
   `criada_em` já existem, e `codigo` é único. A busca por trecho (`LIKE '%x%'`) não usa
   índice, o que é aceitável neste volume.
 
+### Atualização de 2026-11-07: listagens sem filtro
+
+- `GET /api/v1/lotes/pesquisa` completa a pesquisa paginada de lotes; `/materiais/pesquisa` e `/listas-tecnicas/pesquisa` já existiam.
+- `GET /api/v1/lotes` e `GET /api/v1/listas-tecnicas` **sem filtro** passam a constar como uso obsoleto na descrição do OpenAPI. Com filtro, seguem normais: o resultado é limitado por material ou ordem. A marca `deprecated` vale para a operação inteira, por isso não foi usada.
+- `GET /api/v1/materiais` **continua sem marca de obsoleto**: é o catálogo que 13 telas e diálogos usam para mostrar código e descrição, e é cadastro, que cresce devagar. Trocar exigiria consulta por lista de ids em todas elas. Reavaliar se passar de ~1000 materiais, o mesmo critério acima.
+
 ## Alternativas consideradas
 
 | Alternativa | Por que foi descartada |
