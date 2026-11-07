@@ -11,8 +11,13 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:pcp}
     username: ${DB_USER:pcp}
     password: ${DB_PASSWORD:pcp_dev}
+    hikari:
+      # Banco fora do ar responde erro em 5 s, em vez de segurar a requisição pelo padrão de 30 s.
+      connection-timeout: 5000
 
   jpa:
+    properties:
+      jakarta.persistence.query.timeout: 30000 # ms; também limita a espera por uma ordem bloqueada
     hibernate:
       # O Flyway é o dono do schema; o Hibernate apenas VALIDA se as
       # entidades batem com as tabelas (falha rápido se divergirem).
@@ -34,6 +39,8 @@ server:
     max-swallow-size: 2MB
 
 pcp:
+  # "Hoje" da operação: validade de lote, atraso de ordem e filtros por data.
+  fuso-horario: ${FUSO_HORARIO:America/Sao_Paulo}
   seguranca:
     # Corpo máximo aceito em POST/PUT/PATCH, em bytes (1 MB).
     corpo-maximo-bytes: 1048576
