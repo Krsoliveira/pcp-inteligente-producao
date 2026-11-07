@@ -105,6 +105,8 @@ public class ConfiguracaoSeguranca {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // Só o status, sem detalhes; o resto do Actuator exige login e nem está exposto.
+                        .requestMatchers("/actuator/health").permitAll()
                         // /error é o forward interno do Spring para erros (ex.: 400 por
                         // parâmetro ausente). Protegido, ele virava um falso 401 e o
                         // frontend deslogava o usuário.

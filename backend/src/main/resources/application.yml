@@ -38,6 +38,15 @@ pcp:
     # Corpo máximo aceito em POST/PUT/PATCH, em bytes (1 MB).
     corpo-maximo-bytes: 1048576
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

@@ -80,6 +80,12 @@
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
 
+    <!-- Health check para a hospedagem. Só /actuator/health é exposto (application.yml). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
     <!-- Rate limiting por IP (login e cadastro) -->
     <dependency>
       <groupId>com.bucket4j</groupId>
