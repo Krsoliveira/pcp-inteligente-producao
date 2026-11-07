@@ -1,0 +1,17 @@
+#!/bin/sh
+# Barra segredo e lint quebrado antes do commit. Ative uma vez: git config core.hooksPath .githooks
+set -e
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --no-banner --redact
+else
+  echo "pre-commit: gitleaks não instalado; o CI ainda faz a varredura." >&2
+fi
+
+if git diff --cached --name-only | grep -q '^frontend/'; then
+  (cd frontend && npm run --silent lint)
+fi
+
+if git diff --cached --name-only | grep -q '^backend/.*\.java$'; then
+  (cd backend && mvn -B -q -ntp checkstyle:check)
+fi

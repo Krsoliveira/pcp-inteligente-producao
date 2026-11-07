@@ -176,6 +176,8 @@ npm run dev
 Entre com o administrador inicial. Quem usar **Criar conta** entra como Visualizador (só consulta) até um
 gestor lhe dar outro perfil.
 
+**Hook de pre-commit** (lint, Checkstyle e varredura de segredos): `git config core.hooksPath .githooks`, uma vez em cada clone.
+
 **Testes:** `cd backend && mvn -B verify` (requer Docker com o daemon rodando, por causa do Testcontainers) e
 `cd frontend && npm run lint && npm test && npm run build`.
 
