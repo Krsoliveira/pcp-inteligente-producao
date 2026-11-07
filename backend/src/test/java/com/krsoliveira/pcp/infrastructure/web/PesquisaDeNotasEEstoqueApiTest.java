@@ -47,7 +47,7 @@ class PesquisaDeNotasEEstoqueApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     private static final String NOTAS = "/api/v1/notas-fiscais";
     private static final String ESTOQUE = "/api/v1/estoque";

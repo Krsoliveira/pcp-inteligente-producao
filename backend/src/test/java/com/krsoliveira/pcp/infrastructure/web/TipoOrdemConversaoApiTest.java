@@ -45,7 +45,7 @@ class TipoOrdemConversaoApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     private static final String TIPOS = "/api/v1/tipos-ordem";
 

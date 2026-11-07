@@ -38,7 +38,7 @@ class RateLimitingIntegracaoTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     @LocalServerPort
     private int porta;

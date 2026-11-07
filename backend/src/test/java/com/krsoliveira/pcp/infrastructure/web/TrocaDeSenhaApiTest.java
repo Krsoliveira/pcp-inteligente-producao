@@ -50,7 +50,7 @@ class TrocaDeSenhaApiTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     private static final String ACESSOS = "/api/v1/acessos";
     private static final String PROVISORIA = "Provisoria#2026";
