@@ -128,9 +128,10 @@ public class AcessoController {
     @PreAuthorize("hasAuthority('PERFIL_GERENCIAR')")
     @Operation(summary = "Altera nome, descrição e permissões de um perfil",
             description = "O perfil Administrador não pode ser alterado (422). Quem altera precisa ter todas as "
-                    + "permissões do perfil, antes e depois (403).")
+                    + "permissões do perfil, antes e depois (403). Se a versao informada não for mais a atual, "
+                    + "outra pessoa alterou o perfil e a alteração é recusada (409).")
     public PerfilAcessoResponse atualizarPerfil(@PathVariable UUID id, @Valid @RequestBody PerfilAcessoRequest request) {
-        atualizarPerfil.executar(id, request.nome(), request.descricao(), request.permissoes());
+        atualizarPerfil.executar(id, request.nome(), request.descricao(), request.permissoes(), request.versao());
         return PerfilAcessoResponse.de(consultarAcessos.buscarPerfil(id));
     }
 

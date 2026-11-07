@@ -30,9 +30,12 @@ public class PerfilAcesso {
     private final boolean padraoDoAutocadastro;
     private final Set<Permissao> permissoes;
     private Assinatura assinatura;
+    /** Soma 1 a cada alteração: quem editou sobre uma versão antiga é recusado (ADR-0034). */
+    private long versao;
 
     private PerfilAcesso(UUID id, String nome, String descricao, boolean administrador,
-                         boolean padraoDoAutocadastro, Set<Permissao> permissoes, Assinatura assinatura) {
+                         boolean padraoDoAutocadastro, Set<Permissao> permissoes, Assinatura assinatura,
+                         long versao) {
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
@@ -40,20 +43,21 @@ public class PerfilAcesso {
         this.padraoDoAutocadastro = padraoDoAutocadastro;
         this.permissoes = permissoes;
         this.assinatura = assinatura;
+        this.versao = versao;
     }
 
     /** Perfil novo, escolhido pelo gerente: nunca é de sistema. */
     public static PerfilAcesso criar(String nome, String descricao, Collection<Permissao> permissoes,
                                      String usuario) {
         return new PerfilAcesso(UUID.randomUUID(), nomeValido(nome), descricaoValida(descricao),
-                false, false, permissoesValidas(permissoes), Assinatura.nova(usuario));
+                false, false, permissoesValidas(permissoes), Assinatura.nova(usuario), 0);
     }
 
     public static PerfilAcesso reconstituir(UUID id, String nome, String descricao, boolean administrador,
                                             boolean padraoDoAutocadastro, Collection<Permissao> permissoes,
-                                            Assinatura assinatura) {
+                                            Assinatura assinatura, long versao) {
         Set<Permissao> conjunto = permissoes.isEmpty() ? EnumSet.noneOf(Permissao.class) : EnumSet.copyOf(permissoes);
-        return new PerfilAcesso(id, nome, descricao, administrador, padraoDoAutocadastro, conjunto, assinatura);
+        return new PerfilAcesso(id, nome, descricao, administrador, padraoDoAutocadastro, conjunto, assinatura, versao);
     }
 
     /** O Administrador, perfil de sistema com todas as permissões, nunca muda. */
@@ -76,6 +80,7 @@ public class PerfilAcesso {
         this.permissoes.clear();
         this.permissoes.addAll(permissoesValidas);
         this.assinatura = alterada;
+        this.versao++;
     }
 
     /** O Administrador sempre tem todas as permissões, inclusive as que forem criadas no futuro. */
@@ -126,4 +131,5 @@ public class PerfilAcesso {
     public boolean isAdministrador() { return administrador; }
     public boolean isPadraoDoAutocadastro() { return padraoDoAutocadastro; }
     public Assinatura getAssinatura() { return assinatura; }
+    public long getVersao() { return versao; }
 }
