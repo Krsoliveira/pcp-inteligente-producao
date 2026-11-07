@@ -157,6 +157,17 @@ class ConcorrenciaDaOrdemApiTest {
         assertThat(lotes).isEqualTo(respostas.get(0) == 200 ? 1 : 0);
     }
 
+    @RepeatedTest(REPETICOES)
+    @DisplayName("criar duas ordens com o mesmo código ao mesmo tempo: a segunda recebe conflito, não erro do sistema")
+    void cadastroSimultaneoComMesmoCodigo() throws Exception {
+        String codigo = "OP-DUP-" + (++sequencia);
+        Map<String, Object> corpo = Map.of("codigo", codigo, "materialId", produto, "listaTecnicaId", lista, "centroDeTrabalho", "Usinagem",
+                "quantidade", 10, "inicioPlanejado", LocalDate.now().toString(), "fimPlanejado", LocalDate.now().plusDays(10).toString());
+        Supplier<Integer> criar = () -> rest.postForEntity(ORDENS, comAuth(corpo), String.class).getStatusCode().value();
+
+        assertThat(emParalelo(criar, criar)).containsExactlyInAnyOrder(201, 409);
+    }
+
     private List<Integer> emParalelo(Supplier<Integer> primeira, Supplier<Integer> segunda) throws Exception {
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try {

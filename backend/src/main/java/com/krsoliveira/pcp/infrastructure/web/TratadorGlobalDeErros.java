@@ -60,6 +60,7 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
 
     /** Classe 22 do SQLSTATE, "exceção de dados": número acima da coluna, byte nulo em texto. */
     private static final String CLASSE_SQL_DADO_RECUSADO = "22";
+    private static final String SQL_VIOLACAO_DE_UNICIDADE = "23505";
 
     @Override
     public boolean supports(MethodParameter tipoDeRetorno, Class<? extends HttpMessageConverter<?>> conversor) {
@@ -134,8 +135,17 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
      */
     @ExceptionHandler(DataAccessException.class)
     public ProblemDetail dadoRecusadoPeloBanco(DataAccessException ex) {
-        if (!(ex.getMostSpecificCause() instanceof SQLException erroSql) || erroSql.getSQLState() == null
-                || !erroSql.getSQLState().startsWith(CLASSE_SQL_DADO_RECUSADO)) {
+        if (!(ex.getMostSpecificCause() instanceof SQLException erroSql) || erroSql.getSQLState() == null) {
+            throw ex;
+        }
+        // Duas requisições passaram juntas pela checagem de duplicado: quem chegou depois recebe conflito, como se tivesse chegado depois mesmo.
+        if (SQL_VIOLACAO_DE_UNICIDADE.equals(erroSql.getSQLState())) {
+            ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+            problema.setTitle("Conflito");
+            problema.setDetail("Este registro acabou de ser criado por outra pessoa. Atualize a tela e confira.");
+            return problema;
+        }
+        if (!erroSql.getSQLState().startsWith(CLASSE_SQL_DADO_RECUSADO)) {
             throw ex;
         }
         logger.warn("Dado recusado pelo banco, SQLSTATE " + erroSql.getSQLState());
