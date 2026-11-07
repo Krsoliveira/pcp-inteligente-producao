@@ -5,6 +5,7 @@ import { registrarConsumo } from '../../api/consumos'
 import { listarLotesDisponiveis } from '../../api/lotes'
 import { lote, material } from '../../test/fabricas'
 import { renderizarTela } from '../../test/renderizar'
+import { erroHttp } from '../../test/erros'
 import type { ConsumoMaterial } from '../../types'
 import { RegistrarConsumoDialog } from './RegistrarConsumoDialog'
 
@@ -100,6 +101,19 @@ describe('RegistrarConsumoDialog', () => {
 
     expect(await screen.findByText('Há desvio: informe a justificativa.')).toBeInTheDocument()
     expect(registrarConsumo).not.toHaveBeenCalled()
+  })
+
+  it('recusado pelo servidor, mostra o motivo e busca de novo o saldo dos lotes, que pode ter mudado', async () => {
+    vi.mocked(registrarConsumo).mockRejectedValue(erroHttp(422, { detail: 'Só é possível registrar o consumo de uma ordem em produção.' }))
+    montar()
+    const usuario = await informarQuantidade('25')
+    const consultasAntes = vi.mocked(listarLotesDisponiveis).mock.calls.length
+
+    await usuario.click(screen.getByRole('button', { name: 'Registrar' }))
+
+    expect(await screen.findByText('Só é possível registrar o consumo de uma ordem em produção.')).toBeInTheDocument()
+    await waitFor(() => expect(vi.mocked(listarLotesDisponiveis).mock.calls.length).toBeGreaterThan(consultasAntes))
+    expect(onSucesso).not.toHaveBeenCalled()
   })
 
   it('consumo zero registra sem lotes e não pede distribuição', async () => {
