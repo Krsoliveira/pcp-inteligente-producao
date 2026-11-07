@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SePermitido } from '../components/SePermitido'
 import { usePermissoes } from '../hooks/usePermissoes'
+import { useSincronizarAoMudar } from '../hooks/useSincronizarAoMudar'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Table from '@mui/material/Table'
@@ -147,18 +148,23 @@ interface TipoOrdemDialogProps {
   onFechar: () => void
 }
 
+const COR_PADRAO = '#4F46E5'
+
 function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogProps) {
-  const [form, setForm] = useState<CadastrarTipoOrdemRequest>({ nome: '', descricao: '', cor: '#4F46E5' })
+  const [form, setForm] = useState<CadastrarTipoOrdemRequest>({ nome: '', descricao: '', cor: COR_PADRAO })
   const [erro, setErro] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
-  // Preenche o form ao abrir para edição
-  useState(() => {
-    if (tipoExistente) {
-      setForm({ nome: tipoExistente.nome, descricao: tipoExistente.descricao ?? '', cor: tipoExistente.cor })
-    } else {
-      setForm({ nome: '', descricao: '', cor: '#4F46E5' })
-    }
+  const preencher = (origem: TipoOrdem | null) => {
+    setErro(null)
+    setForm(origem
+      ? { nome: origem.nome, descricao: origem.descricao ?? '', cor: origem.cor }
+      : { nome: '', descricao: '', cor: COR_PADRAO })
+  }
+
+  // O diálogo fica montado: preenche a cada abertura, com o tipo escolhido ou vazio para um novo.
+  useSincronizarAoMudar([aberto, tipoExistente?.id], () => {
+    if (aberto) preencher(tipoExistente)
   })
 
   const { mutate: criar, isPending: criando } = useMutation({

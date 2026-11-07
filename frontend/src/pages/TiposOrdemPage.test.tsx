@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { listarTiposOrdem } from '../api/tiposOrdem'
 import { renderizarTela } from '../test/renderizar'
@@ -38,5 +39,20 @@ describe('TiposOrdemPage: tipo de sistema Conversão', () => {
 
     expect(screen.queryByText('Sistema')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
+  })
+})
+
+describe('TiposOrdemPage: edição', () => {
+  beforeEach(() => {
+    vi.mocked(listarTiposOrdem).mockReset().mockResolvedValue([tipo({})] as never)
+  })
+
+  it('abre a edição com os dados do tipo escolhido', async () => {
+    renderizarTela(<TiposOrdemPage />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+
+    expect(await screen.findByLabelText(/^Nome/)).toHaveValue('Produção Normal')
+    expect(screen.getByLabelText('Descrição')).toHaveValue('Ordem planejada')
   })
 })
