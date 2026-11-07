@@ -25,12 +25,13 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # BACKEND_ENDERECO: host:porta da API pela rede privada.
 # NGINX_ENTRYPOINT_LOCAL_RESOLVERS: a imagem lê o DNS do contêiner (/etc/resolv.conf) e o expõe em
 #   NGINX_LOCAL_RESOLVERS; assim o Nginx volta a resolver o endereço da API quando ela é reimplantada e muda de IP.
-# BORDA_CONFIAVEL: faixa CIDR da borda da plataforma, a única de quem se aceita X-Forwarded-For. O padrão (só o
-#   loopback) não confia em ninguém de fora; a faixa real é medida no primeiro deploy (docs/deploy.md).
+# BORDA_CONFIAVEL: faixa CIDR da borda da plataforma, a única de quem se aceita o cabeçalho com o IP do cliente. O
+#   padrão (só o loopback) não confia em ninguém de fora; a faixa real é medida no deploy (docs/deploy.md).
+# CABECALHO_DO_CLIENTE: o cabeçalho em que a borda põe o IP do cliente (no Railway, X-Real-IP).
 # NGINX_ENVSUBST_FILTER: só estas variáveis entram no modelo; as demais do ambiente ficam de fora.
 ENV PORT=8080 \
     BACKEND_ENDERECO=backend.railway.internal:8080 \
-    BORDA_CONFIAVEL=127.0.0.1/32 \
+    BORDA_CONFIAVEL=127.0.0.1/32     CABECALHO_DO_CLIENTE=X-Forwarded-For \
     NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 \
-    NGINX_ENVSUBST_FILTER="^(PORT|BACKEND_ENDERECO|BORDA_CONFIAVEL|NGINX_LOCAL_RESOLVERS)$"
+    NGINX_ENVSUBST_FILTER="^(PORT|BACKEND_ENDERECO|BORDA_CONFIAVEL|CABECALHO_DO_CLIENTE|NGINX_LOCAL_RESOLVERS)$"
 EXPOSE 8080
