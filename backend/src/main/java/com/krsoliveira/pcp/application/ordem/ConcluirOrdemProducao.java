@@ -80,6 +80,9 @@ public class ConcluirOrdemProducao {
                     .listarPorOrdemProducao(comando.ordemProducaoId());
 
             validarConsumos(consumos);
+            if (comando.dataFabricacao() == null) {
+                throw new RegraDeNegocioException("A data de fabricação do lote é obrigatória.");
+            }
 
             StatusOrdemProducao statusAnterior = ordem.getStatus();
             ordem.concluir(comando.quantidadeProduzida(), ctx.usuario());
@@ -87,9 +90,6 @@ public class ConcluirOrdemProducao {
             Material material = materialRepository.buscarPorId(ordem.getMaterialId())
                     .orElseThrow(() -> new MaterialNaoEncontradoException(ordem.getMaterialId()));
 
-            if (comando.dataFabricacao() == null) {
-                throw new RegraDeNegocioException("A data de fabricação do lote é obrigatória.");
-            }
             String numeroLote = Lote.numeroLoteProducao(comando.dataFabricacao(),
                     loteRepository.proximoSequencialProducao(comando.dataFabricacao()));
 

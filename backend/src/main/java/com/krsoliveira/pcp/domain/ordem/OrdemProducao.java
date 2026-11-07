@@ -144,6 +144,13 @@ public class OrdemProducao {
         this.assinatura = alterada;
     }
 
+    /** Recusa a operação se a ordem não está em produção; {@code operacao} completa a frase, como "lançar o consumo". */
+    public void exigirEmProducaoPara(String operacao) {
+        if (status != StatusOrdemProducao.EM_PRODUCAO) {
+            throw new RegraDeNegocioException("Só é possível %s de uma ordem em produção.".formatted(operacao));
+        }
+    }
+
     /**
      * Uma ordem está atrasada se continua aberta depois da data de fim planejada.
      * A data de referência é parâmetro (e não {@code LocalDate.now()}) para o
