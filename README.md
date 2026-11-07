@@ -247,6 +247,7 @@ Compose, ainda sem consumidores). Estado detalhado em [docs/proximos-passos.md](
 - [Visão geral](docs/visao-geral.md) — problema, escopo e personas
 - [Arquitetura](docs/arquitetura.md) — camadas, fluxos e convenções
 - [Glossário](docs/glossario.md) — termos de PCP e técnicos
+- [Design system](docs/design-system.md) — tokens, componentes e padrões de interface
 - [ADRs](docs/README.md#índice-de-adrs) — registro das decisões de arquitetura
 - [Dados](data/README.md) — como o dataset sintético é gerado
 
