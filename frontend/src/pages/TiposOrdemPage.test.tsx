@@ -31,7 +31,7 @@ describe('TiposOrdemPage: tipo de sistema Conversão', () => {
     await screen.findByText('Conversão')
 
     expect(screen.getByText('Sistema')).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'Editar' })).toHaveLength(1) // só o tipo comum
+    expect(screen.getAllByRole('button', { name: /^Editar tipo / })).toHaveLength(1) // só o tipo comum
   })
 
   it('os tipos do usuário seguem editáveis e sem o selo', async () => {
@@ -41,7 +41,7 @@ describe('TiposOrdemPage: tipo de sistema Conversão', () => {
     await screen.findByText('Produção Normal')
 
     expect(screen.queryByText('Sistema')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Editar tipo / })).toBeInTheDocument()
   })
 })
 
@@ -53,7 +53,7 @@ describe('TiposOrdemPage: edição', () => {
   it('abre a edição com os dados do tipo escolhido', async () => {
     renderizarTela(<TiposOrdemPage />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    await userEvent.click(await screen.findByRole('button', { name: /^Editar tipo / }))
 
     expect(await screen.findByLabelText(/^Nome/)).toHaveValue('Produção Normal')
     expect(screen.getByLabelText('Descrição')).toHaveValue('Ordem planejada')
@@ -64,7 +64,7 @@ describe('TiposOrdemPage: edição', () => {
     vi.mocked(atualizarTipoOrdem).mockReset().mockResolvedValue(tipo({}) as never)
     renderizarTela(<TiposOrdemPage />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    await userEvent.click(await screen.findByRole('button', { name: /^Editar tipo / }))
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }))
 
     await waitFor(() => expect(atualizarTipoOrdem).toHaveBeenCalled())
@@ -78,7 +78,7 @@ describe('TiposOrdemPage: edição', () => {
     }))
     vi.mocked(buscarTipoOrdem).mockReset().mockResolvedValue(tipo({ descricao: 'Mudado pela Ana', versao: 1 }) as never)
     renderizarTela(<TiposOrdemPage />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    await userEvent.click(await screen.findByRole('button', { name: /^Editar tipo / }))
     const descricao = await screen.findByLabelText('Descrição')
     await userEvent.clear(descricao)
     await userEvent.type(descricao, 'Do Bruno')
@@ -100,7 +100,7 @@ describe('TiposOrdemPage: edição', () => {
   it('outro conflito (nome repetido) mostra o motivo sem oferecer carregar a versão atual', async () => {
     vi.mocked(atualizarTipoOrdem).mockReset().mockRejectedValue(erroHttp(409, { detail: 'Já existe um tipo com esse nome.' }))
     renderizarTela(<TiposOrdemPage />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    await userEvent.click(await screen.findByRole('button', { name: /^Editar tipo / }))
 
     await userEvent.click(await screen.findByRole('button', { name: 'Salvar' }))
 

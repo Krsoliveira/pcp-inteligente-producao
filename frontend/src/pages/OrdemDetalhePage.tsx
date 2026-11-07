@@ -84,6 +84,12 @@ export function OrdemDetalhePage() {
   // Catálogo de materiais (compartilhado em cache) para exibir código em vez de ID.
   const materiaisQuery = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais, enabled: tem('MATERIAL_VISUALIZAR') })
   const materialPorId = new Map((materiaisQuery.data ?? []).map((m) => [m.id, m]))
+  /** Nome do material em texto, para o leitor de tela dizer de qual linha é o botão. */
+  const nomeDoMaterial = (id: string) => {
+    const m = materialPorId.get(id)
+    return m ? `${formatarCodigoMaterial(m.codigo)} ${m.descricao}` : 'material'
+  }
+
   const rotuloMaterial = (id: string) => {
     const m = materialPorId.get(id)
     return (
@@ -320,7 +326,8 @@ export function OrdemDetalhePage() {
                               <TableCell align="center">
                                 {!c.registrado && tem('CONSUMO_REGISTRAR') && (
                                   <Tooltip title="Registrar consumo">
-                                    <IconButton size="small" color="primary" onClick={() => setConsumoSelecionado(c)}>
+                                    <IconButton size="small" color="primary" onClick={() => setConsumoSelecionado(c)}
+                                      aria-label={`Registrar consumo de ${nomeDoMaterial(c.materialId)}`}>
                                       <EditIcon sx={{ fontSize: 16 }} />
                                     </IconButton>
                                   </Tooltip>

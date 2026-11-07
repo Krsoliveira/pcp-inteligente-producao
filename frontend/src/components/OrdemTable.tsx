@@ -114,7 +114,8 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                   {ordem.status === 'EM_PRODUCAO' && tem('CONSUMO_REGISTRAR') && (
                     <Tooltip title="Lançar consumo">
-                      <IconButton size="small" color="primary" component={RouterLink} to={`/ordens/${ordem.id}/lancar-consumo`}>
+                      <IconButton size="small" color="primary" component={RouterLink} to={`/ordens/${ordem.id}/lancar-consumo`}
+                        aria-label={`Lançar consumo da ordem ${ordem.codigo}`}>
                         <PlaylistAddOutlinedIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
@@ -125,6 +126,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
                         size="small"
                         onClick={(e) => { e.stopPropagation(); onAtualizarStatus(ordem) }}
                         color="primary"
+                        aria-label={`Atualizar status da ordem ${ordem.codigo}`}
                       >
                         <SwapHorizIcon sx={{ fontSize: 16 }} />
                       </IconButton>
@@ -135,6 +137,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
                       size="small"
                       onClick={() => navigate(`/ordens/${ordem.id}`)}
                       color="default"
+                      aria-label={`Ver detalhes da ordem ${ordem.codigo}`}
                     >
                       <OpenInNewIcon sx={{ fontSize: 16 }} />
                     </IconButton>

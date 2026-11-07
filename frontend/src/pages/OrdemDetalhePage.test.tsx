@@ -49,7 +49,7 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
     montar()
 
     expect(await screen.findByRole('button', { name: 'Alterar status' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Registrar consumo' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Registrar consumo de / })).toBeInTheDocument()
     expect(await screen.findByText('Histórico da ordem')).toBeInTheDocument()
   })
 
@@ -87,7 +87,7 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
     await screen.findByRole('button', { name: 'Alterar status' })
     await screen.findAllByText('110.000.001')
 
-    expect(screen.queryByRole('button', { name: 'Registrar consumo' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Registrar consumo de / })).not.toBeInTheDocument()
   })
 
   it('sem CONSUMO_VISUALIZAR avisa em vez de mostrar a lista, e nem consulta os consumos', async () => {
@@ -132,7 +132,7 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
     expect((await screen.findAllByText('110.000.001')).length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: 'Alterar status' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Concluir ordem' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Registrar consumo' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Registrar consumo de / })).not.toBeInTheDocument()
   })
 })
 
