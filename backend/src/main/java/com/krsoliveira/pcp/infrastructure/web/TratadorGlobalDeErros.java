@@ -1,21 +1,7 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
-import com.krsoliveira.pcp.application.acesso.PerfilNaoEncontradoException;
-import com.krsoliveira.pcp.application.acesso.PerfilNomeJaUtilizadoException;
-import com.krsoliveira.pcp.application.acesso.UsuarioNaoEncontradoException;
-import com.krsoliveira.pcp.application.auth.EmailJaUtilizadoException;
-import com.krsoliveira.pcp.application.consumo.ConsumoMaterialNaoEncontradoException;
-import com.krsoliveira.pcp.application.lista.ListaTecnicaNaoEncontradaException;
-import com.krsoliveira.pcp.application.lista.VersaoListaTecnicaJaExisteException;
-import com.krsoliveira.pcp.application.notafiscal.LoteDuplicadoException;
-import com.krsoliveira.pcp.application.notafiscal.NotaFiscalDuplicadaException;
-import com.krsoliveira.pcp.application.notafiscal.NotaFiscalNaoEncontradaException;
-import com.krsoliveira.pcp.application.lote.LoteNaoEncontradoException;
-import com.krsoliveira.pcp.application.material.MaterialNaoEncontradoException;
-import com.krsoliveira.pcp.application.ordem.CodigoJaUtilizadoException;
-import com.krsoliveira.pcp.application.ordem.NomeTipoOrdemJaUtilizadoException;
-import com.krsoliveira.pcp.application.ordem.OrdemProducaoNaoEncontradaException;
-import com.krsoliveira.pcp.application.ordem.TipoOrdemNaoEncontradoException;
+import com.krsoliveira.pcp.application.comum.ConflitoException;
+import com.krsoliveira.pcp.application.comum.RecursoNaoEncontradoException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.acesso.AcessoNegadoException;
 import com.krsoliveira.pcp.infrastructure.security.CorpoGrandeDemaisException;
@@ -103,6 +89,22 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
         return problema;
     }
 
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    public ProblemDetail recursoNaoEncontrado(RecursoNaoEncontradoException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problema.setTitle("Recurso não encontrado");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(ConflitoException.class)
+    public ProblemDetail conflito(ConflitoException ex) {
+        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problema.setTitle("Conflito");
+        problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
     /** Falta a permissão exigida pelo endpoint (segurança por método) ou a regra "só se concede o que se tem". */
     @ExceptionHandler({AccessDeniedException.class, AcessoNegadoException.class})
     public ProblemDetail acessoNegado(RuntimeException ex) {
@@ -126,46 +128,6 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
                 .anyMatch(a -> UsuarioDetailsService.SENHA_PROVISORIA.equals(a.getAuthority()));
     }
 
-    @ExceptionHandler({PerfilNaoEncontradoException.class, UsuarioNaoEncontradoException.class})
-    public ProblemDetail acessoNaoEncontrado(RuntimeException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problema.setTitle("Recurso não encontrado");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(PerfilNomeJaUtilizadoException.class)
-    public ProblemDetail perfilDuplicado(PerfilNomeJaUtilizadoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problema.setTitle("Conflito");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(OrdemProducaoNaoEncontradaException.class)
-    public ProblemDetail naoEncontrada(OrdemProducaoNaoEncontradaException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problema.setTitle("Recurso não encontrado");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(CodigoJaUtilizadoException.class)
-    public ProblemDetail codigoDuplicado(CodigoJaUtilizadoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problema.setTitle("Conflito");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(EmailJaUtilizadoException.class)
-    public ProblemDetail emailDuplicado(EmailJaUtilizadoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problema.setTitle("Conflito");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
     /**
      * Valor que passou pela validação do corpo, mas o banco não aceita. É erro de quem chamou: responde 400, sem repetir o
      * valor. Os demais erros de acesso a dados (banco fora do ar, por exemplo) seguem como erro do sistema.
@@ -180,78 +142,6 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problema.setTitle("Requisição inválida");
         problema.setDetail("Um dos valores informados está fora do limite ou do formato aceito.");
-        return problema;
-    }
-
-    @ExceptionHandler(MaterialNaoEncontradoException.class)
-    public ProblemDetail materialNaoEncontrado(MaterialNaoEncontradoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problema.setTitle("Recurso não encontrado");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(ListaTecnicaNaoEncontradaException.class)
-    public ProblemDetail listaTecnicaNaoEncontrada(ListaTecnicaNaoEncontradaException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problema.setTitle("Recurso não encontrado");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler({NotaFiscalDuplicadaException.class, LoteDuplicadoException.class})
-    public ProblemDetail entradaDuplicada(RuntimeException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problema.setTitle("Conflito");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(NotaFiscalNaoEncontradaException.class)
-    public ProblemDetail notaFiscalNaoEncontrada(NotaFiscalNaoEncontradaException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problema.setTitle("Recurso não encontrado");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(VersaoListaTecnicaJaExisteException.class)
-    public ProblemDetail versaoListaDuplicada(VersaoListaTecnicaJaExisteException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problema.setTitle("Conflito");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(ConsumoMaterialNaoEncontradoException.class)
-    public ProblemDetail consumoNaoEncontrado(ConsumoMaterialNaoEncontradoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problema.setTitle("Recurso não encontrado");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(LoteNaoEncontradoException.class)
-    public ProblemDetail loteNaoEncontrado(LoteNaoEncontradoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problema.setTitle("Recurso não encontrado");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(TipoOrdemNaoEncontradoException.class)
-    public ProblemDetail tipoOrdemNaoEncontrado(TipoOrdemNaoEncontradoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
-        problema.setTitle("Recurso não encontrado");
-        problema.setDetail(ex.getMessage());
-        return problema;
-    }
-
-    @ExceptionHandler(NomeTipoOrdemJaUtilizadoException.class)
-    public ProblemDetail nomeTipoOrdemDuplicado(NomeTipoOrdemJaUtilizadoException ex) {
-        ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
-        problema.setTitle("Conflito");
-        problema.setDetail(ex.getMessage());
         return problema;
     }
 

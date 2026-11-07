@@ -17,7 +17,6 @@ import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
-import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -85,9 +84,7 @@ public class RegistrarConsumoMaterial {
                     .filter(c -> c.getOrdemProducaoId().equals(ordemProducaoId))
                     .orElseThrow(() -> new ConsumoMaterialNaoEncontradoException(
                             comando.consumoMaterialId()));
-            if (ordem.getStatus() != StatusOrdemProducao.EM_PRODUCAO) {
-                throw new RegraDeNegocioException("Só é possível registrar o consumo de uma ordem em produção.");
-            }
+            ordem.exigirEmProducaoPara("registrar o consumo");
             return registrarNoContexto(ctx, consumo, comando, AcaoAuditoria.CONSUMO_REGISTRADO);
         });
     }
