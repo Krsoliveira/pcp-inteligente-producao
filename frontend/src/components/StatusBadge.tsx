@@ -142,6 +142,11 @@ export function TipoOrdemBadge({ nome, cor }: TipoOrdemBadgeProps) {
   )
 }
 
+/** Rótulo de qualquer status pela constante que vem do servidor. */
+export const ROTULOS_DE_STATUS: Record<string, string> = Object.fromEntries(
+  [ORDEM_CONFIG, LISTA_CONFIG, LOTE_CONFIG].flatMap((config) => Object.entries(config).map(([status, { label }]) => [status, label])),
+)
+
 /** Texto do status como aparece na tela (usado pelo filtro por coluna). */
 export const rotuloDoStatusDeOrdem = (status: StatusOrdem) => ORDEM_CONFIG[status].label
 export const rotuloDoStatusDeLista = (status: StatusLista) => LISTA_CONFIG[status].label
