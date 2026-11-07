@@ -5,7 +5,6 @@ import Card from '@mui/material/Card'
 import Chip from '@mui/material/Chip'
 import Skeleton from '@mui/material/Skeleton'
 import ListAltIcon from '@mui/icons-material/ListAlt'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { pesquisarOrdens } from '../api/ordens'
 import { OrdemTable, colunasDeOrdens } from '../components/OrdemTable'
 import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
@@ -17,6 +16,7 @@ import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/Tabe
 import { CamposFiltroOrdens, STATUS_VALIDOS } from '../components/ordens/CamposFiltroOrdens'
 import { ehDataIso, periodoInvertido } from '../components/consulta/CamposDePeriodo'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
+import { usePesquisaPaginada } from '../hooks/usePesquisaPaginada'
 import { contagem, formatarData } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import type { OrdemProducao, StatusOrdem } from '../types'
@@ -41,8 +41,6 @@ export function OrdensResultadosPage() {
   const fimDeAplicado = ehDataIso(url.texto('fimDe')) ? url.texto('fimDe') : ''
   const fimAteAplicado = ehDataIso(url.texto('fimAte')) ? url.texto('fimAte') : ''
   const periodoValido = !periodoInvertido(deAplicado, ateAplicado) && !periodoInvertido(fimDeAplicado, fimAteAplicado)
-  const pagina = url.numero('pagina', 0)
-  const tamanho = url.numero('tamanho', 25)
 
   // Os campos editam um rascunho; a consulta só muda ao clicar em Pesquisar.
   const [busca, setBusca] = useState(buscaAplicada)
@@ -55,29 +53,19 @@ export function OrdensResultadosPage() {
 
   const [ordemSelecionada, setOrdemSelecionada] = useState<OrdemProducao | null>(null)
 
-  const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
-    queryKey: ['ordens', 'pesquisa', buscaAplicada, statusAplicado, deAplicado, ateAplicado, atrasadasAplicado, centroAplicado, fimDeAplicado, fimAteAplicado, pagina, tamanho],
-    queryFn: () => pesquisarOrdens({
+  const { itens: ordens, total, pagina, tamanho, isLoading, isError, error, isPlaceholderData, falhouSemDados } = usePesquisaPaginada({
+    url,
+    chave: ['ordens', 'pesquisa', buscaAplicada, statusAplicado, deAplicado, ateAplicado, atrasadasAplicado, centroAplicado, fimDeAplicado, fimAteAplicado],
+    consultar: ({ pagina, tamanho }) => pesquisarOrdens({
       busca: buscaAplicada || undefined, status: statusAplicado, de: deAplicado || undefined, ate: ateAplicado || undefined,
       atrasadas: atrasadasAplicado || undefined, centro: centroAplicado || undefined,
       fimDe: fimDeAplicado || undefined, fimAte: fimAteAplicado || undefined, pagina, tamanho,
     }),
-    enabled: periodoValido,
-    placeholderData: keepPreviousData,
+    habilitada: periodoValido,
   })
-  const ordens = data?.itens ?? []
-  const total = data?.total ?? 0
-  const falhouSemDados = isError && !data
   const tabela = useTabelaInterativa(ordens, colunasDeOrdens)
   const filtrando = buscaAplicada !== '' || statusAplicado !== undefined || deAplicado !== '' || ateAplicado !== '' || atrasadasAplicado
     || centroAplicado !== '' || fimDeAplicado !== '' || fimAteAplicado !== ''
-
-  // Se a página pedida deixou de existir (ex.: uma ordem saiu do filtro), volta para a última.
-  useEffect(() => {
-    if (data && data.itens.length === 0 && data.total > 0 && pagina > 0) {
-      url.atualizar({ pagina: Math.max(0, data.totalPaginas - 1) })
-    }
-  }, [data, pagina]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pesquisar = () => {
     if (periodoInvertido(de, ate)) return

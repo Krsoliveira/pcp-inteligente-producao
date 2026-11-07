@@ -43,7 +43,8 @@ import { AtualizarStatusDialog } from '../components/AtualizarStatusDialog'
 import { InfoRow } from '../components/InfoRow'
 import { RegistrarConsumoDialog } from '../components/consumo/RegistrarConsumoDialog'
 import { HistoricoAuditoria } from '../components/HistoricoAuditoria'
-import { formatarCodigoMaterial, formatarDataHora, formatarQuantidade, hojeIso } from '../utils/formatacao'
+import { invalidarDadosDaOrdem } from '../api/invalidacao'
+import { formatarCodigoMaterial, formatarData, formatarDataHora, formatarQuantidade, hojeIso } from '../utils/formatacao'
 import type { ConsumoMaterial, ConcluirOrdemRequest } from '../types'
 import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
@@ -98,16 +99,7 @@ export function OrdemDetalhePage() {
     enabled: !!ordemQuery.data?.materialId && tem('MATERIAL_VISUALIZAR'),
   })
 
-  const invalidar = () => {
-    queryClient.invalidateQueries({ queryKey: ['ordem', id] })
-    queryClient.invalidateQueries({ queryKey: ['consumos', id] })
-    queryClient.invalidateQueries({ queryKey: ['lotes-ordem', id] })
-    queryClient.invalidateQueries({ queryKey: ['ordens'] })
-    queryClient.invalidateQueries({ queryKey: ['lotes'] })
-    queryClient.invalidateQueries({ queryKey: ['estoque'] })
-    queryClient.invalidateQueries({ queryKey: ['lotes-disponiveis'] })
-    queryClient.invalidateQueries({ queryKey: ['auditoria'] })
-  }
+  const invalidar = () => invalidarDadosDaOrdem(queryClient, id)
 
   const ordem = ordemQuery.data
   const consumos = consumosQuery.data ?? []
@@ -460,9 +452,4 @@ function ConcluirOrdemDialog({ aberto, ordemId, onFechar, onSucesso }: ConcluirO
       </DialogActions>
     </Dialog>
   )
-}
-
-function formatarData(data: string): string {
-  const [ano, mes, dia] = data.split('-')
-  return `${dia}/${mes}/${ano}`
 }

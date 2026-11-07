@@ -12,7 +12,8 @@ import HistoryIcon from '@mui/icons-material/History'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { consultarEventosAuditoria } from '../api/auditoria'
 import { formatarCodigoMaterial, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
-import type { AcaoAuditoria, EventoAuditoria, MudancaAuditoria, TipoEntidade } from '../types'
+import { ROTULOS_DE_STATUS } from './StatusBadge'
+import { TIPO_MATERIAL_LABEL, type AcaoAuditoria, type EventoAuditoria, type MudancaAuditoria, type TipoEntidade } from '../types'
 
 const ACAO_LABEL: Record<AcaoAuditoria, string> = {
   CRIADO: 'Criado',
@@ -78,23 +79,7 @@ const CAMPO_LABEL: Record<string, string> = {
 }
 
 /** Rótulos de status e tipos (os eventos guardam as constantes do backend). */
-const VALOR_LABEL: Record<string, string> = {
-  PLANEJADA: 'Planejada',
-  LIBERADA: 'Liberada',
-  EM_PRODUCAO: 'Em produção',
-  CONCLUIDA: 'Concluída',
-  CANCELADA: 'Cancelada',
-  DISPONIVEL: 'Disponível',
-  BLOQUEADO: 'Bloqueado',
-  CONSUMIDO: 'Consumido',
-  VENCIDO: 'Vencido',
-  EM_REVISAO: 'Em revisão',
-  ATIVA: 'Ativa',
-  OBSOLETA: 'Obsoleta',
-  PRODUTO_ACABADO: 'Produto acabado',
-  SEMIACABADO: 'Semiacabado',
-  MATERIA_PRIMA: 'Matéria-prima',
-}
+const VALOR_LABEL: Record<string, string> = { ...ROTULOS_DE_STATUS, ...TIPO_MATERIAL_LABEL }
 
 /** Campos numéricos: exibidos no padrão brasileiro (vírgula decimal). */
 const CAMPOS_NUMERICOS = new Set(['quantidade', 'quantidadePlanejada', 'quantidadeConsumida', 'quantidadeProduzida', 'desvio', 'saldo'])

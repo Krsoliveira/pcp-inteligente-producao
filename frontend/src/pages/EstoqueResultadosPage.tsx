@@ -4,7 +4,6 @@ import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Skeleton from '@mui/material/Skeleton'
 import WarehouseIcon from '@mui/icons-material/WarehouseOutlined'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { pesquisarEstoque } from '../api/estoque'
 import { AlertaDeEstoque } from '../components/suprimentos/AlertaDeEstoque'
 import { CamposFiltroEstoque, TIPOS_DE_ESTOQUE_VALIDOS } from '../components/suprimentos/CamposFiltroEstoque'
@@ -15,6 +14,7 @@ import { PageHeader } from '../components/PageHeader'
 import { PaginacaoTabela } from '../components/PaginacaoTabela'
 import { EmptyState } from '../components/EmptyState'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
+import { usePesquisaPaginada } from '../hooks/usePesquisaPaginada'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import { type TipoMaterial } from '../types'
 import { contagem } from '../utils/formatacao'
@@ -26,8 +26,6 @@ export function EstoqueResultadosPage() {
   const tipoBruto = url.texto('tipo') as TipoMaterial
   const tipoAplicado = TIPOS_DE_ESTOQUE_VALIDOS.includes(tipoBruto) ? tipoBruto : undefined
   const saldoAplicado = url.texto('somenteComSaldo') === 'true'
-  const pagina = url.numero('pagina', 0)
-  const tamanho = url.numero('tamanho', 25)
 
   const [busca, setBusca] = useState(buscaAplicada)
   const [tipo, setTipo] = useState<TipoMaterial | 'TODOS'>(tipoAplicado ?? 'TODOS')
@@ -36,24 +34,15 @@ export function EstoqueResultadosPage() {
     setBusca(buscaAplicada); setTipo(tipoAplicado ?? 'TODOS'); setSomenteComSaldo(saldoAplicado)
   }, [buscaAplicada, tipoAplicado, saldoAplicado])
 
-  const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
-    queryKey: ['estoque', 'pesquisa', buscaAplicada, tipoAplicado, saldoAplicado, pagina, tamanho],
-    queryFn: () => pesquisarEstoque({
+  const { itens: posicoes, total, pagina, tamanho, isLoading, isError, error, isPlaceholderData, falhouSemDados } = usePesquisaPaginada({
+    url,
+    chave: ['estoque', 'pesquisa', buscaAplicada, tipoAplicado, saldoAplicado],
+    consultar: ({ pagina, tamanho }) => pesquisarEstoque({
       busca: buscaAplicada || undefined, tipo: tipoAplicado, somenteComSaldo: saldoAplicado || undefined, pagina, tamanho,
     }),
-    placeholderData: keepPreviousData,
   })
-  const posicoes = data?.itens ?? []
-  const total = data?.total ?? 0
-  const falhouSemDados = isError && !data
   const tabela = useTabelaInterativa(posicoes, colunasDeEstoque)
   const filtrando = buscaAplicada !== '' || tipoAplicado !== undefined || saldoAplicado
-
-  useEffect(() => {
-    if (data && data.itens.length === 0 && data.total > 0 && pagina > 0) {
-      url.atualizar({ pagina: Math.max(0, data.totalPaginas - 1) })
-    }
-  }, [data, pagina]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pesquisar = () => url.atualizar({
     busca: busca.trim(),

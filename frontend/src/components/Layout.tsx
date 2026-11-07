@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { Link as RouterLink, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Drawer from '@mui/material/Drawer'
@@ -6,6 +6,7 @@ import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import List from '@mui/material/List'
 import Link from '@mui/material/Link'
+import Skeleton from '@mui/material/Skeleton'
 import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
@@ -357,7 +358,9 @@ export function Layout() {
           maxWidth: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
         }}
       >
-        <Outlet />
+        <Suspense fallback={<Skeleton variant="rounded" height={320} />}>
+          <Outlet />
+        </Suspense>
       </Box>
     </Box>
   )
