@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography'
 import HistoryIcon from '@mui/icons-material/History'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { consultarEventosAuditoria } from '../api/auditoria'
-import { formatarDataHora } from '../utils/formatacao'
+import { formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import type { AcaoAuditoria, EventoAuditoria, MudancaAuditoria, TipoEntidade } from '../types'
 
 const ACAO_LABEL: Record<AcaoAuditoria, string> = {
@@ -126,7 +126,7 @@ function formatarValor(campo: string, valor: unknown): string {
   const texto = String(valor)
   if (CAMPOS_DE_PERMISSOES.has(campo)) return texto.split(',').map((p) => constanteLegivel(p.trim())).join(', ')
   if (CAMPOS_NUMERICOS.has(campo) && !Number.isNaN(Number(texto))) {
-    return Number(texto).toLocaleString('pt-BR', { maximumFractionDigits: 4 })
+    return formatarQuantidade(Number(texto))
   }
   const data = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto)
   if (data) return `${data[3]}/${data[2]}/${data[1]}`

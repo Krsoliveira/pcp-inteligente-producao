@@ -19,6 +19,7 @@ import { StatusOrdemBadge, rotuloDoStatusDeOrdem } from './StatusBadge'
 import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from './consulta/TabelaInterativa'
 
 import { EmptyState } from './EmptyState'
+import { formatarData, formatarQuantidade } from '../utils/formatacao'
 import type { OrdemProducao } from '../types'
 
 interface OrdemTableProps {
@@ -33,7 +34,7 @@ interface OrdemTableProps {
 export const colunasDeOrdens: Coluna<OrdemProducao>[] = [
   { chave: 'codigo', rotulo: 'Código', valor: (o) => o.codigo },
   { chave: 'centro', rotulo: 'Centro de Trabalho', valor: (o) => o.centroDeTrabalho },
-  { chave: 'quantidade', rotulo: 'Qtd', valor: (o) => o.quantidade, texto: (o) => o.quantidade.toLocaleString('pt-BR') },
+  { chave: 'quantidade', rotulo: 'Qtd', valor: (o) => o.quantidade, texto: (o) => formatarQuantidade(o.quantidade) },
   { chave: 'inicio', rotulo: 'Início', valor: (o) => o.inicioPlanejado, texto: (o) => formatarData(o.inicioPlanejado) },
   { chave: 'fim', rotulo: 'Fim', valor: (o) => o.fimPlanejado, texto: (o) => formatarData(o.fimPlanejado) },
   { chave: 'status', rotulo: 'Status', valor: (o) => rotuloDoStatusDeOrdem(o.status) },
@@ -85,7 +86,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
                 <Typography variant="body2">{ordem.centroDeTrabalho}</Typography>
               </TableCell>
               <TableCell align="right">
-                <Typography variant="body2">{ordem.quantidade.toLocaleString('pt-BR')}</Typography>
+                <Typography variant="body2">{formatarQuantidade(ordem.quantidade)}</Typography>
               </TableCell>
               <TableCell>
                 <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
@@ -146,9 +147,4 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
       </Table>
     </TableContainer>
   )
-}
-
-function formatarData(data: string): string {
-  const [ano, mes, dia] = data.split('-')
-  return `${dia}/${mes}/${ano}`
 }

@@ -53,6 +53,14 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
     expect(await screen.findByText('Histórico da ordem')).toBeInTheDocument()
   })
 
+  it('mostra a quantidade consumida com as 4 casas do sistema, sem arredondar', async () => {
+    consumosMock.mockResolvedValue([consumo({ quantidadePlanejada: 120.5, quantidadeConsumida: 119.9088, desvio: -0.5912 })])
+    montar()
+
+    expect(await screen.findByText('119,9088')).toBeInTheDocument()
+    expect(screen.getByText('-0,5912')).toBeInTheDocument()
+  })
+
   it('só oferece concluir quando todos os consumos estão registrados, e com ORDEM_CONCLUIR', async () => {
     montar()
 
