@@ -1,32 +1,35 @@
+import { lazy } from 'react'
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ExigirPermissao } from './components/ExigirPermissao'
 import { LoginPage } from './pages/LoginPage'
 import { RotaDoAutocadastro } from './components/auth/RotaDoAutocadastro'
-import { DashboardPage } from './pages/DashboardPage'
-import { OrdensPage } from './pages/OrdensPage'
-import { OrdensResultadosPage } from './pages/OrdensResultadosPage'
-import { OrdemDetalhePage } from './pages/OrdemDetalhePage'
-import { MateriaisPage } from './pages/MateriaisPage'
-import { MateriaisResultadosPage } from './pages/MateriaisResultadosPage'
-import { ListasTecnicasPage } from './pages/ListasTecnicasPage'
-import { ListasTecnicasResultadosPage } from './pages/ListasTecnicasResultadosPage'
-import { ListaTecnicaDetalhePage } from './pages/ListaTecnicaDetalhePage'
-import { ListaTecnicaComparacaoPage } from './pages/ListaTecnicaComparacaoPage'
-import { TiposOrdemPage } from './pages/TiposOrdemPage'
-import { LoteDetalhePage } from './pages/LoteDetalhePage'
-import { NotasFiscaisPage } from './pages/NotasFiscaisPage'
-import { NotasFiscaisResultadosPage } from './pages/NotasFiscaisResultadosPage'
-import { NotaFiscalDetalhePage } from './pages/NotaFiscalDetalhePage'
-import { EstoquePage } from './pages/EstoquePage'
-import { EstoqueResultadosPage } from './pages/EstoqueResultadosPage'
-import { EstoqueMaterialPage } from './pages/EstoqueMaterialPage'
-import { LancamentoDeConsumoPage } from './pages/LancamentoDeConsumoPage'
-import { PerfisAcessoPage } from './pages/PerfisAcessoPage'
-import { RelatorioConsumoOrdensPage } from './pages/RelatorioConsumoOrdensPage'
-import { TrocarSenhaPage } from './pages/TrocarSenhaPage'
-import { UsuariosAcessoPage } from './pages/UsuariosAcessoPage'
+
+/** Cada tela vira um arquivo à parte: quem abre o login não baixa os gráficos nem as demais telas. */
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
+const OrdensPage = lazy(() => import('./pages/OrdensPage').then((m) => ({ default: m.OrdensPage })))
+const OrdensResultadosPage = lazy(() => import('./pages/OrdensResultadosPage').then((m) => ({ default: m.OrdensResultadosPage })))
+const OrdemDetalhePage = lazy(() => import('./pages/OrdemDetalhePage').then((m) => ({ default: m.OrdemDetalhePage })))
+const MateriaisPage = lazy(() => import('./pages/MateriaisPage').then((m) => ({ default: m.MateriaisPage })))
+const MateriaisResultadosPage = lazy(() => import('./pages/MateriaisResultadosPage').then((m) => ({ default: m.MateriaisResultadosPage })))
+const ListasTecnicasPage = lazy(() => import('./pages/ListasTecnicasPage').then((m) => ({ default: m.ListasTecnicasPage })))
+const ListasTecnicasResultadosPage = lazy(() => import('./pages/ListasTecnicasResultadosPage').then((m) => ({ default: m.ListasTecnicasResultadosPage })))
+const ListaTecnicaDetalhePage = lazy(() => import('./pages/ListaTecnicaDetalhePage').then((m) => ({ default: m.ListaTecnicaDetalhePage })))
+const ListaTecnicaComparacaoPage = lazy(() => import('./pages/ListaTecnicaComparacaoPage').then((m) => ({ default: m.ListaTecnicaComparacaoPage })))
+const TiposOrdemPage = lazy(() => import('./pages/TiposOrdemPage').then((m) => ({ default: m.TiposOrdemPage })))
+const LoteDetalhePage = lazy(() => import('./pages/LoteDetalhePage').then((m) => ({ default: m.LoteDetalhePage })))
+const NotasFiscaisPage = lazy(() => import('./pages/NotasFiscaisPage').then((m) => ({ default: m.NotasFiscaisPage })))
+const NotasFiscaisResultadosPage = lazy(() => import('./pages/NotasFiscaisResultadosPage').then((m) => ({ default: m.NotasFiscaisResultadosPage })))
+const NotaFiscalDetalhePage = lazy(() => import('./pages/NotaFiscalDetalhePage').then((m) => ({ default: m.NotaFiscalDetalhePage })))
+const EstoquePage = lazy(() => import('./pages/EstoquePage').then((m) => ({ default: m.EstoquePage })))
+const EstoqueResultadosPage = lazy(() => import('./pages/EstoqueResultadosPage').then((m) => ({ default: m.EstoqueResultadosPage })))
+const EstoqueMaterialPage = lazy(() => import('./pages/EstoqueMaterialPage').then((m) => ({ default: m.EstoqueMaterialPage })))
+const LancamentoDeConsumoPage = lazy(() => import('./pages/LancamentoDeConsumoPage').then((m) => ({ default: m.LancamentoDeConsumoPage })))
+const PerfisAcessoPage = lazy(() => import('./pages/PerfisAcessoPage').then((m) => ({ default: m.PerfisAcessoPage })))
+const RelatorioConsumoOrdensPage = lazy(() => import('./pages/RelatorioConsumoOrdensPage').then((m) => ({ default: m.RelatorioConsumoOrdensPage })))
+const TrocarSenhaPage = lazy(() => import('./pages/TrocarSenhaPage').then((m) => ({ default: m.TrocarSenhaPage })))
+const UsuariosAcessoPage = lazy(() => import('./pages/UsuariosAcessoPage').then((m) => ({ default: m.UsuariosAcessoPage })))
 
 const router = createBrowserRouter([
   {
