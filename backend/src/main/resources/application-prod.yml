@@ -33,7 +33,7 @@ server:
   forward-headers-strategy: native
   tomcat:
     remoteip:
-      internal-proxies: ${PROXIES_CONFIAVEIS:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1|::1}
+      internal-proxies: ${PROXIES_CONFIAVEIS:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1|::1|f[cd][0-9a-f]{2}:.*}
 
 # Swagger e OpenAPI desabilitados em produção.
 # O endpoint /v3/api-docs expõe o mapa completo da API; em produção isso
