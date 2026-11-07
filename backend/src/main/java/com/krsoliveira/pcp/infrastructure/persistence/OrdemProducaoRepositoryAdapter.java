@@ -47,6 +47,11 @@ public class OrdemProducaoRepositoryAdapter implements OrdemProducaoRepository {
     }
 
     @Override
+    public Optional<OrdemProducao> buscarPorIdParaAtualizar(UUID id) {
+        return springData.buscarParaAtualizar(id).map(OrdemProducaoJpaEntity::paraDominio);
+    }
+
+    @Override
     public List<OrdemProducao> buscarPorIds(Collection<UUID> ids) {
         if (ids.isEmpty()) return List.of();
         return springData.findAllById(ids).stream().map(OrdemProducaoJpaEntity::paraDominio).toList();

@@ -63,7 +63,7 @@ public class AdicionarConsumoMaterial {
 
     /** Mesma operação dentro de uma execução auditada já aberta (o lançamento de vários itens de uma vez). */
     public ConsumoMaterial adicionarNoContexto(ExecucaoAuditada.Contexto ctx, Comando comando) {
-        OrdemProducao ordem = ordemRepository.buscarPorId(comando.ordemProducaoId())
+        OrdemProducao ordem = ordemRepository.buscarPorIdParaAtualizar(comando.ordemProducaoId())
                 .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(comando.ordemProducaoId()));
         if (ordem.getStatus() != StatusOrdemProducao.EM_PRODUCAO) {
             throw new RegraDeNegocioException("Só é possível adicionar itens ao consumo de uma ordem em produção.");
