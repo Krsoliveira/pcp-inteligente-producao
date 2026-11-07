@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN" "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!-- Só o que aponta defeito ou sujeira. Estilo de formatação fica de fora: reformatar tudo não corrige nada. -->
+<module name="Checker">
+  <property name="severity" value="error"/>
+  <module name="TreeWalker">
+    <module name="UnusedImports"/>
+    <module name="RedundantImport"/>
+    <module name="AvoidStarImport">
+      <property name="excludes" value="org.assertj.core.api.Assertions,org.mockito.Mockito"/>
+    </module>
+    <module name="EmptyCatchBlock"/>
+    <module name="EmptyStatement"/>
+    <module name="EqualsHashCode"/>
+    <module name="StringLiteralEquality"/>
+    <module name="FallThrough"/>
+    <module name="ModifiedControlVariable"/>
+    <module name="OneStatementPerLine"/>
+    <module name="MissingSwitchDefault"/>
+  </module>
+</module>

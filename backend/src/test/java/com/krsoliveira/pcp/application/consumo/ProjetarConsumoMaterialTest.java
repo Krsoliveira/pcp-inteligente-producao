@@ -1,6 +1,5 @@
 package com.krsoliveira.pcp.application.consumo;
 
-import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
 import com.krsoliveira.pcp.application.lista.ListaTecnicaRepositoryEmMemoria;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
 import com.krsoliveira.pcp.domain.lista.ItemListaTecnica;
