@@ -40,7 +40,7 @@ Todo tom da paleta usado como texto tem contraste de pelo menos 4,5:1 sobre os d
 
 Barra de gráfico e ponto de status não são texto, então podem usar os tons vivos. Eles ficam num lugar só, `TOM_VIVO` em `components/tonsDosGraficos.ts` (com `COR_DA_GRADE_DO_GRAFICO`), para o mesmo status ter a mesma cor no selo e no gráfico.
 
-Componente que recebe cor recebe um **tom do tema**, não um valor: `KpiCard` aceita `tom="sucesso" | "atencao" | "erro" | "neutro" | "primario"`.
+Componente que recebe cor recebe um **tom do tema**, não um valor: `KpiCard` aceita `tom="sucesso" | "atencao" | "erro" | "neutro"`, só para sinalizar; sem tom, o número fica em `text.primary`. Cartão de indicador não leva ícone (Dashboard e Estoque seguem o mesmo padrão).
 
 ## Tipografia
 

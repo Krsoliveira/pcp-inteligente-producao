@@ -10,9 +10,6 @@ import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
 import Typography from '@mui/material/Typography'
 import AllInboxIcon from '@mui/icons-material/AllInboxOutlined'
-import CheckCircleIcon from '@mui/icons-material/CheckCircleOutlined'
-import BlockIcon from '@mui/icons-material/Block'
-import EventIcon from '@mui/icons-material/EventOutlined'
 import { useQuery } from '@tanstack/react-query'
 import { consultarEstoque } from '../api/estoque'
 import { listarLotesPorMaterial } from '../api/lotes'
@@ -65,18 +62,18 @@ export function EstoqueMaterialPage() {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KpiCard titulo="Disponível" valor={formatarQuantidade(posicao.saldoDisponivel, unidade)}
             subtitulo={`${posicao.lotesDisponiveis} ${posicao.lotesDisponiveis === 1 ? 'lote' : 'lotes'}`}
-            Icone={CheckCircleIcon} tom="sucesso" />
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KpiCard titulo="Indisponível" valor={formatarQuantidade(posicao.saldoIndisponivel, unidade)}
-            subtitulo="Bloqueado ou vencido" Icone={BlockIcon} tom="atencao" />
+            subtitulo="Bloqueado ou vencido" tom={posicao.saldoIndisponivel > 0 ? 'atencao' : undefined} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KpiCard titulo="Próximo vencimento" valor={formatarData(posicao.proximoVencimento)}
-            subtitulo="Entre os lotes disponíveis" Icone={EventIcon} />
+            subtitulo="Entre os lotes disponíveis" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <KpiCard titulo="Lotes" valor={String(lotes.length)} subtitulo="De qualquer status" Icone={AllInboxIcon} tom="neutro" />
+          <KpiCard titulo="Lotes" valor={String(lotes.length)} subtitulo="De qualquer status" />
         </Grid>
       </Grid>
 
