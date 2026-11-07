@@ -65,7 +65,7 @@ public class ConcluirOrdemProducao {
 
     public Resultado executar(Comando comando) {
         return execucao.executar(ctx -> {
-            OrdemProducao ordem = ordemRepository.buscarPorId(comando.ordemProducaoId())
+            OrdemProducao ordem = ordemRepository.buscarPorIdParaAtualizar(comando.ordemProducaoId())
                     .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(
                             comando.ordemProducaoId()));
 

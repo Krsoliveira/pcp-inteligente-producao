@@ -32,7 +32,7 @@ public class AtualizarStatusOrdemProducao {
                     "que valida os consumos de material e gera o lote de produção.");
         }
         return execucao.executar(ctx -> {
-            OrdemProducao ordem = repositorio.buscarPorId(id)
+            OrdemProducao ordem = repositorio.buscarPorIdParaAtualizar(id)
                     .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(id));
             StatusOrdemProducao anterior = ordem.getStatus();
             ordem.alterarStatusPara(novoStatus, ctx.usuario());

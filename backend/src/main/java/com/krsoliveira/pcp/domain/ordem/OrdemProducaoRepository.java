@@ -22,6 +22,13 @@ public interface OrdemProducaoRepository {
 
     Optional<OrdemProducao> buscarPorId(UUID id);
 
+    /**
+     * Busca a ordem bloqueando-a até o fim da transação. Todo caso de uso que altera a ordem ou o consumo dela
+     * começa por aqui: a segunda requisição simultânea espera a primeira terminar e já lê o estado novo, em vez de
+     * passar na mesma checagem (o que gerava dois lotes na conclusão e baixa de saldo em dobro no consumo).
+     */
+    Optional<OrdemProducao> buscarPorIdParaAtualizar(UUID id);
+
     List<OrdemProducao> buscarPorIds(Collection<UUID> ids);
 
     List<OrdemProducao> listarTodas();
