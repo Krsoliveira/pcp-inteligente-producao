@@ -17,7 +17,7 @@ import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/Tabe
 import { CamposFiltroOrdens, STATUS_VALIDOS } from '../components/ordens/CamposFiltroOrdens'
 import { ehDataIso, periodoInvertido } from '../components/consulta/CamposDePeriodo'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
-import { formatarData } from '../utils/formatacao'
+import { contagem, formatarData } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import type { OrdemProducao, StatusOrdem } from '../types'
 
@@ -92,7 +92,7 @@ export function OrdensResultadosPage() {
     <Box>
       <PageHeader
         titulo="Ordens de Produção"
-        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${total} ${filtrando ? 'ordens encontradas' : 'ordens cadastradas'}`}
+        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : filtrando ? contagem(total, 'ordem encontrada', 'ordens encontradas') : contagem(total, 'ordem cadastrada', 'ordens cadastradas')}
         breadcrumbs={[{ label: 'Produção' }, { label: 'Ordens', href: '/ordens' }, { label: 'Resultados' }]}
       />
 

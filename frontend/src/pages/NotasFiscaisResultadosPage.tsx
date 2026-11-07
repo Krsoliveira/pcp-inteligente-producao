@@ -17,6 +17,7 @@ import { PainelDeConsulta } from '../components/consulta/PainelDeConsulta'
 import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/TabelaInterativa'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
+import { contagem } from '../utils/formatacao'
 
 /** Segunda etapa: o resultado da consulta de notas, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function NotasFiscaisResultadosPage() {
@@ -67,7 +68,7 @@ export function NotasFiscaisResultadosPage() {
     <Box>
       <PageHeader
         titulo="Entrada de notas"
-        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${total} ${total === 1 ? 'nota fiscal' : 'notas fiscais'}${filtrando ? ' encontradas' : ' registradas'}`}
+        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : filtrando ? contagem(total, 'nota fiscal encontrada', 'notas fiscais encontradas') : contagem(total, 'nota fiscal registrada', 'notas fiscais registradas')}
         breadcrumbs={[{ label: 'Suprimentos' }, { label: 'Entrada de notas', href: '/notas-fiscais' }, { label: 'Resultados' }]}
       />
 

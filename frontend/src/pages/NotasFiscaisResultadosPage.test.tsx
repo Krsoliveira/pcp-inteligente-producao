@@ -54,6 +54,13 @@ describe('NotasFiscaisResultadosPage', () => {
     expect(pesquisarMock).not.toHaveBeenCalled()
   })
 
+  it('uma só nota fica no singular', async () => {
+    pesquisarMock.mockResolvedValue(pagina([notaFiscal({ id: 'n-9', numero: 'NF-009' })], { total: 1 }))
+    montar(`${ROTA}?de=2026-09-01`)
+
+    expect(await screen.findByText('1 nota fiscal encontrada')).toBeInTheDocument()
+  })
+
   it('cada nota abre por um link de verdade, sem depender do mouse', async () => {
     montar()
 

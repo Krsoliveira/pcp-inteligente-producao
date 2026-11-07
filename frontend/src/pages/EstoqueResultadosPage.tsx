@@ -17,6 +17,7 @@ import { EmptyState } from '../components/EmptyState'
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import { type TipoMaterial } from '../types'
+import { contagem } from '../utils/formatacao'
 
 /** Estoque, segunda etapa: o resultado da consulta, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function EstoqueResultadosPage() {
@@ -69,7 +70,7 @@ export function EstoqueResultadosPage() {
     <Box>
       <PageHeader
         titulo="Estoque"
-        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${total} ${filtrando ? 'materiais encontrados' : 'materiais'} · saldo calculado a partir dos lotes`}
+        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${filtrando ? contagem(total, 'material encontrado', 'materiais encontrados') : contagem(total, 'material', 'materiais')} · saldo calculado a partir dos lotes`}
         breadcrumbs={[{ label: 'Suprimentos' }, { label: 'Estoque', href: '/estoque' }, { label: 'Resultados' }]}
       />
 

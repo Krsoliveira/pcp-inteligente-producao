@@ -16,6 +16,7 @@ import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/Tabe
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import { type TipoMaterial } from '../types'
+import { contagem } from '../utils/formatacao'
 
 /** Segunda etapa: o resultado da consulta de materiais, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function MateriaisResultadosPage() {
@@ -54,7 +55,7 @@ export function MateriaisResultadosPage() {
     <Box>
       <PageHeader
         titulo="Materiais"
-        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${total} ${filtrando ? 'materiais encontrados' : 'materiais cadastrados'}`}
+        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : filtrando ? contagem(total, 'material encontrado', 'materiais encontrados') : contagem(total, 'material cadastrado', 'materiais cadastrados')}
         breadcrumbs={[{ label: 'Cadastros' }, { label: 'Materiais', href: '/materiais' }, { label: 'Resultados' }]}
       />
 
