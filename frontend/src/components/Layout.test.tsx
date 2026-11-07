@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
@@ -18,6 +18,34 @@ function montar(rota: string, permissoes: Permissao[], usuario?: Partial<Usuario
     { rotas: [rota], permissoes, usuario },
   )
 }
+
+describe('Layout: navegação por teclado e leitor de tela', () => {
+  it('o menu é uma região de navegação com links de verdade, e marca a página atual', () => {
+    montar('/ordens', ['DASHBOARD_VISUALIZAR', 'ORDEM_VISUALIZAR'])
+
+    const menu = screen.getAllByRole('navigation', { name: 'Navegação principal', hidden: true })[0]
+    expect(within(menu).getByRole('link', { name: 'Dashboard', hidden: true })).toHaveAttribute('href', '/dashboard')
+    const ordens = within(menu).getByRole('link', { name: 'Ordens', hidden: true })
+    expect(ordens).toHaveAttribute('href', '/ordens')
+    expect(ordens).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('o primeiro item da página pula o menu e leva o foco ao conteúdo', async () => {
+    montar('/dashboard', ['DASHBOARD_VISUALIZAR'])
+
+    await userEvent.tab()
+    expect(screen.getByRole('link', { name: 'Pular para o conteúdo' })).toHaveFocus()
+
+    await userEvent.keyboard('{Enter}')
+    expect(screen.getByRole('main')).toHaveFocus()
+  })
+
+  it('o botão do menu no celular tem nome', () => {
+    montar('/dashboard', ['DASHBOARD_VISUALIZAR'])
+
+    expect(screen.getByRole('button', { name: 'Abrir menu de navegação', hidden: true })).toBeInTheDocument()
+  })
+})
 
 describe('Layout: menu e senha provisória', () => {
   it('mostra no menu só o que o perfil permite, e quem está logado com o perfil', () => {
