@@ -84,6 +84,13 @@ entidade `PERFIL_ACESSO` e ações `EXCLUIDO` e `PERFIL_ATRIBUIDO`.
 `usuario.perfil` (texto) por `usuario.perfil_id` (obrigatório, com chave estrangeira). Com a tabela vazia a
 troca é segura e a coluna antiga é removida na mesma migração.
 
+### Atualização de 2026-11-07: permissão nova em perfil existente
+
+- **Regra:** permissão nova nasce só no Administrador, que tem todas. Nenhum outro perfil a ganha sozinho, porque isso ampliaria o acesso de pessoas sem que ninguém decidisse.
+- **Como conceder:** pelo gestor, na tela de perfis, ou por migração. A migração faz o mesmo que a tela: assina o perfil (`sistema:migracao-vNN`) e grava o evento `ALTERADO` com `permissoesAdicionadas` na trilha, na mesma instrução, e não faz nada se o perfil já tiver a permissão.
+- **V19:** o Visualizador recebe `RELATORIO_CONSUMO_VISUALIZAR`, que surgiu depois da V13. Como ele é o perfil do autocadastro público, quem se cadastra sozinho passa a ver o relatório. Só essa permissão: sem `CONSUMO_VISUALIZAR`, ele vê os totais por componente das ordens concluídas, não o consumo de cada ordem.
+- **Desfazer a V19:** uma migração nova que remove a permissão e grava o evento inverso; reverter o código não desfaz o dado.
+
 ## Alternativas consideradas
 
 | Alternativa | Por que foi descartada |

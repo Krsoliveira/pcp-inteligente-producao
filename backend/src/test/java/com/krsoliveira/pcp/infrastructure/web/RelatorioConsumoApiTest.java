@@ -162,20 +162,43 @@ class RelatorioConsumoApiTest {
     }
 
     @Test
-    @DisplayName("sem token devolve 401; Visualizador, que não tem RELATORIO_CONSUMO_VISUALIZAR, recebe 403")
+    @DisplayName("sem token devolve 401; perfil sem RELATORIO_CONSUMO_VISUALIZAR recebe 403")
     void exigeAutenticacaoEPermissao() {
         assertThat(rest.getForEntity(RELATORIO + "?de=2026-09-01&ate=2026-09-30", Map.class).getStatusCode())
                 .isEqualTo(HttpStatus.UNAUTHORIZED);
 
-        rest.postForEntity("/api/v1/auth/registrar", semAuth(Map.of("nome", "Visual", "email", "visual@pcp.com", "senha", "Senha@123")), Void.class);
-        String visualizador = login("visual@pcp.com", "Senha@123");
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(visualizador);
-        ResponseEntity<Map> proibido = rest.exchange(RELATORIO + "?de=2026-09-01&ate=2026-09-30", HttpMethod.GET,
-                new HttpEntity<>(headers), Map.class);
+        String perfil = (String) rest.postForEntity("/api/v1/acessos/perfis", comAuth(Map.of("nome", "Só ordens",
+                "descricao", "", "permissoes", List.of("ORDEM_VISUALIZAR"))), Map.class).getBody().get("id");
+        rest.postForEntity("/api/v1/acessos/usuarios", comAuth(Map.of("nome", "Operador", "email", "operador@pcp.com",
+                "senhaProvisoria", "Senha@123", "perfilId", perfil)), Map.class);
+        rest.exchange("/api/v1/acessos/minha-senha", HttpMethod.PUT, comToken(login("operador@pcp.com", "Senha@123"),
+                Map.of("senhaAtual", "Senha@123", "novaSenha", "Senha@123!nova")), Void.class);
+        ResponseEntity<Map> proibido = relatorioCom(login("operador@pcp.com", "Senha@123!nova"));
 
         assertThat(proibido.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(proibido.getBody()).containsEntry("title", "Acesso negado");
+    }
+
+    @Test
+    @DisplayName("o Visualizador, perfil de quem se cadastra sozinho, vê o relatório (V19)")
+    void visualizadorVeORelatorio() {
+        rest.postForEntity("/api/v1/auth/registrar", semAuth(Map.of("nome", "Visual", "email", "visual@pcp.com", "senha", "Senha@123")), Void.class);
+
+        ResponseEntity<Map> resposta = relatorioCom(login("visual@pcp.com", "Senha@123"));
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat((List<?>) resposta.getBody().get("linhas")).isNotEmpty();
+    }
+
+    private ResponseEntity<Map> relatorioCom(String token) {
+        return rest.exchange(RELATORIO + "?de=2026-09-01&ate=2026-09-30", HttpMethod.GET, comToken(token, null), Map.class);
+    }
+
+    private static HttpEntity<Object> comToken(String token, Object corpo) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(token);
+        return new HttpEntity<>(corpo, headers);
     }
 
     // ------------------------------------------------------------------ apoio
