@@ -88,7 +88,7 @@ export function DashboardPage() {
     <Box>
       <PageHeader
         titulo="Dashboard"
-        subtitulo="Visão geral da produção em tempo real"
+        subtitulo="Visão geral da produção, atualizada a cada 30 segundos"
       />
 
       {erro && (
