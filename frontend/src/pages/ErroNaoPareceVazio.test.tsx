@@ -32,16 +32,16 @@ vi.mock('../api/tiposOrdem')
 
 const MODULOS = [acessos, estoque, listasTecnicas, materiais, notasFiscais, ordens, relatorios, tiposOrdem]
 
-const TELAS: Array<[string, ReactElement, string]> = [
-  ['ordens', <OrdensResultadosPage />, '/ordens/resultados'],
-  ['materiais', <MateriaisResultadosPage />, '/materiais/resultados'],
-  ['listas técnicas', <ListasTecnicasResultadosPage />, '/listas-tecnicas/resultados'],
-  ['notas fiscais', <NotasFiscaisResultadosPage />, '/notas-fiscais/resultados'],
-  ['estoque', <EstoqueResultadosPage />, '/estoque/resultados'],
-  ['tipos de ordem', <TiposOrdemPage />, '/tipos-ordem'],
-  ['perfis', <PerfisAcessoPage />, '/acessos/perfis'],
-  ['usuários', <UsuariosAcessoPage />, '/acessos/usuarios'],
-  ['relatório', <RelatorioConsumoOrdensPage />, '/relatorios/consumo-de-ordens?de=2026-01-01&ate=2026-03-31'],
+const TELAS: Array<[string, () => ReactElement, string]> = [
+  ['ordens', OrdensResultadosPage, '/ordens/resultados'],
+  ['materiais', MateriaisResultadosPage, '/materiais/resultados'],
+  ['listas técnicas', ListasTecnicasResultadosPage, '/listas-tecnicas/resultados'],
+  ['notas fiscais', NotasFiscaisResultadosPage, '/notas-fiscais/resultados'],
+  ['estoque', EstoqueResultadosPage, '/estoque/resultados'],
+  ['tipos de ordem', TiposOrdemPage, '/tipos-ordem'],
+  ['perfis', PerfisAcessoPage, '/acessos/perfis'],
+  ['usuários', UsuariosAcessoPage, '/acessos/usuarios'],
+  ['relatório', RelatorioConsumoOrdensPage, '/relatorios/consumo-de-ordens?de=2026-01-01&ate=2026-03-31'],
 ]
 
 describe('falha ao carregar não se apresenta como lista vazia', () => {
@@ -53,8 +53,8 @@ describe('falha ao carregar não se apresenta como lista vazia', () => {
     }
   })
 
-  it.each(TELAS)('%s: mostra o erro, sem contagem zerada nem "nenhum cadastrado"', async (_nome, tela, rota) => {
-    renderizarTela(tela, { rotas: [rota], padrao: rota.split('?')[0] })
+  it.each(TELAS)('%s: mostra o erro, sem contagem zerada nem "nenhum cadastrado"', async (_nome, Tela, rota) => {
+    renderizarTela(<Tela />, { rotas: [rota], padrao: rota.split('?')[0] })
 
     const alerta = await screen.findByRole('alert')
     expect(within(alerta).getByText(/temporariamente indispon/i)).toBeInTheDocument()
