@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -20,6 +20,7 @@ import { usePesquisaPaginada } from '../hooks/usePesquisaPaginada'
 import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import type { ListaTecnica, StatusListaTecnica } from '../types'
 import { contagem } from '../utils/formatacao'
+import { useSincronizarAoMudar } from '../hooks/useSincronizarAoMudar'
 
 /** Segunda etapa: o resultado da consulta de listas técnicas, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function ListasTecnicasResultadosPage() {
@@ -31,7 +32,7 @@ export function ListasTecnicasResultadosPage() {
 
   const [materialId, setMaterialId] = useState(materialAplicado)
   const [status, setStatus] = useState<StatusListaTecnica | 'TODOS'>(statusAplicado ?? 'TODOS')
-  useEffect(() => { setMaterialId(materialAplicado); setStatus(statusAplicado ?? 'TODOS') }, [materialAplicado, statusAplicado])
+  useSincronizarAoMudar([materialAplicado, statusAplicado], () => { setMaterialId(materialAplicado); setStatus(statusAplicado ?? 'TODOS') })
 
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais })
   const comLista = materiais.filter((m) => m.tipo !== 'MATERIA_PRIMA')

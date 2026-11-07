@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { atribuirPerfil, criarUsuario, redefinirSenha } from '../../api/acessos'
 import type { PerfilAcesso, Permissao, UsuarioAcesso } from '../../types'
 import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
+import { useSincronizarAoMudar } from '../../hooks/useSincronizarAoMudar'
 
 /** Perfis que quem usa a tela pode conceder: só se concede o que se tem (ADR-0020). */
 export function perfisConcediveis(perfis: PerfilAcesso[], permissoesDoUsuario: Set<Permissao>): PerfilAcesso[] {
@@ -35,10 +36,10 @@ export function NovoUsuarioDialog({ aberto, onFechar, perfis, permissoesDoUsuari
   const [erro, setErro] = useState<string | null>(null)
   const concediveis = perfisConcediveis(perfis, permissoesDoUsuario)
 
-  useEffect(() => {
+  useSincronizarAoMudar([aberto], () => {
     if (!aberto) return
     setNome(''); setEmail(''); setSenha(''); setPerfilId(''); setErro(null)
-  }, [aberto])
+  })
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => criarUsuario({ nome: nome.trim(), email: email.trim(), senhaProvisoria: senha, perfilId }),
@@ -96,10 +97,10 @@ export function TrocarPerfilDialog({ usuario, onFechar, perfis, permissoesDoUsua
   const [erro, setErro] = useState<string | null>(null)
   const concediveis = perfisConcediveis(perfis, permissoesDoUsuario)
 
-  useEffect(() => {
+  useSincronizarAoMudar([usuario?.id], () => {
     setPerfilId(usuario?.perfilId ?? '')
     setErro(null)
-  }, [usuario?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  })
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => atribuirPerfil(usuario!.id, perfilId),
@@ -143,10 +144,10 @@ export function RedefinirSenhaDialog({ usuario, onFechar }: RedefinirSenhaDialog
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState<string | null>(null)
 
-  useEffect(() => {
+  useSincronizarAoMudar([usuario?.id], () => {
     setSenha('')
     setErro(null)
-  }, [usuario?.id])
+  })
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => redefinirSenha(usuario!.id, senha),
