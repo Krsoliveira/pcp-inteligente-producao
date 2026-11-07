@@ -10,6 +10,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import { LinkDaLinha } from '../consulta/LinkDaLinha'
+import { LARGURA_MINIMA_DA_DESCRICAO } from '../consulta/TabelaInterativa'
 import { StatusLoteBadge } from '../StatusBadge'
 import { diasAte, formatarCodigoMaterial, formatarData, formatarQuantidade } from '../../utils/formatacao'
 import type { Lote, Material } from '../../types'
@@ -49,7 +50,7 @@ export function TabelaLotes({ lotes, coluna, materialPorId }: TabelaLotesProps) 
                 </TableCell>
                 <TableCell>
                   {coluna === 'material' ? (
-                    <Typography variant="body2" noWrap>
+                    <Typography variant="body2" sx={{ overflowWrap: 'anywhere', minWidth: LARGURA_MINIMA_DA_DESCRICAO }}>
                       {formatarCodigoMaterial(material?.codigo)}
                       <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>
                         {material ? ` · ${material.descricao}` : ''}

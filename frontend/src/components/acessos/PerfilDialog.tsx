@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -18,6 +18,7 @@ import { CHAVE_USUARIO_LOGADO } from '../../hooks/usePermissoes'
 import type { PerfilAcesso, Permissao, PermissaoDoCatalogo } from '../../types'
 import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
 import { HistoricoAuditoria } from '../HistoricoAuditoria'
+import { useSincronizarAoMudar } from '../../hooks/useSincronizarAoMudar'
 
 interface PerfilDialogProps {
   aberto: boolean
@@ -57,13 +58,13 @@ export function PerfilDialog({ aberto, onFechar, perfil, catalogo, permissoesDoU
   const [marcadas, setMarcadas] = useState<Set<Permissao>>(new Set())
   const [erro, setErro] = useState<string | null>(null)
 
-  useEffect(() => {
+  useSincronizarAoMudar([aberto, perfil?.id], () => {
     if (!aberto) return
     setErro(null)
     setNome(perfil?.nome ?? '')
     setDescricao(perfil?.descricao ?? '')
     setMarcadas(new Set(perfil?.permissoes ?? []))
-  }, [aberto, perfil?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  })
 
   const grupos = useMemo(() => porArea(catalogo), [catalogo])
 

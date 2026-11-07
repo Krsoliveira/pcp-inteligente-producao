@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -21,6 +21,7 @@ import type { CadastrarListaTecnicaRequest, ListaTecnica, TipoMaterial } from '.
 import { formatarCodigoMaterial } from '../../utils/formatacao'
 import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
 import { sugerirProximaVersao } from '../../utils/versoes'
+import { useSincronizarAoMudar } from '../../hooks/useSincronizarAoMudar'
 
 interface ItemForm { materialComponenteId: string; quantidadePlanejada: string; unidadeDeMedida: string }
 
@@ -57,7 +58,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
   const componentesPermitidos = donoEhSemiacabado ? materiais : materiais.filter((m) => m.tipo !== 'PRODUTO_ACABADO')
 
   // Cada abertura recomeça: vazio, ou preenchido a partir do modelo.
-  useEffect(() => {
+  useSincronizarAoMudar([aberto, modelo?.id], () => {
     if (!aberto) return
     setErro(null)
     if (modelo) {
@@ -75,7 +76,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
       setBase('1')
       setItens([ITEM_VAZIO])
     }
-  }, [aberto, modelo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  })
 
   const { mutate, isPending } = useMutation({
     mutationFn: (payload: CadastrarListaTecnicaRequest) => cadastrarListaTecnica(payload),

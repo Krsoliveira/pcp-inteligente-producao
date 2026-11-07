@@ -34,8 +34,7 @@ public record RegistrarNotaFiscalRequest(
         LocalDate dataRecebimento,
 
         @NotEmpty(message = "Informe pelo menos um item.")
-        @Valid
-        List<Item> itens) {
+        List<@Valid Item> itens) {
 
     public record Item(
             @NotNull(message = "O material é obrigatório.")

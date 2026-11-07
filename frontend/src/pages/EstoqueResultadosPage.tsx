@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -18,6 +18,7 @@ import { usePesquisaPaginada } from '../hooks/usePesquisaPaginada'
 import { mensagemDeErroAoCarregar } from '../utils/mensagensDeErro'
 import { type TipoMaterial } from '../types'
 import { contagem } from '../utils/formatacao'
+import { useSincronizarAoMudar } from '../hooks/useSincronizarAoMudar'
 
 /** Estoque, segunda etapa: o resultado da consulta, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function EstoqueResultadosPage() {
@@ -30,9 +31,9 @@ export function EstoqueResultadosPage() {
   const [busca, setBusca] = useState(buscaAplicada)
   const [tipo, setTipo] = useState<TipoMaterial | 'TODOS'>(tipoAplicado ?? 'TODOS')
   const [somenteComSaldo, setSomenteComSaldo] = useState(saldoAplicado)
-  useEffect(() => {
+  useSincronizarAoMudar([buscaAplicada, tipoAplicado, saldoAplicado], () => {
     setBusca(buscaAplicada); setTipo(tipoAplicado ?? 'TODOS'); setSomenteComSaldo(saldoAplicado)
-  }, [buscaAplicada, tipoAplicado, saldoAplicado])
+  })
 
   const { itens: posicoes, total, pagina, tamanho, isLoading, isError, error, isPlaceholderData, falhouSemDados } = usePesquisaPaginada({
     url,
