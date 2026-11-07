@@ -54,13 +54,13 @@ export function OrdensPage() {
   return (
     <Box>
       <PageHeader
-        titulo="Ordens de Produção"
+        titulo="Ordens de produção"
         subtitulo="Pesquise por código, status ou período de início, ou abra uma das mais recentes"
         breadcrumbs={[{ label: 'Produção' }, { label: 'Ordens' }]}
         action={
           <SePermitido qualquer={['ORDEM_CRIAR']}>
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogCriarAberto(true)}>
-              Nova Ordem
+              Nova ordem
             </Button>
           </SePermitido>
         }

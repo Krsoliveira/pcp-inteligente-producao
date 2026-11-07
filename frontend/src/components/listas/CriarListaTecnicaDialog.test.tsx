@@ -42,7 +42,7 @@ describe('CriarListaTecnicaDialog', () => {
     it('começa vazio, com o material livre para escolher', async () => {
       montar()
 
-      expect(await screen.findByText('Nova Lista Técnica (BOM)')).toBeInTheDocument()
+      expect(await screen.findByText('Nova lista técnica (BOM)')).toBeInTheDocument()
       expect(screen.getByLabelText(/^Versão/)).toHaveValue('')
       expect(screen.getAllByRole('combobox', { name: /Material componente/ })).toHaveLength(1)
       expect(screen.getByRole('combobox', { name: /^Material \*/ })).not.toHaveAttribute('aria-disabled', 'true')
@@ -51,7 +51,7 @@ describe('CriarListaTecnicaDialog', () => {
     it('exige material, versão e ao menos um componente', async () => {
       montar()
 
-      await userEvent.click(await screen.findByRole('button', { name: 'Criar Lista' }))
+      await userEvent.click(await screen.findByRole('button', { name: 'Criar lista' }))
 
       expect(await screen.findByText('Material e versão são obrigatórios.')).toBeInTheDocument()
       expect(cadastrarMock).not.toHaveBeenCalled()
@@ -217,12 +217,12 @@ describe('CriarListaTecnicaDialog: quantidade base (ADR-0027)', () => {
     await userEvent.click(screen.getAllByRole('combobox', { name: /Material componente/ })[0])
     await userEvent.click(await screen.findByRole('option', { name: /Aço inox/ }))
     await userEvent.type(screen.getByLabelText('Qtd'), '200')
-    await userEvent.click(screen.getByRole('button', { name: 'Criar Lista' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Criar lista' }))
   }
 
   it('a base começa em 1 e a ajuda diz para quantas unidades do material os componentes valem', async () => {
     montar()
-    await screen.findByText('Nova Lista Técnica (BOM)')
+    await screen.findByText('Nova lista técnica (BOM)')
 
     expect(screen.getByLabelText(/^Quantidade base/)).toHaveValue('1')
     expect(screen.getByText('Os componentes valem para produzir 1 un.')).toBeInTheDocument()

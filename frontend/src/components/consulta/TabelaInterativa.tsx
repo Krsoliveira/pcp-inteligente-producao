@@ -12,6 +12,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
 import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined'
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore'
+import { contagem } from '../../utils/formatacao'
 
 /**
  * Uma coluna da tabela de resultados. `valor` é o que se compara ao ordenar; `texto` é o que o
@@ -39,6 +40,9 @@ export interface ControleDaTabela<T> {
   /** Há algum filtro de coluna preenchido? */
   filtrando: boolean
 }
+
+/** Com `overflowWrap: 'anywhere'`, evita que uma descrição longa encolha até uma letra por linha. */
+export const LARGURA_MINIMA_DA_DESCRICAO = 140
 
 /** Com o ícone de 16 px, dá o alvo mínimo de 24 x 24 px (WCAG 2.5.8). */
 const ALVO_DO_ICONE = 0.5
@@ -165,8 +169,8 @@ interface ResumoDaTabelaProps {
 export function ResumoDaTabela({ exibidas, naPagina, filtrando, onLimpar }: ResumoDaTabelaProps) {
   return (
     <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-        {filtrando ? `Mostrando ${exibidas} de ${naPagina} linhas desta página` : `${naPagina} linhas nesta página`}
+      <Typography variant="caption" role="status" sx={{ color: 'text.secondary' }}>
+        {filtrando ? `Mostrando ${exibidas} de ${contagem(naPagina, 'linha', 'linhas')} desta página` : `${contagem(naPagina, 'linha', 'linhas')} nesta página`}
         {' · use os ícones do título para ordenar e filtrar'}
       </Typography>
       {filtrando && <Button size="small" onClick={onLimpar}>Limpar filtros das colunas</Button>}

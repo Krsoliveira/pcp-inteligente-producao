@@ -39,16 +39,16 @@ beforeEach(() => {
 })
 
 describe('botões de cadastro por permissão', () => {
-  it('Ordens: "Nova Ordem" só com ORDEM_CRIAR; o botão de status só com ORDEM_ATUALIZAR_STATUS', async () => {
+  it('Ordens: "Nova ordem" só com ORDEM_CRIAR; o botão de status só com ORDEM_ATUALIZAR_STATUS', async () => {
     const { unmount } = renderizarTela(<OrdensPage />)
     await screen.findByText('OP-1')
-    expect(screen.getByRole('button', { name: 'Nova Ordem' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Nova ordem' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Atualizar status' })).toBeInTheDocument()
     unmount()
 
     renderizarTela(<OrdensPage />, { permissoes: sem('ORDEM_CRIAR', 'ORDEM_ATUALIZAR_STATUS') })
     await screen.findByText('OP-1')
-    expect(screen.queryByRole('button', { name: 'Nova Ordem' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Nova ordem' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Atualizar status' })).not.toBeInTheDocument()
   })
 
@@ -81,24 +81,24 @@ describe('botões de cadastro por permissão', () => {
     expect(screen.queryByRole('button', { name: 'Criar primeira ordem' })).not.toBeInTheDocument()
   })
 
-  it('Materiais: "Novo Material" só com MATERIAL_CADASTRAR', async () => {
+  it('Materiais: "Novo material" só com MATERIAL_CADASTRAR', async () => {
     const { unmount } = renderizarTela(<MateriaisPage />)
-    expect(await screen.findByRole('button', { name: 'Novo Material' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Novo material' })).toBeInTheDocument()
     unmount()
 
     renderizarTela(<MateriaisPage />, { permissoes: sem('MATERIAL_CADASTRAR') })
     await screen.findByRole('heading', { name: 'Materiais' })
-    expect(screen.queryByRole('button', { name: 'Novo Material' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Novo material' })).not.toBeInTheDocument()
   })
 
-  it('Listas técnicas: "Nova Lista" só com LISTA_CADASTRAR', async () => {
+  it('Listas técnicas: "Nova lista" só com LISTA_CADASTRAR', async () => {
     const { unmount } = renderizarTela(<ListasTecnicasPage />)
-    expect(await screen.findByRole('button', { name: 'Nova Lista' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Nova lista' })).toBeInTheDocument()
     unmount()
 
     renderizarTela(<ListasTecnicasPage />, { permissoes: sem('LISTA_CADASTRAR') })
-    await screen.findByRole('heading', { name: 'Listas Técnicas' })
-    expect(screen.queryByRole('button', { name: 'Nova Lista' })).not.toBeInTheDocument()
+    await screen.findByRole('heading', { name: 'Listas técnicas' })
+    expect(screen.queryByRole('button', { name: 'Nova lista' })).not.toBeInTheDocument()
   })
 
   it('Entrada de notas: "Nova entrada" só com NOTA_FISCAL_REGISTRAR', async () => {
@@ -111,16 +111,16 @@ describe('botões de cadastro por permissão', () => {
     expect(screen.queryByRole('button', { name: 'Nova entrada' })).not.toBeInTheDocument()
   })
 
-  it('Tipos de ordem: "Novo Tipo" e o editar só com TIPO_ORDEM_GERENCIAR', async () => {
+  it('Tipos de ordem: "Novo tipo" e o editar só com TIPO_ORDEM_GERENCIAR', async () => {
     const { unmount } = renderizarTela(<TiposOrdemPage />)
     await screen.findByText('Produção')
-    expect(screen.getByRole('button', { name: 'Novo Tipo' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Novo tipo' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
     unmount()
 
     renderizarTela(<TiposOrdemPage />, { permissoes: sem('TIPO_ORDEM_GERENCIAR') })
     await screen.findByText('Produção')
-    expect(screen.queryByRole('button', { name: 'Novo Tipo' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Novo tipo' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument()
   })
 })

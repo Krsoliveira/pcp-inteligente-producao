@@ -18,6 +18,7 @@ import { ResumoDaTabela, useTabelaInterativa } from '../components/consulta/Tabe
 import { useParametrosDaUrl } from '../hooks/useParametrosDaUrl'
 import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import type { ListaTecnica, StatusListaTecnica } from '../types'
+import { contagem } from '../utils/formatacao'
 
 /** Segunda etapa: o resultado da consulta de listas técnicas, paginado no servidor, com filtro e ordenação por coluna na página. */
 export function ListasTecnicasResultadosPage() {
@@ -67,9 +68,9 @@ export function ListasTecnicasResultadosPage() {
   return (
     <Box>
       <PageHeader
-        titulo="Listas Técnicas"
-        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : `${total} ${filtrando ? 'versões encontradas' : 'versões cadastradas'}`}
-        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas Técnicas', href: '/listas-tecnicas' }, { label: 'Resultados' }]}
+        titulo="Listas técnicas"
+        subtitulo={isLoading ? '…' : falhouSemDados ? undefined : filtrando ? contagem(total, 'versão encontrada', 'versões encontradas') : contagem(total, 'versão cadastrada', 'versões cadastradas')}
+        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas técnicas', href: '/listas-tecnicas' }, { label: 'Resultados' }]}
       />
 
       <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>

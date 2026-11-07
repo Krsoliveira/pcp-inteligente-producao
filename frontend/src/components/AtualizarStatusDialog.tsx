@@ -26,7 +26,7 @@ const TRANSICOES: Record<StatusOrdem, StatusOrdem[]> = {
 const STATUS_LABEL: Record<StatusOrdem, string> = {
   PLANEJADA: 'Planejada',
   LIBERADA: 'Liberada',
-  EM_PRODUCAO: 'Em Produção',
+  EM_PRODUCAO: 'Em produção',
   CONCLUIDA: 'Concluída',
   CANCELADA: 'Cancelada',
 }
@@ -68,7 +68,7 @@ export function AtualizarStatusDialog({ ordem, onFechar }: AtualizarStatusDialog
 
   return (
     <Dialog open={!!ordem} onClose={handleFechar} maxWidth="xs" fullWidth>
-      <DialogTitle>Atualizar Status</DialogTitle>
+      <DialogTitle>Atualizar status</DialogTitle>
       <DialogContent dividers>
         {erro && (
           <Alert severity="error" sx={{ mb: 2 }}>

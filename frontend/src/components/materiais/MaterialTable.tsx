@@ -8,7 +8,7 @@ import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import { TIPO_MATERIAL_LABEL, type Material, type TipoMaterial } from '../../types'
 import { formatarCodigoMaterial } from '../../utils/formatacao'
-import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
+import { CelulaDeCabecalho, LARGURA_MINIMA_DA_DESCRICAO, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
 
 export const TIPO_COR: Record<TipoMaterial, string> = {
   PRODUTO_ACABADO: '#4F46E5',
@@ -49,7 +49,7 @@ export function MaterialTable({ materiais, controle }: MaterialTableProps) {
                 variant="body2"
                 noWrap
                 sx={{ fontWeight: 600, fontFamily: 'monospace' }}>{formatarCodigoMaterial(m.codigo)}</Typography></TableCell>
-              <TableCell>{m.descricao}</TableCell>
+              <TableCell sx={{ overflowWrap: 'anywhere', minWidth: LARGURA_MINIMA_DA_DESCRICAO }}>{m.descricao}</TableCell>
               <TableCell>
                 <Chip label={TIPO_MATERIAL_LABEL[m.tipo]} size="small"
                   sx={{ bgcolor: `${TIPO_COR[m.tipo]}14`, color: TIPO_COR[m.tipo], fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />

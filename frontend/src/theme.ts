@@ -114,6 +114,8 @@ export const theme = createTheme(
         },
       },
       MuiTableCell: {
+        // Dígitos de mesma largura nas colunas numéricas: os números alinham entre as linhas.
+        variants: [{ props: { align: 'right' }, style: { fontVariantNumeric: 'tabular-nums' } }],
         styleOverrides: {
           root: {
             borderBottom: '1px solid rgba(0,0,0,0.05)',

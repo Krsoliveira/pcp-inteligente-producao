@@ -27,6 +27,20 @@ describe('EstoqueResultadosPage', () => {
     vi.mocked(consultarResumoEstoque).mockResolvedValue({ totalMateriais: 2, materiaisVencendo: 0, materiasPrimasSemSaldo: 1 })
   })
 
+  it('um só resultado fica no singular, no total e no resumo da tabela', async () => {
+    pesquisarMock.mockResolvedValue(pagina([posicoes[0]], { total: 1 }))
+    montar(`${ROTA}?busca=aço`)
+
+    expect(await screen.findByText('1 material encontrado · saldo calculado a partir dos lotes')).toBeInTheDocument()
+    expect(screen.getByText(/^1 linha nesta página/)).toBeInTheDocument()
+  })
+
+  it('o resumo da tabela é anunciado ao leitor de tela quando o resultado muda', async () => {
+    montar()
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/^2 linhas nesta página/)
+  })
+
   it('cada material abre por um link de verdade, sem depender do mouse', async () => {
     montar()
 

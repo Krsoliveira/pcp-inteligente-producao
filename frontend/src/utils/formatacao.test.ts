@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   codigoMaterialCorresponde,
+  contagem,
   diasAte,
   formatarCodigoMaterial,
   formatarData,
@@ -66,6 +67,17 @@ describe('hojeIso', () => {
     vi.setSystemTime(new Date('2026-11-07T01:00:00Z'))
 
     expect(hojeIso()).toBe('2026-11-06')
+  })
+})
+
+describe('contagem', () => {
+  it.each([
+    [0, '0 ordens'],
+    [1, '1 ordem'],
+    [2, '2 ordens'],
+    [1234, '1.234 ordens'],
+  ])('%i vira "%s"', (total, esperado) => {
+    expect(contagem(total, 'ordem', 'ordens')).toBe(esperado)
   })
 })
 

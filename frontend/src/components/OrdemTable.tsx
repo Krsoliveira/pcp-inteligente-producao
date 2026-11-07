@@ -36,7 +36,7 @@ const SO_PARA_LEITOR_DE_TELA = { position: 'absolute', width: '1px', height: '1p
 
 export const colunasDeOrdens: Coluna<OrdemProducao>[] = [
   { chave: 'codigo', rotulo: 'Código', valor: (o) => o.codigo },
-  { chave: 'centro', rotulo: 'Centro de Trabalho', valor: (o) => o.centroDeTrabalho },
+  { chave: 'centro', rotulo: 'Centro de trabalho', valor: (o) => o.centroDeTrabalho },
   { chave: 'quantidade', rotulo: 'Qtd', valor: (o) => o.quantidade, texto: (o) => formatarQuantidade(o.quantidade) },
   { chave: 'inicio', rotulo: 'Início', valor: (o) => o.inicioPlanejado, texto: (o) => formatarData(o.inicioPlanejado) },
   { chave: 'fim', rotulo: 'Fim', valor: (o) => o.fimPlanejado, texto: (o) => formatarData(o.fimPlanejado) },
@@ -63,7 +63,7 @@ export function OrdemTable({ ordens, onAtualizarStatus, mostrarAcoes = true, con
         <TableHead sx={{ '& th': { whiteSpace: 'nowrap' } }}>
           <TableRow>
             <CelulaDeCabecalho chave="codigo" rotulo="Código" controle={controle} />
-            <CelulaDeCabecalho chave="centro" rotulo="Centro de Trabalho" controle={controle} />
+            <CelulaDeCabecalho chave="centro" rotulo="Centro de trabalho" controle={controle} />
             <CelulaDeCabecalho chave="quantidade" rotulo="Qtd" controle={controle} align="right" />
             <CelulaDeCabecalho chave="inicio" rotulo="Início" controle={controle} />
             <CelulaDeCabecalho chave="fim" rotulo="Fim" controle={controle} />

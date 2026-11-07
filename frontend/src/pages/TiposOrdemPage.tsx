@@ -53,13 +53,13 @@ export function TiposOrdemPage() {
   return (
     <Box>
       <PageHeader
-        titulo="Tipos de Ordem"
+        titulo="Tipos de ordem"
         subtitulo="Categorias para classificar ordens de produção"
-        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Tipos de Ordem' }]}
+        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Tipos de ordem' }]}
         action={
           <SePermitido qualquer={['TIPO_ORDEM_GERENCIAR']}>
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
-              Novo Tipo
+              Novo tipo
             </Button>
           </SePermitido>
         }
@@ -187,7 +187,7 @@ function TipoOrdemDialog({ aberto, tipoExistente, onFechar }: TipoOrdemDialogPro
 
   return (
     <Dialog open={aberto} onClose={onFechar} fullWidth maxWidth="xs">
-      <DialogTitle>{tipoExistente ? 'Editar Tipo de Ordem' : 'Novo Tipo de Ordem'}</DialogTitle>
+      <DialogTitle>{tipoExistente ? 'Editar tipo de Ordem' : 'Novo tipo de Ordem'}</DialogTitle>
       <DialogContent dividers>
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         <Grid container spacing={2} sx={{ mt: 0 }}>

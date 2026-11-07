@@ -2,12 +2,12 @@ import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import type { StatusOrdem } from '../types'
 
-// ---- Ordem de Produção ----
+// ---- Ordem de produção ----
 
 const ORDEM_CONFIG: Record<StatusOrdem, { label: string; dot: string; bg: string; color: string }> = {
   PLANEJADA:   { label: 'Planejada',   dot: '#94A3B8', bg: 'rgba(148,163,184,0.12)', color: '#475569' },
   LIBERADA:    { label: 'Liberada',    dot: '#2563EB', bg: 'rgba(37,99,235,0.10)',   color: '#1D4ED8' },
-  EM_PRODUCAO: { label: 'Em Produção', dot: '#D97706', bg: 'rgba(217,119,6,0.10)',   color: '#B45309' },
+  EM_PRODUCAO: { label: 'Em produção', dot: '#D97706', bg: 'rgba(217,119,6,0.10)',   color: '#B45309' },
   CONCLUIDA:   { label: 'Concluída',   dot: '#059669', bg: 'rgba(5,150,105,0.10)',   color: '#047857' },
   CANCELADA:   { label: 'Cancelada',   dot: '#DC2626', bg: 'rgba(220,38,38,0.10)',   color: '#B91C1C' },
 }
@@ -46,12 +46,12 @@ export function StatusOrdemBadge({ status, size = 'small' }: StatusOrdemBadgePro
   )
 }
 
-// ---- Lista Técnica ----
+// ---- Lista técnica ----
 
 type StatusLista = 'EM_REVISAO' | 'ATIVA' | 'OBSOLETA'
 
 const LISTA_CONFIG: Record<StatusLista, { label: string; dot: string; bg: string; color: string }> = {
-  EM_REVISAO: { label: 'Em Revisão', dot: '#D97706', bg: 'rgba(217,119,6,0.10)',  color: '#B45309' },
+  EM_REVISAO: { label: 'Em revisão', dot: '#D97706', bg: 'rgba(217,119,6,0.10)',  color: '#B45309' },
   ATIVA:      { label: 'Ativa',      dot: '#059669', bg: 'rgba(5,150,105,0.10)', color: '#047857' },
   OBSOLETA:   { label: 'Obsoleta',   dot: '#94A3B8', bg: 'rgba(148,163,184,0.12)', color: '#475569' },
 }
@@ -112,7 +112,7 @@ export function StatusLoteBadge({ status }: { status: StatusLote }) {
   )
 }
 
-// ---- Tipo de Ordem (badge colorido conforme cadastro) ----
+// ---- Tipo de ordem (badge colorido conforme cadastro) ----
 
 interface TipoOrdemBadgeProps {
   nome: string

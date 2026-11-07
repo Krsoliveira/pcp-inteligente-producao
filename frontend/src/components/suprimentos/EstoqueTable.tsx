@@ -17,7 +17,7 @@ import {
   formatarQuantidade,
 } from '../../utils/formatacao'
 import { LinkDaLinha } from '../consulta/LinkDaLinha'
-import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
+import { CelulaDeCabecalho, LARGURA_MINIMA_DA_DESCRICAO, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
 
 /** Colunas que a tela de resultados ordena e filtra; o texto é o que aparece na célula. */
 export const colunasDeEstoque: Coluna<PosicaoEstoque>[] = [
@@ -65,7 +65,7 @@ export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
                 <TableCell>
                   <LinkDaLinha para={`/estoque/${p.materialId}`} monoespacado>{formatarCodigoMaterial(p.codigo)}</LinkDaLinha>
                 </TableCell>
-                <TableCell><Typography variant="body2">{p.descricao}</Typography></TableCell>
+                <TableCell><Typography variant="body2" sx={{ overflowWrap: 'anywhere', minWidth: LARGURA_MINIMA_DA_DESCRICAO }}>{p.descricao}</Typography></TableCell>
                 <TableCell>
                   <Chip size="small" variant="outlined" label={TIPO_MATERIAL_LABEL[p.tipo]} sx={{ fontSize: '0.7rem' }} />
                 </TableCell>
