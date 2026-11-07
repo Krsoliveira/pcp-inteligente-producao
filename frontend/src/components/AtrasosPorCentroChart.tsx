@@ -5,6 +5,7 @@ import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import type { AtrasoDoCentro } from '../types'
 import { DadosDoGrafico } from './DadosDoGrafico'
+import { COR_DA_GRADE_DO_GRAFICO, TOM_VIVO } from './tonsDosGraficos'
 
 interface AtrasosPorCentroChartProps {
   atrasos?: AtrasoDoCentro[]
@@ -22,7 +23,7 @@ export function AtrasosPorCentroChart({ atrasos = [], onSelecionar }: AtrasosPor
         return `${a.centroDeTrabalho}<br/>${a.ordensAtrasadas} ${a.ordensAtrasadas === 1 ? 'ordem atrasada' : 'ordens atrasadas'}<br/>a mais antiga há ${a.diasDeAtrasoDaMaisAntiga} dias`
       },
     },
-    xAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#E2E8F0' } } },
+    xAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: COR_DA_GRADE_DO_GRAFICO } } },
     yAxis: { type: 'category', inverse: true, data: atrasos.map((a) => a.centroDeTrabalho), axisTick: { show: false } },
     series: [
       {
@@ -30,7 +31,7 @@ export function AtrasosPorCentroChart({ atrasos = [], onSelecionar }: AtrasosPor
         barMaxWidth: 26,
         cursor: onSelecionar ? 'pointer' : 'default',
         label: { show: true, position: 'right', fontWeight: 600 },
-        data: atrasos.map((a) => ({ value: a.ordensAtrasadas, itemStyle: { color: '#DC2626', borderRadius: [0, 4, 4, 0] } })),
+        data: atrasos.map((a) => ({ value: a.ordensAtrasadas, itemStyle: { color: TOM_VIVO.erro, borderRadius: [0, 4, 4, 0] } })),
       },
     ],
   }

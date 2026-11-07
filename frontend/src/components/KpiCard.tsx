@@ -4,8 +4,20 @@ import CardActionArea from '@mui/material/CardActionArea'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
+import { alpha, useTheme, type Palette } from '@mui/material/styles'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import type { SvgIconComponent } from '@mui/icons-material'
+
+/** Tons do tema para o número e o ícone do cartão; nunca uma cor solta (design-system.md). */
+export type TomDoKpi = 'primario' | 'sucesso' | 'atencao' | 'erro' | 'neutro'
+
+const COR_DO_TOM: Record<TomDoKpi, (paleta: Palette) => string> = {
+  primario: (p) => p.primary.main,
+  sucesso: (p) => p.success.main,
+  atencao: (p) => p.warning.main,
+  erro: (p) => p.error.main,
+  neutro: (p) => p.text.secondary,
+}
 
 interface KpiCardProps {
   titulo: string
@@ -13,13 +25,15 @@ interface KpiCardProps {
   subtitulo?: string
   /** Sem ícone o cartão fica só com o número; use cor apenas para sinalizar (ex.: atrasos). */
   Icone?: SvgIconComponent
-  cor?: string
+  tom?: TomDoKpi
   /** Quando informado, o cartão inteiro vira um link para a tela já filtrada. */
   link?: { para: string; rotulo: string }
 }
 
-export function KpiCard({ titulo, valor, subtitulo, Icone, cor, link }: KpiCardProps) {
-  const corDoValor = cor ?? (Icone ? '#4F46E5' : undefined)
+export function KpiCard({ titulo, valor, subtitulo, Icone, tom, link }: KpiCardProps) {
+  const { palette } = useTheme()
+  const tomEfetivo = tom ?? (Icone ? 'primario' : undefined)
+  const corDoValor = tomEfetivo && COR_DO_TOM[tomEfetivo](palette)
 
   const conteudo = (
     <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -40,7 +54,7 @@ export function KpiCard({ titulo, valor, subtitulo, Icone, cor, link }: KpiCardP
           )}
         </Box>
         {Icone && (
-          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: `${corDoValor}18`, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(corDoValor ?? palette.primary.main, 0.09), display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <Icone sx={{ color: corDoValor, fontSize: 28 }} />
           </Box>
         )}

@@ -7,13 +7,14 @@ import type { ReactNode } from 'react'
 import type { EntregasDoMes } from '../types'
 import { rotuloDoMes } from '../utils/periodos'
 import { DadosDoGrafico } from './DadosDoGrafico'
+import { COR_DA_GRADE_DO_GRAFICO, TOM_VIVO } from './tonsDosGraficos'
 
 /** As quatro situações de uma ordem no mês do fim planejado, na ordem em que as barras empilham. */
 export const SERIES_DE_ENTREGA: { campo: keyof Omit<EntregasDoMes, 'mes'>; rotulo: string; cor: string }[] = [
-  { campo: 'noPrazo', rotulo: 'Concluídas no prazo', cor: '#059669' },
-  { campo: 'comAtraso', rotulo: 'Concluídas com atraso', cor: '#D97706' },
-  { campo: 'abertasAtrasadas', rotulo: 'Abertas atrasadas', cor: '#DC2626' },
-  { campo: 'abertasNoPrazo', rotulo: 'Abertas no prazo', cor: '#94A3B8' },
+  { campo: 'noPrazo', rotulo: 'Concluídas no prazo', cor: TOM_VIVO.sucesso },
+  { campo: 'comAtraso', rotulo: 'Concluídas com atraso', cor: TOM_VIVO.atencao },
+  { campo: 'abertasAtrasadas', rotulo: 'Abertas atrasadas', cor: TOM_VIVO.erro },
+  { campo: 'abertasNoPrazo', rotulo: 'Abertas no prazo', cor: TOM_VIVO.neutro },
 ]
 
 interface EntregasPorMesChartProps {
@@ -36,7 +37,7 @@ export function EntregasPorMesChart({ entregas = [], acaoDoCabecalho, onSelecion
     legend: { top: 0, icon: 'circle', itemGap: 16 },
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     xAxis: { type: 'category', data: entregas.map((m) => rotuloDoMes(m.mes)), axisTick: { show: false } },
-    yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#E2E8F0' } } },
+    yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: COR_DA_GRADE_DO_GRAFICO } } },
     series: SERIES_DE_ENTREGA.map((serie) => ({
       name: serie.rotulo,
       type: 'bar',
