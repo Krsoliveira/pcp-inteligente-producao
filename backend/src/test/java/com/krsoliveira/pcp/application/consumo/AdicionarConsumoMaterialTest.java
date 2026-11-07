@@ -176,7 +176,7 @@ class AdicionarConsumoMaterialTest {
         Lote loteDoAcabado = loteDeCompra(acabado, "NF-A", "10");
         TipoOrdem normal = tipos.salvar(TipoOrdem.criar("Produção Normal", null, "#1565c0", USUARIO_TESTE));
         TipoOrdem conversao = tipos.salvar(TipoOrdem.reconstituir(UUID.randomUUID(), "Conversão", null, "#6a1b9a", true,
-                new Assinatura("sistema", Instant.now(), "sistema", Instant.now())));
+                new Assinatura("sistema", Instant.now(), "sistema", Instant.now()), 0));
         OrdemProducao comum = ordemEmProducao(normal.getId());
         OrdemProducao deConversao = ordemEmProducao(conversao.getId());
 

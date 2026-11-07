@@ -18,7 +18,7 @@ class TipoOrdemTest {
 
         private TipoOrdem conversao() {
             return TipoOrdem.reconstituir(java.util.UUID.randomUUID(), "Conversão", "Acabado em semiacabado", "#6a1b9a", true,
-                    new com.krsoliveira.pcp.domain.auditoria.Assinatura("sistema", java.time.Instant.now(), "sistema", java.time.Instant.now()));
+                    new com.krsoliveira.pcp.domain.auditoria.Assinatura("sistema", java.time.Instant.now(), "sistema", java.time.Instant.now()), 0);
         }
 
         @Test
