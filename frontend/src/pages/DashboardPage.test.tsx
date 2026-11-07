@@ -114,6 +114,43 @@ describe('DashboardPage', () => {
     expect(screen.getByTestId('rota')).toHaveTextContent('/ordens/resultados?atrasadas=true')
   })
 
+  describe('gráficos sem depender de mouse nem de visão', () => {
+    it('cada gráfico diz em texto o que mostra', async () => {
+      montar()
+
+      expect(await screen.findByRole('img', { name: 'Fila de produção: Planejada 52, Liberada 3, Em produção 18.' })).toBeInTheDocument()
+      expect(await screen.findByRole('img', { name: /^Entregas por mês: ago\/26:/ })).toBeInTheDocument()
+      expect(await screen.findByRole('img', { name: /^Atrasos por centro de trabalho: Usinagem CNC 12, Soldagem MIG\/TIG 3\.$/ })).toBeInTheDocument()
+    })
+
+    it('os números do gráfico abrem numa tabela, e cada linha leva à mesma lista que a barra', async () => {
+      montar()
+      await screen.findByTestId('grafico-fila')
+
+      const botao = screen.getByRole('button', { name: 'Ver os números de Fila de produção' })
+      expect(botao).toHaveAttribute('aria-expanded', 'false')
+      await userEvent.click(botao)
+      expect(screen.getByRole('button', { name: 'Ocultar os números de Fila de produção' })).toHaveAttribute('aria-expanded', 'true')
+
+      const tabela = screen.getByRole('table', { name: 'Fila de produção' })
+      expect(within(tabela).getByRole('row', { name: /Planejada 52/ })).toBeInTheDocument()
+      await userEvent.click(within(tabela).getByRole('button', { name: 'Liberada' }))
+
+      expect(screen.getByTestId('rota')).toHaveTextContent('/ordens/resultados?status=LIBERADA')
+    })
+
+    it('sem permissão de ver as ordens, a tabela mostra os números sem oferecer link', async () => {
+      montar(['DASHBOARD_VISUALIZAR'])
+      await screen.findByTestId('grafico-fila')
+
+      await userEvent.click(screen.getByRole('button', { name: 'Ver os números de Fila de produção' }))
+
+      const tabela = screen.getByRole('table', { name: 'Fila de produção' })
+      expect(within(tabela).getByText('Liberada')).toBeInTheDocument()
+      expect(within(tabela).queryByRole('button')).not.toBeInTheDocument()
+    })
+  })
+
   it('o gráfico da fila mostra só a fila aberta e clicar numa barra filtra as ordens por aquele status', async () => {
     montar()
     const grafico = await screen.findByTestId('grafico-fila')

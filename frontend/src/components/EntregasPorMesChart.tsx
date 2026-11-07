@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography'
 import type { ReactNode } from 'react'
 import type { EntregasDoMes } from '../types'
 import { rotuloDoMes } from '../utils/periodos'
+import { DadosDoGrafico } from './DadosDoGrafico'
 
 /** As quatro situações de uma ordem no mês do fim planejado, na ordem em que as barras empilham. */
 export const SERIES_DE_ENTREGA: { campo: keyof Omit<EntregasDoMes, 'mes'>; rotulo: string; cor: string }[] = [
@@ -25,6 +26,10 @@ interface EntregasPorMesChartProps {
 
 export function EntregasPorMesChart({ entregas = [], acaoDoCabecalho, onSelecionarMes }: EntregasPorMesChartProps) {
   const total = entregas.reduce((soma, m) => soma + m.noPrazo + m.comAtraso + m.abertasAtrasadas + m.abertasNoPrazo, 0)
+
+  const resumo = entregas
+    .map((m) => `${rotuloDoMes(m.mes)}: ${SERIES_DE_ENTREGA.map((s) => `${s.rotulo} ${m[s.campo]}`).join(', ')}`)
+    .join('; ')
 
   const option = {
     grid: { left: 8, right: 8, top: 36, bottom: 8, containLabel: true },
@@ -63,13 +68,27 @@ export function EntregasPorMesChart({ entregas = [], acaoDoCabecalho, onSelecion
             Nenhuma ordem com fim planejado neste período
           </Typography>
         ) : (
-          <ReactECharts
-            option={option}
-            style={{ height: 280 }}
-            onEvents={onSelecionarMes && entregas.length > 0
-              ? { click: (e: { dataIndex: number }) => onSelecionarMes(entregas[e.dataIndex].mes) }
-              : undefined}
-          />
+          <>
+            <Box role="img" aria-label={`Entregas por mês: ${resumo}.`}>
+              <ReactECharts
+                option={option}
+                style={{ height: 280 }}
+                onEvents={onSelecionarMes && entregas.length > 0
+                  ? { click: (e: { dataIndex: number }) => onSelecionarMes(entregas[e.dataIndex].mes) }
+                  : undefined}
+              />
+            </Box>
+            <DadosDoGrafico
+              titulo="Entregas por mês"
+              rotuloDaColuna="Mês"
+              colunas={SERIES_DE_ENTREGA.map((s) => s.rotulo)}
+              linhas={entregas.map((m) => ({
+                rotulo: rotuloDoMes(m.mes),
+                valores: SERIES_DE_ENTREGA.map((s) => m[s.campo]),
+                onSelecionar: onSelecionarMes && (() => onSelecionarMes(m.mes)),
+              }))}
+            />
+          </>
         )}
       </CardContent>
     </Card>

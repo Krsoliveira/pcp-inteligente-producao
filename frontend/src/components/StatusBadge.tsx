@@ -53,7 +53,7 @@ type StatusLista = 'EM_REVISAO' | 'ATIVA' | 'OBSOLETA'
 const LISTA_CONFIG: Record<StatusLista, { label: string; dot: string; bg: string; color: string }> = {
   EM_REVISAO: { label: 'Em Revisão', dot: '#D97706', bg: 'rgba(217,119,6,0.10)',  color: '#B45309' },
   ATIVA:      { label: 'Ativa',      dot: '#059669', bg: 'rgba(5,150,105,0.10)', color: '#047857' },
-  OBSOLETA:   { label: 'Obsoleta',   dot: '#94A3B8', bg: 'rgba(148,163,184,0.12)', color: '#64748B' },
+  OBSOLETA:   { label: 'Obsoleta',   dot: '#94A3B8', bg: 'rgba(148,163,184,0.12)', color: '#475569' },
 }
 
 export function StatusListaBadge({ status }: { status: StatusLista }) {
@@ -80,7 +80,7 @@ type StatusLote = 'DISPONIVEL' | 'BLOQUEADO' | 'CONSUMIDO' | 'VENCIDO'
 const LOTE_CONFIG: Record<StatusLote, { label: string; dot: string; bg: string; color: string }> = {
   DISPONIVEL: { label: 'Disponível', dot: '#059669', bg: 'rgba(5,150,105,0.10)',   color: '#047857' },
   BLOQUEADO:  { label: 'Bloqueado',  dot: '#D97706', bg: 'rgba(217,119,6,0.10)',   color: '#B45309' },
-  CONSUMIDO:  { label: 'Consumido',  dot: '#94A3B8', bg: 'rgba(148,163,184,0.12)', color: '#64748B' },
+  CONSUMIDO:  { label: 'Consumido',  dot: '#94A3B8', bg: 'rgba(148,163,184,0.12)', color: '#475569' },
   VENCIDO:    { label: 'Vencido',    dot: '#DC2626', bg: 'rgba(220,38,38,0.10)',   color: '#B91C1C' },
 }
 
@@ -129,7 +129,8 @@ export function TipoOrdemBadge({ nome, cor }: TipoOrdemBadgeProps) {
         py: 0.25,
         borderRadius: 99,
         bgcolor: `${cor}18`,
-        color: cor,
+        // A cor do tipo é escolhida pelo usuário e nem toda dá contraste como texto: ela fica no fundo e na borda.
+        color: 'text.primary',
         fontSize: '0.7rem',
         fontWeight: 600,
         border: `1px solid ${cor}40`,

@@ -70,13 +70,13 @@ export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
                   <Chip size="small" variant="outlined" label={TIPO_MATERIAL_LABEL[p.tipo]} sx={{ fontSize: '0.7rem' }} />
                 </TableCell>
                 <TableCell align="right">
-                  <Typography variant="body2" noWrap sx={{ color: p.saldoDisponivel > 0 ? 'text.primary' : 'text.disabled', fontWeight: 600 }}>
+                  <Typography variant="body2" noWrap sx={{ color: p.saldoDisponivel > 0 ? 'text.primary' : 'text.secondary', fontWeight: 600 }}>
                     {formatarQuantidade(p.saldoDisponivel, p.unidadeDeMedida)}
                   </Typography>
                 </TableCell>
                 <TableCell align="center">{p.lotesDisponiveis}</TableCell>
                 <TableCell align="right">
-                  <Typography variant="body2" noWrap sx={{ color: p.saldoIndisponivel > 0 ? 'warning.main' : 'text.disabled' }}>
+                  <Typography variant="body2" noWrap sx={{ color: p.saldoIndisponivel > 0 ? 'warning.main' : 'text.secondary' }}>
                     {formatarQuantidade(p.saldoIndisponivel, p.unidadeDeMedida)}
                   </Typography>
                 </TableCell>
@@ -87,7 +87,7 @@ export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
                         {formatarData(p.proximoVencimento)}
                       </Typography>
                     </Tooltip>
-                  ) : <Typography variant="body2" sx={{ color: 'text.disabled' }}>—</Typography>}
+                  ) : <Typography variant="body2" sx={{ color: 'text.secondary' }}>—</Typography>}
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>{formatarDataHora(p.ultimaEntrada)}</Typography>
