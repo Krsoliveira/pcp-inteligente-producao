@@ -136,7 +136,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
 
   return (
     <Dialog open={aberto} onClose={handleFechar} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ pb: 1 }}>Nova Ordem de Produção</DialogTitle>
+      <DialogTitle sx={{ pb: 1 }}>Nova ordem de produção</DialogTitle>
       <DialogContent dividers>
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
 
@@ -159,7 +159,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
             <Grid size={12}>
               <TextField
                 select
-                label="Tipo de Ordem (opcional)"
+                label="Tipo de ordem (opcional)"
                 value={form.tipoOrdemId ?? ''}
                 onChange={(e) => {
                   const novo = tiposOrdem.find((t) => t.id === e.target.value)
@@ -195,7 +195,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
             <Typography
               variant="caption"
               sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Produto e Lista Técnica
+              Produto e Lista técnica
             </Typography>
           </Grid>
           <Grid size={12}>
@@ -227,7 +227,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
           <Grid size={12}>
             <TextField
               select
-              label="Versão da Lista Técnica (BOM) *"
+              label="Versão da lista técnica (BOM) *"
               value={form.listaTecnicaId}
               onChange={set('listaTecnicaId')}
               fullWidth
@@ -267,7 +267,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
           <Grid size={12}>
             <TextField
               select
-              label="Centro de Trabalho *"
+              label="Centro de trabalho *"
               value={form.centroDeTrabalho}
               onChange={set('centroDeTrabalho')}
               fullWidth
@@ -278,17 +278,17 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Início Planejado *" type="date" value={form.inicioPlanejado} onChange={set('inicioPlanejado')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField label="Início planejado *" type="date" value={form.inicioPlanejado} onChange={set('inicioPlanejado')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Fim Planejado *" type="date" value={form.fimPlanejado} onChange={set('fimPlanejado')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField label="Fim planejado *" type="date" value={form.fimPlanejado} onChange={set('fimPlanejado')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
           </Grid>
         </Grid>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={handleFechar} disabled={isPending}>Cancelar</Button>
         <Button variant="contained" onClick={handleSubmit} disabled={isPending}>
-          {isPending ? 'Salvando…' : 'Criar Ordem'}
+          {isPending ? 'Salvando…' : 'Criar ordem'}
         </Button>
       </DialogActions>
     </Dialog>

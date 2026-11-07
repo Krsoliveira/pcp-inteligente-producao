@@ -38,10 +38,10 @@ export const NAV_SECTIONS: NavSection[] = [
     itens: [
       { label: 'Materiais', icon: <InventoryIcon fontSize="small" />, rota: '/materiais', permissoes: ['MATERIAL_VISUALIZAR'] },
       {
-        label: 'Listas Técnicas', icon: <AccountTreeIcon fontSize="small" />, rota: '/listas-tecnicas',
+        label: 'Listas técnicas', icon: <AccountTreeIcon fontSize="small" />, rota: '/listas-tecnicas',
         permissoes: ['LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS'],
       },
-      { label: 'Tipos de Ordem', icon: <LabelOutlinedIcon fontSize="small" />, rota: '/tipos-ordem', permissoes: ['TIPO_ORDEM_VISUALIZAR'] },
+      { label: 'Tipos de ordem', icon: <LabelOutlinedIcon fontSize="small" />, rota: '/tipos-ordem', permissoes: ['TIPO_ORDEM_VISUALIZAR'] },
     ],
   },
   {

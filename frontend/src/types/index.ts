@@ -1,4 +1,4 @@
-// ---- Ordens de Produção ----
+// ---- Ordens de produção ----
 
 export type StatusOrdem =
   | 'PLANEJADA'
@@ -43,7 +43,7 @@ export interface ConcluirOrdemRequest {
   dataValidade: string
 }
 
-// ---- Tipo de Ordem ----
+// ---- Tipo de ordem ----
 
 export interface TipoOrdem {
   id: string
@@ -69,9 +69,9 @@ export interface CadastrarTipoOrdemRequest {
 export type TipoMaterial = 'PRODUTO_ACABADO' | 'SEMIACABADO' | 'MATERIA_PRIMA'
 
 export const TIPO_MATERIAL_LABEL: Record<TipoMaterial, string> = {
-  PRODUTO_ACABADO: 'Produto Acabado',
+  PRODUTO_ACABADO: 'Produto acabado',
   SEMIACABADO: 'Semiacabado',
-  MATERIA_PRIMA: 'Matéria-Prima',
+  MATERIA_PRIMA: 'Matéria-prima',
 }
 
 export interface Material {
@@ -93,7 +93,7 @@ export interface CadastrarMaterialRequest {
   unidadeDeMedida: string
 }
 
-// ---- Lista Técnica ----
+// ---- Lista técnica ----
 
 export type StatusListaTecnica = 'EM_REVISAO' | 'ATIVA' | 'OBSOLETA'
 

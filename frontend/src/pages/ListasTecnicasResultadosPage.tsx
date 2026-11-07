@@ -68,9 +68,9 @@ export function ListasTecnicasResultadosPage() {
   return (
     <Box>
       <PageHeader
-        titulo="Listas Técnicas"
+        titulo="Listas técnicas"
         subtitulo={isLoading ? '…' : falhouSemDados ? undefined : filtrando ? contagem(total, 'versão encontrada', 'versões encontradas') : contagem(total, 'versão cadastrada', 'versões cadastradas')}
-        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas Técnicas', href: '/listas-tecnicas' }, { label: 'Resultados' }]}
+        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas técnicas', href: '/listas-tecnicas' }, { label: 'Resultados' }]}
       />
 
       <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>

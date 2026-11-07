@@ -180,7 +180,7 @@ export function DashboardPage() {
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                Ordens Recentes
+                Ordens recentes
               </Typography>
               {isLoading ? (
                 <Skeleton variant="rounded" height={240} />

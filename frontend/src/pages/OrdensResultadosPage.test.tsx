@@ -110,8 +110,8 @@ describe('OrdensResultadosPage', () => {
     await screen.findByText('OP-2026-0003')
     const consultasAntes = pesquisarMock.mock.calls.length
 
-    await userEvent.click(screen.getByRole('button', { name: 'Filtrar Centro de Trabalho' }))
-    await userEvent.type(screen.getByRole('textbox', { name: 'Texto do filtro de Centro de Trabalho' }), 'soldagem')
+    await userEvent.click(screen.getByRole('button', { name: 'Filtrar Centro de trabalho' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Texto do filtro de Centro de trabalho' }), 'soldagem')
     await userEvent.keyboard('{Escape}')
 
     expect(screen.getByText('OP-2026-0002')).toBeInTheDocument()

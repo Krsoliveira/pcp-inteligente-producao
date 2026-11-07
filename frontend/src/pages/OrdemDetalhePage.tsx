@@ -149,12 +149,12 @@ export function OrdemDetalhePage() {
           <Box sx={{ display: 'flex', gap: 1 }}>
             {!['CONCLUIDA', 'CANCELADA'].includes(ordem.status) && tem('ORDEM_ATUALIZAR_STATUS') && (
               <Button variant="outlined" onClick={() => setDialogStatus(true)}>
-                Alterar Status
+                Alterar status
               </Button>
             )}
             {podeConcluir && tem('ORDEM_CONCLUIR') && (
               <Button variant="contained" color="success" startIcon={<DoneAllIcon />} onClick={() => setDialogConcluir(true)}>
-                Concluir Ordem
+                Concluir ordem
               </Button>
             )}
           </Box>
@@ -166,13 +166,13 @@ export function OrdemDetalhePage() {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
-              <Typography variant="subtitle2" gutterBottom>Informações da Ordem</Typography>
+              <Typography variant="subtitle2" gutterBottom>Informações da ordem</Typography>
               <Divider sx={{ mb: 2 }} />
               <Grid container spacing={1.5}>
                 <InfoRow label="Status"><StatusOrdemBadge status={ordem.status} size="medium" /></InfoRow>
                 <InfoRow label="Material">{material ? `${formatarCodigoMaterial(material.codigo)} — ${material.descricao}` : <Skeleton width={140} />}</InfoRow>
-                <InfoRow label="Lista Técnica"><Chip label={listaTecnica?.versao ?? '…'} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} /></InfoRow>
-                <InfoRow label="Centro de Trabalho">{ordem.centroDeTrabalho}</InfoRow>
+                <InfoRow label="Lista técnica"><Chip label={listaTecnica?.versao ?? '…'} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} /></InfoRow>
+                <InfoRow label="Centro de trabalho">{ordem.centroDeTrabalho}</InfoRow>
                 <InfoRow label="Quantidade planejada">{formatarQuantidade(ordem.quantidade, material?.unidadeDeMedida)}</InfoRow>
                 {ordem.quantidadeProduzida != null && (
                   <InfoRow label="Quantidade produzida">
@@ -201,7 +201,7 @@ export function OrdemDetalhePage() {
         <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
-              <Typography variant="subtitle2" gutterBottom>Lista Técnica utilizada</Typography>
+              <Typography variant="subtitle2" gutterBottom>Lista técnica utilizada</Typography>
               <Divider sx={{ mb: 2 }} />
               {!listaTecnica ? (
                 <Skeleton variant="rounded" height={100} />
@@ -237,12 +237,12 @@ export function OrdemDetalhePage() {
           </Card>
         </Grid>
 
-        {/* Card: Consumo de Materiais */}
+        {/* Card: Consumo de materiais */}
         <Grid size={12}>
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="subtitle2">Consumo de Materiais</Typography>
+                <Typography variant="subtitle2">Consumo de materiais</Typography>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   {consumos.length > 0 && (
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -353,12 +353,12 @@ export function OrdemDetalhePage() {
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <AllInboxIcon color="action" fontSize="small" />
-                  <Typography variant="subtitle2">Lote Gerado</Typography>
+                  <Typography variant="subtitle2">Lote gerado</Typography>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
                 {lotes.map((lote) => (
                   <Grid key={lote.id} container spacing={2}>
-                    <InfoRow label="Número do Lote">
+                    <InfoRow label="Número do lote">
                       <Link
                         component={RouterLink}
                         to={`/lotes/${lote.id}`}
@@ -409,7 +409,7 @@ export function OrdemDetalhePage() {
   )
 }
 
-// ---- Dialog: Concluir Ordem ----
+// ---- Dialog: Concluir ordem ----
 
 interface ConcluirOrdemDialogProps {
   aberto: boolean
@@ -436,7 +436,7 @@ function ConcluirOrdemDialog({ aberto, ordemId, onFechar, onSucesso }: ConcluirO
 
   return (
     <Dialog open={aberto} onClose={onFechar} fullWidth maxWidth="xs">
-      <DialogTitle>Concluir Ordem de Produção</DialogTitle>
+      <DialogTitle>Concluir ordem de produção</DialogTitle>
       <DialogContent dividers>
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
@@ -456,7 +456,7 @@ function ConcluirOrdemDialog({ aberto, ordemId, onFechar, onSucesso }: ConcluirO
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onFechar} disabled={isPending}>Cancelar</Button>
-        <Button variant="contained" color="success" onClick={handleSubmit} disabled={isPending}>{isPending ? 'Concluindo…' : 'Confirmar Conclusão'}</Button>
+        <Button variant="contained" color="success" onClick={handleSubmit} disabled={isPending}>{isPending ? 'Concluindo…' : 'Confirmar conclusão'}</Button>
       </DialogActions>
     </Dialog>
   )

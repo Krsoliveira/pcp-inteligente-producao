@@ -91,7 +91,7 @@ export function OrdensResultadosPage() {
   return (
     <Box>
       <PageHeader
-        titulo="Ordens de Produção"
+        titulo="Ordens de produção"
         subtitulo={isLoading ? '…' : falhouSemDados ? undefined : filtrando ? contagem(total, 'ordem encontrada', 'ordens encontradas') : contagem(total, 'ordem cadastrada', 'ordens cadastradas')}
         breadcrumbs={[{ label: 'Produção' }, { label: 'Ordens', href: '/ordens' }, { label: 'Resultados' }]}
       />

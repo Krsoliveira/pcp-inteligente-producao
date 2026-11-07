@@ -116,7 +116,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
 
   return (
     <Dialog open={aberto} onClose={onFechar} fullWidth maxWidth="md">
-      <DialogTitle>{modelo ? `Nova versão a partir da ${modelo.versao}` : 'Nova Lista Técnica (BOM)'}</DialogTitle>
+      <DialogTitle>{modelo ? `Nova versão a partir da ${modelo.versao}` : 'Nova lista técnica (BOM)'}</DialogTitle>
       <DialogContent dividers>
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         {modelo && (
@@ -187,7 +187,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onFechar} disabled={isPending}>Cancelar</Button>
         <Button variant="contained" onClick={handleSubmit} disabled={isPending}>
-          {isPending ? 'Salvando…' : modelo ? 'Criar versão' : 'Criar Lista'}
+          {isPending ? 'Salvando…' : modelo ? 'Criar versão' : 'Criar lista'}
         </Button>
       </DialogActions>
     </Dialog>

@@ -61,13 +61,13 @@ export function ListasTecnicasPage() {
   return (
     <Box>
       <PageHeader
-        titulo="Listas Técnicas"
+        titulo="Listas técnicas"
         subtitulo="Pesquise por material ou status, ou abra uma das mais recentes"
-        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas Técnicas' }]}
+        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas técnicas' }]}
         action={
           <SePermitido qualquer={['LISTA_CADASTRAR']}>
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
-              Nova Lista
+              Nova lista
             </Button>
           </SePermitido>
         }

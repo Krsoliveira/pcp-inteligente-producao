@@ -95,7 +95,7 @@ export function ListaTecnicaComparacaoPage() {
       <PageHeader
         titulo="Comparar versões"
         subtitulo={material ? `${codigo} — ${material.descricao}` : 'Escolha duas versões da mesma lista técnica'}
-        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas Técnicas', href: '/listas-tecnicas' }, { label: 'Comparar' }]}
+        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas técnicas', href: '/listas-tecnicas' }, { label: 'Comparar' }]}
       />
 
       {(!a || !b) && <Alert severity="info">Abra uma lista técnica e use "Comparar" em uma das outras versões.</Alert>}

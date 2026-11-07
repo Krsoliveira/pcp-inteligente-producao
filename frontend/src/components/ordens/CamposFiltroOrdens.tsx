@@ -9,7 +9,7 @@ const STATUS_OPCOES: Array<{ label: string; value: StatusOrdem | 'TODAS' }> = [
   { label: 'Todos os status', value: 'TODAS' },
   { label: 'Planejada', value: 'PLANEJADA' },
   { label: 'Liberada', value: 'LIBERADA' },
-  { label: 'Em Produção', value: 'EM_PRODUCAO' },
+  { label: 'Em produção', value: 'EM_PRODUCAO' },
   { label: 'Concluída', value: 'CONCLUIDA' },
   { label: 'Cancelada', value: 'CANCELADA' },
 ]
