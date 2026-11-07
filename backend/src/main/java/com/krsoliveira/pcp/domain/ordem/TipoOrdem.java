@@ -23,14 +23,18 @@ public class TipoOrdem {
     private String cor;
     private final boolean conversao;
     private Assinatura assinatura;
+    /** Soma 1 a cada alteração: quem editou sobre uma versão antiga é recusado (ADR-0034). */
+    private long versao;
 
-    private TipoOrdem(UUID id, String nome, String descricao, String cor, boolean conversao, Assinatura assinatura) {
+    private TipoOrdem(UUID id, String nome, String descricao, String cor, boolean conversao, Assinatura assinatura,
+                      long versao) {
         this.id = id;
         this.conversao = conversao;
         this.nome = nome;
         this.descricao = descricao;
         this.cor = cor;
         this.assinatura = assinatura;
+        this.versao = versao;
     }
 
     /**
@@ -42,7 +46,7 @@ public class TipoOrdem {
         validarNome(nome);
         validarCor(cor);
         return new TipoOrdem(UUID.randomUUID(), nome.trim(), descricao != null ? descricao.trim() : null,
-                cor.trim(), false, Assinatura.nova(usuario));
+                cor.trim(), false, Assinatura.nova(usuario), 0);
     }
 
     /**
@@ -50,13 +54,13 @@ public class TipoOrdem {
      */
     public static TipoOrdem reconstituir(UUID id, String nome, String descricao, String cor,
                                          Assinatura assinatura) {
-        return new TipoOrdem(id, nome, descricao, cor, false, assinatura);
+        return new TipoOrdem(id, nome, descricao, cor, false, assinatura, 0);
     }
 
-    /** Reconstrói um tipo de ordem existente, dizendo se é o tipo de sistema Conversão. */
+    /** Reconstrói um tipo de ordem existente, dizendo se é o tipo de sistema Conversão e em que versão está. */
     public static TipoOrdem reconstituir(UUID id, String nome, String descricao, String cor, boolean conversao,
-                                         Assinatura assinatura) {
-        return new TipoOrdem(id, nome, descricao, cor, conversao, assinatura);
+                                         Assinatura assinatura, long versao) {
+        return new TipoOrdem(id, nome, descricao, cor, conversao, assinatura, versao);
     }
 
     /**
@@ -73,6 +77,7 @@ public class TipoOrdem {
         this.descricao = descricao != null ? descricao.trim() : null;
         this.cor = cor.trim();
         this.assinatura = alterada;
+        this.versao++;
     }
 
     private static void validarNome(String nome) {
@@ -95,6 +100,7 @@ public class TipoOrdem {
 
     public String getCor() { return cor; }
     public Assinatura getAssinatura() { return assinatura; }
+    public long getVersao() { return versao; }
     public Instant getCriadoEm() { return assinatura.criadoEm(); }
     public Instant getAtualizadoEm() { return assinatura.alteradoEm(); }
 }

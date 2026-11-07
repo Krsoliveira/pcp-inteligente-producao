@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.application.acesso;
 
 import com.krsoliveira.pcp.application.comum.Detalhes;
+import com.krsoliveira.pcp.application.comum.EdicaoConcorrenteException;
 import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
 import com.krsoliveira.pcp.application.comum.PermissoesDoUsuarioAtual;
 import com.krsoliveira.pcp.domain.acesso.Delegacao;
@@ -19,6 +20,9 @@ import java.util.UUID;
  * Caso de uso: alterar nome, descrição e permissões de um perfil (ADR-0020). Quem altera precisa ter
  * todas as permissões que o perfil tem antes e que terá depois: ninguém mexe num perfil acima do seu
  * alcance nem o eleva além dele. A mudança entra na trilha com as permissões adicionadas e removidas.
+ *
+ * O perfil é lido travado e a versão que a tela leu precisa ser a atual: duas edições simultâneas não se
+ * sobrepõem em silêncio, a segunda recebe 409 (ADR-0034).
  */
 public class AtualizarPerfilAcesso {
 
@@ -33,9 +37,13 @@ public class AtualizarPerfilAcesso {
         this.execucao = execucao;
     }
 
-    public PerfilAcesso executar(UUID id, String nome, String descricao, Collection<Permissao> permissoes) {
+    /**
+     * @param versaoLida versão do perfil quando a tela abriu a edição; {@code null} dispensa a conferência
+     */
+    public PerfilAcesso executar(UUID id, String nome, String descricao, Collection<Permissao> permissoes,
+                                 Long versaoLida) {
         return execucao.executar(ctx -> {
-            PerfilAcesso perfil = perfilRepository.buscarPorId(id)
+            PerfilAcesso perfil = perfilRepository.buscarPorIdParaAtualizar(id)
                     .orElseThrow(() -> new PerfilNaoEncontradoException(id));
             String nomeAnterior = perfil.getNome();
             Set<Permissao> antes = copia(perfil.permissoesEfetivas());
@@ -46,6 +54,8 @@ public class AtualizarPerfilAcesso {
             Set<Permissao> doAtor = permissoesAtuais.permissoes();
             Delegacao.exigirQueAbrange(doAtor, antes);
             Delegacao.exigirQueAbrange(doAtor, depois);
+            EdicaoConcorrenteException.exigirVersaoAtual(versaoLida, perfil.getVersao(),
+                    "O perfil \"%s\"".formatted(nomeAnterior));
             String nomeNovo = nome == null ? "" : nome.trim();
             perfilRepository.buscarPorNome(nomeNovo)
                     .filter(outro -> !outro.getId().equals(perfil.getId()))

@@ -19,7 +19,7 @@ vi.mock('../api/acessos', () => ({
 function perfil(sobrescritas: Partial<PerfilAcesso>): PerfilAcesso {
   return {
     id: 'p-x', nome: 'Perfil', descricao: '', administrador: false, padraoDoAutocadastro: false,
-    permissoes: ['ORDEM_VISUALIZAR'], quantidadeDeUsuarios: 0, atualizadoEm: '2026-10-20T10:00:00Z', atualizadoPor: 'admin',
+    permissoes: ['ORDEM_VISUALIZAR'], quantidadeDeUsuarios: 0, atualizadoEm: '2026-10-20T10:00:00Z', atualizadoPor: 'admin', versao: 0,
     ...sobrescritas,
   }
 }

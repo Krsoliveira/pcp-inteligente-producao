@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.application.acesso;
 
 import com.krsoliveira.pcp.application.auth.UsuarioRepositoryEmMemoria;
+import com.krsoliveira.pcp.application.comum.EdicaoConcorrenteException;
 import com.krsoliveira.pcp.application.comum.TrilhaDeAuditoriaEmMemoria;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.acesso.AcessoNegadoException;
@@ -117,7 +118,7 @@ class PerfisDeAcessoTest {
         void alteraERegistra() {
             PerfilAcesso perfil = umPerfil("Operação", Permissao.ORDEM_VISUALIZAR, Permissao.ORDEM_CRIAR);
 
-            atualizar.executar(perfil.getId(), "Operação de chão", "", List.of(Permissao.ORDEM_VISUALIZAR, Permissao.ESTOQUE_VISUALIZAR));
+            atualizar.executar(perfil.getId(), "Operação de chão", "", List.of(Permissao.ORDEM_VISUALIZAR, Permissao.ESTOQUE_VISUALIZAR), null);
 
             PerfilAcesso salvo = perfis.buscarPorId(perfil.getId()).orElseThrow();
             assertThat(salvo.getNome()).isEqualTo("Operação de chão");
@@ -133,7 +134,7 @@ class PerfisDeAcessoTest {
         void soMudaONome() {
             PerfilAcesso perfil = umPerfil("Operação", Permissao.ORDEM_VISUALIZAR);
 
-            atualizar.executar(perfil.getId(), "Chão", "", List.of(Permissao.ORDEM_VISUALIZAR));
+            atualizar.executar(perfil.getId(), "Chão", "", List.of(Permissao.ORDEM_VISUALIZAR), null);
 
             EventoAuditoria evento = unicoEvento(AcaoAuditoria.ALTERADO);
             assertThat(evento.getDetalhes()).doesNotContainKeys("permissoesAdicionadas", "permissoesRemovidas");
@@ -143,7 +144,7 @@ class PerfisDeAcessoTest {
         @DisplayName("o Administrador não pode ser alterado")
         void administradorNaoAltera() {
             assertThatThrownBy(() -> atualizar.executar(PerfilAcessoRepositoryEmMemoria.ID_ADMINISTRADOR, "Outro", "",
-                    List.of(Permissao.ORDEM_VISUALIZAR)))
+                    List.of(Permissao.ORDEM_VISUALIZAR), null))
                     .isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("Administrador");
         }
 
@@ -153,7 +154,7 @@ class PerfisDeAcessoTest {
             PerfilAcesso poderoso = umPerfil("Chefia", Permissao.ORDEM_VISUALIZAR, Permissao.LISTA_ATIVAR);
             doAtor = EnumSet.of(Permissao.ORDEM_VISUALIZAR, Permissao.PERFIL_GERENCIAR);
 
-            assertThatThrownBy(() -> atualizar.executar(poderoso.getId(), "Chefia 2", "", List.of(Permissao.ORDEM_VISUALIZAR)))
+            assertThatThrownBy(() -> atualizar.executar(poderoso.getId(), "Chefia 2", "", List.of(Permissao.ORDEM_VISUALIZAR), null))
                     .isInstanceOf(AcessoNegadoException.class);
 
             assertThat(perfis.buscarPorId(poderoso.getId()).orElseThrow().getNome()).isEqualTo("Chefia");
@@ -166,7 +167,7 @@ class PerfisDeAcessoTest {
             doAtor = EnumSet.of(Permissao.ORDEM_VISUALIZAR, Permissao.PERFIL_GERENCIAR);
 
             assertThatThrownBy(() -> atualizar.executar(perfil.getId(), "Operação", "",
-                    List.of(Permissao.ORDEM_VISUALIZAR, Permissao.USUARIO_GERENCIAR)))
+                    List.of(Permissao.ORDEM_VISUALIZAR, Permissao.USUARIO_GERENCIAR), null))
                     .isInstanceOf(AcessoNegadoException.class);
 
             assertThat(perfis.buscarPorId(perfil.getId()).orElseThrow().permissoesEfetivas())
@@ -180,9 +181,9 @@ class PerfisDeAcessoTest {
             PerfilAcesso a = umPerfil("Operação", Permissao.ORDEM_VISUALIZAR);
             umPerfil("Qualidade", Permissao.ORDEM_VISUALIZAR);
 
-            assertThatThrownBy(() -> atualizar.executar(a.getId(), "qualidade", "", List.of(Permissao.ORDEM_VISUALIZAR)))
+            assertThatThrownBy(() -> atualizar.executar(a.getId(), "qualidade", "", List.of(Permissao.ORDEM_VISUALIZAR), null))
                     .isInstanceOf(PerfilNomeJaUtilizadoException.class);
-            atualizar.executar(a.getId(), "OPERAÇÃO", "nova descrição", List.of(Permissao.ORDEM_VISUALIZAR));
+            atualizar.executar(a.getId(), "OPERAÇÃO", "nova descrição", List.of(Permissao.ORDEM_VISUALIZAR), null);
 
             assertThat(perfis.buscarPorId(a.getId()).orElseThrow().getNome()).isEqualTo("OPERAÇÃO");
         }
@@ -190,7 +191,7 @@ class PerfisDeAcessoTest {
         @Test
         @DisplayName("perfil inexistente devolve não encontrado")
         void inexistente() {
-            assertThatThrownBy(() -> atualizar.executar(UUID.randomUUID(), "X", "", List.of(Permissao.ORDEM_VISUALIZAR)))
+            assertThatThrownBy(() -> atualizar.executar(UUID.randomUUID(), "X", "", List.of(Permissao.ORDEM_VISUALIZAR), null))
                     .isInstanceOf(PerfilNaoEncontradoException.class);
         }
     }
@@ -248,6 +249,65 @@ class PerfisDeAcessoTest {
         @DisplayName("perfil inexistente devolve não encontrado")
         void inexistente() {
             assertThatThrownBy(() -> excluir.executar(UUID.randomUUID())).isInstanceOf(PerfilNaoEncontradoException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Edição simultânea (ADR-0034)")
+    class EdicaoSimultanea {
+
+        @Test
+        @DisplayName("com a versão atual, altera e passa para a versão seguinte")
+        void versaoAtualAltera() {
+            PerfilAcesso perfil = umPerfil("Operação", Permissao.ORDEM_VISUALIZAR);
+
+            PerfilAcesso salvo = atualizar.executar(perfil.getId(), "Operação", "nova", List.of(Permissao.ORDEM_VISUALIZAR), 0L);
+
+            assertThat(salvo.getVersao()).isEqualTo(1);
+            assertThat(salvo.getDescricao()).isEqualTo("nova");
+        }
+
+        @Test
+        @DisplayName("com uma versão que já não é a atual, recusa com 409 e não altera nem registra nada")
+        void versaoAntigaRecusada() {
+            PerfilAcesso perfil = umPerfil("Operação", Permissao.ORDEM_VISUALIZAR, Permissao.ORDEM_CRIAR);
+            // Ana e Bruno abriram o perfil na versão 0; Ana tirou ORDEM_CRIAR e salvou primeiro.
+            atualizar.executar(perfil.getId(), "Operação", "", List.of(Permissao.ORDEM_VISUALIZAR), 0L);
+
+            assertThatThrownBy(() -> atualizar.executar(perfil.getId(), "Operação", "do Bruno",
+                    List.of(Permissao.ORDEM_VISUALIZAR, Permissao.ORDEM_CRIAR), 0L))
+                    .isInstanceOf(EdicaoConcorrenteException.class)
+                    .hasMessageContaining("\"Operação\" foi alterado por outra pessoa");
+
+            PerfilAcesso atual = perfis.buscarPorId(perfil.getId()).orElseThrow();
+            assertThat(atual.permissoesEfetivas()).containsExactly(Permissao.ORDEM_VISUALIZAR);
+            assertThat(atual.getDescricao()).isEmpty();
+            assertThat(atual.getVersao()).isEqualTo(1);
+            assertThat(trilha.eventos(AcaoAuditoria.ALTERADO)).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("sem versão informada (cliente que não a envia), altera como antes e ainda soma a versão")
+        void semVersaoAlteraComoAntes() {
+            PerfilAcesso perfil = umPerfil("Operação", Permissao.ORDEM_VISUALIZAR);
+            atualizar.executar(perfil.getId(), "Operação", "a", List.of(Permissao.ORDEM_VISUALIZAR), null);
+
+            PerfilAcesso salvo = atualizar.executar(perfil.getId(), "Operação", "b", List.of(Permissao.ORDEM_VISUALIZAR), null);
+
+            assertThat(salvo.getDescricao()).isEqualTo("b");
+            assertThat(salvo.getVersao()).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("quem não alcança o perfil recebe 403, não 409, mesmo com versão antiga")
+        void autorizacaoAntesDaVersao() {
+            PerfilAcesso perfil = umPerfil("Chefia", Permissao.ORDEM_VISUALIZAR, Permissao.LISTA_ATIVAR);
+            atualizar.executar(perfil.getId(), "Chefia", "x", List.of(Permissao.ORDEM_VISUALIZAR, Permissao.LISTA_ATIVAR), 0L);
+            doAtor = EnumSet.of(Permissao.ORDEM_VISUALIZAR, Permissao.PERFIL_GERENCIAR);
+
+            assertThatThrownBy(() -> atualizar.executar(perfil.getId(), "Chefia", "",
+                    List.of(Permissao.ORDEM_VISUALIZAR), 0L))
+                    .isInstanceOf(AcessoNegadoException.class);
         }
     }
 }

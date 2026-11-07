@@ -60,6 +60,10 @@ class PerfilAcessoJpaEntity {
     @Column(name = "atualizado_por", nullable = false, length = 150)
     private String atualizadoPor;
 
+    /** Conferida no caso de uso, sob SELECT ... FOR UPDATE (ADR-0034); por isso não é o @Version do JPA. */
+    @Column(nullable = false)
+    private long versao;
+
     protected PerfilAcessoJpaEntity() {}
 
     static PerfilAcessoJpaEntity de(PerfilAcesso perfil) {
@@ -76,11 +80,12 @@ class PerfilAcessoJpaEntity {
         e.atualizadoEm = a.alteradoEm();
         e.criadoPor = a.criadoPor();
         e.atualizadoPor = a.alteradoPor();
+        e.versao = perfil.getVersao();
         return e;
     }
 
     PerfilAcesso paraDominio() {
         return PerfilAcesso.reconstituir(id, nome, descricao, administrador, padraoDoAutocadastro, permissoes,
-                new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm));
+                new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm), versao);
     }
 }

@@ -24,6 +24,11 @@ export const listarPerfis = async (): Promise<PerfilAcesso[]> => {
   return data
 }
 
+export const buscarPerfil = async (id: string): Promise<PerfilAcesso> => {
+  const { data } = await apiClient.get<PerfilAcesso>(`/v1/acessos/perfis/${id}`)
+  return data
+}
+
 export const criarPerfil = async (payload: SalvarPerfilRequest): Promise<PerfilAcesso> => {
   const { data } = await apiClient.post<PerfilAcesso>('/v1/acessos/perfis', payload)
   return data

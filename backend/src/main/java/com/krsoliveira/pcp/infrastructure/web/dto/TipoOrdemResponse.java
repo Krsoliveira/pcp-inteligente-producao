@@ -13,7 +13,9 @@ public record TipoOrdemResponse(UUID id,
                                 Instant criadoEm,
                                 Instant atualizadoEm,
                                 String criadoPor,
-                                String atualizadoPor) {
+                                String atualizadoPor,
+                                // Devolvida na alteração para recusar a edição feita sobre dados antigos (ADR-0034).
+                                long versao) {
 
     public static TipoOrdemResponse de(TipoOrdem tipo) {
         return new TipoOrdemResponse(
@@ -25,6 +27,7 @@ public record TipoOrdemResponse(UUID id,
                 tipo.getCriadoEm(),
                 tipo.getAtualizadoEm(),
                 tipo.getAssinatura().criadoPor(),
-                tipo.getAssinatura().alteradoPor());
+                tipo.getAssinatura().alteradoPor(),
+                tipo.getVersao());
     }
 }

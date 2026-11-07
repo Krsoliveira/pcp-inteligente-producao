@@ -76,7 +76,9 @@ public class TipoOrdemController {
 
     @PreAuthorize("hasAuthority('TIPO_ORDEM_GERENCIAR')")
     @PutMapping("/{id}")
-    @Operation(summary = "Atualizar tipo de ordem")
+    @Operation(summary = "Atualizar tipo de ordem",
+            description = "Se a versao informada não for mais a atual, outra pessoa alterou o tipo e a alteração é "
+                    + "recusada (409).")
     public ResponseEntity<TipoOrdemResponse> atualizar(@PathVariable UUID id,
                                                         @RequestBody @Valid AtualizarTipoOrdemRequest request) {
         return ResponseEntity.ok(

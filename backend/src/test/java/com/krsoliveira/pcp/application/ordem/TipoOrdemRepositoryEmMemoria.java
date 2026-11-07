@@ -26,6 +26,11 @@ public class TipoOrdemRepositoryEmMemoria implements TipoOrdemRepository {
     }
 
     @Override
+    public Optional<TipoOrdem> buscarPorIdParaAtualizar(UUID id) {
+        return buscarPorId(id);
+    }
+
+    @Override
     public List<TipoOrdem> listarTodos() {
         return new ArrayList<>(dados.values());
     }

@@ -42,6 +42,15 @@ export function mensagemDeErroDaApi(error: unknown, padrao: string): string {
   return typeof detalhe === 'string' && detalhe.trim() ? detalhe : padrao
 }
 
+/** Código que o servidor põe no 409 de edição sobre uma versão antiga, para diferenciá-lo do nome repetido (ADR-0034). */
+const CODIGO_EDICAO_CONCORRENTE = 'EDICAO_CONCORRENTE'
+
+/** Outra pessoa salvou o registro depois que a tela o abriu: a edição foi recusada e nada mudou. */
+export function ehEdicaoConcorrente(error: unknown): boolean {
+  if (!axios.isAxiosError(error) || error.response?.status !== 409) return false
+  return (error.response.data as { codigo?: unknown } | undefined)?.codigo === CODIGO_EDICAO_CONCORRENTE
+}
+
 /**
  * Mensagem para telas de detalhe que não conseguiram carregar. "Não encontrado" só
  * aparece quando o sistema realmente respondeu 404 (ou a consulta deu certo e o item

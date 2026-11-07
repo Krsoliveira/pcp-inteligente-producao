@@ -18,7 +18,7 @@ class PerfilAcessoTest {
 
     private static PerfilAcesso umAdministrador() {
         return PerfilAcesso.reconstituir(UUID.randomUUID(), "Administrador", "", true, false, Set.of(),
-                Assinatura.nova("sistema"));
+                Assinatura.nova("sistema"), 0);
     }
 
     @Test
@@ -102,7 +102,7 @@ class PerfilAcessoTest {
     @DisplayName("o perfil padrão do autocadastro pode ter as permissões editadas, mas não pode ser excluído")
     void perfilPadrao() {
         PerfilAcesso padrao = PerfilAcesso.reconstituir(UUID.randomUUID(), "Visualizador", "", false, true,
-                Set.of(Permissao.DASHBOARD_VISUALIZAR), Assinatura.nova("sistema"));
+                Set.of(Permissao.DASHBOARD_VISUALIZAR), Assinatura.nova("sistema"), 0);
 
         padrao.redefinir("Visualizador", "", List.of(Permissao.DASHBOARD_VISUALIZAR, Permissao.ORDEM_VISUALIZAR), "g");
 
