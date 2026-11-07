@@ -122,8 +122,9 @@ public class ListaTecnicaController {
     @PreAuthorize("hasAnyAuthority('LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS')")
     @GetMapping
     @Operation(summary = "Listar listas técnicas",
-               description = "Sem materialId, retorna todas as listas; com materialId, "
-                       + "todas as versões de lista técnica daquele material.")
+               description = "Com materialId, todas as versões de lista técnica daquele material. Sem materialId, devolve "
+                       + "todas as listas de uma vez: esse uso é obsoleto, prefira GET /api/v1/listas-tecnicas/pesquisa, "
+                       + "que filtra e pagina no servidor. Continua disponível porque o contrato só cresce (ADR-0015).")
     public ResponseEntity<List<ListaTecnicaResponse>> listar(
             @RequestParam(required = false) UUID materialId) {
         var listas = materialId == null

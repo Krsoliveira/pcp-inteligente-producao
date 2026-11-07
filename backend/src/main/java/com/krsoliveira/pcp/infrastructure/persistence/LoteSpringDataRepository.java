@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.persistence;
 
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface LoteSpringDataRepository extends JpaRepository<LoteJpaEntity, UUID> {
+public interface LoteSpringDataRepository extends JpaRepository<LoteJpaEntity, UUID>, JpaSpecificationExecutor<LoteJpaEntity> {
 
     List<LoteJpaEntity> findByOrdemProducaoId(UUID ordemProducaoId);
 

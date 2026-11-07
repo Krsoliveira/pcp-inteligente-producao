@@ -42,6 +42,11 @@ public class OrdemProducaoRepositoryEmMemoria implements OrdemProducaoRepository
     }
 
     @Override
+    public Optional<OrdemProducao> buscarPorIdParaAtualizar(UUID id) {
+        return buscarPorId(id);
+    }
+
+    @Override
     public List<OrdemProducao> buscarPorIds(Collection<UUID> ids) {
         return ids.stream().map(dados::get).filter(Objects::nonNull).toList();
     }

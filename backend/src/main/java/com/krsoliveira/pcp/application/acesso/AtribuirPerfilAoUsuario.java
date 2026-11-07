@@ -61,9 +61,8 @@ public class AtribuirPerfilAoUsuario {
             if (atual.getId().equals(novo.getId())) {
                 return usuario;
             }
-            if (atual.isAdministrador() && usuarioRepository.contarPorPerfil(atual.getId()) <= 1) {
-                throw new RegraDeNegocioException(
-                        "Este é o último usuário com o perfil Administrador; o sistema precisa de ao menos um.");
+            if (atual.isAdministrador()) {
+                exigirOutroAdministrador(atual);
             }
 
             usuario.atribuirPerfil(novo.getId());
@@ -72,5 +71,17 @@ public class AtribuirPerfilAoUsuario {
                     Detalhes.com("email", salvo.getEmail()).mudanca("perfil", atual.getNome(), novo.getNome()));
             return salvo;
         });
+    }
+
+    /**
+     * Bloqueia o perfil antes de contar. Sem isso, dois administradores rebaixando um ao outro ao mesmo tempo contam
+     * dois, passam os dois, e o sistema fica sem nenhum.
+     */
+    private void exigirOutroAdministrador(PerfilAcesso administrador) {
+        perfilRepository.buscarPorIdParaAtualizar(administrador.getId());
+        if (usuarioRepository.contarPorPerfil(administrador.getId()) <= 1) {
+            throw new RegraDeNegocioException(
+                    "Este é o último usuário com o perfil Administrador; o sistema precisa de ao menos um.");
+        }
     }
 }

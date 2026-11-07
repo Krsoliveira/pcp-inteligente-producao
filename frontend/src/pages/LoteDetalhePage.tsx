@@ -346,7 +346,7 @@ function LinhaConsumo({ consumo: c, material, lotes }: { consumo: ConsumoMateria
         <LotesDeOrigem lotes={lotes} registrado={c.registrado} unidade={c.unidadeDeMedida} />
       </TableCell>
       <TableCell>
-        <Typography variant="body2" sx={{ color: c.justificativa ? 'text.primary' : 'text.disabled' }}>
+        <Typography variant="body2" sx={{ color: c.justificativa ? 'text.primary' : 'text.secondary' }}>
           {c.justificativa ?? '—'}
         </Typography>
       </TableCell>
@@ -360,13 +360,13 @@ function LinhaConsumo({ consumo: c, material, lotes }: { consumo: ConsumoMateria
 /** Links para os lotes de onde saiu o material; compra mostra a NF. */
 function LotesDeOrigem({ lotes, registrado, unidade }: { lotes?: LoteOrigem[]; registrado: boolean; unidade: string }) {
   if (!registrado) return (
-    <Typography variant="body2" sx={{ color: 'text.disabled' }}>—</Typography>
+    <Typography variant="body2" sx={{ color: 'text.secondary' }}>—</Typography>
   )
   if (!lotes) return <Skeleton width={120} />
   if (lotes.length === 0) {
     return (
       <Tooltip title="Consumo registrado antes da genealogia de lotes.">
-        <Typography variant="body2" sx={{ color: 'text.disabled' }}>Sem rastreio</Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>Sem rastreio</Typography>
       </Tooltip>
     )
   }
@@ -455,7 +455,7 @@ function OndeFoiUsadoCard({ lote, rastreio, carregando, erro, materialPorId }: {
                           {d.loteGeradoNumero}
                         </Link>
                       ) : (
-                        <Typography variant="body2" sx={{ color: 'text.disabled' }}>Ordem em andamento</Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>Ordem em andamento</Typography>
                       )}
                     </TableCell>
                     <TableCell><Assinatura usuario={d.alocadoPor} instante={d.alocadoEm} /></TableCell>

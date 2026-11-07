@@ -21,6 +21,13 @@ export function dataLocalIso(instante: string): string {
   return `${d.getFullYear()}-${mes}-${dia}`
 }
 
+/** Hoje no fuso do navegador, em "YYYY-MM-DD". `toISOString` daria o dia em UTC, já o seguinte à noite no Brasil. */
+export const hojeIso = () => dataLocalIso(new Date().toISOString())
+
+/** "1 ordem", "2 ordens", "1.234 ordens". */
+export const contagem = (total: number, singular: string, plural: string) =>
+  `${total.toLocaleString('pt-BR')} ${total === 1 ? singular : plural}`
+
 export function formatarQuantidade(valor: number | null | undefined, unidade?: string): string {
   if (valor == null) return '—'
   const numero = Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 4 })

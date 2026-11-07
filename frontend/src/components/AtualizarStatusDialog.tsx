@@ -12,6 +12,7 @@ import Box from '@mui/material/Box'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { atualizarStatus } from '../api/ordens'
 import type { OrdemProducao, StatusOrdem } from '../types'
+import { rotuloDoStatusDeOrdem } from './StatusBadge'
 import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 
 /** Transições válidas por status atual (espelha a máquina de estados do domínio). */
@@ -21,14 +22,6 @@ const TRANSICOES: Record<StatusOrdem, StatusOrdem[]> = {
   EM_PRODUCAO: ['CONCLUIDA', 'CANCELADA'],
   CONCLUIDA: [],
   CANCELADA: [],
-}
-
-const STATUS_LABEL: Record<StatusOrdem, string> = {
-  PLANEJADA: 'Planejada',
-  LIBERADA: 'Liberada',
-  EM_PRODUCAO: 'Em Produção',
-  CONCLUIDA: 'Concluída',
-  CANCELADA: 'Cancelada',
 }
 
 interface AtualizarStatusDialogProps {
@@ -68,7 +61,7 @@ export function AtualizarStatusDialog({ ordem, onFechar }: AtualizarStatusDialog
 
   return (
     <Dialog open={!!ordem} onClose={handleFechar} maxWidth="xs" fullWidth>
-      <DialogTitle>Atualizar Status</DialogTitle>
+      <DialogTitle>Atualizar status</DialogTitle>
       <DialogContent dividers>
         {erro && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -86,7 +79,7 @@ export function AtualizarStatusDialog({ ordem, onFechar }: AtualizarStatusDialog
             Status atual
           </Typography>
           <Typography sx={{ fontWeight: 500 }}>
-            {ordem ? STATUS_LABEL[ordem.status] : ''}
+            {ordem ? rotuloDoStatusDeOrdem(ordem.status) : ''}
           </Typography>
         </Box>
         <TextField
@@ -103,7 +96,7 @@ export function AtualizarStatusDialog({ ordem, onFechar }: AtualizarStatusDialog
         >
           {transicoes.map((s) => (
             <MenuItem key={s} value={s}>
-              {STATUS_LABEL[s]}
+              {rotuloDoStatusDeOrdem(s)}
             </MenuItem>
           ))}
         </TextField>

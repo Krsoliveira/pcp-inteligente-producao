@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.domain.ordem;
 
+import com.krsoliveira.pcp.domain.comum.PrecisaoDeQuantidade;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
@@ -139,9 +140,17 @@ public class OrdemProducao {
         if (quantidadeProduzida == null || quantidadeProduzida.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RegraDeNegocioException("A quantidade produzida deve ser maior que zero.");
         }
+        PrecisaoDeQuantidade.exigir(quantidadeProduzida, "A quantidade produzida");
         this.quantidadeProduzida = quantidadeProduzida;
         this.status = StatusOrdemProducao.CONCLUIDA;
         this.assinatura = alterada;
+    }
+
+    /** Recusa a operação se a ordem não está em produção; {@code operacao} completa a frase, como "lançar o consumo". */
+    public void exigirEmProducaoPara(String operacao) {
+        if (status != StatusOrdemProducao.EM_PRODUCAO) {
+            throw new RegraDeNegocioException("Só é possível %s de uma ordem em produção.".formatted(operacao));
+        }
     }
 
     /**

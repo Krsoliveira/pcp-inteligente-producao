@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.infrastructure.web.dto;
 
 import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
+import java.time.LocalDate;
 
 /**
  * Resposta da conclusão de uma ordem de produção.
@@ -9,9 +10,9 @@ import com.krsoliveira.pcp.application.ordem.ConcluirOrdemProducao;
 public record ConcluirOrdemResponse(OrdemProducaoResponse ordem,
                                     LoteResponse lote) {
 
-    public static ConcluirOrdemResponse de(ConcluirOrdemProducao.Resultado resultado) {
+    public static ConcluirOrdemResponse de(ConcluirOrdemProducao.Resultado resultado, LocalDate hoje) {
         return new ConcluirOrdemResponse(
-                OrdemProducaoResponse.de(resultado.ordem()),
+                OrdemProducaoResponse.de(resultado.ordem(), hoje),
                 LoteResponse.de(resultado.lote()));
     }
 }

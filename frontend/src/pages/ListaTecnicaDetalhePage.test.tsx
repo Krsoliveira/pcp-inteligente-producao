@@ -62,7 +62,7 @@ describe('ListaTecnicaDetalhePage', () => {
     expect(screen.getByText('103.000.001 · versão v1')).toBeInTheDocument()
     expect(await screen.findByText('Aço inox')).toBeInTheDocument()
     expect(screen.getByText('110.000.001')).toBeInTheDocument()
-    expect(screen.getByText('Matéria-Prima')).toBeInTheDocument()
+    expect(screen.getByText('Matéria-prima')).toBeInTheDocument()
     expect(screen.getByText('2,5 kg')).toBeInTheDocument()
   })
 

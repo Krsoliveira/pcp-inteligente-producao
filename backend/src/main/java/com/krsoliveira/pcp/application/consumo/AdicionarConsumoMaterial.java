@@ -13,7 +13,6 @@ import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
-import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.TipoOrdem;
 import com.krsoliveira.pcp.domain.ordem.TipoOrdemRepository;
 
@@ -63,11 +62,9 @@ public class AdicionarConsumoMaterial {
 
     /** Mesma operação dentro de uma execução auditada já aberta (o lançamento de vários itens de uma vez). */
     public ConsumoMaterial adicionarNoContexto(ExecucaoAuditada.Contexto ctx, Comando comando) {
-        OrdemProducao ordem = ordemRepository.buscarPorId(comando.ordemProducaoId())
+        OrdemProducao ordem = ordemRepository.buscarPorIdParaAtualizar(comando.ordemProducaoId())
                 .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(comando.ordemProducaoId()));
-        if (ordem.getStatus() != StatusOrdemProducao.EM_PRODUCAO) {
-            throw new RegraDeNegocioException("Só é possível adicionar itens ao consumo de uma ordem em produção.");
-        }
+        ordem.exigirEmProducaoPara("adicionar itens ao consumo");
         Material item = materialRepository.buscarPorId(comando.materialId())
                 .orElseThrow(() -> new MaterialNaoEncontradoException(comando.materialId()));
         if (item.getId().equals(ordem.getMaterialId())) {

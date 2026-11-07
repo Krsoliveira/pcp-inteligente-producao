@@ -3,7 +3,6 @@ package com.krsoliveira.pcp.application.consumo;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterialRepository;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

@@ -60,6 +60,13 @@ class ConsumoMaterialTest {
         }
 
         @Test
+        void recusaMaisDeQuatroCasasDecimais() {
+            assertThatThrownBy(() -> consumoProjetado().registrarConsumo(new BigDecimal("10.00001"), "Motivo", USUARIO))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("4 casas decimais");
+        }
+
+        @Test
         @DisplayName("com justificativa, registra e o desvio é igual ao consumido")
         void registraComJustificativa() {
             ConsumoMaterial consumo = naoPlanejado();

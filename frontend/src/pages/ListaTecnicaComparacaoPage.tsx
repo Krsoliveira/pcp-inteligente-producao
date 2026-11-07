@@ -29,7 +29,7 @@ import type { ComparacaoDeVersoes, ItemComparado } from '../types'
 type Situacao = 'alterado' | 'adicionado' | 'removido' | 'igual'
 
 const SITUACAO: Record<Situacao, { rotulo: string; cor: string }> = {
-  alterado: { rotulo: 'Alterado', cor: '#B45309' },
+  alterado: { rotulo: 'Alterado', cor: '#92400E' },
   adicionado: { rotulo: 'Adicionado em B', cor: '#047857' },
   removido: { rotulo: 'Removido em B', cor: '#B91C1C' },
   igual: { rotulo: 'Igual', cor: '#64748B' },
@@ -95,7 +95,7 @@ export function ListaTecnicaComparacaoPage() {
       <PageHeader
         titulo="Comparar versões"
         subtitulo={material ? `${codigo} — ${material.descricao}` : 'Escolha duas versões da mesma lista técnica'}
-        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas Técnicas', href: '/listas-tecnicas' }, { label: 'Comparar' }]}
+        breadcrumbs={[{ label: 'Cadastros' }, { label: 'Listas técnicas', href: '/listas-tecnicas' }, { label: 'Comparar' }]}
       />
 
       {(!a || !b) && <Alert severity="info">Abra uma lista técnica e use "Comparar" em uma das outras versões.</Alert>}
@@ -135,8 +135,8 @@ export function ListaTecnicaComparacaoPage() {
 
           {comparacao.versaoA.quantidadeBase !== comparacao.versaoB.quantidadeBase && (
             <Alert severity="info" sx={{ mb: 2 }}>
-              As versões usam bases diferentes: a {comparacao.versaoA.versao} vale para {comparacao.versaoA.quantidadeBase.toLocaleString('pt-BR')} e a{' '}
-              {comparacao.versaoB.versao} para {comparacao.versaoB.quantidadeBase.toLocaleString('pt-BR')}. A comparação é por unidade produzida; as
+              As versões usam bases diferentes: a {comparacao.versaoA.versao} vale para {formatarQuantidade(comparacao.versaoA.quantidadeBase)} e a{' '}
+              {comparacao.versaoB.versao} para {formatarQuantidade(comparacao.versaoB.quantidadeBase)}. A comparação é por unidade produzida; as
               quantidades abaixo são as de cada versão.
             </Alert>
           )}

@@ -3,7 +3,6 @@ package com.krsoliveira.pcp.application.consumo;
 import com.krsoliveira.pcp.application.comum.Detalhes;
 import com.krsoliveira.pcp.application.comum.ExecucaoAuditada;
 import com.krsoliveira.pcp.application.lote.LoteNaoEncontradoException;
-import com.krsoliveira.pcp.application.ordem.OrdemProducaoNaoEncontradaException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
@@ -18,7 +17,6 @@ import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
-import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -79,15 +77,14 @@ public class RegistrarConsumoMaterial {
 
     public ConsumoMaterial executar(UUID ordemProducaoId, Comando comando) {
         return execucao.executar(ctx -> {
+            // Ordem inexistente: para quem chama, é o consumo informado que não existe nela.
+            OrdemProducao ordem = ordemRepository.buscarPorIdParaAtualizar(ordemProducaoId)
+                    .orElseThrow(() -> new ConsumoMaterialNaoEncontradoException(comando.consumoMaterialId()));
             ConsumoMaterial consumo = consumoRepository.buscarPorId(comando.consumoMaterialId())
                     .filter(c -> c.getOrdemProducaoId().equals(ordemProducaoId))
                     .orElseThrow(() -> new ConsumoMaterialNaoEncontradoException(
                             comando.consumoMaterialId()));
-            OrdemProducao ordem = ordemRepository.buscarPorId(consumo.getOrdemProducaoId())
-                    .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(consumo.getOrdemProducaoId()));
-            if (ordem.getStatus() != StatusOrdemProducao.EM_PRODUCAO) {
-                throw new RegraDeNegocioException("Só é possível registrar o consumo de uma ordem em produção.");
-            }
+            ordem.exigirEmProducaoPara("registrar o consumo");
             return registrarNoContexto(ctx, consumo, comando, AcaoAuditoria.CONSUMO_REGISTRADO);
         });
     }

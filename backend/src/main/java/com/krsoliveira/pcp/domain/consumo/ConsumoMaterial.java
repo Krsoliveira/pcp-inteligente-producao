@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.domain.consumo;
 
+import com.krsoliveira.pcp.domain.comum.PrecisaoDeQuantidade;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
@@ -124,6 +125,7 @@ public class ConsumoMaterial {
             throw new RegraDeNegocioException(
                     "A quantidade consumida deve ser zero ou maior.");
         }
+        PrecisaoDeQuantidade.exigir(quantidadeConsumida, "A quantidade consumida");
 
         BigDecimal desvio = quantidadeConsumida.subtract(this.quantidadePlanejada);
         boolean temDesvio = desvio.compareTo(BigDecimal.ZERO) != 0;

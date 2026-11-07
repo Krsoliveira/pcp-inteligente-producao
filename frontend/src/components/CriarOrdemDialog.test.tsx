@@ -30,10 +30,10 @@ async function escolherMaterial() {
 
 async function preencherOrdem() {
   await userEvent.type(screen.getByLabelText(/^Código/), 'OP-0001')
-  await userEvent.click(screen.getByRole('combobox', { name: /^Centro de Trabalho/ }))
+  await userEvent.click(screen.getByRole('combobox', { name: /^Centro de trabalho/ }))
   await userEvent.click(await screen.findByRole('option', { name: 'Montagem' }))
-  await userEvent.type(screen.getByLabelText(/^Início Planejado/), '2026-11-01')
-  await userEvent.type(screen.getByLabelText(/^Fim Planejado/), '2026-11-10')
+  await userEvent.type(screen.getByLabelText(/^Início planejado/), '2026-11-01')
+  await userEvent.type(screen.getByLabelText(/^Fim planejado/), '2026-11-10')
 }
 
 describe('CriarOrdemDialog: versão da lista técnica', () => {
@@ -48,17 +48,17 @@ describe('CriarOrdemDialog: versão da lista técnica', () => {
     listasMock.mockResolvedValue([])
     montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'TIPO_ORDEM_VISUALIZAR'))
 
-    await screen.findByText('Nova Ordem de Produção')
+    await screen.findByText('Nova ordem de produção')
 
     expect(listarTiposOrdem).not.toHaveBeenCalled()
-    expect(screen.queryByLabelText(/Tipo de Ordem/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Tipo de ordem/)).not.toBeInTheDocument()
   })
 
   it('com TIPO_ORDEM_VISUALIZAR pede os tipos e mostra o campo', async () => {
     listasMock.mockResolvedValue([])
     montar()
 
-    expect(await screen.findByLabelText(/Tipo de Ordem/)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/Tipo de ordem/)).toBeInTheDocument()
     expect(listarTiposOrdem).toHaveBeenCalled()
   })
 
@@ -71,7 +71,7 @@ describe('CriarOrdemDialog: versão da lista técnica', () => {
 
     await escolherMaterial()
 
-    await waitFor(() => expect(screen.getByRole('combobox', { name: /Versão da Lista Técnica/ })).toHaveTextContent('v1'))
+    await waitFor(() => expect(screen.getByRole('combobox', { name: /Versão da lista técnica/ })).toHaveTextContent('v1'))
   })
 
   it('versões em revisão ou obsoletas não aparecem para escolha', async () => {
@@ -84,7 +84,7 @@ describe('CriarOrdemDialog: versão da lista técnica', () => {
     montar()
     await escolherMaterial()
 
-    await userEvent.click(await screen.findByRole('combobox', { name: /Versão da Lista Técnica/ }))
+    await userEvent.click(await screen.findByRole('combobox', { name: /Versão da lista técnica/ }))
 
     expect(screen.getByRole('option', { name: /^v1/ })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: /^v2/ })).toBeInTheDocument()
@@ -100,10 +100,10 @@ describe('CriarOrdemDialog: versão da lista técnica', () => {
     montar()
     await escolherMaterial()
     expect(await screen.findByText(/Este material tem 2 versões em uso/)).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: /Versão da Lista Técnica/ })).not.toHaveTextContent('v1')
+    expect(screen.getByRole('combobox', { name: /Versão da lista técnica/ })).not.toHaveTextContent('v1')
     await preencherOrdem()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Criar Ordem' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Criar ordem' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/escolha qual usar nesta ordem/i)
     expect(criarMock).not.toHaveBeenCalled()
@@ -117,11 +117,11 @@ describe('CriarOrdemDialog: versão da lista técnica', () => {
     criarMock.mockResolvedValue({} as Awaited<ReturnType<typeof criarOrdem>>)
     montar()
     await escolherMaterial()
-    await userEvent.click(await screen.findByRole('combobox', { name: /Versão da Lista Técnica/ }))
+    await userEvent.click(await screen.findByRole('combobox', { name: /Versão da lista técnica/ }))
     await userEvent.click(await screen.findByRole('option', { name: /^v2/ }))
     await preencherOrdem()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Criar Ordem' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Criar ordem' }))
 
     // o React Query repassa mais argumentos além do pedido; só o primeiro interessa
     await waitFor(() => expect(criarMock).toHaveBeenCalled())
@@ -135,7 +135,7 @@ describe('CriarOrdemDialog: versão da lista técnica', () => {
     await escolherMaterial()
 
     expect(await screen.findByText('Nenhuma versão da lista técnica em uso para este material.')).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: /Versão da Lista Técnica/ })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByRole('combobox', { name: /Versão da lista técnica/ })).toHaveAttribute('aria-disabled', 'true')
   })
 })
 
@@ -157,7 +157,7 @@ describe('CriarOrdemDialog: tipo Conversão (ADR-0024)', () => {
   })
 
   async function escolherTipo(nome: string) {
-    await userEvent.click(await screen.findByRole('combobox', { name: /Tipo de Ordem/ }))
+    await userEvent.click(await screen.findByRole('combobox', { name: /Tipo de ordem/ }))
     await userEvent.click(await screen.findByRole('option', { name: nome }))
   }
 

@@ -55,6 +55,12 @@ describe('OrdensResultadosPage', () => {
     expect(pesquisarMock).toHaveBeenCalledWith(expect.objectContaining({ status: undefined }))
   })
 
+  it('cada ordem abre por um link de verdade, sem depender do mouse', async () => {
+    montar()
+
+    expect((await screen.findByRole('link', { name: 'OP-2026-0002' })).getAttribute('href')).toMatch(/^\/ordens\/.+/)
+  })
+
   it('mostra as ordens e o total encontrado', async () => {
     montar(`${ROTA}?busca=OP`)
 
@@ -104,8 +110,8 @@ describe('OrdensResultadosPage', () => {
     await screen.findByText('OP-2026-0003')
     const consultasAntes = pesquisarMock.mock.calls.length
 
-    await userEvent.click(screen.getByRole('button', { name: 'Filtrar Centro de Trabalho' }))
-    await userEvent.type(screen.getByRole('textbox', { name: 'Texto do filtro de Centro de Trabalho' }), 'soldagem')
+    await userEvent.click(screen.getByRole('button', { name: 'Filtrar Centro de trabalho' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Texto do filtro de Centro de trabalho' }), 'soldagem')
     await userEvent.keyboard('{Escape}')
 
     expect(screen.getByText('OP-2026-0002')).toBeInTheDocument()

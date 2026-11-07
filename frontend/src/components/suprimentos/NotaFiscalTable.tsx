@@ -8,6 +8,7 @@ import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import type { Material, NotaFiscal } from '../../types'
 import { formatarCodigoMaterial, formatarData, formatarDataHora } from '../../utils/formatacao'
+import { LinkDaLinha } from '../consulta/LinkDaLinha'
 import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
 
 interface NotaFiscalTableProps {
@@ -60,9 +61,7 @@ export function NotaFiscalTable({ notas, materialPorId, controle }: NotaFiscalTa
           {notas.map((nota) => (
             <TableRow key={nota.id} hover onClick={() => navigate(`/notas-fiscais/${nota.id}`)} sx={{ cursor: 'pointer' }}>
               <TableCell>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 600, fontFamily: 'monospace' }}>{nota.numero}</Typography>
+                <LinkDaLinha para={`/notas-fiscais/${nota.id}`} monoespacado>{nota.numero}</LinkDaLinha>
               </TableCell>
               <TableCell><Typography variant="body2">{nota.fornecedor}</Typography></TableCell>
               <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{formatarData(nota.dataEmissao)}</Typography></TableCell>

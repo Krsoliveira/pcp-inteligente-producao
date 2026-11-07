@@ -10,7 +10,7 @@ describe('PageHeader', () => {
   it('mostra título, subtítulo e a ação', () => {
     renderizarTela(<PageHeader titulo="Ordens" subtitulo="12 ordens" action={<button>Nova</button>} />)
 
-    expect(screen.getByRole('heading', { name: 'Ordens' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Ordens' })).toBeInTheDocument()
     expect(screen.getByText('12 ordens')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Nova' })).toBeInTheDocument()
   })

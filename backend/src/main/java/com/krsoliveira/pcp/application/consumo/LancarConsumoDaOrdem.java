@@ -10,7 +10,6 @@ import com.krsoliveira.pcp.domain.material.Material;
 import com.krsoliveira.pcp.domain.material.MaterialRepository;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducao;
 import com.krsoliveira.pcp.domain.ordem.OrdemProducaoRepository;
-import com.krsoliveira.pcp.domain.ordem.StatusOrdemProducao;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -69,11 +68,9 @@ public class LancarConsumoDaOrdem {
     /** @return as linhas lançadas: primeiro as da lista, depois os itens adicionados, na ordem informada */
     public List<ConsumoMaterial> executar(Comando comando) {
         return execucao.executar(ctx -> {
-            OrdemProducao ordem = ordemRepository.buscarPorId(comando.ordemProducaoId())
+            OrdemProducao ordem = ordemRepository.buscarPorIdParaAtualizar(comando.ordemProducaoId())
                     .orElseThrow(() -> new OrdemProducaoNaoEncontradaException(comando.ordemProducaoId()));
-            if (ordem.getStatus() != StatusOrdemProducao.EM_PRODUCAO) {
-                throw new RegraDeNegocioException("Só é possível lançar o consumo de uma ordem em produção.");
-            }
+            ordem.exigirEmProducaoPara("lançar o consumo");
             if (comando.consumos().isEmpty() && comando.itensAdicionais().isEmpty()) {
                 throw new RegraDeNegocioException("Informe ao menos um consumo para lançar.");
             }

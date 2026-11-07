@@ -48,35 +48,43 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
     consumosMock.mockResolvedValue([consumo({ registrado: false })])
     montar()
 
-    expect(await screen.findByRole('button', { name: 'Alterar Status' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Alterar status' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Registrar consumo' })).toBeInTheDocument()
     expect(await screen.findByText('Histórico da ordem')).toBeInTheDocument()
+  })
+
+  it('mostra a quantidade consumida com as 4 casas do sistema, sem arredondar', async () => {
+    consumosMock.mockResolvedValue([consumo({ quantidadePlanejada: 120.5, quantidadeConsumida: 119.9088, desvio: -0.5912 })])
+    montar()
+
+    expect(await screen.findByText('119,9088')).toBeInTheDocument()
+    expect(screen.getByText('-0,5912')).toBeInTheDocument()
   })
 
   it('só oferece concluir quando todos os consumos estão registrados, e com ORDEM_CONCLUIR', async () => {
     montar()
 
-    expect(await screen.findByRole('button', { name: 'Concluir Ordem' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Concluir ordem' })).toBeInTheDocument()
   })
 
-  it('sem ORDEM_ATUALIZAR_STATUS não mostra "Alterar Status"', async () => {
+  it('sem ORDEM_ATUALIZAR_STATUS não mostra "Alterar status"', async () => {
     montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'ORDEM_ATUALIZAR_STATUS'))
-    await screen.findByRole('button', { name: 'Concluir Ordem' })
+    await screen.findByRole('button', { name: 'Concluir ordem' })
 
-    expect(screen.queryByRole('button', { name: 'Alterar Status' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Alterar status' })).not.toBeInTheDocument()
   })
 
-  it('sem ORDEM_CONCLUIR não mostra "Concluir Ordem", mesmo com tudo registrado', async () => {
+  it('sem ORDEM_CONCLUIR não mostra "Concluir ordem", mesmo com tudo registrado', async () => {
     montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'ORDEM_CONCLUIR'))
-    await screen.findByRole('button', { name: 'Alterar Status' })
+    await screen.findByRole('button', { name: 'Alterar status' })
 
-    expect(screen.queryByRole('button', { name: 'Concluir Ordem' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Concluir ordem' })).not.toBeInTheDocument()
   })
 
   it('sem CONSUMO_REGISTRAR não mostra o botão de registrar consumo', async () => {
     consumosMock.mockResolvedValue([consumo({ registrado: false })])
     montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'CONSUMO_REGISTRAR'))
-    await screen.findByRole('button', { name: 'Alterar Status' })
+    await screen.findByRole('button', { name: 'Alterar status' })
     await screen.findAllByText('110.000.001')
 
     expect(screen.queryByRole('button', { name: 'Registrar consumo' })).not.toBeInTheDocument()
@@ -91,7 +99,7 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
 
   it('sem AUDITORIA_VISUALIZAR esconde o histórico e nem o consulta', async () => {
     montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'AUDITORIA_VISUALIZAR'))
-    await screen.findByRole('button', { name: 'Alterar Status' })
+    await screen.findByRole('button', { name: 'Alterar status' })
 
     expect(screen.queryByText('Histórico da ordem')).not.toBeInTheDocument()
     expect(consultarEventosAuditoria).not.toHaveBeenCalled()
@@ -99,20 +107,20 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
 
   it('sem ESTOQUE_VISUALIZAR não pede os lotes da ordem; com a permissão pede', async () => {
     const { unmount } = montar()
-    await screen.findByRole('button', { name: 'Alterar Status' })
+    await screen.findByRole('button', { name: 'Alterar status' })
     expect(listarLotesPorOrdem).toHaveBeenCalled()
     unmount()
     vi.mocked(listarLotesPorOrdem).mockClear()
 
     montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'ESTOQUE_VISUALIZAR'))
-    await screen.findByRole('button', { name: 'Alterar Status' })
+    await screen.findByRole('button', { name: 'Alterar status' })
 
     expect(listarLotesPorOrdem).not.toHaveBeenCalled()
   })
 
   it('sem MATERIAL_VISUALIZAR não pede o catálogo de materiais', async () => {
     montar(TODAS_AS_PERMISSOES.filter((p) => p !== 'MATERIAL_VISUALIZAR'))
-    await screen.findByRole('button', { name: 'Alterar Status' })
+    await screen.findByRole('button', { name: 'Alterar status' })
 
     expect(listarMateriais).not.toHaveBeenCalled()
     expect(buscarMaterialPorId).not.toHaveBeenCalled()
@@ -122,8 +130,8 @@ describe('OrdemDetalhePage: o que cada perfil pode fazer', () => {
     montar(['ORDEM_VISUALIZAR', 'CONSUMO_VISUALIZAR', 'MATERIAL_VISUALIZAR'])
 
     expect((await screen.findAllByText('110.000.001')).length).toBeGreaterThan(0)
-    expect(screen.queryByRole('button', { name: 'Alterar Status' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Concluir Ordem' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Alterar status' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Concluir ordem' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Registrar consumo' })).not.toBeInTheDocument()
   })
 })
@@ -149,7 +157,7 @@ describe('OrdemDetalhePage: item não planejado (ADR-0025)', () => {
     consumosMock.mockReset().mockResolvedValue([consumo()])
     montar()
 
-    await screen.findByText(/Consumo de Materiais/)
+    await screen.findByText(/Consumo de materiais/)
 
     expect(screen.queryByText('Não planejado')).not.toBeInTheDocument()
   })

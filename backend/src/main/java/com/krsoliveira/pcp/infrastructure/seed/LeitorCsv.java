@@ -62,12 +62,14 @@ final class LeitorCsv {
         List<String> campos = new ArrayList<>();
         StringBuilder atual = new StringBuilder();
         boolean entreAspas = false;
-        for (int i = 0; i < linha.length(); i++) {
+        int i = 0;
+        while (i < linha.length()) {
             char c = linha.charAt(i);
+            i++;
             if (entreAspas) {
-                if (c == '"' && i + 1 < linha.length() && linha.charAt(i + 1) == '"') {
+                if (c == '"' && i < linha.length() && linha.charAt(i) == '"') {
                     atual.append('"');
-                    i++;
+                    i++; // aspas duplicadas: a segunda já foi consumida
                 } else if (c == '"') {
                     entreAspas = false;
                 } else {

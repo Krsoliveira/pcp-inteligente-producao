@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -27,12 +27,12 @@ import {
   type ErrosFormulario,
   type ItemFormulario,
   errosDoServidor,
-  hojeIso,
   paraRequisicao,
   temErros,
   validarNotaFiscal,
 } from './notaFiscalFormulario'
 import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
+import { hojeIso } from '../../utils/formatacao'
 
 interface EntradaNotaFiscalDialogProps {
   aberto: boolean
@@ -43,16 +43,17 @@ interface EntradaNotaFiscalDialogProps {
 const CABECALHO_VAZIO: CabecalhoFormulario = { fornecedor: '', numero: '', dataEmissao: '', dataRecebimento: '' }
 const SEM_ERROS: ErrosFormulario = { cabecalho: {}, itens: {} }
 
+let proximaChave = 1
+const novoItem = (): ItemFormulario => ({
+  chave: proximaChave++, materialId: '', numeroLote: '', quantidade: '', dataFabricacao: '', dataValidade: '',
+})
+
 /**
  * Entrada de nota fiscal de compra (POST /api/v1/notas-fiscais): cabeçalho da nota e um
  * ou mais itens. Cada item vira um lote DISPONIVEL de matéria-prima, com o lote do
  * fornecedor, ligado à nota — é o que alimenta o estoque.
  */
 export function EntradaNotaFiscalDialog({ aberto, onFechar, onRegistrada }: EntradaNotaFiscalDialogProps) {
-  const proximaChave = useRef(1)
-  const novoItem = (): ItemFormulario => ({
-    chave: proximaChave.current++, materialId: '', numeroLote: '', quantidade: '', dataFabricacao: '', dataValidade: '',
-  })
   const [cabecalho, setCabecalho] = useState<CabecalhoFormulario>(CABECALHO_VAZIO)
   const [itens, setItens] = useState<ItemFormulario[]>(() => [novoItem()])
   const [erros, setErros] = useState<ErrosFormulario>(SEM_ERROS)

@@ -81,7 +81,7 @@ export function ListaTecnicaDetalhePage() {
         subtitulo={`${codigo} · versão ${lista.versao}`}
         breadcrumbs={[
           { label: 'Cadastros' },
-          { label: 'Listas Técnicas', href: '/listas-tecnicas' },
+          { label: 'Listas técnicas', href: '/listas-tecnicas' },
           { label: `${codigo} · ${lista.versao}` },
         ]}
         action={

@@ -12,6 +12,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
 import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined'
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore'
+import { contagem } from '../../utils/formatacao'
 
 /**
  * Uma coluna da tabela de resultados. `valor` é o que se compara ao ordenar; `texto` é o que o
@@ -39,6 +40,12 @@ export interface ControleDaTabela<T> {
   /** Há algum filtro de coluna preenchido? */
   filtrando: boolean
 }
+
+/** Com `overflowWrap: 'anywhere'`, evita que uma descrição longa encolha até uma letra por linha. */
+export const LARGURA_MINIMA_DA_DESCRICAO = 140
+
+/** Com o ícone de 16 px, dá o alvo mínimo de 24 x 24 px (WCAG 2.5.8). */
+const ALVO_DO_ICONE = 0.5
 
 const comparador = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' })
 const vazio = (v: unknown) => v == null || v === ''
@@ -108,19 +115,21 @@ export function CelulaDeCabecalho<T>({ chave, controle, rotulo, align }: CelulaD
   const IconeDeOrdem = !ativa ? UnfoldMoreIcon : controle.crescente ? ArrowUpwardIcon : ArrowDownwardIcon
 
   return (
-    <TableCell align={align} sortDirection={ativa ? (controle.crescente ? 'asc' : 'desc') : false}>
-      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}>
+    // Em coluna à esquerda, o ícone já marca o fim do título: menos respiro à direita compensa os alvos de 24 px
+    // e a tabela de 8 colunas continua cabendo em 1440 px.
+    <TableCell align={align} sortDirection={ativa ? (controle.crescente ? 'asc' : 'desc') : false} sx={align === 'right' ? undefined : { pr: 0.5 }}>
+      <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
         {rotulo}
         {!coluna.semOrdenacao && (
           <Tooltip title={ativa ? (controle.crescente ? 'Crescente — clique para inverter' : 'Decrescente — clique para remover') : 'Ordenar'}>
-            <IconButton size="small" sx={{ p: 0.25 }} aria-label={`Ordenar ${rotulo}`} color={ativa ? 'primary' : 'default'} onClick={() => controle.alternarOrdem(chave)}>
+            <IconButton size="small" sx={{ p: ALVO_DO_ICONE }} aria-label={`Ordenar ${rotulo}`} color={ativa ? 'primary' : 'default'} onClick={() => controle.alternarOrdem(chave)}>
               <IconeDeOrdem sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
         )}
         {!coluna.semFiltro && (
           <Tooltip title="Filtrar">
-            <IconButton size="small" sx={{ p: 0.25 }} aria-label={`Filtrar ${rotulo}`} color={filtroAtivo ? 'primary' : 'default'} onClick={(e) => setAncora(e.currentTarget)}>
+            <IconButton size="small" sx={{ p: ALVO_DO_ICONE }} aria-label={`Filtrar ${rotulo}`} color={filtroAtivo ? 'primary' : 'default'} onClick={(e) => setAncora(e.currentTarget)}>
               {filtroAtivo ? <FilterAltIcon sx={{ fontSize: 16 }} /> : <FilterAltOutlinedIcon sx={{ fontSize: 16 }} />}
             </IconButton>
           </Tooltip>
@@ -160,8 +169,8 @@ interface ResumoDaTabelaProps {
 export function ResumoDaTabela({ exibidas, naPagina, filtrando, onLimpar }: ResumoDaTabelaProps) {
   return (
     <Box sx={{ px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-        {filtrando ? `Mostrando ${exibidas} de ${naPagina} linhas desta página` : `${naPagina} linhas nesta página`}
+      <Typography variant="caption" role="status" sx={{ color: 'text.secondary' }}>
+        {filtrando ? `Mostrando ${exibidas} de ${contagem(naPagina, 'linha', 'linhas')} desta página` : `${contagem(naPagina, 'linha', 'linhas')} nesta página`}
         {' · use os ícones do título para ordenar e filtrar'}
       </Typography>
       {filtrando && <Button size="small" onClick={onLimpar}>Limpar filtros das colunas</Button>}

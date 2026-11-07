@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.domain.lista;
 
+import com.krsoliveira.pcp.domain.comum.PrecisaoDeQuantidade;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
@@ -116,9 +117,7 @@ public class ListaTecnica {
         if (quantidadeBase == null || quantidadeBase.signum() <= 0) {
             throw new RegraDeNegocioException("A quantidade base da lista técnica deve ser maior que zero.");
         }
-        if (quantidadeBase.stripTrailingZeros().scale() > 4) {
-            throw new RegraDeNegocioException("A quantidade base aceita no máximo 4 casas decimais.");
-        }
+        PrecisaoDeQuantidade.exigir(quantidadeBase, "A quantidade base");
         if (quantidadeBase.compareTo(LIMITE_DA_QUANTIDADE_BASE) >= 0) {
             throw new RegraDeNegocioException("A quantidade base deve ser menor que 100.000.000.");
         }

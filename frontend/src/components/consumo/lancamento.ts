@@ -1,4 +1,5 @@
 import type { ConsumoMaterial, LancarConsumoRequest } from '../../types'
+import { formatarQuantidade } from '../../utils/formatacao'
 import { deUnidades, lerQuantidade, paraUnidades } from './alocacao'
 
 /** O que o usuário digitou numa linha do lançamento. */
@@ -39,7 +40,7 @@ function erroDosLotes(rotulo: string, quantidade: number, alocado: Record<string
   if (quantidade <= 0) return null
   const soma = somaDosLotes(alocado)
   if (soma !== paraUnidades(quantidade)) {
-    return `${rotulo}: a soma dos lotes (${deUnidades(soma).toLocaleString('pt-BR')}) deve ser igual à quantidade consumida (${quantidade.toLocaleString('pt-BR')}).`
+    return `${rotulo}: a soma dos lotes (${formatarQuantidade(deUnidades(soma))}) deve ser igual à quantidade consumida (${formatarQuantidade(quantidade)}).`
   }
   return null
 }

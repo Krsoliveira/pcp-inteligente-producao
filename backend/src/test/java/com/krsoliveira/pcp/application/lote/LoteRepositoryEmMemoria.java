@@ -1,5 +1,8 @@
 package com.krsoliveira.pcp.application.lote;
 
+import com.krsoliveira.pcp.domain.lote.FiltroLotes;
+import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.lote.Lote;
 import com.krsoliveira.pcp.domain.lote.LoteRepository;
 
@@ -59,6 +62,18 @@ public class LoteRepositoryEmMemoria implements LoteRepository {
     @Override
     public long contarPorStatus(StatusLote status) {
         return dados.values().stream().filter(l -> l.getStatus() == status).count();
+    }
+
+    @Override
+    public Pagina<Lote> pesquisar(FiltroLotes filtro, PedidoDePagina pedido) {
+        List<Lote> filtrados = listarTodos().stream()
+                .filter(l -> filtro.status() == null || l.getStatus() == filtro.status())
+                .filter(l -> filtro.materialId() == null || filtro.materialId().equals(l.getMaterialId()))
+                .filter(l -> filtro.busca() == null || l.getNumeroLote().toLowerCase().contains(filtro.busca().toLowerCase()))
+                .toList();
+        int de = (int) Math.min(pedido.deslocamento(), filtrados.size());
+        int ate = Math.min(de + pedido.tamanho(), filtrados.size());
+        return new Pagina<>(filtrados.subList(de, ate), pedido.pagina(), pedido.tamanho(), filtrados.size());
     }
 
     @Override

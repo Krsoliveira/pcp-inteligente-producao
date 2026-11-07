@@ -16,7 +16,8 @@ import {
   formatarDataHora,
   formatarQuantidade,
 } from '../../utils/formatacao'
-import { CelulaDeCabecalho, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
+import { LinkDaLinha } from '../consulta/LinkDaLinha'
+import { CelulaDeCabecalho, LARGURA_MINIMA_DA_DESCRICAO, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
 
 /** Colunas que a tela de resultados ordena e filtra; o texto é o que aparece na célula. */
 export const colunasDeEstoque: Coluna<PosicaoEstoque>[] = [
@@ -62,25 +63,20 @@ export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
             return (
               <TableRow key={p.materialId} hover onClick={() => navigate(`/estoque/${p.materialId}`)} sx={{ cursor: 'pointer' }}>
                 <TableCell>
-                  <Typography
-                    variant="body2"
-                    noWrap
-                    sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
-                    {formatarCodigoMaterial(p.codigo)}
-                  </Typography>
+                  <LinkDaLinha para={`/estoque/${p.materialId}`} monoespacado>{formatarCodigoMaterial(p.codigo)}</LinkDaLinha>
                 </TableCell>
-                <TableCell><Typography variant="body2">{p.descricao}</Typography></TableCell>
+                <TableCell><Typography variant="body2" sx={{ overflowWrap: 'anywhere', minWidth: LARGURA_MINIMA_DA_DESCRICAO }}>{p.descricao}</Typography></TableCell>
                 <TableCell>
                   <Chip size="small" variant="outlined" label={TIPO_MATERIAL_LABEL[p.tipo]} sx={{ fontSize: '0.7rem' }} />
                 </TableCell>
                 <TableCell align="right">
-                  <Typography variant="body2" noWrap sx={{ color: p.saldoDisponivel > 0 ? 'text.primary' : 'text.disabled', fontWeight: 600 }}>
+                  <Typography variant="body2" noWrap sx={{ color: p.saldoDisponivel > 0 ? 'text.primary' : 'text.secondary', fontWeight: 600 }}>
                     {formatarQuantidade(p.saldoDisponivel, p.unidadeDeMedida)}
                   </Typography>
                 </TableCell>
                 <TableCell align="center">{p.lotesDisponiveis}</TableCell>
                 <TableCell align="right">
-                  <Typography variant="body2" noWrap sx={{ color: p.saldoIndisponivel > 0 ? 'warning.main' : 'text.disabled' }}>
+                  <Typography variant="body2" noWrap sx={{ color: p.saldoIndisponivel > 0 ? 'warning.main' : 'text.secondary' }}>
                     {formatarQuantidade(p.saldoIndisponivel, p.unidadeDeMedida)}
                   </Typography>
                 </TableCell>
@@ -91,7 +87,7 @@ export function EstoqueTable({ posicoes, controle }: EstoqueTableProps) {
                         {formatarData(p.proximoVencimento)}
                       </Typography>
                     </Tooltip>
-                  ) : <Typography variant="body2" sx={{ color: 'text.disabled' }}>—</Typography>}
+                  ) : <Typography variant="body2" sx={{ color: 'text.secondary' }}>—</Typography>}
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>{formatarDataHora(p.ultimaEntrada)}</Typography>

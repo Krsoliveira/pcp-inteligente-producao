@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.domain.lista;
 
+import com.krsoliveira.pcp.domain.comum.PrecisaoDeQuantidade;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 
 import java.math.BigDecimal;
@@ -40,6 +41,7 @@ public class ItemListaTecnica {
         if (unidadeDeMedida == null || unidadeDeMedida.isBlank()) {
             throw new RegraDeNegocioException("A unidade de medida do componente é obrigatória.");
         }
+        PrecisaoDeQuantidade.exigir(quantidadePlanejada, "A quantidade do componente");
         return new ItemListaTecnica(UUID.randomUUID(), materialComponenteId,
                 quantidadePlanejada, unidadeDeMedida.trim());
     }

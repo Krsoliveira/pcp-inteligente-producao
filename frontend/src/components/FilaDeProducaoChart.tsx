@@ -1,14 +1,17 @@
 import ReactECharts from 'echarts-for-react'
+import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import type { StatusOrdem } from '../types'
+import { DadosDoGrafico } from './DadosDoGrafico'
+import { rotuloDoStatusDeOrdem } from './StatusBadge'
 
 /** As ordens que ainda estão no chão de fábrica, na ordem em que andam. Concluídas e canceladas ficam de fora. */
 export const ETAPAS_DA_FILA: { status: StatusOrdem; rotulo: string; cor: string }[] = [
-  { status: 'PLANEJADA', rotulo: 'Planejada', cor: '#94A3B8' },
-  { status: 'LIBERADA', rotulo: 'Liberada', cor: '#4F46E5' },
-  { status: 'EM_PRODUCAO', rotulo: 'Em produção', cor: '#D97706' },
+  { status: 'PLANEJADA', rotulo: rotuloDoStatusDeOrdem('PLANEJADA'), cor: '#94A3B8' },
+  { status: 'LIBERADA', rotulo: rotuloDoStatusDeOrdem('LIBERADA'), cor: '#2563EB' },
+  { status: 'EM_PRODUCAO', rotulo: rotuloDoStatusDeOrdem('EM_PRODUCAO'), cor: '#D97706' },
 ]
 
 interface FilaDeProducaoChartProps {
@@ -57,11 +60,25 @@ export function FilaDeProducaoChart({ contagem = {}, onSelecionar }: FilaDeProdu
             Nenhuma ordem em andamento
           </Typography>
         ) : (
-          <ReactECharts
-            option={option}
-            style={{ height: 220 }}
-            onEvents={onSelecionar ? { click: (e: { dataIndex: number }) => onSelecionar(ETAPAS_DA_FILA[e.dataIndex].status) } : undefined}
-          />
+          <>
+            <Box role="img" aria-label={`Fila de produção: ${ETAPAS_DA_FILA.map((etapa, i) => `${etapa.rotulo} ${quantidades[i]}`).join(', ')}.`}>
+              <ReactECharts
+                option={option}
+                style={{ height: 220 }}
+                onEvents={onSelecionar ? { click: (e: { dataIndex: number }) => onSelecionar(ETAPAS_DA_FILA[e.dataIndex].status) } : undefined}
+              />
+            </Box>
+            <DadosDoGrafico
+              titulo="Fila de produção"
+              rotuloDaColuna="Etapa"
+              colunas={['Ordens']}
+              linhas={ETAPAS_DA_FILA.map((etapa, i) => ({
+                rotulo: etapa.rotulo,
+                valores: [quantidades[i]],
+                onSelecionar: onSelecionar && (() => onSelecionar(etapa.status)),
+              }))}
+            />
+          </>
         )}
         <Typography
           variant="caption"

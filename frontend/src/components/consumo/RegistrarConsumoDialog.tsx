@@ -9,7 +9,8 @@ import Button from '@mui/material/Button'
 import Grid from '@mui/material/Grid'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { invalidarDadosDaOrdem } from '../../api/invalidacao'
 import { registrarConsumo } from '../../api/consumos'
 import { listarLotesDisponiveis } from '../../api/lotes'
 import { formatarCodigoMaterial, formatarQuantidade } from '../../utils/formatacao'
@@ -55,11 +56,14 @@ export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, o
   }
   const fechar = () => { limpar(); onFechar() }
 
+  const queryClient = useQueryClient()
   const { mutate, isPending } = useMutation({
     mutationFn: (payload: RegistrarConsumoRequest) => registrarConsumo(ordemId, consumo!.id, payload),
     onSuccess: () => { onSucesso(); fechar() },
     onError: (err: unknown) => {
       setErro(mensagemDeErroDaApi(err, 'Não foi possível registrar o consumo. Tente novamente.'))
+      // A recusa costuma vir de mudança feita por outra pessoa: atualiza o diálogo e a tela ao fundo.
+      invalidarDadosDaOrdem(queryClient, ordemId)
     },
   })
 
@@ -81,7 +85,7 @@ export function RegistrarConsumoDialog({ consumo, material, ordemId, onFechar, o
 
   return (
     <Dialog open={!!consumo} onClose={fechar} fullWidth maxWidth="sm">
-      <DialogTitle>Registrar Consumo{material ? ` — ${formatarCodigoMaterial(material.codigo)}` : ''}</DialogTitle>
+      <DialogTitle>Registrar consumo{material ? ` — ${formatarCodigoMaterial(material.codigo)}` : ''}</DialogTitle>
       <DialogContent dividers>
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         {consumo && (

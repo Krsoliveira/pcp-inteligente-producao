@@ -12,11 +12,13 @@ export const theme = createTheme(
       secondary: {
         main: '#0F766E',
       },
+      // Tons com contraste AA sobre branco, porque também pintam texto. Ponto de status e barra de gráfico,
+      // que não são texto, podem usar os tons mais vivos (ver StatusBadge e os gráficos).
       success: {
-        main: '#059669',
+        main: '#047857',
       },
       warning: {
-        main: '#D97706',
+        main: '#B45309',
       },
       error: {
         main: '#DC2626',
@@ -46,6 +48,20 @@ export const theme = createTheme(
       borderRadius: 8,
     },
     components: {
+      // Foco por teclado visível em tudo que é clicável: o padrão do MUI é só uma sombra clara (WCAG 2.4.7).
+      MuiButtonBase: {
+        styleOverrides: {
+          root: {
+            '&.Mui-focusVisible': { outline: '2px solid #4F46E5', outlineOffset: 2 },
+          },
+        },
+      },
+      // Título de cartão e de seção vem logo abaixo do título da página (h1), sem pular nível.
+      MuiTypography: {
+        defaultProps: {
+          variantMapping: { h6: 'h2', subtitle1: 'h2', subtitle2: 'h2' },
+        },
+      },
       MuiCard: {
         defaultProps: { elevation: 0 },
         styleOverrides: {
@@ -98,6 +114,8 @@ export const theme = createTheme(
         },
       },
       MuiTableCell: {
+        // Dígitos de mesma largura nas colunas numéricas: os números alinham entre as linhas.
+        variants: [{ props: { align: 'right' }, style: { fontVariantNumeric: 'tabular-nums' } }],
         styleOverrides: {
           root: {
             borderBottom: '1px solid rgba(0,0,0,0.05)',

@@ -4,14 +4,12 @@ import TextField from '@mui/material/TextField'
 import SearchIcon from '@mui/icons-material/Search'
 import type { StatusOrdem } from '../../types'
 import { CamposDePeriodo } from '../consulta/CamposDePeriodo'
+import { rotuloDoStatusDeOrdem } from '../StatusBadge'
 
 const STATUS_OPCOES: Array<{ label: string; value: StatusOrdem | 'TODAS' }> = [
   { label: 'Todos os status', value: 'TODAS' },
-  { label: 'Planejada', value: 'PLANEJADA' },
-  { label: 'Liberada', value: 'LIBERADA' },
-  { label: 'Em Produção', value: 'EM_PRODUCAO' },
-  { label: 'Concluída', value: 'CONCLUIDA' },
-  { label: 'Cancelada', value: 'CANCELADA' },
+  ...(['PLANEJADA', 'LIBERADA', 'EM_PRODUCAO', 'CONCLUIDA', 'CANCELADA'] as const)
+    .map((value) => ({ label: rotuloDoStatusDeOrdem(value), value })),
 ]
 
 /** Status aceitos na URL; qualquer outro valor é ignorado. */

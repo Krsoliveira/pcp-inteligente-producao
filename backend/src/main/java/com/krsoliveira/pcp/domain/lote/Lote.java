@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.domain.lote;
 
+import com.krsoliveira.pcp.domain.comum.PrecisaoDeQuantidade;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 import com.krsoliveira.pcp.domain.consumo.ConsumoMaterial;
@@ -122,6 +123,7 @@ public class Lote {
     private static void validarDadosComuns(UUID materialId,
                                            BigDecimal quantidade, String unidadeDeMedida,
                                            LocalDate dataFabricacao, LocalDate dataValidade) {
+        PrecisaoDeQuantidade.exigir(quantidade, "A quantidade do lote");
         if (materialId == null) {
             throw new RegraDeNegocioException("O material do lote é obrigatório.");
         }
@@ -184,6 +186,7 @@ public class Lote {
     public AlocacaoLote alocar(ConsumoMaterial consumo, BigDecimal quantidade, LocalDate data,
                                String usuario) {
         Assinatura alterada = assinatura.alterada(usuario);
+        PrecisaoDeQuantidade.exigir(quantidade, "A quantidade alocada");
         if (!materialId.equals(consumo.getMaterialId())) {
             throw new RegraDeNegocioException(
                     "O lote %s não é do material deste consumo.".formatted(numeroLote));

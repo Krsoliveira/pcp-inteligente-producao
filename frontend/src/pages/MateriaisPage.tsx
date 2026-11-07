@@ -61,7 +61,7 @@ export function MateriaisPage() {
         action={
           <SePermitido qualquer={['MATERIAL_CADASTRAR']}>
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogAberto(true)}>
-              Novo Material
+              Novo material
             </Button>
           </SePermitido>
         }
@@ -77,7 +77,7 @@ export function MateriaisPage() {
         ) : recentes.isError ? (
           <Alert severity="error" sx={{ m: 2 }}>{mensagemDeErroAoCarregar(recentes.error, 'Não foi possível carregar os materiais.')}</Alert>
         ) : (recentes.data?.itens.length ?? 0) === 0 ? (
-          <EmptyState Icone={InventoryIcon} titulo="Nenhum material cadastrado" descricao="Cadastre materiais: produtos acabados, semiacabados e matérias-primas." acaoLabel={tem('MATERIAL_CADASTRAR') ? 'Novo Material' : undefined} onAcao={() => setDialogAberto(true)} />
+          <EmptyState Icone={InventoryIcon} titulo="Nenhum material cadastrado" descricao="Cadastre materiais: produtos acabados, semiacabados e matérias-primas." acaoLabel={tem('MATERIAL_CADASTRAR') ? 'Novo material' : undefined} onAcao={() => setDialogAberto(true)} />
         ) : (
           <>
           <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={itensRecentes.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
@@ -130,7 +130,7 @@ function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
 
   return (
     <Dialog open={aberto} onClose={handleFechar} fullWidth maxWidth="sm">
-      <DialogTitle>Novo Material</DialogTitle>
+      <DialogTitle>Novo material</DialogTitle>
       <DialogContent dividers>
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         <Grid container spacing={2} sx={{ mt: 0 }}>
@@ -145,7 +145,7 @@ function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Unidade de Medida *" value={form.unidadeDeMedida} onChange={(e) => setForm(p => ({ ...p, unidadeDeMedida: e.target.value }))} fullWidth placeholder="un, kg, m…" helperText={form.tipo === 'MATERIA_PRIMA' ? 'Matéria-prima não possui lista técnica.' : ''} slotProps={{ htmlInput: { maxLength: 10 } }} />
+            <TextField label="Unidade de medida *" value={form.unidadeDeMedida} onChange={(e) => setForm(p => ({ ...p, unidadeDeMedida: e.target.value }))} fullWidth placeholder="un, kg, m…" helperText={form.tipo === 'MATERIA_PRIMA' ? 'Matéria-prima não possui lista técnica.' : ''} slotProps={{ htmlInput: { maxLength: 10 } }} />
           </Grid>
         </Grid>
       </DialogContent>
