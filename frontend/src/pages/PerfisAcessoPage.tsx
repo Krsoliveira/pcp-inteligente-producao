@@ -58,6 +58,7 @@ export function PerfisAcessoPage() {
   const perfisQuery = useQuery({ queryKey: ['acessos', 'perfis'], queryFn: listarPerfis })
   const catalogoQuery = useQuery({ queryKey: ['acessos', 'permissoes'], queryFn: listarPermissoes, staleTime: Infinity })
   const perfis = perfisQuery.data ?? []
+  const falhouSemDados = perfisQuery.isError && !perfisQuery.data
   const tabela = useTabelaInterativa(perfis, COLUNAS)
 
   const { mutate: excluir, isPending: excluindoAgora } = useMutation({
@@ -93,65 +94,67 @@ export function PerfisAcessoPage() {
         <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(perfisQuery.error, 'Não foi possível carregar os perfis.')}</Alert>
       )}
 
-      <Card>
-        {perfisQuery.isLoading ? (
-          <Skeleton variant="rounded" height={240} sx={{ m: 2 }} />
-        ) : perfis.length === 0 ? (
-          <EmptyState Icone={AdminPanelSettingsIcon} titulo="Nenhum perfil cadastrado" />
-        ) : (
-          <>
-            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={perfis.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    {COLUNAS.map((c) => (
-                      <CelulaDeCabecalho key={c.chave} chave={c.chave} rotulo={c.rotulo} controle={tabela.controle}
-                        align={c.chave === 'permissoes' || c.chave === 'usuarios' ? 'center' : undefined} />
-                    ))}
-                    <TableCell align="center" sx={{ width: 110 }}>Ações</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {tabela.linhas.map((p) => (
-                    <TableRow key={p.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.nome}</Typography>
-                          {(p.administrador || p.padraoDoAutocadastro) && <Chip label="Sistema" size="small" variant="outlined" sx={{ fontSize: '0.65rem' }} />}
-                        </Box>
-                      </TableCell>
-                      <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{p.descricao || '—'}</Typography></TableCell>
-                      <TableCell align="center">{p.administrador ? 'Todas' : p.permissoes.length}</TableCell>
-                      <TableCell align="center">{p.quantidadeDeUsuarios}</TableCell>
-                      <TableCell>
-                        <Typography variant="body2" noWrap>{formatarDataHora(p.atualizadoEm)}</Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>{p.atualizadoPor}</Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Tooltip title={podeGerenciar && !p.administrador ? 'Editar' : 'Ver permissões'}>
-                          <IconButton size="small" aria-label={`${podeGerenciar && !p.administrador ? 'Editar' : 'Ver'} perfil ${p.nome}`}
-                            onClick={() => setDialogo({ aberto: true, perfil: p })}>
-                            {podeGerenciar && !p.administrador ? <EditIcon sx={{ fontSize: 18 }} /> : <VisibilityIcon sx={{ fontSize: 18 }} />}
-                          </IconButton>
-                        </Tooltip>
-                        {podeExcluir(p) && (
-                          <Tooltip title="Excluir">
-                            <IconButton size="small" color="error" aria-label={`Excluir perfil ${p.nome}`}
-                              onClick={() => { setErroExclusao(null); setExcluindo(p) }}>
-                              <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+      {!falhouSemDados && (
+        <Card>
+          {perfisQuery.isLoading ? (
+            <Skeleton variant="rounded" height={240} sx={{ m: 2 }} />
+          ) : perfis.length === 0 ? (
+            <EmptyState Icone={AdminPanelSettingsIcon} titulo="Nenhum perfil cadastrado" />
+          ) : (
+            <>
+              <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={perfis.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      {COLUNAS.map((c) => (
+                        <CelulaDeCabecalho key={c.chave} chave={c.chave} rotulo={c.rotulo} controle={tabela.controle}
+                          align={c.chave === 'permissoes' || c.chave === 'usuarios' ? 'center' : undefined} />
+                      ))}
+                      <TableCell align="center" sx={{ width: 110 }}>Ações</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {tabela.linhas.map((p) => (
+                      <TableRow key={p.id} hover>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.nome}</Typography>
+                            {(p.administrador || p.padraoDoAutocadastro) && <Chip label="Sistema" size="small" variant="outlined" sx={{ fontSize: '0.65rem' }} />}
+                          </Box>
+                        </TableCell>
+                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{p.descricao || '—'}</Typography></TableCell>
+                        <TableCell align="center">{p.administrador ? 'Todas' : p.permissoes.length}</TableCell>
+                        <TableCell align="center">{p.quantidadeDeUsuarios}</TableCell>
+                        <TableCell>
+                          <Typography variant="body2" noWrap>{formatarDataHora(p.atualizadoEm)}</Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>{p.atualizadoPor}</Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title={podeGerenciar && !p.administrador ? 'Editar' : 'Ver permissões'}>
+                            <IconButton size="small" aria-label={`${podeGerenciar && !p.administrador ? 'Editar' : 'Ver'} perfil ${p.nome}`}
+                              onClick={() => setDialogo({ aberto: true, perfil: p })}>
+                              {podeGerenciar && !p.administrador ? <EditIcon sx={{ fontSize: 18 }} /> : <VisibilityIcon sx={{ fontSize: 18 }} />}
                             </IconButton>
                           </Tooltip>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )}
-      </Card>
+                          {podeExcluir(p) && (
+                            <Tooltip title="Excluir">
+                              <IconButton size="small" color="error" aria-label={`Excluir perfil ${p.nome}`}
+                                onClick={() => { setErroExclusao(null); setExcluindo(p) }}>
+                                <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+        </Card>
+      )}
 
       <PerfilDialog
         aberto={dialogo.aberto}

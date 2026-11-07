@@ -46,6 +46,7 @@ export function UsuariosAcessoPage() {
   const usuariosQuery = useQuery({ queryKey: ['acessos', 'usuarios'], queryFn: listarUsuarios })
   const perfisQuery = useQuery({ queryKey: ['acessos', 'perfis'], queryFn: listarPerfis })
   const usuarios = usuariosQuery.data ?? []
+  const falhouSemDados = usuariosQuery.isError && !usuariosQuery.data
   const perfis = perfisQuery.data ?? []
   const tabela = useTabelaInterativa(usuarios, COLUNAS)
 
@@ -74,53 +75,55 @@ export function UsuariosAcessoPage() {
         <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(usuariosQuery.error, 'Não foi possível carregar os usuários.')}</Alert>
       )}
 
-      <Card>
-        {usuariosQuery.isLoading ? (
-          <Skeleton variant="rounded" height={240} sx={{ m: 2 }} />
-        ) : usuarios.length === 0 ? (
-          <EmptyState Icone={GroupsIcon} titulo="Nenhum usuário cadastrado" />
-        ) : (
-          <>
-            <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={usuarios.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    {COLUNAS.map((c) => <CelulaDeCabecalho key={c.chave} chave={c.chave} rotulo={c.rotulo} controle={tabela.controle} />)}
-                    <TableCell align="center" sx={{ width: 110 }}>Ações</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {tabela.linhas.map((u) => (
-                    <TableRow key={u.id} hover>
-                      <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{u.nome}</Typography></TableCell>
-                      <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{u.email}</Typography></TableCell>
-                      <TableCell>{u.perfilNome ?? '—'}</TableCell>
-                      <TableCell><Typography variant="body2" noWrap>{formatarDataHora(u.criadoEm)}</Typography></TableCell>
-                      <TableCell align="center">
-                        {podeTrocar(u) && (
-                          <>
-                            <Tooltip title="Alterar perfil">
-                              <IconButton size="small" aria-label={`Alterar o perfil de ${u.nome}`} onClick={() => setTrocando(u)}>
-                                <SwapHorizIcon sx={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Redefinir senha">
-                              <IconButton size="small" aria-label={`Redefinir a senha de ${u.nome}`} onClick={() => setRedefinindo(u)}>
-                                <LockResetIcon sx={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        )}
-                      </TableCell>
+      {!falhouSemDados && (
+        <Card>
+          {usuariosQuery.isLoading ? (
+            <Skeleton variant="rounded" height={240} sx={{ m: 2 }} />
+          ) : usuarios.length === 0 ? (
+            <EmptyState Icone={GroupsIcon} titulo="Nenhum usuário cadastrado" />
+          ) : (
+            <>
+              <ResumoDaTabela exibidas={tabela.linhas.length} naPagina={usuarios.length} filtrando={tabela.controle.filtrando} onLimpar={tabela.controle.limparFiltros} />
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      {COLUNAS.map((c) => <CelulaDeCabecalho key={c.chave} chave={c.chave} rotulo={c.rotulo} controle={tabela.controle} />)}
+                      <TableCell align="center" sx={{ width: 110 }}>Ações</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )}
-      </Card>
+                  </TableHead>
+                  <TableBody>
+                    {tabela.linhas.map((u) => (
+                      <TableRow key={u.id} hover>
+                        <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{u.nome}</Typography></TableCell>
+                        <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{u.email}</Typography></TableCell>
+                        <TableCell>{u.perfilNome ?? '—'}</TableCell>
+                        <TableCell><Typography variant="body2" noWrap>{formatarDataHora(u.criadoEm)}</Typography></TableCell>
+                        <TableCell align="center">
+                          {podeTrocar(u) && (
+                            <>
+                              <Tooltip title="Alterar perfil">
+                                <IconButton size="small" aria-label={`Alterar o perfil de ${u.nome}`} onClick={() => setTrocando(u)}>
+                                  <SwapHorizIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Redefinir senha">
+                                <IconButton size="small" aria-label={`Redefinir a senha de ${u.nome}`} onClick={() => setRedefinindo(u)}>
+                                  <LockResetIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+        </Card>
+      )}
 
       <NovoUsuarioDialog aberto={novoAberto} onFechar={() => setNovoAberto(false)} perfis={perfis} permissoesDoUsuario={permissoes} />
       <RedefinirSenhaDialog usuario={redefinindo} onFechar={() => setRedefinindo(null)} />
