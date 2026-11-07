@@ -28,8 +28,7 @@ public record CadastrarListaTecnicaRequest(
         BigDecimal quantidadeBase,
 
         @NotEmpty(message = "A lista técnica deve ter ao menos um componente.")
-        @Valid
-        List<ItemListaTecnicaRequest> itens
+        List<@Valid ItemListaTecnicaRequest> itens
 
 ) {
     public CadastrarListaTecnica.Comando paraComando() {

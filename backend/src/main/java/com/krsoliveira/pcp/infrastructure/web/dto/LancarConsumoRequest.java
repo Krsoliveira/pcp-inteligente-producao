@@ -17,11 +17,11 @@ import java.util.UUID;
  */
 public record LancarConsumoRequest(
 
-        @Valid @Size(max = 200, message = "No máximo 200 linhas por lançamento")
-        List<Linha> consumos,
+        @Size(max = 200, message = "No máximo 200 linhas por lançamento")
+        List<@Valid Linha> consumos,
 
-        @Valid @Size(max = 200, message = "No máximo 200 itens adicionais por lançamento")
-        List<Item> itensAdicionais) {
+        @Size(max = 200, message = "No máximo 200 itens adicionais por lançamento")
+        List<@Valid Item> itensAdicionais) {
 
     public LancarConsumoRequest {
         consumos = consumos == null ? List.of() : consumos;
@@ -38,8 +38,7 @@ public record LancarConsumoRequest(
 
             String justificativa,
 
-            @Valid
-            List<RegistrarConsumoRequest.AlocacaoRequest> alocacoes) {}
+            List<RegistrarConsumoRequest.@Valid AlocacaoRequest> alocacoes) {}
 
     public record Item(
             @NotNull(message = "materialId é obrigatório")
@@ -51,8 +50,7 @@ public record LancarConsumoRequest(
 
             String justificativa,
 
-            @Valid
-            List<RegistrarConsumoRequest.AlocacaoRequest> alocacoes) {}
+            List<RegistrarConsumoRequest.@Valid AlocacaoRequest> alocacoes) {}
 
     public LancarConsumoDaOrdem.Comando paraComando(UUID ordemId) {
         return new LancarConsumoDaOrdem.Comando(ordemId,
