@@ -33,15 +33,17 @@ describe('ListaTecnicaTable: acesso sem mouse', () => {
 })
 
 describe('ListaTecnicaTable', () => {
-  it('mostra o código do material e a descrição em colunas separadas', () => {
+  it('mostra o número da lista, o código do material e a descrição em colunas separadas', () => {
     montar()
 
+    expect(screen.getByRole('columnheader', { name: 'Lista' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Código' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Descrição' })).toBeInTheDocument()
     const celulas = within(screen.getAllByRole('row')[1]).getAllByRole('cell')
-    expect(celulas[0]).toHaveTextContent('103.000.001')
-    expect(celulas[1]).toHaveTextContent('Viga metálica')
-    expect(celulas[0]).not.toHaveTextContent('Viga')
+    expect(celulas[0]).toHaveTextContent('LT-0001')
+    expect(celulas[1]).toHaveTextContent('103.000.001')
+    expect(celulas[2]).toHaveTextContent('Viga metálica')
+    expect(celulas[1]).not.toHaveTextContent('Viga')
   })
 
   it('versão ativa oferece retirar de uso, e não ativar', async () => {

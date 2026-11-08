@@ -50,6 +50,13 @@ public class ListaTecnicaRepositoryEmMemoria implements ListaTecnicaRepository {
                 .toList();
     }
 
+    private long ultimoNumero = 0;
+
+    @Override
+    public long proximoNumeroDeLista() {
+        return ++ultimoNumero;
+    }
+
     @Override
     public boolean existeVersaoParaMaterial(UUID materialId, String versao) {
         return dados.values().stream()

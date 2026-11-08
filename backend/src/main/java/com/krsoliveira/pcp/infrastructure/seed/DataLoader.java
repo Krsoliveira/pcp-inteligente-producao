@@ -251,6 +251,7 @@ public class DataLoader implements CommandLineRunner {
 
         Map<String, ListaTecnica> listas = new LinkedHashMap<>();
         Map<UUID, UUID> listaDoMaterial = new HashMap<>();
+        Map<UUID, Long> numeroDaListaDoMaterial = new HashMap<>();
         for (var linha : LeitorCsv.ler(DIRETORIO + "listas_tecnicas.csv")) {
             Material material = buscar(materiais, linha.get("material_codigo"), "material");
             if (material.getTipo() == TipoMaterial.MATERIA_PRIMA) {
@@ -259,7 +260,9 @@ public class DataLoader implements CommandLineRunner {
             }
             String chave = chaveLista(material.getCodigo(), linha.get("versao"));
             UUID listaId = listaDoMaterial.computeIfAbsent(material.getId(), id -> UUID.randomUUID());
-            ListaTecnica criada = ListaTecnica.criarVersao(material.getId(), listaId, linha.get("versao"),
+            long numeroLista = numeroDaListaDoMaterial.computeIfAbsent(material.getId(),
+                    id -> listaTecnicaRepository.proximoNumeroDeLista());
+            ListaTecnica criada = ListaTecnica.criarVersao(material.getId(), listaId, numeroLista, linha.get("versao"),
                     itensPorLista.getOrDefault(chave, List.of()), RESPONSAVEL);
             switch (linha.get("status")) {
                 case "ATIVA" -> criada.ativar(RESPONSAVEL);
@@ -270,11 +273,11 @@ public class DataLoader implements CommandLineRunner {
                 case "EM_REVISAO" -> { /* estado inicial de criar() */ }
                 default -> throw new IllegalStateException("Status de lista inválido: " + linha.get("status"));
             }
-            ListaTecnica lista = ListaTecnica.reconstituir(criada.getId(), criada.getListaId(), criada.getMaterialId(),
+            ListaTecnica lista = ListaTecnica.reconstituir(criada.getId(), criada.getListaId(), criada.getNumeroLista(), criada.getMaterialId(),
                     criada.getVersao(), criada.getStatus(), criada.getItens(),
                     assinatura(cadastradoEm, cadastradoEm));
             listaTecnicaRepository.salvar(lista);
-            String referencia = material.getCodigo() + " " + lista.getVersao();
+            String referencia = lista.referencia(material.getCodigo());
             registrar(TipoEntidade.LISTA_TECNICA, lista.getId(), referencia, AcaoAuditoria.CRIADO,
                     RESPONSAVEL, cadastradoEm,
                     Detalhes.com("material", material.getCodigo())

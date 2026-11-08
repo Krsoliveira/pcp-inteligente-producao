@@ -92,6 +92,50 @@ class VersoesDeListaTecnicaApiTest {
     }
 
     @Test
+    @DisplayName("o número da lista (LT-0001) é o mesmo em todas as versões, diferente entre listas, e vai na comparação")
+    @SuppressWarnings("unchecked")
+    void numeroDaLista() {
+        Map<String, Object> v1 = buscar(idV1);
+        Map<String, Object> v3 = buscar(idV3);
+        Map<String, Object> chapa = buscar(idChapaV1);
+
+        assertThat((String) v1.get("numeroLista")).startsWith("LT-").isEqualTo(v3.get("numeroLista"));
+        assertThat(chapa.get("numeroLista")).isNotEqualTo(v1.get("numeroLista"));
+        Map<String, Object> corpo = comparar(idV1, idV2).getBody();
+        assertThat(((Map<String, Object>) corpo.get("versaoA")).get("numeroLista")).isEqualTo(v1.get("numeroLista"));
+        assertThat(((Map<String, Object>) corpo.get("versaoB")).get("numeroLista")).isEqualTo(v1.get("numeroLista"));
+    }
+
+    @Test
+    @DisplayName("criar listas ao mesmo tempo para materiais diferentes nunca repete o número")
+    void numerosDistintosEmCriacaoSimultanea() throws Exception {
+        int quantidade = 10;
+        List<String> materiais = new java.util.ArrayList<>();
+        for (int i = 0; i < quantidade; i++) {
+            materiais.add(criarMaterial("Produto simultâneo " + i, "PRODUTO_ACABADO", "un"));
+        }
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(quantidade);
+        java.util.concurrent.CountDownLatch largada = new java.util.concurrent.CountDownLatch(1);
+        try {
+            List<java.util.concurrent.Future<String>> ids = new java.util.ArrayList<>();
+            for (String material : materiais) {
+                ids.add(pool.submit(() -> {
+                    largada.await();
+                    return cadastrarVersao(material, "v1", item(idAco, 1.0, "kg"));
+                }));
+            }
+            largada.countDown();
+            java.util.Set<Object> numeros = new java.util.HashSet<>();
+            for (java.util.concurrent.Future<String> id : ids) {
+                numeros.add(buscar(id.get()).get("numeroLista"));
+            }
+            assertThat(numeros).hasSize(quantidade);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    @Test
     @DisplayName("ativar uma versão não obsoleta as outras: v1 e v2 ficam ativas ao mesmo tempo")
     void variasVersoesAtivas() {
         assertThat(buscar(idV1)).containsEntry("status", "ATIVA");

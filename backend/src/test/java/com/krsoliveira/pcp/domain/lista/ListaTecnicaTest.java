@@ -27,7 +27,7 @@ class ListaTecnicaTest {
     }
 
     private ListaTecnica listaValida() {
-        return ListaTecnica.criar(MATERIAL_ID, "v1", itensValidos(), USUARIO);
+        return ListaTecnica.criar(MATERIAL_ID, 1L, "v1", itensValidos(), USUARIO);
     }
 
     @Nested
@@ -35,14 +35,14 @@ class ListaTecnicaTest {
     class QuantidadeBase {
 
         private ListaTecnica comBase(String base) {
-            return ListaTecnica.criar(MATERIAL_ID, "v1", new BigDecimal(base), itensValidos(), USUARIO);
+            return ListaTecnica.criar(MATERIAL_ID, 1L, "v1", new BigDecimal(base), itensValidos(), USUARIO);
         }
 
         @Test
         @DisplayName("sem informar, a base é 1: as listas continuam significando 'por 1 unidade'")
         void padraoEhUm() {
             assertThat(listaValida().getQuantidadeBase()).isEqualByComparingTo("1");
-            assertThat(ListaTecnica.criarVersao(MATERIAL_ID, UUID.randomUUID(), "v2", itensValidos(), USUARIO).getQuantidadeBase())
+            assertThat(ListaTecnica.criarVersao(MATERIAL_ID, UUID.randomUUID(), 1L, "v2", itensValidos(), USUARIO).getQuantidadeBase())
                     .isEqualByComparingTo("1");
         }
 
@@ -60,7 +60,7 @@ class ListaTecnicaTest {
         void recusaBasesInvalidas() {
             assertThatThrownBy(() -> comBase("0")).isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("maior que zero");
             assertThatThrownBy(() -> comBase("-1")).isInstanceOf(RegraDeNegocioException.class);
-            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, "v1", (BigDecimal) null, itensValidos(), USUARIO))
+            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, 1L, "v1", (BigDecimal) null, itensValidos(), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class);
             assertThatThrownBy(() -> comBase("1.00001")).isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("4 casas");
             assertThatThrownBy(() -> comBase("100000000")).isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("menor que");
@@ -90,9 +90,9 @@ class ListaTecnicaTest {
         void reconstituir() {
             ListaTecnica base = comBase("100");
 
-            ListaTecnica igual = ListaTecnica.reconstituir(base.getId(), base.getListaId(), MATERIAL_ID, "v1", new BigDecimal("100"),
+            ListaTecnica igual = ListaTecnica.reconstituir(base.getId(), base.getListaId(), 1L, MATERIAL_ID, "v1", new BigDecimal("100"),
                     base.getStatus(), itensValidos(), base.getAssinatura());
-            ListaTecnica antiga = ListaTecnica.reconstituir(base.getId(), base.getListaId(), MATERIAL_ID, "v1",
+            ListaTecnica antiga = ListaTecnica.reconstituir(base.getId(), base.getListaId(), 1L, MATERIAL_ID, "v1",
                     base.getStatus(), itensValidos(), base.getAssinatura());
 
             assertThat(igual.getQuantidadeBase()).isEqualByComparingTo("100");
@@ -118,16 +118,50 @@ class ListaTecnicaTest {
         void criarVersaoReaproveitaListaId() {
             UUID listaId = UUID.randomUUID();
 
-            ListaTecnica v2 = ListaTecnica.criarVersao(MATERIAL_ID, listaId, "v2", itensValidos(), USUARIO);
+            ListaTecnica v2 = ListaTecnica.criarVersao(MATERIAL_ID, listaId, 1L, "v2", itensValidos(), USUARIO);
 
             assertThat(v2.getListaId()).isEqualTo(listaId);
             assertThat(v2.getStatus()).isEqualTo(StatusListaTecnica.EM_REVISAO);
         }
 
         @Test
+        @DisplayName("o número da lista é guardado e aparece formatado como LT-0007")
+        void numeroDaLista() {
+            ListaTecnica lista = ListaTecnica.criar(MATERIAL_ID, 7L, "v1", itensValidos(), USUARIO);
+
+            assertThat(lista.getNumeroLista()).isEqualTo(7L);
+            assertThat(lista.getNumeroFormatado()).isEqualTo("LT-0007");
+        }
+
+        @Test
+        @DisplayName("a referência da auditoria junta número, código do material e versão")
+        void referenciaDaAuditoria() {
+            ListaTecnica lista = ListaTecnica.criar(MATERIAL_ID, 7L, "v1", itensValidos(), USUARIO);
+
+            assertThat(lista.referencia("MAT-000001")).isEqualTo("LT-0007 · MAT-000001 v1");
+        }
+
+        @Test
+        @DisplayName("o número da lista deve ser maior que zero")
+        void numeroDaListaInvalido() {
+            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, 0L, "v1", itensValidos(), USUARIO))
+                    .isInstanceOf(RegraDeNegocioException.class).hasMessageContaining("número da lista");
+            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, -3L, "v1", itensValidos(), USUARIO))
+                    .isInstanceOf(RegraDeNegocioException.class);
+        }
+
+        @Test
+        @DisplayName("nova versão leva o número da lista que recebeu")
+        void versaoLevaONumeroDaLista() {
+            ListaTecnica v2 = ListaTecnica.criarVersao(MATERIAL_ID, UUID.randomUUID(), 12L, "v2", itensValidos(), USUARIO);
+
+            assertThat(v2.getNumeroFormatado()).isEqualTo("LT-0012");
+        }
+
+        @Test
         @DisplayName("criarVersao exige o listaId")
         void criarVersaoExigeListaId() {
-            assertThatThrownBy(() -> ListaTecnica.criarVersao(MATERIAL_ID, null, "v2", itensValidos(), USUARIO))
+            assertThatThrownBy(() -> ListaTecnica.criarVersao(MATERIAL_ID, null, 1L, "v2", itensValidos(), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class);
         }
 
@@ -146,7 +180,7 @@ class ListaTecnicaTest {
         @Test
         @DisplayName("rejeita lista sem itens")
         void rejeitaListaSemItens() {
-            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, "v1", List.of(), USUARIO))
+            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, 1L, "v1", List.of(), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("componente");
         }
@@ -154,7 +188,7 @@ class ListaTecnicaTest {
         @Test
         @DisplayName("rejeita versão em branco")
         void rejeitaVersaoEmBranco() {
-            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, "  ", itensValidos(), USUARIO))
+            assertThatThrownBy(() -> ListaTecnica.criar(MATERIAL_ID, 1L, "  ", itensValidos(), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("versão");
         }
@@ -162,7 +196,7 @@ class ListaTecnicaTest {
         @Test
         @DisplayName("rejeita material nulo")
         void rejeitaMaterialNulo() {
-            assertThatThrownBy(() -> ListaTecnica.criar(null, "v1", itensValidos(), USUARIO))
+            assertThatThrownBy(() -> ListaTecnica.criar(null, 1L, "v1", itensValidos(), USUARIO))
                     .isInstanceOf(RegraDeNegocioException.class)
                     .hasMessageContaining("material");
         }

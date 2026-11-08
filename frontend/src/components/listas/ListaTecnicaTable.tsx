@@ -32,6 +32,7 @@ interface ListaTecnicaTableProps {
 /** Colunas que as telas ordenam e filtram; o texto é o que aparece na célula. */
 export function colunasDeListas(materialPorId: Map<string, Material>): Coluna<ListaTecnica>[] {
   return [
+    { chave: 'numero', rotulo: 'Lista', valor: (l) => l.numeroLista },
     {
       chave: 'codigo', rotulo: 'Código',
       valor: (l) => nomeDoMaterialDaLista(l, materialPorId)?.codigo,
@@ -54,6 +55,7 @@ export function ListaTecnicaTable({ listas, materialPorId, onAtivar, onRetirarDe
       <Table size="small">
         <TableHead>
           <TableRow>
+            <CelulaDeCabecalho chave="numero" rotulo="Lista" controle={controle} />
             <CelulaDeCabecalho chave="codigo" rotulo="Código" controle={controle} />
             <CelulaDeCabecalho chave="descricao" rotulo="Descrição" controle={controle} />
             <CelulaDeCabecalho chave="versao" rotulo="Versão" controle={controle} />
@@ -67,6 +69,9 @@ export function ListaTecnicaTable({ listas, materialPorId, onAtivar, onRetirarDe
             const material = nomeDoMaterialDaLista(l, materialPorId)
             return (
               <TableRow key={l.id} hover onClick={() => navigate(`/listas-tecnicas/${l.id}`)} sx={{ cursor: 'pointer' }}>
+                <TableCell>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{l.numeroLista}</Typography>
+                </TableCell>
                 <TableCell>
                   <LinkDaLinha para={`/listas-tecnicas/${l.id}`} monoespacado>{material?.codigo ? formatarCodigoMaterial(material.codigo) : '—'}</LinkDaLinha>
                 </TableCell>

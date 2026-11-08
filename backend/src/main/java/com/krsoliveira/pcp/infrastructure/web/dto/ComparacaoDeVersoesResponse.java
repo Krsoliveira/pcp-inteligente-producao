@@ -22,10 +22,10 @@ public record ComparacaoDeVersoesResponse(
         List<ItemComparadoResponse> iguais
 ) {
     public record VersaoResumo(UUID id, UUID listaId, UUID materialId, String versao, BigDecimal quantidadeBase,
-                               StatusListaTecnica status) {
+                               StatusListaTecnica status, String numeroLista) {
         static VersaoResumo de(ListaTecnica lista) {
             return new VersaoResumo(lista.getId(), lista.getListaId(), lista.getMaterialId(),
-                    lista.getVersao(), lista.getQuantidadeBase(), lista.getStatus());
+                    lista.getVersao(), lista.getQuantidadeBase(), lista.getStatus(), lista.getNumeroFormatado());
         }
     }
 

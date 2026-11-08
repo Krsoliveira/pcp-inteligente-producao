@@ -65,6 +65,15 @@ public final class BancoDeTeste {
         return postgres.getJdbcUrl().replaceFirst("/" + postgres.getDatabaseName() + "(?=\\?|$)", "/" + nome);
     }
 
+    /** Banco vazio e sem Spring, para testes que migram por etapas (inserir dados antigos e só então migrar). */
+    static ConexaoDeTeste novoBancoParaMigracao(Class<?> classeDeTeste) {
+        PostgreSQLContainer postgres = conteiner();
+        return new ConexaoDeTeste(novoBanco(classeDeTeste), postgres.getUsername(), postgres.getPassword());
+    }
+
+    record ConexaoDeTeste(String url, String usuario, String senha) {
+    }
+
     /** Liga o banco próprio ao contexto da classe marcada com {@link BancoDeTesteIsolado}. */
     public static final class Fabrica implements ContextCustomizerFactory {
 

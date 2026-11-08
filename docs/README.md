@@ -11,6 +11,7 @@ Este diretório concentra toda a documentação do projeto. A regra é simples:
 | [`arquitetura.md`](arquitetura.md) | Camadas, fluxo de dados, diagramas e convenções | Antes de escrever ou revisar código |
 | [`glossario.md`](glossario.md) | Termos de PCP e termos técnicos usados no projeto | Sempre que um termo for desconhecido |
 | [`proximos-passos.md`](proximos-passos.md) | Estado atual do trabalho, pendências e próximos passos | Ao retomar o trabalho |
+| [`roteiro-de-testes.md`](roteiro-de-testes.md) | Roteiro de testes manuais: segurança, fluxo completo, desktop e celular, clareza e desempenho | Antes de uma entrega e nas rodadas de aceite |
 | [`adr/`](adr/) | ADRs — registros de decisões de arquitetura | Quando quiser saber *por que* algo é como é |
 
 ## O que é um ADR?
@@ -67,3 +68,5 @@ Regras dos ADRs deste projeto:
 | [0032](adr/0032-oxlint-no-frontend.md) | Oxlint como linter do frontend | Aceito |
 | [0033](adr/0033-deploy-railway-pro-com-nginx.md) | Deploy no Railway Pro, com o Nginx do frontend na frente da API | Aceito |
 | [0034](adr/0034-bloqueio-otimista-na-edicao.md) | Bloqueio otimista na edição de perfil de acesso e tipo de ordem | Aceito |
+| [0035](adr/0035-logs-de-seguranca-e-desempenho.md) | Logs de segurança, de atividade e de desempenho | Aceito |
+| [0036](adr/0036-numero-legivel-da-lista-tecnica.md) | Número legível da lista técnica (LT-0001) | Aceito |
