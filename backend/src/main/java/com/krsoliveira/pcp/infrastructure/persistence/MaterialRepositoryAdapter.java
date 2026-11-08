@@ -8,6 +8,7 @@ import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 import com.krsoliveira.pcp.domain.material.FiltroMateriais;
 import jakarta.persistence.criteria.Predicate;
+import java.util.Collection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -42,6 +43,11 @@ public class MaterialRepositoryAdapter implements MaterialRepository {
     @Override
     public Optional<Material> buscarPorId(UUID id) {
         return springDataRepository.findById(id).map(MaterialJpaEntity::paraDominio);
+    }
+
+    @Override
+    public List<Material> buscarPorIds(Collection<UUID> ids) {
+        return springDataRepository.findAllById(ids).stream().map(MaterialJpaEntity::paraDominio).toList();
     }
 
     @Override

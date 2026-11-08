@@ -1,5 +1,10 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import com.krsoliveira.pcp.application.material.ConsultarMateriais;
+import com.krsoliveira.pcp.domain.auditoria.Pagina;
+import com.krsoliveira.pcp.domain.lista.ListaTecnica;
+import com.krsoliveira.pcp.domain.material.Material;
+import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.lista.AtivarListaTecnica;
 import com.krsoliveira.pcp.application.lista.CadastrarListaTecnica;
@@ -41,17 +46,26 @@ public class ListaTecnicaController {
     private final RetirarListaTecnicaDeUso retirarListaTecnicaDeUso;
     private final CompararListasTecnicas compararListasTecnicas;
     private final ConsultarListaTecnica consultarListaTecnica;
+    private final ConsultarMateriais consultarMateriais;
 
     public ListaTecnicaController(CadastrarListaTecnica cadastrarListaTecnica,
                                   AtivarListaTecnica ativarListaTecnica,
                                   RetirarListaTecnicaDeUso retirarListaTecnicaDeUso,
                                   CompararListasTecnicas compararListasTecnicas,
-                                  ConsultarListaTecnica consultarListaTecnica) {
+                                  ConsultarListaTecnica consultarListaTecnica,
+                                  ConsultarMateriais consultarMateriais) {
         this.cadastrarListaTecnica = cadastrarListaTecnica;
         this.ativarListaTecnica = ativarListaTecnica;
         this.retirarListaTecnicaDeUso = retirarListaTecnicaDeUso;
         this.compararListasTecnicas = compararListasTecnicas;
         this.consultarListaTecnica = consultarListaTecnica;
+        this.consultarMateriais = consultarMateriais;
+    }
+
+    /** Converte as listas carregando os materiais citados de uma vez, para nomeá-los na resposta. */
+    private List<ListaTecnicaResponse> respostas(List<ListaTecnica> listas) {
+        Map<UUID, Material> materiais = consultarMateriais.porIds(ListaTecnicaResponse.materiaisCitados(listas));
+        return listas.stream().map(lista -> ListaTecnicaResponse.de(lista, materiais)).toList();
     }
 
     @PreAuthorize("hasAuthority('LISTA_CADASTRAR')")
@@ -98,7 +112,8 @@ public class ListaTecnicaController {
             @RequestParam(required = false) Integer tamanho) {
         var resultado = consultarListaTecnica.pesquisar(
                 new FiltroListasTecnicas(materialId, status), PedidoDePagina.de(pagina, tamanho));
-        return PaginaResponse.de(resultado, ListaTecnicaResponse::de);
+        List<ListaTecnicaResponse> itens = respostas(resultado.itens());
+        return PaginaResponse.de(new Pagina<>(itens, resultado.pagina(), resultado.tamanho(), resultado.total()), item -> item);
     }
 
     @PreAuthorize("hasAuthority('LISTA_COMPARAR') and hasAnyAuthority('LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS')")
@@ -115,8 +130,7 @@ public class ListaTecnicaController {
     @GetMapping("/{id}")
     @Operation(summary = "Buscar lista técnica por ID")
     public ResponseEntity<ListaTecnicaResponse> buscar(@PathVariable UUID id) {
-        return ResponseEntity.ok(
-                ListaTecnicaResponse.de(consultarListaTecnica.buscarPorId(id)));
+        return ResponseEntity.ok(respostas(List.of(consultarListaTecnica.buscarPorId(id))).getFirst());
     }
 
     @PreAuthorize("hasAnyAuthority('LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS')")
@@ -130,7 +144,6 @@ public class ListaTecnicaController {
         var listas = materialId == null
                 ? consultarListaTecnica.listarTodas()
                 : consultarListaTecnica.listarPorMaterial(materialId);
-        List<ListaTecnicaResponse> resposta = listas.stream().map(ListaTecnicaResponse::de).toList();
-        return ResponseEntity.ok(resposta);
+        return ResponseEntity.ok(respostas(listas));
     }
 }
