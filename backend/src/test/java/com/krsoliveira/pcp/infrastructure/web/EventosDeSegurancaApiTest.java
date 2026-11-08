@@ -16,6 +16,7 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRe
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +48,9 @@ class EventosDeSegurancaApiTest {
     private TestRestTemplate rest;
 
     private final ListAppender<ILoggingEvent> registros = new ListAppender<>();
+    private final ListAppender<ILoggingEvent> atividade = new ListAppender<>();
     private Logger logDeSeguranca;
+    private Logger logDeAtividade;
 
     @BeforeEach
     void ouvirOLog() {
@@ -55,12 +58,18 @@ class EventosDeSegurancaApiTest {
         logDeSeguranca.setLevel(Level.INFO);
         registros.start();
         logDeSeguranca.addAppender(registros);
+        logDeAtividade = (Logger) LoggerFactory.getLogger("pcp.atividade");
+        logDeAtividade.setLevel(Level.INFO);
+        atividade.start();
+        logDeAtividade.addAppender(atividade);
     }
 
     @AfterEach
     void pararDeOuvir() {
         logDeSeguranca.detachAppender(registros);
         registros.stop();
+        logDeAtividade.detachAppender(atividade);
+        atividade.stop();
     }
 
     @Test
@@ -103,6 +112,27 @@ class EventosDeSegurancaApiTest {
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(mensagens()).contains("acesso_negado usuario=c***@teste.local requisicao=POST /api/v1/acessos/usuarios");
         assertThat(mensagens()).noneMatch(m -> m.contains(token));
+    }
+
+    @Test
+    @DisplayName("escrita recusada vira uma linha de atividade WARN com o usuário e o status; leitura e login não")
+    void atividadeNaCadeiaDeSeguranca() {
+        cadastrar("dora.logs@teste.local");
+        String token = (String) login("dora.logs@teste.local", SENHA).getBody().get("token");
+        HttpHeaders cabecalhos = new HttpHeaders();
+        cabecalhos.setContentType(MediaType.APPLICATION_JSON);
+        cabecalhos.setBearerAuth(token);
+
+        rest.exchange("/api/v1/acessos/eu", HttpMethod.GET, new HttpEntity<>(cabecalhos), Map.class);
+        rest.postForEntity("/api/v1/acessos/usuarios", new HttpEntity<>(Map.of(
+                "nome", "Alguém", "email", "alguem@teste.local", "senhaProvisoria", "Provisoria@1",
+                "perfilId", UUID.randomUUID().toString()), cabecalhos), Map.class);
+
+        assertThat(atividade.list).singleElement().satisfies(evento -> {
+            assertThat(evento.getLevel()).isEqualTo(Level.WARN);
+            assertThat(evento.getFormattedMessage())
+                    .startsWith("requisicao usuario=d***@teste.local POST /api/v1/acessos/usuarios status=403 duracaoMs=");
+        });
     }
 
     private List<String> mensagens() {
