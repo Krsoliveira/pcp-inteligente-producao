@@ -43,7 +43,8 @@ public class UsuarioDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         Usuario usuario = usuarioRepository.porEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
-        return new UsuarioAutenticado(usuario.getEmail(), usuario.getSenhaHash(), autoridadesDe(usuario), usuario.getSenhaAlteradaEm());
+        return new UsuarioAutenticado(usuario.getEmail(), usuario.getSenhaHash(), usuario.isAtivo(), autoridadesDe(usuario),
+                usuario.getSenhaAlteradaEm());
     }
 
     private List<GrantedAuthority> autoridadesDe(Usuario usuario) {

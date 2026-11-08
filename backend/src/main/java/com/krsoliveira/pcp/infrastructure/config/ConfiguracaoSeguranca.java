@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -182,6 +183,14 @@ public class ConfiguracaoSeguranca {
     public AuthenticationManager authenticationManager() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(usuarioDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
+        // Usuário desativado só é recusado depois de conferir a senha: com senha errada ou certa, a resposta e o tempo
+        // são os de "e-mail ou senha incorretos". Conferir antes deixaria descobrir que a conta existe.
+        provider.setPreAuthenticationChecks(usuario -> { });
+        provider.setPostAuthenticationChecks(usuario -> {
+            if (!usuario.isEnabled()) {
+                throw new DisabledException("Usuário desativado");
+            }
+        });
         return new ProviderManager(provider);
     }
 

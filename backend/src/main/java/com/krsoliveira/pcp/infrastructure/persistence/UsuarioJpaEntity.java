@@ -41,6 +41,9 @@ class UsuarioJpaEntity {
     @Column(name = "senha_alterada_em")
     private Instant senhaAlteradaEm;
 
+    @Column(nullable = false)
+    private boolean ativo;
+
     protected UsuarioJpaEntity() {}
 
     static UsuarioJpaEntity de(Usuario usuario) {
@@ -53,10 +56,11 @@ class UsuarioJpaEntity {
         e.deveTrocarSenha = usuario.isDeveTrocarSenha();
         e.criadoEm = usuario.getCriadoEm();
         e.senhaAlteradaEm = usuario.getSenhaAlteradaEm();
+        e.ativo = usuario.isAtivo();
         return e;
     }
 
     Usuario paraDominio() {
-        return Usuario.reconstituir(id, nome, email, senhaHash, perfilId, deveTrocarSenha, criadoEm, senhaAlteradaEm);
+        return Usuario.reconstituir(id, nome, email, senhaHash, perfilId, deveTrocarSenha, criadoEm, senhaAlteradaEm, ativo);
     }
 }

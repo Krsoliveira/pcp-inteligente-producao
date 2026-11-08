@@ -46,6 +46,16 @@ public class UsuarioRepositoryEmMemoria implements UsuarioRepository {
         return usuarios.stream().filter(u -> u.getPerfilId().equals(perfilId)).count();
     }
 
+    @Override
+    public long contarAtivosPorPerfil(UUID perfilId) {
+        return usuarios.stream().filter(u -> u.getPerfilId().equals(perfilId) && u.isAtivo()).count();
+    }
+
+    @Override
+    public Optional<Usuario> porIdParaAtualizar(UUID id) {
+        return porId(id);
+    }
+
     public List<Usuario> todos() {
         return List.copyOf(usuarios);
     }

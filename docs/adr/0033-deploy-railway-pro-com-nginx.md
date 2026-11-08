@@ -64,7 +64,7 @@ O ADR-0013 escolheu o Railway antes de existir qualquer artefato de deploy. Desd
   - **Imagens base:** dependem de atualização; o CI ainda não gera nem varre as imagens.
   - **Google Fonts:** a fonte Inter vem do Google, então o navegador do usuário fala com um terceiro. *(Resolvido em 2026-11-07: a fonte passou a ser servida pela aplicação, com `@fontsource-variable/inter`, e a CSP ficou só em `'self'`.)*
 - **Pendências:**
-  - job no CI que gere e varra as duas imagens;
-  - Dependabot para as imagens base (`docker`);
-  - fonte servida pela própria aplicação;
+  - ~~job no CI que gere e varra as duas imagens~~ (2026-11-07: job "Container scan", Trivy na imagem, falha em HIGH/CRITICAL com correção);
+  - ~~Dependabot para as imagens base (`docker`)~~ (2026-11-07);
+  - ~~fonte servida pela própria aplicação~~ (2026-11-07);
   - métricas e alertas quando houver uso real.

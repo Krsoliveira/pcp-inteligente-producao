@@ -67,3 +67,13 @@ export const trocarMinhaSenha = async (senhaAtual: string, novaSenha: string): P
 export const redefinirSenha = async (usuarioId: string, senhaProvisoria: string): Promise<void> => {
   await apiClient.post(`/v1/acessos/usuarios/${usuarioId}/redefinir-senha`, { senhaProvisoria })
 }
+
+/** Tira o acesso sem excluir: o usuário não entra e perde a sessão aberta. */
+export const desativarUsuario = async (usuarioId: string): Promise<void> => {
+  await apiClient.post(`/v1/acessos/usuarios/${usuarioId}/desativar`)
+}
+
+/** Devolve o acesso, com o mesmo perfil e a mesma senha. */
+export const reativarUsuario = async (usuarioId: string): Promise<void> => {
+  await apiClient.post(`/v1/acessos/usuarios/${usuarioId}/reativar`)
+}

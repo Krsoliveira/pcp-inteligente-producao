@@ -26,5 +26,9 @@ public enum AcaoAuditoria {
     /** O próprio usuário trocou a senha (a senha nunca vai para a trilha). */
     SENHA_ALTERADA,
     /** Um gestor redefiniu a senha de um usuário. */
-    SENHA_REDEFINIDA
+    SENHA_REDEFINIDA,
+    /** Um gestor tirou o acesso de um usuário, sem excluí-lo. */
+    USUARIO_DESATIVADO,
+    /** Um gestor devolveu o acesso a um usuário desativado. */
+    USUARIO_REATIVADO
 }

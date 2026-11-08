@@ -121,3 +121,17 @@ troca é segura e a coluna antiga é removida na mesma migração.
   inválido recebe 400. Não vaza dado nem permite agir; os testes usam corpos válidos para provar o 403.
 - **Pendências**: troca de senha obrigatória no primeiro acesso; exceções de permissão por usuário; vários
   perfis por usuário, se o uso pedir.
+
+## Atualização de 2026-11-07: desativar usuário sem excluí-lo
+
+- **Coluna `usuario.ativo`** (V21, padrão `true`). Endpoints `POST /api/v1/acessos/usuarios/{id}/desativar` e
+  `/reativar`, com `USUARIO_GERENCIAR`. Valem as regras de gestão de usuários: só se alcança quem tem perfil ao alcance
+  do gestor, e nunca o próprio usuário (403).
+- **Efeito:** desativado não entra e perde a sessão aberta na requisição seguinte, porque o filtro recarrega o usuário
+  a cada chamada. Ele continua na lista, na trilha de auditoria e nas assinaturas, e volta com o mesmo perfil e a mesma
+  senha. Ações `USUARIO_DESATIVADO` e `USUARIO_REATIVADO` na trilha.
+- **Sem revelar a conta:** o login confere a senha antes da situação. Desativado com senha certa ou errada recebe o
+  mesmo 401 "E-mail ou senha incorretos.", no mesmo tempo.
+- **Último Administrador:** o sistema precisa de ao menos um Administrador **ativo**. Desativar e trocar perfil contam
+  só os ativos e travam o perfil Administrador, para duas ações simultâneas não zerarem os ativos. Excluir perfil conta
+  todos os usuários, porque um perfil em uso, mesmo por desativado, não se exclui.
