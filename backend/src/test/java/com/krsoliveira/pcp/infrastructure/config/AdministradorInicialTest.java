@@ -50,6 +50,16 @@ class AdministradorInicialTest {
         public long contarPorPerfil(UUID perfilId) {
             return usuarios.values().stream().filter(u -> u.getPerfilId().equals(perfilId)).count();
         }
+
+        @Override
+        public long contarAtivosPorPerfil(UUID perfilId) {
+            return usuarios.values().stream().filter(u -> u.getPerfilId().equals(perfilId) && u.isAtivo()).count();
+        }
+
+        @Override
+        public Optional<Usuario> porIdParaAtualizar(UUID id) {
+            return porId(id);
+        }
     };
 
     private final PerfilAcessoRepositoryEmMemoria perfis = new PerfilAcessoRepositoryEmMemoria();

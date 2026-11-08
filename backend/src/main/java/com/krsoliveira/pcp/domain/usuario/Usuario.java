@@ -1,5 +1,7 @@
 package com.krsoliveira.pcp.domain.usuario;
 
+import com.krsoliveira.pcp.domain.RegraDeNegocioException;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -17,9 +19,11 @@ public class Usuario {
     private boolean deveTrocarSenha;
     private final Instant criadoEm;
     private Instant senhaAlteradaEm;
+    /** Desativado não entra nem usa sessão aberta, mas continua na trilha de auditoria e nas assinaturas. */
+    private boolean ativo;
 
     private Usuario(UUID id, String nome, String email, String senhaHash,
-                    UUID perfilId, boolean deveTrocarSenha, Instant criadoEm, Instant senhaAlteradaEm) {
+                    UUID perfilId, boolean deveTrocarSenha, Instant criadoEm, Instant senhaAlteradaEm, boolean ativo) {
         this.id = id;
         this.nome = nome;
         this.email = email;
@@ -28,6 +32,7 @@ public class Usuario {
         this.deveTrocarSenha = deveTrocarSenha;
         this.criadoEm = criadoEm;
         this.senhaAlteradaEm = senhaAlteradaEm;
+        this.ativo = ativo;
     }
 
     /**
@@ -48,7 +53,7 @@ public class Usuario {
             throw new IllegalArgumentException("Perfil é obrigatório.");
         }
         return new Usuario(UUID.randomUUID(), nome.trim(), email.trim().toLowerCase(),
-                senhaHash, perfilId, false, Instant.now(), null);
+                senhaHash, perfilId, false, Instant.now(), null, true);
     }
 
     /**
@@ -66,8 +71,25 @@ public class Usuario {
      * Não revalida invariantes: os dados já passaram por {@link #criar}.
      */
     public static Usuario reconstituir(UUID id, String nome, String email, String senhaHash,
-                                       UUID perfilId, boolean deveTrocarSenha, Instant criadoEm, Instant senhaAlteradaEm) {
-        return new Usuario(id, nome, email, senhaHash, perfilId, deveTrocarSenha, criadoEm, senhaAlteradaEm);
+                                       UUID perfilId, boolean deveTrocarSenha, Instant criadoEm, Instant senhaAlteradaEm,
+                                       boolean ativo) {
+        return new Usuario(id, nome, email, senhaHash, perfilId, deveTrocarSenha, criadoEm, senhaAlteradaEm, ativo);
+    }
+
+    /** Tira o acesso sem apagar o usuário. Quem pode, e se é o último Administrador, é decidido pelo caso de uso. */
+    public void desativar() {
+        if (!ativo) {
+            throw new RegraDeNegocioException("O usuário %s já está desativado.".formatted(email));
+        }
+        this.ativo = false;
+    }
+
+    /** Devolve o acesso, com o mesmo perfil e a mesma senha de antes. */
+    public void reativar() {
+        if (ativo) {
+            throw new RegraDeNegocioException("O usuário %s já está ativo.".formatted(email));
+        }
+        this.ativo = true;
     }
 
     /** O próprio usuário definiu uma senha nova: a troca obrigatória, se havia, deixa de valer. */
@@ -106,6 +128,7 @@ public class Usuario {
     public String getSenhaHash() { return senhaHash; }
     public UUID getPerfilId() { return perfilId; }
     public boolean isDeveTrocarSenha() { return deveTrocarSenha; }
+    public boolean isAtivo() { return ativo; }
     public Instant getCriadoEm() { return criadoEm; }
     /** Última mudança de senha; nula se não mudou desde que isso passou a ser guardado. Token emitido antes não vale. */
     public Instant getSenhaAlteradaEm() { return senhaAlteradaEm; }

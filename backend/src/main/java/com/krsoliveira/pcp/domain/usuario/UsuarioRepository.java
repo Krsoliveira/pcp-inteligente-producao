@@ -16,9 +16,15 @@ public interface UsuarioRepository {
 
     Optional<Usuario> porId(UUID id);
 
+    /** Busca travando o usuário até o fim da transação (SELECT ... FOR UPDATE). */
+    Optional<Usuario> porIdParaAtualizar(UUID id);
+
     /** Por nome, em ordem alfabética. */
     List<Usuario> listarTodos();
 
-    /** Quantos usuários têm este perfil. */
+    /** Quantos usuários têm este perfil, ativos ou não (um perfil em uso, mesmo por desativado, não se exclui). */
     long contarPorPerfil(UUID perfilId);
+
+    /** Quantos usuários ativos têm este perfil (o sistema precisa de ao menos um Administrador ativo). */
+    long contarAtivosPorPerfil(UUID perfilId);
 }

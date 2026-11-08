@@ -8,6 +8,7 @@ import com.krsoliveira.pcp.application.acesso.ConsultarUsuarioLogado;
 import com.krsoliveira.pcp.application.acesso.CriarPerfilAcesso;
 import com.krsoliveira.pcp.application.acesso.CriarUsuarioPorGestor;
 import com.krsoliveira.pcp.application.acesso.ExcluirPerfilAcesso;
+import com.krsoliveira.pcp.application.acesso.DesativacaoDeUsuario;
 import com.krsoliveira.pcp.application.acesso.RedefinirSenhaDoUsuario;
 import com.krsoliveira.pcp.application.acesso.TrocarMinhaSenha;
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
@@ -330,6 +331,12 @@ public class ConfiguracaoCasosDeUso {
                                                     CodificadorDeSenha codificadorDeSenha,
                                                     PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
         return new RedefinirSenhaDoUsuario(usuarioRepository, perfilRepository, codificadorDeSenha, permissoesAtuais, execucao);
+    }
+
+    @Bean
+    DesativacaoDeUsuario desativacaoDeUsuario(UsuarioRepository usuarioRepository, PerfilAcessoRepository perfilRepository,
+                                              PermissoesDoUsuarioAtual permissoesAtuais, ExecucaoAuditada execucao) {
+        return new DesativacaoDeUsuario(usuarioRepository, perfilRepository, permissoesAtuais, execucao);
     }
 
     @Bean

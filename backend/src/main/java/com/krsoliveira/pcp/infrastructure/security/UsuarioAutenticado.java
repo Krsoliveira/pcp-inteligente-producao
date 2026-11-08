@@ -11,8 +11,9 @@ class UsuarioAutenticado extends User {
 
     private final transient Instant senhaAlteradaEm;
 
-    UsuarioAutenticado(String email, String senhaHash, Collection<? extends GrantedAuthority> autoridades, Instant senhaAlteradaEm) {
-        super(email, senhaHash, autoridades);
+    UsuarioAutenticado(String email, String senhaHash, boolean ativo, Collection<? extends GrantedAuthority> autoridades,
+                       Instant senhaAlteradaEm) {
+        super(email, senhaHash, ativo, true, true, true, autoridades);
         this.senhaAlteradaEm = senhaAlteradaEm;
     }
 

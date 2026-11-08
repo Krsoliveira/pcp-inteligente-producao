@@ -390,6 +390,8 @@ export type AcaoAuditoria =
   | 'PERFIL_ATRIBUIDO'
   | 'SENHA_ALTERADA'
   | 'SENHA_REDEFINIDA'
+  | 'USUARIO_DESATIVADO'
+  | 'USUARIO_REATIVADO'
 
 /** Mudança de valor registrada na trilha: {"de": ..., "para": ...}. */
 export interface MudancaAuditoria {
@@ -611,6 +613,8 @@ export interface UsuarioAcesso {
   perfilId: string
   perfilNome: string | null
   criadoEm: string
+  /** Desativado não entra; continua na lista e no histórico e pode ser reativado. */
+  ativo: boolean
 }
 
 export interface CriarUsuarioRequest {

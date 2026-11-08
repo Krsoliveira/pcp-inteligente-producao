@@ -47,7 +47,8 @@ public class JwtService {
     /** Verifica assinatura, e-mail, expiração e se o token não é anterior à última mudança de senha. */
     public boolean isValido(String token, UserDetails userDetails) {
         String email = extrairEmail(token);
-        return email.equals(userDetails.getUsername()) && !isExpirado(token) && !anteriorAMudancaDeSenha(token, userDetails);
+        return email.equals(userDetails.getUsername()) && userDetails.isEnabled() && !isExpirado(token)
+                && !anteriorAMudancaDeSenha(token, userDetails);
     }
 
     /**

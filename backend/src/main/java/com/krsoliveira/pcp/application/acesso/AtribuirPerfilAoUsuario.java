@@ -79,7 +79,7 @@ public class AtribuirPerfilAoUsuario {
      */
     private void exigirOutroAdministrador(PerfilAcesso administrador) {
         perfilRepository.buscarPorIdParaAtualizar(administrador.getId());
-        if (usuarioRepository.contarPorPerfil(administrador.getId()) <= 1) {
+        if (usuarioRepository.contarAtivosPorPerfil(administrador.getId()) <= 1) {
             throw new RegraDeNegocioException(
                     "Este é o último usuário com o perfil Administrador; o sistema precisa de ao menos um.");
         }
