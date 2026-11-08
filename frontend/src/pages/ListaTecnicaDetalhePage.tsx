@@ -34,6 +34,7 @@ import { TIPO_COR } from '../components/materiais/MaterialTable'
 import { formatarCodigoMaterial, formatarDataHora, formatarQuantidade } from '../utils/formatacao'
 import { mensagemDeErroAoCarregar, mensagemDeErroDaApi } from '../utils/mensagensDeErro'
 import { TIPO_MATERIAL_LABEL } from '../types'
+import { nomeDoComponente, nomeDoMaterialDaLista } from '../components/listas/nomesDaLista'
 
 /** Detalhe da lista técnica: a "receita" (componentes e quantidades) de uma versão. */
 export function ListaTecnicaDetalhePage() {
@@ -72,12 +73,13 @@ export function ListaTecnicaDetalhePage() {
   }
 
   const material = materialPorId.get(lista.materialId)
-  const codigo = material ? formatarCodigoMaterial(material.codigo) : '—'
+  const nomeDaLista = nomeDoMaterialDaLista(lista, materialPorId)
+  const codigo = nomeDaLista?.codigo ? formatarCodigoMaterial(nomeDaLista.codigo) : '—'
 
   return (
     <Box>
       <PageHeader
-        titulo={material?.descricao ?? 'Lista técnica'}
+        titulo={nomeDaLista?.descricao ?? 'Lista técnica'}
         subtitulo={`${codigo} · versão ${lista.versao}`}
         breadcrumbs={[
           { label: 'Cadastros' },
@@ -116,7 +118,7 @@ export function ListaTecnicaDetalhePage() {
               </Box>
               <Divider sx={{ mb: 2 }} />
               <Grid container spacing={1.5}>
-                <InfoRow label="Material">{material ? `${codigo} — ${material.descricao}` : '—'}</InfoRow>
+                <InfoRow label="Material">{nomeDaLista ? `${codigo} — ${nomeDaLista.descricao ?? ''}` : '—'}</InfoRow>
                 <InfoRow label="Versão">
                   <Chip label={lista.versao} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} />
                 </InfoRow>
@@ -162,6 +164,7 @@ export function ListaTecnicaDetalhePage() {
                 <TableBody>
                   {lista.itens.map((item, i) => {
                     const componente = materialPorId.get(item.materialComponenteId)
+                    const nomeDoItem = nomeDoComponente(item, materialPorId)
                     return (
                       <TableRow key={item.id} hover>
                         <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{i + 1}</Typography></TableCell>
@@ -170,10 +173,10 @@ export function ListaTecnicaDetalhePage() {
                             variant="body2"
                             noWrap
                             sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
-                            {componente ? formatarCodigoMaterial(componente.codigo) : '—'}
+                            {nomeDoItem?.codigo ? formatarCodigoMaterial(nomeDoItem.codigo) : '—'}
                           </Typography>
                         </TableCell>
-                        <TableCell>{componente?.descricao ?? `${item.materialComponenteId.substring(0, 8)}…`}</TableCell>
+                        <TableCell>{nomeDoItem?.descricao ?? `${item.materialComponenteId.substring(0, 8)}…`}</TableCell>
                         <TableCell>
                           {componente && (
                             <Chip label={TIPO_MATERIAL_LABEL[componente.tipo]} size="small"
@@ -246,7 +249,7 @@ export function ListaTecnicaDetalhePage() {
 
       <RetirarDeUsoDialog
         lista={retirando ? lista : null}
-        nomeDoMaterial={material ? `${codigo} — ${material.descricao}` : 'Material'}
+        nomeDoMaterial={nomeDaLista ? `${codigo} — ${nomeDaLista.descricao ?? ''}` : 'Material'}
         onFechar={() => setRetirando(false)}
       />
     </Box>

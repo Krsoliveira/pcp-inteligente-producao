@@ -24,6 +24,9 @@ export interface OrdemProducao {
   atualizadaEm: string
   criadaPor: string
   atualizadaPor: string
+  /** Vêm na resposta: quem só vê listas não precisa consultar o catálogo de materiais. */
+  materialCodigo?: string | null
+  materialDescricao?: string | null
 }
 
 export interface CriarOrdemRequest {
@@ -109,6 +112,9 @@ export interface ItemListaTecnica {
   materialComponenteId: string
   quantidadePlanejada: number
   unidadeDeMedida: string
+  /** Vêm na resposta: quem só vê listas não precisa consultar o catálogo de materiais. */
+  componenteCodigo?: string | null
+  componenteDescricao?: string | null
 }
 
 export interface ListaTecnica {
@@ -126,6 +132,9 @@ export interface ListaTecnica {
   atualizadaEm: string
   criadaPor: string
   atualizadaPor: string
+  /** Vêm na resposta: quem só vê listas não precisa consultar o catálogo de materiais. */
+  materialCodigo?: string | null
+  materialDescricao?: string | null
 }
 
 /** Componente nas duas versões comparadas; o lado em que ele não existe vem nulo. */

@@ -17,6 +17,7 @@ import { LinkDaLinha } from '../consulta/LinkDaLinha'
 import { CelulaDeCabecalho, LARGURA_MINIMA_DA_DESCRICAO, type Coluna, type ControleDaTabela } from '../consulta/TabelaInterativa'
 import type { ListaTecnica, Material } from '../../types'
 import { formatarCodigoMaterial } from '../../utils/formatacao'
+import { nomeDoMaterialDaLista } from './nomesDaLista'
 
 interface ListaTecnicaTableProps {
   listas: ListaTecnica[]
@@ -33,10 +34,10 @@ export function colunasDeListas(materialPorId: Map<string, Material>): Coluna<Li
   return [
     {
       chave: 'codigo', rotulo: 'Código',
-      valor: (l) => materialPorId.get(l.materialId)?.codigo,
-      texto: (l) => formatarCodigoMaterial(materialPorId.get(l.materialId)?.codigo),
+      valor: (l) => nomeDoMaterialDaLista(l, materialPorId)?.codigo,
+      texto: (l) => formatarCodigoMaterial(nomeDoMaterialDaLista(l, materialPorId)?.codigo),
     },
-    { chave: 'descricao', rotulo: 'Descrição', valor: (l) => materialPorId.get(l.materialId)?.descricao },
+    { chave: 'descricao', rotulo: 'Descrição', valor: (l) => nomeDoMaterialDaLista(l, materialPorId)?.descricao },
     { chave: 'versao', rotulo: 'Versão', valor: (l) => l.versao },
     { chave: 'componentes', rotulo: 'Componentes', valor: (l) => l.itens.length },
     { chave: 'status', rotulo: 'Status', valor: (l) => rotuloDoStatusDeLista(l.status) },
@@ -63,11 +64,11 @@ export function ListaTecnicaTable({ listas, materialPorId, onAtivar, onRetirarDe
         </TableHead>
         <TableBody>
           {listas.map((l) => {
-            const material = materialPorId.get(l.materialId)
+            const material = nomeDoMaterialDaLista(l, materialPorId)
             return (
               <TableRow key={l.id} hover onClick={() => navigate(`/listas-tecnicas/${l.id}`)} sx={{ cursor: 'pointer' }}>
                 <TableCell>
-                  <LinkDaLinha para={`/listas-tecnicas/${l.id}`} monoespacado>{material ? formatarCodigoMaterial(material.codigo) : '—'}</LinkDaLinha>
+                  <LinkDaLinha para={`/listas-tecnicas/${l.id}`} monoespacado>{material?.codigo ? formatarCodigoMaterial(material.codigo) : '—'}</LinkDaLinha>
                 </TableCell>
                 <TableCell><Typography variant="body2" sx={{ overflowWrap: 'anywhere', minWidth: LARGURA_MINIMA_DA_DESCRICAO }}>{material?.descricao ?? `${l.materialId.substring(0, 8)}…`}</Typography></TableCell>
                 <TableCell>

@@ -66,6 +66,21 @@ describe('ListaTecnicaDetalhePage', () => {
     expect(screen.getByText('2,5 kg')).toBeInTheDocument()
   })
 
+  it('sem acesso ao catálogo de materiais, nomeia o produto e os componentes com o que vem na lista', async () => {
+    materiaisMock.mockRejectedValue(erroHttp(403, { detail: 'Você não tem permissão para fazer isso.' }))
+    const base = listaTecnica()
+    buscarMock.mockResolvedValue(listaTecnica({
+      materialCodigo: '103000009', materialDescricao: 'Pórtico soldado',
+      itens: base.itens.map((item) => ({ ...item, componenteCodigo: '110000009', componenteDescricao: 'Tubo quadrado' })),
+    }))
+    montar()
+
+    expect(await screen.findByRole('heading', { name: 'Pórtico soldado' })).toBeInTheDocument()
+    expect(screen.getByText('103.000.009 · versão v1')).toBeInTheDocument()
+    expect(screen.getByText('Tubo quadrado')).toBeInTheDocument()
+    expect(screen.getByText('110.000.009')).toBeInTheDocument()
+  })
+
   it('oferece ativar a versão que está em revisão e chama o sistema ao clicar', async () => {
     ativarMock.mockResolvedValue()
     montar()
