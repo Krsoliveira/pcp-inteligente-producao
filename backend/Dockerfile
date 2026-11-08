@@ -11,7 +11,7 @@ COPY src ./src
 # Os testes rodam no CI (mvn -B verify), que precisa do Docker para o Testcontainers; aqui só se empacota.
 RUN mvn -B -q -DskipTests package
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:24-jre-alpine
 WORKDIR /app
 RUN addgroup -S pcp && adduser -S -G pcp pcp
 COPY --from=build --chown=pcp:pcp /app/target/pcp-backend-*.jar app.jar
