@@ -6,7 +6,9 @@ import com.krsoliveira.pcp.application.comum.RecursoNaoEncontradoException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.acesso.AcessoNegadoException;
 import com.krsoliveira.pcp.infrastructure.security.CorpoGrandeDemaisException;
+import com.krsoliveira.pcp.infrastructure.security.EventosDeSeguranca;
 import com.krsoliveira.pcp.infrastructure.security.UsuarioDetailsService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
 import org.springframework.dao.DataAccessException;
@@ -119,7 +121,7 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
 
     /** Falta a permissão exigida pelo endpoint (segurança por método) ou a regra "só se concede o que se tem". */
     @ExceptionHandler({AccessDeniedException.class, AcessoNegadoException.class})
-    public ProblemDetail acessoNegado(RuntimeException ex) {
+    public ProblemDetail acessoNegado(RuntimeException ex, HttpServletRequest requisicao) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
         problema.setTitle("Acesso negado");
         if (senhaProvisoriaPendente()) {
@@ -127,6 +129,9 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
             problema.setProperty("codigo", "TROCAR_SENHA");
             return problema;
         }
+        var autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        EventosDeSeguranca.acessoNegado(autenticacao == null ? null : autenticacao.getName(),
+                requisicao.getMethod(), requisicao.getRequestURI());
         problema.setDetail(ex instanceof AcessoNegadoException
                 ? ex.getMessage()
                 : "Você não tem permissão para fazer isso.");

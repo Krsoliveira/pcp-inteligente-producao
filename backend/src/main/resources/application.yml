@@ -41,6 +41,9 @@ server:
 pcp:
   # "Hoje" da operação: validade de lote, atraso de ordem e filtros por data.
   fuso-horario: ${FUSO_HORARIO:America/Sao_Paulo}
+  observabilidade:
+    # Requisição que leva este tempo ou mais é registrada em WARN (logger pcp.desempenho), em milissegundos.
+    requisicao-lenta-ms: ${REQUISICAO_LENTA_MS:1000}
   seguranca:
     # Corpo máximo aceito em POST/PUT/PATCH, em bytes (1 MB).
     corpo-maximo-bytes: 1048576
