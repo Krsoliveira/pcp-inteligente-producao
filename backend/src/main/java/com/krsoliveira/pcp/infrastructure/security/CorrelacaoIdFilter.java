@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -32,6 +34,8 @@ import java.util.regex.Pattern;
 @Order(-300)
 public class CorrelacaoIdFilter extends OncePerRequestFilter {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CorrelacaoIdFilter.class);
+
     static final String HEADER  = "X-Request-ID";
     static final String MDC_KEY = "requestId";
 
@@ -50,6 +54,11 @@ public class CorrelacaoIdFilter extends OncePerRequestFilter {
         response.setHeader(HEADER, id);
         try {
             chain.doFilter(request, response);
+        } catch (ServletException | IOException | RuntimeException e) {
+            // O Tomcat registra a falha depois que o MDC é limpo (abaixo), então sem isto o erro 500 ficaria sem o
+            // requestId. A exceção segue adiante e a resposta não muda.
+            LOG.error("erro_inesperado requisicao={} {}", request.getMethod(), request.getRequestURI(), e);
+            throw e;
         } finally {
             MDC.remove(MDC_KEY);
         }
