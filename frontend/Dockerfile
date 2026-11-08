@@ -3,7 +3,7 @@
 # Gerar localmente: docker build -t pcp-frontend ./frontend
 
 # Mesma versão do Node do CI.
-FROM node:22-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
