@@ -122,6 +122,8 @@ export interface ListaTecnica {
   id: string
   /** Id da lista do material: todas as versões do mesmo material compartilham este valor. */
   listaId: string
+  /** Número legível da lista (LT-0001), igual em todas as versões do material. */
+  numeroLista: string
   materialId: string
   versao: string
   /** Para quantas unidades (ou kg) do material produzido valem as quantidades dos componentes (ADR-0027). */
@@ -149,6 +151,7 @@ export interface ItemComparado {
 export interface VersaoResumo {
   id: string
   listaId: string
+  numeroLista: string
   materialId: string
   versao: string
   quantidadeBase: number

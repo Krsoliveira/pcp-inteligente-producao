@@ -80,7 +80,7 @@ export function ListaTecnicaDetalhePage() {
     <Box>
       <PageHeader
         titulo={nomeDaLista?.descricao ?? 'Lista técnica'}
-        subtitulo={`${codigo} · versão ${lista.versao}`}
+        subtitulo={`${lista.numeroLista} · ${codigo} · versão ${lista.versao}`}
         breadcrumbs={[
           { label: 'Cadastros' },
           { label: 'Listas técnicas', href: '/listas-tecnicas' },
@@ -118,6 +118,7 @@ export function ListaTecnicaDetalhePage() {
               </Box>
               <Divider sx={{ mb: 2 }} />
               <Grid container spacing={1.5}>
+                <InfoRow label="Lista">{lista.numeroLista}</InfoRow>
                 <InfoRow label="Material">{nomeDaLista ? `${codigo} — ${nomeDaLista.descricao ?? ''}` : '—'}</InfoRow>
                 <InfoRow label="Versão">
                   <Chip label={lista.versao} size="small" variant="outlined" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }} />
