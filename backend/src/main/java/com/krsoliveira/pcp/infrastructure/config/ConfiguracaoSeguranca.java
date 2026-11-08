@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.config;
 
+import com.krsoliveira.pcp.infrastructure.security.AtividadeFilter;
 import com.krsoliveira.pcp.infrastructure.security.JwtAuthenticationFilter;
 import com.krsoliveira.pcp.infrastructure.security.LimiteTamanhoCorpoFilter;
 import com.krsoliveira.pcp.infrastructure.security.RateLimitingFilter;
@@ -67,6 +68,7 @@ public class ConfiguracaoSeguranca {
     private final JwtAuthenticationFilter jwtFilter;
     private final LimiteTamanhoCorpoFilter limiteTamanhoCorpoFilter;
     private final RateLimitingFilter rateLimitingFilter;
+    private final AtividadeFilter atividadeFilter;
 
     @Value("${CORS_ORIGINS:http://localhost:3000}")
     private String corsOriginsConfig;
@@ -74,11 +76,13 @@ public class ConfiguracaoSeguranca {
     public ConfiguracaoSeguranca(UsuarioDetailsService usuarioDetailsService,
                                  JwtAuthenticationFilter jwtFilter,
                                  LimiteTamanhoCorpoFilter limiteTamanhoCorpoFilter,
-                                 RateLimitingFilter rateLimitingFilter) {
+                                 RateLimitingFilter rateLimitingFilter,
+                                 AtividadeFilter atividadeFilter) {
         this.usuarioDetailsService = usuarioDetailsService;
         this.jwtFilter = jwtFilter;
         this.limiteTamanhoCorpoFilter = limiteTamanhoCorpoFilter;
         this.rateLimitingFilter = rateLimitingFilter;
+        this.atividadeFilter = atividadeFilter;
     }
 
     @Bean
@@ -124,7 +128,9 @@ public class ConfiguracaoSeguranca {
                 // usuário vê "erro de conexão" em vez da mensagem real.
                 .addFilterAfter(limiteTamanhoCorpoFilter, CorsFilter.class)
                 .addFilterAfter(rateLimitingFilter, LimiteTamanhoCorpoFilter.class)
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                // Depois do JWT: só ali o usuário já está identificado para a linha de atividade.
+                .addFilterAfter(atividadeFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 
@@ -135,6 +141,13 @@ public class ConfiguracaoSeguranca {
     @Bean
     public FilterRegistrationBean<RateLimitingFilter> rateLimitingForaDoServlet(RateLimitingFilter filtro) {
         FilterRegistrationBean<RateLimitingFilter> registro = new FilterRegistrationBean<>(filtro);
+        registro.setEnabled(false);
+        return registro;
+    }
+
+    @Bean
+    public FilterRegistrationBean<AtividadeFilter> atividadeForaDoServlet(AtividadeFilter filtro) {
+        FilterRegistrationBean<AtividadeFilter> registro = new FilterRegistrationBean<>(filtro);
         registro.setEnabled(false);
         return registro;
     }

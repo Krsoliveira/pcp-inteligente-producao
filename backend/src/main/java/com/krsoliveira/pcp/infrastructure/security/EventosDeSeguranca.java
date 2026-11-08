@@ -60,7 +60,7 @@ public final class EventosDeSeguranca {
     }
 
     /** Troca caracteres de controle (quebra de linha, tabulação) por "?" para o valor não forjar outra linha de log. */
-    private static String apenasImprimiveis(String valor) {
+    static String apenasImprimiveis(String valor) {
         return valor == null ? "" : CONTROLE.matcher(valor).replaceAll("?");
     }
 }
