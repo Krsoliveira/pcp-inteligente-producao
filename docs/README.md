@@ -67,3 +67,4 @@ Regras dos ADRs deste projeto:
 | [0032](adr/0032-oxlint-no-frontend.md) | Oxlint como linter do frontend | Aceito |
 | [0033](adr/0033-deploy-railway-pro-com-nginx.md) | Deploy no Railway Pro, com o Nginx do frontend na frente da API | Aceito |
 | [0034](adr/0034-bloqueio-otimista-na-edicao.md) | Bloqueio otimista na edição de perfil de acesso e tipo de ordem | Aceito |
+| [0035](adr/0035-logs-de-seguranca-e-desempenho.md) | Logs de segurança e de desempenho | Aceito |
