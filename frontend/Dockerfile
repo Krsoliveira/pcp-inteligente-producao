@@ -13,7 +13,7 @@ RUN npm run build
 # Nginx sem root (usuário nginx, porta acima de 1024), na variante slim: 21 pacotes do sistema em vez de 71, com o
 # que este frontend usa (modelos com envsubst, resolvedor local e realip). Os pacotes são atualizados na geração da
 # imagem para não esperar a base ser republicada com as correções de segurança.
-FROM nginxinc/nginx-unprivileged:1.29-alpine-slim
+FROM nginxinc/nginx-unprivileged:1.31-alpine-slim
 USER root
 RUN apk upgrade --no-cache
 USER 101
