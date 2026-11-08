@@ -47,7 +47,7 @@ class RetirarListaTecnicaDeUsoTest {
 
     private ListaTecnica salvar(String versao, StatusListaTecnica status) {
         var item = ItemListaTecnica.criar(UUID.randomUUID(), BigDecimal.ONE, "UN");
-        var lista = ListaTecnica.reconstituir(UUID.randomUUID(), listaId, materialId, versao, status,
+        var lista = ListaTecnica.reconstituir(UUID.randomUUID(), listaId, 1L, materialId, versao, status,
                 List.of(item), Assinatura.nova(USUARIO));
         listaTecnicaRepository.salvar(lista);
         return lista;

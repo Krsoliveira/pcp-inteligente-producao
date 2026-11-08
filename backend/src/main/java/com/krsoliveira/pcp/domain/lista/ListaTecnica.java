@@ -31,6 +31,7 @@ public class ListaTecnica {
 
     private final UUID id;
     private final UUID listaId;
+    private final long numeroLista;
     private final UUID materialId;
     private final String versao;
     private final BigDecimal quantidadeBase;
@@ -38,10 +39,11 @@ public class ListaTecnica {
     private final List<ItemListaTecnica> itens;
     private Assinatura assinatura;
 
-    private ListaTecnica(UUID id, UUID listaId, UUID materialId, String versao, BigDecimal quantidadeBase,
-                         StatusListaTecnica status, List<ItemListaTecnica> itens, Assinatura assinatura) {
+    private ListaTecnica(UUID id, UUID listaId, long numeroLista, UUID materialId, String versao,
+                         BigDecimal quantidadeBase, StatusListaTecnica status, List<ItemListaTecnica> itens, Assinatura assinatura) {
         this.id = id;
         this.listaId = listaId;
+        this.numeroLista = numeroLista;
         this.materialId = materialId;
         this.versao = versao;
         this.quantidadeBase = quantidadeBase;
@@ -52,33 +54,37 @@ public class ListaTecnica {
 
     /**
      * Fábrica da PRIMEIRA versão de um material: abre uma lista nova (novo {@code listaId}).
+     * O {@code numeroLista} vem da sequência do banco (ver {@code ListaTecnicaRepository#proximoNumeroDeLista}).
      * Nasce sempre com status EM_REVISAO. A validação de que o material não é MATERIA_PRIMA
      * é responsabilidade do use case, que tem acesso ao repositório de materiais.
      */
-    public static ListaTecnica criar(UUID materialId, String versao,
+    public static ListaTecnica criar(UUID materialId, long numeroLista, String versao,
                                      List<ItemListaTecnica> itens, String usuario) {
-        return criar(materialId, versao, BigDecimal.ONE, itens, usuario);
+        return criar(materialId, numeroLista, versao, BigDecimal.ONE, itens, usuario);
     }
 
     /** Primeira versão de um material, dizendo para quantas unidades (ou kg) do material valem os componentes. */
-    public static ListaTecnica criar(UUID materialId, String versao, BigDecimal quantidadeBase,
+    public static ListaTecnica criar(UUID materialId, long numeroLista, String versao, BigDecimal quantidadeBase,
                                      List<ItemListaTecnica> itens, String usuario) {
-        return criarVersao(materialId, UUID.randomUUID(), versao, quantidadeBase, itens, usuario);
+        return criarVersao(materialId, UUID.randomUUID(), numeroLista, versao, quantidadeBase, itens, usuario);
     }
 
     /**
      * Fábrica de uma versão (EM_REVISAO) de uma lista que já existe: reaproveita o
-     * {@code listaId} das demais versões do mesmo material.
+     * {@code listaId} e o {@code numeroLista} das demais versões do mesmo material.
      */
-    public static ListaTecnica criarVersao(UUID materialId, UUID listaId, String versao,
+    public static ListaTecnica criarVersao(UUID materialId, UUID listaId, long numeroLista, String versao,
                                            List<ItemListaTecnica> itens, String usuario) {
-        return criarVersao(materialId, listaId, versao, BigDecimal.ONE, itens, usuario);
+        return criarVersao(materialId, listaId, numeroLista, versao, BigDecimal.ONE, itens, usuario);
     }
 
     /** Versão de uma lista que já existe, com a quantidade base (ADR-0027). */
-    public static ListaTecnica criarVersao(UUID materialId, UUID listaId, String versao, BigDecimal quantidadeBase,
-                                           List<ItemListaTecnica> itens, String usuario) {
+    public static ListaTecnica criarVersao(UUID materialId, UUID listaId, long numeroLista, String versao,
+                                           BigDecimal quantidadeBase, List<ItemListaTecnica> itens, String usuario) {
         validarQuantidadeBase(quantidadeBase);
+        if (numeroLista <= 0) {
+            throw new RegraDeNegocioException("O número da lista técnica deve ser maior que zero.");
+        }
         if (listaId == null) {
             throw new RegraDeNegocioException("A lista técnica da versão é obrigatória.");
         }
@@ -92,25 +98,25 @@ public class ListaTecnica {
             throw new RegraDeNegocioException(
                     "A lista técnica deve ter ao menos um componente.");
         }
-        return new ListaTecnica(UUID.randomUUID(), listaId, materialId, versao.trim(), quantidadeBase,
+        return new ListaTecnica(UUID.randomUUID(), listaId, numeroLista, materialId, versao.trim(), quantidadeBase,
                 StatusListaTecnica.EM_REVISAO, itens, Assinatura.nova(usuario));
     }
 
     /**
      * Reconstrói uma lista EXISTENTE a partir do banco de dados.
      */
-    public static ListaTecnica reconstituir(UUID id, UUID listaId, UUID materialId, String versao,
+    public static ListaTecnica reconstituir(UUID id, UUID listaId, long numeroLista, UUID materialId, String versao,
                                             StatusListaTecnica status,
                                             List<ItemListaTecnica> itens,
                                             Assinatura assinatura) {
-        return reconstituir(id, listaId, materialId, versao, BigDecimal.ONE, status, itens, assinatura);
+        return reconstituir(id, listaId, numeroLista, materialId, versao, BigDecimal.ONE, status, itens, assinatura);
     }
 
     /** Reconstrói uma lista existente com a quantidade base gravada. */
-    public static ListaTecnica reconstituir(UUID id, UUID listaId, UUID materialId, String versao,
+    public static ListaTecnica reconstituir(UUID id, UUID listaId, long numeroLista, UUID materialId, String versao,
                                             BigDecimal quantidadeBase, StatusListaTecnica status,
                                             List<ItemListaTecnica> itens, Assinatura assinatura) {
-        return new ListaTecnica(id, listaId, materialId, versao, quantidadeBase, status, itens, assinatura);
+        return new ListaTecnica(id, listaId, numeroLista, materialId, versao, quantidadeBase, status, itens, assinatura);
     }
 
     private static void validarQuantidadeBase(BigDecimal quantidadeBase) {
@@ -160,8 +166,17 @@ public class ListaTecnica {
         this.assinatura = alterada;
     }
 
+    /** Identificação legível para a trilha de auditoria: {@code LT-0007 · MAT-001 v1.0}. */
+    public String referencia(String codigoMaterial) {
+        return getNumeroFormatado() + " · " + codigoMaterial + " " + versao;
+    }
+
     public UUID getId() { return id; }
     public UUID getListaId() { return listaId; }
+    /** Número legível da lista, igual em todas as versões. */
+    public long getNumeroLista() { return numeroLista; }
+    /** O número no formato de exibição, ex.: {@code LT-0007}. */
+    public String getNumeroFormatado() { return NumeroDaLista.formatar(numeroLista); }
     public UUID getMaterialId() { return materialId; }
     public String getVersao() { return versao; }
     /** Para quantas unidades (ou kg) do material produzido valem as quantidades dos componentes. */

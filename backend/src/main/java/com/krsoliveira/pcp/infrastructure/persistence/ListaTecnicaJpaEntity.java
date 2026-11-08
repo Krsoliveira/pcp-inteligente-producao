@@ -34,6 +34,9 @@ public class ListaTecnicaJpaEntity {
     @Column(name = "lista_id", nullable = false)
     private UUID listaId;
 
+    @Column(name = "numero_lista", nullable = false)
+    private long numeroLista;
+
     @Column(name = "material_id", nullable = false)
     private UUID materialId;
 
@@ -69,6 +72,7 @@ public class ListaTecnicaJpaEntity {
         ListaTecnicaJpaEntity entity = new ListaTecnicaJpaEntity();
         entity.id = lista.getId();
         entity.listaId = lista.getListaId();
+        entity.numeroLista = lista.getNumeroLista();
         entity.materialId = lista.getMaterialId();
         entity.versao = lista.getVersao();
         entity.quantidadeBase = lista.getQuantidadeBase();
@@ -90,7 +94,7 @@ public class ListaTecnicaJpaEntity {
         List<ItemListaTecnica> itensDominio = itens.stream()
                 .map(ItemListaTecnicaJpaEntity::paraDominio)
                 .toList();
-        return ListaTecnica.reconstituir(id, listaId, materialId, versao, quantidadeBase, status,
+        return ListaTecnica.reconstituir(id, listaId, numeroLista, materialId, versao, quantidadeBase, status,
                 itensDominio, new Assinatura(criadaPor, criadaEm, atualizadaPor, atualizadaEm));
     }
 

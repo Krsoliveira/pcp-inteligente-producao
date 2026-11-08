@@ -51,7 +51,7 @@ class VisibilidadeDeListasTest {
 
     private ListaTecnica versao(String rotulo, StatusListaTecnica status) {
         var item = ItemListaTecnica.criar(UUID.randomUUID(), BigDecimal.ONE, "un");
-        var lista = ListaTecnica.reconstituir(UUID.randomUUID(), listaId, materialId, rotulo, status, List.of(item),
+        var lista = ListaTecnica.reconstituir(UUID.randomUUID(), listaId, 1L, materialId, rotulo, status, List.of(item),
                 Assinatura.nova("teste"));
         repositorio.salvar(lista);
         return lista;

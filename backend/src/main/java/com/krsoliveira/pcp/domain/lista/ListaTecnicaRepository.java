@@ -34,4 +34,10 @@ public interface ListaTecnicaRepository {
     List<ListaTecnica> listarPorMaterial(UUID materialId);
 
     boolean existeVersaoParaMaterial(UUID materialId, String versao);
+
+    /**
+     * Próximo número de lista (sequência do banco). Cada chamada devolve um valor novo, mesmo entre transações
+     * simultâneas; se a criação falhar depois, o número se perde (a numeração pode ter buracos).
+     */
+    long proximoNumeroDeLista();
 }

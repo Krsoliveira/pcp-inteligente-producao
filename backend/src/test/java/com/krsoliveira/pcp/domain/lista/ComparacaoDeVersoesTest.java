@@ -22,7 +22,7 @@ class ComparacaoDeVersoesTest {
     private static final UUID CAIXA = UUID.randomUUID();
 
     private static ListaTecnica versao(String rotulo, ItemListaTecnica... itens) {
-        return ListaTecnica.criarVersao(MATERIAL, LISTA, rotulo, List.of(itens), "teste");
+        return ListaTecnica.criarVersao(MATERIAL, LISTA, 1L, rotulo, List.of(itens), "teste");
     }
 
     private static ItemListaTecnica item(UUID componente, String quantidade, String unidade) {
@@ -32,9 +32,9 @@ class ComparacaoDeVersoesTest {
     @Test
     @DisplayName("bases diferentes: 2 kg para 1 un é o mesmo que 200 kg para 100 un (igual); 250 kg para 100 un é alteração")
     void comparaPorUnidadeProduzida() {
-        ListaTecnica porUnidade = ListaTecnica.criarVersao(MATERIAL, LISTA, "v1", new BigDecimal("1"),
+        ListaTecnica porUnidade = ListaTecnica.criarVersao(MATERIAL, LISTA, 1L, "v1", new BigDecimal("1"),
                 List.of(item(ACO, "2", "kg"), item(PARAFUSO, "8", "un")), "teste");
-        ListaTecnica porCem = ListaTecnica.criarVersao(MATERIAL, LISTA, "v2", new BigDecimal("100"),
+        ListaTecnica porCem = ListaTecnica.criarVersao(MATERIAL, LISTA, 1L, "v2", new BigDecimal("100"),
                 List.of(item(ACO, "200", "kg"), item(PARAFUSO, "850", "un")), "teste");
 
         ComparacaoDeVersoes comparacao = ComparacaoDeVersoes.de(porUnidade, porCem);
@@ -104,7 +104,7 @@ class ComparacaoDeVersoesTest {
     @Test
     @DisplayName("rejeita comparar versões de listas diferentes")
     void rejeitaListasDiferentes() {
-        ListaTecnica deOutraLista = ListaTecnica.criar(UUID.randomUUID(), "v1", List.of(item(ACO, "1", "kg")), "teste");
+        ListaTecnica deOutraLista = ListaTecnica.criar(UUID.randomUUID(), 1L, "v1", List.of(item(ACO, "1", "kg")), "teste");
 
         assertThatThrownBy(() -> ComparacaoDeVersoes.de(versao("v1", item(ACO, "1", "kg")), deOutraLista))
                 .isInstanceOf(RegraDeNegocioException.class)
@@ -115,7 +115,7 @@ class ComparacaoDeVersoesTest {
     @DisplayName("rejeita comparar uma versão com ela mesma")
     void rejeitaMesmaVersao() {
         ListaTecnica v1 = versao("v1", item(ACO, "1", "kg"));
-        ListaTecnica mesma = ListaTecnica.reconstituir(v1.getId(), v1.getListaId(), v1.getMaterialId(), "v1",
+        ListaTecnica mesma = ListaTecnica.reconstituir(v1.getId(), v1.getListaId(), 1L, v1.getMaterialId(), "v1",
                 v1.getStatus(), v1.getItens(), Assinatura.nova("teste"));
 
         assertThatThrownBy(() -> ComparacaoDeVersoes.de(v1, mesma))

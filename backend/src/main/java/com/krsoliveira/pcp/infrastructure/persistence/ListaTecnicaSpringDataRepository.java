@@ -27,4 +27,7 @@ public interface ListaTecnicaSpringDataRepository
     Optional<ListaTecnicaJpaEntity> buscarParaUso(@Param("id") UUID id);
 
     boolean existsByMaterialIdAndVersao(UUID materialId, String versao);
+
+    @Query(value = "SELECT nextval('lista_tecnica_numero_seq')", nativeQuery = true)
+    long proximoNumeroDeLista();
 }
