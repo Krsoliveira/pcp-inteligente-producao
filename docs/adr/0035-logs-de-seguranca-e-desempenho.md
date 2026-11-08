@@ -1,4 +1,4 @@
-# ADR-0035: Logs de segurança e de desempenho
+# ADR-0035: Logs de segurança, de atividade e de desempenho
 
 - **Status**: Aceito
 - **Data**: 2026-11-08
@@ -13,6 +13,7 @@ Logs de eventos, em dois loggers com nome próprio para filtrar na plataforma:
 
 - **`pcp.seguranca`**: `login_sucesso`, `login_recusado` (com o motivo real: `credenciais_invalidas` ou `usuario_desativado`), `acesso_negado` (usuário, método e rota) e `limite_excedido` (método e rota). A resposta da API não muda: o usuário desativado continua recebendo a mesma mensagem de senha errada.
 - **`pcp.desempenho`**: `requisicao_lenta`, em WARN, quando a requisição leva `pcp.observabilidade.requisicao-lenta-ms` (padrão 1000, variável `REQUISICAO_LENTA_MS`) ou mais. Requisição rápida e health check não geram linha.
+- **`pcp.atividade`**: uma linha por requisição que altera dados (POST, PUT, PATCH e DELETE, exceto `/api/v1/auth/`): `requisicao usuario=m***@dominio.com POST /rota status=201 duracaoMs=42`. INFO para sucesso, WARN para 4xx (recusa de regra, permissão, validação) e ERROR para 5xx. Leituras ficam de fora. O filtro fica na cadeia do Spring Security, depois do JWT, porque só ali o usuário está identificado e o status é o final. O que mudou no registro continua só na auditoria.
 - **Erro inesperado (500)**: `erro_inesperado` com a causa e o `requestId`, registrado pelo filtro de correlação, que relança a exceção. O Tomcat ainda escreve a própria linha, sem `requestId`.
 
 Em produção o console já sai em JSON (formato ECS), com o `requestId`; em desenvolvimento, texto legível.
