@@ -1,7 +1,7 @@
 # Imagem da API para o deploy (ADR-0033). Duas etapas: o Maven gera o JAR; a imagem final só tem o JRE e o JAR.
 # Gerar localmente: docker build -t pcp-backend ./backend
 
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-26 AS build
 WORKDIR /app
 # O Checkstyle roda na fase validate e lê o checkstyle.xml; o pom vem antes do código para reaproveitar o cache das
 # dependências quando só o código muda.
