@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { atribuirPerfil, criarUsuario, listarPerfis, listarUsuarios, redefinirSenha } from '../api/acessos'
+import { atribuirPerfil, criarUsuario, desativarUsuario, listarPerfis, listarUsuarios, reativarUsuario, redefinirSenha } from '../api/acessos'
 import { erroHttp } from '../test/erros'
 import { TODAS_AS_PERMISSOES } from '../test/fabricas'
 import { renderizarTela } from '../test/renderizar'
@@ -14,18 +14,20 @@ vi.mock('../api/acessos', () => ({
   criarUsuario: vi.fn(),
   atribuirPerfil: vi.fn(),
   redefinirSenha: vi.fn(),
+  desativarUsuario: vi.fn(),
+  reativarUsuario: vi.fn(),
 }))
 
 function perfil(sobrescritas: Partial<PerfilAcesso>): PerfilAcesso {
   return {
     id: 'p-x', nome: 'Perfil', descricao: '', administrador: false, padraoDoAutocadastro: false,
-    permissoes: ['ORDEM_VISUALIZAR'], quantidadeDeUsuarios: 0, atualizadoEm: '2026-10-20T10:00:00Z', atualizadoPor: 'admin',
+    permissoes: ['ORDEM_VISUALIZAR'], quantidadeDeUsuarios: 0, atualizadoEm: '2026-10-20T10:00:00Z', atualizadoPor: 'admin', versao: 0,
     ...sobrescritas,
   }
 }
 
 function usuario(sobrescritas: Partial<UsuarioAcesso>): UsuarioAcesso {
-  return { id: 'u-x', nome: 'Fulano', email: 'fulano@pcp.com', perfilId: 'p-op', perfilNome: 'Operador', criadoEm: '2026-10-20T10:00:00Z', ...sobrescritas }
+  return { id: 'u-x', nome: 'Fulano', email: 'fulano@pcp.com', perfilId: 'p-op', perfilNome: 'Operador', criadoEm: '2026-10-20T10:00:00Z', ativo: true, ...sobrescritas }
 }
 
 const PERFIS = [
@@ -55,6 +57,60 @@ describe('UsuariosAcessoPage', () => {
     vi.mocked(criarUsuario).mockReset()
     vi.mocked(atribuirPerfil).mockReset()
     vi.mocked(redefinirSenha).mockReset()
+    vi.mocked(desativarUsuario).mockReset()
+    vi.mocked(reativarUsuario).mockReset()
+  })
+
+  it('mostra a situação de cada usuário', async () => {
+    vi.mocked(listarUsuarios).mockResolvedValue([USUARIOS[0], { ...USUARIOS[1], ativo: false }])
+    montar()
+
+    const linhaDaBia = (await screen.findByText('Bia')).closest('tr')!
+    expect(within(linhaDaBia).getByText('Desativado')).toBeInTheDocument()
+    expect(within(screen.getByText('Ana Teste').closest('tr')!).getByText('Ativo')).toBeInTheDocument()
+  })
+
+  it('desativa depois de confirmar, dizendo quem e o que acontece', async () => {
+    vi.mocked(desativarUsuario).mockResolvedValue()
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Desativar o usuário Bia' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Desativar o usuário Bia?' })
+    expect(within(dialogo).getByText(/bia@pcp.com deixa de entrar e perde a sessão aberta/)).toBeInTheDocument()
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Desativar' }))
+
+    await waitFor(() => expect(desativarUsuario).toHaveBeenCalledWith('u-bia'))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('reativa quem está desativado', async () => {
+    vi.mocked(listarUsuarios).mockResolvedValue([USUARIOS[0], { ...USUARIOS[1], ativo: false }])
+    vi.mocked(reativarUsuario).mockResolvedValue()
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Reativar o usuário Bia' }))
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Reativar' }))
+
+    await waitFor(() => expect(reativarUsuario).toHaveBeenCalledWith('u-bia'))
+  })
+
+  it('não oferece desativar o próprio usuário nem quem está acima do alcance', async () => {
+    montar()
+
+    await screen.findByText('Bia')
+    expect(screen.queryByRole('button', { name: 'Desativar o usuário Ana Teste' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Desativar o usuário Chefe' })).not.toBeInTheDocument()
+  })
+
+  it('mostra o motivo quando o servidor recusa a desativação e não fecha', async () => {
+    vi.mocked(desativarUsuario).mockRejectedValue(erroHttp(422, { detail: 'Este é o último Administrador ativo; o sistema precisa de ao menos um.' }))
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Desativar o usuário Bia' }))
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Desativar' }))
+
+    expect(await screen.findByText('Este é o último Administrador ativo; o sistema precisa de ao menos um.')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
   it('lista os usuários com o perfil de cada um', async () => {

@@ -6,12 +6,13 @@ import Typography from '@mui/material/Typography'
 import type { StatusOrdem } from '../types'
 import { DadosDoGrafico } from './DadosDoGrafico'
 import { rotuloDoStatusDeOrdem } from './StatusBadge'
+import { COR_DA_GRADE_DO_GRAFICO, TOM_VIVO } from './tonsDosGraficos'
 
 /** As ordens que ainda estão no chão de fábrica, na ordem em que andam. Concluídas e canceladas ficam de fora. */
 export const ETAPAS_DA_FILA: { status: StatusOrdem; rotulo: string; cor: string }[] = [
-  { status: 'PLANEJADA', rotulo: rotuloDoStatusDeOrdem('PLANEJADA'), cor: '#94A3B8' },
-  { status: 'LIBERADA', rotulo: rotuloDoStatusDeOrdem('LIBERADA'), cor: '#2563EB' },
-  { status: 'EM_PRODUCAO', rotulo: rotuloDoStatusDeOrdem('EM_PRODUCAO'), cor: '#D97706' },
+  { status: 'PLANEJADA', rotulo: rotuloDoStatusDeOrdem('PLANEJADA'), cor: TOM_VIVO.neutro },
+  { status: 'LIBERADA', rotulo: rotuloDoStatusDeOrdem('LIBERADA'), cor: TOM_VIVO.informacao },
+  { status: 'EM_PRODUCAO', rotulo: rotuloDoStatusDeOrdem('EM_PRODUCAO'), cor: TOM_VIVO.atencao },
 ]
 
 interface FilaDeProducaoChartProps {
@@ -29,7 +30,7 @@ export function FilaDeProducaoChart({ contagem = {}, onSelecionar }: FilaDeProdu
   const option = {
     grid: { left: 8, right: 48, top: 8, bottom: 8, containLabel: true },
     tooltip: { trigger: 'item', formatter: '{b}: {c} ordens' },
-    xAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#E2E8F0' } } },
+    xAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: COR_DA_GRADE_DO_GRAFICO } } },
     yAxis: { type: 'category', inverse: true, data: ETAPAS_DA_FILA.map((e) => e.rotulo), axisTick: { show: false } },
     series: [
       {

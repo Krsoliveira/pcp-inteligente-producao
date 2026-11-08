@@ -25,9 +25,9 @@ public class PerfilAcessoRepositoryEmMemoria implements PerfilAcessoRepository {
 
     public PerfilAcessoRepositoryEmMemoria() {
         perfis.add(PerfilAcesso.reconstituir(ID_ADMINISTRADOR, "Administrador", "Todas as permissões.",
-                true, false, Set.of(), Assinatura.nova("sistema")));
+                true, false, Set.of(), Assinatura.nova("sistema"), 0));
         perfis.add(PerfilAcesso.reconstituir(ID_VISUALIZADOR, "Visualizador", "Só consulta.", false, true,
-                Set.of(Permissao.DASHBOARD_VISUALIZAR, Permissao.LISTA_VISUALIZAR_ATIVAS), Assinatura.nova("sistema")));
+                Set.of(Permissao.DASHBOARD_VISUALIZAR, Permissao.LISTA_VISUALIZAR_ATIVAS), Assinatura.nova("sistema"), 0));
     }
 
     @Override
@@ -44,6 +44,11 @@ public class PerfilAcessoRepositoryEmMemoria implements PerfilAcessoRepository {
 
     @Override
     public Optional<PerfilAcesso> buscarPorIdParaAtualizar(UUID id) {
+        return buscarPorId(id);
+    }
+
+    @Override
+    public Optional<PerfilAcesso> buscarPorIdParaUso(UUID id) {
         return buscarPorId(id);
     }
 

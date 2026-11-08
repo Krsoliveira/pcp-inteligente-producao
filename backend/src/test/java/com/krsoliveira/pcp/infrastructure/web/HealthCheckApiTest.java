@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import com.krsoliveira.pcp.BancoDeTesteIsolado;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -8,12 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.Map;
 
@@ -21,14 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** O health check é público para o provedor de hospedagem, e não pode abrir mais nada do Actuator. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
+@BancoDeTesteIsolado
 @AutoConfigureTestRestTemplate
 @SuppressWarnings("rawtypes")
 class HealthCheckApiTest {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     @Autowired
     private TestRestTemplate rest;

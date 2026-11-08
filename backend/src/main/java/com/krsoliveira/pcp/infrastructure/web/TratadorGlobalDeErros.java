@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.comum.ConflitoException;
+import com.krsoliveira.pcp.application.comum.EdicaoConcorrenteException;
 import com.krsoliveira.pcp.application.comum.RecursoNaoEncontradoException;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.acesso.AcessoNegadoException;
@@ -21,6 +22,7 @@ import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -48,7 +50,7 @@ import java.util.Map;
  *  - 400: requisição malformada (falha de Bean Validation, valor de tipo errado, parâmetro ausente, JSON ilegível)
  *  - 404: recurso não encontrado
  *  - 405: método não permitido
- *  - 409: conflito (código de ordem duplicado)
+ *  - 409: conflito (código de ordem duplicado; edição sobre versão antiga, com {@code codigo} EDICAO_CONCORRENTE)
  *  - 413: corpo da requisição acima do limite (lido sem Content-Length)
  *  - 422: regra de negócio violada
  */
@@ -61,6 +63,8 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
     /** Classe 22 do SQLSTATE, "exceção de dados": número acima da coluna, byte nulo em texto. */
     private static final String CLASSE_SQL_DADO_RECUSADO = "22";
     private static final String SQL_VIOLACAO_DE_UNICIDADE = "23505";
+    /** Diferencia, para a tela, a edição sobre versão antiga dos demais conflitos (nome repetido) (ADR-0034). */
+    static final String CODIGO_EDICAO_CONCORRENTE = "EDICAO_CONCORRENTE";
 
     @Override
     public boolean supports(MethodParameter tipoDeRetorno, Class<? extends HttpMessageConverter<?>> conversor) {
@@ -103,6 +107,13 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problema.setTitle("Conflito");
         problema.setDetail(ex.getMessage());
+        return problema;
+    }
+
+    @ExceptionHandler(EdicaoConcorrenteException.class)
+    public ProblemDetail edicaoConcorrente(EdicaoConcorrenteException ex) {
+        ProblemDetail problema = conflito(ex);
+        problema.setProperty("codigo", CODIGO_EDICAO_CONCORRENTE);
         return problema;
     }
 
@@ -155,8 +166,9 @@ public class TratadorGlobalDeErros extends ResponseEntityExceptionHandler implem
         return problema;
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ProblemDetail credenciaisInvalidas(BadCredentialsException ex) {
+    /** Usuário desativado recebe a mesma resposta de senha errada: não se revela que a conta existe. */
+    @ExceptionHandler({BadCredentialsException.class, DisabledException.class})
+    public ProblemDetail credenciaisInvalidas(RuntimeException ex) {
         ProblemDetail problema = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         problema.setTitle("Credenciais inválidas");
         problema.setDetail("E-mail ou senha incorretos.");

@@ -10,6 +10,7 @@ import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 import com.krsoliveira.pcp.domain.material.FiltroMateriais;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +28,11 @@ public class MaterialRepositoryEmMemoria implements MaterialRepository {
     public void salvar(Material material) {
         materiais.removeIf(m -> m.getId().equals(material.getId()));
         materiais.add(material);
+    }
+
+    @Override
+    public List<Material> buscarPorIds(Collection<UUID> ids) {
+        return ids.stream().map(this::buscarPorId).flatMap(Optional::stream).toList();
     }
 
     @Override

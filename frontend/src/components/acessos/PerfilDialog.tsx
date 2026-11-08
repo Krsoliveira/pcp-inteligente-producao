@@ -13,10 +13,10 @@ import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { atualizarPerfil, criarPerfil } from '../../api/acessos'
+import { atualizarPerfil, buscarPerfil, criarPerfil } from '../../api/acessos'
 import { CHAVE_USUARIO_LOGADO } from '../../hooks/usePermissoes'
 import type { PerfilAcesso, Permissao, PermissaoDoCatalogo } from '../../types'
-import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
+import { ehEdicaoConcorrente, mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
 import { HistoricoAuditoria } from '../HistoricoAuditoria'
 import { useSincronizarAoMudar } from '../../hooks/useSincronizarAoMudar'
 
@@ -39,7 +39,7 @@ interface PerfilDialogProps {
  * `MATERIAL_VISUALIZAR` elas continuam funcionando, mas só com códigos internos no lugar dos nomes.
  */
 const PRECISAM_DOS_NOMES_DOS_MATERIAIS: Permissao[] = [
-  'LISTA_VISUALIZAR_ATIVAS', 'LISTA_VISUALIZAR_TODAS', 'LISTA_COMPARAR', 'LISTA_CADASTRAR',
+  'LISTA_COMPARAR', 'LISTA_CADASTRAR',
   'ORDEM_VISUALIZAR', 'ORDEM_CRIAR', 'CONSUMO_VISUALIZAR', 'NOTA_FISCAL_VISUALIZAR', 'NOTA_FISCAL_REGISTRAR',
 ]
 
@@ -57,13 +57,22 @@ export function PerfilDialog({ aberto, onFechar, perfil, catalogo, permissoesDoU
   const [descricao, setDescricao] = useState('')
   const [marcadas, setMarcadas] = useState<Set<Permissao>>(new Set())
   const [erro, setErro] = useState<string | null>(null)
+  /** Versão lida ao abrir; o servidor recusa (409) se outra pessoa salvou depois (ADR-0034). */
+  const [versao, setVersao] = useState<number | undefined>(undefined)
+  const [conflito, setConflito] = useState(false)
+  const [recarregando, setRecarregando] = useState(false)
+
+  const preencher = (origem: PerfilAcesso | null | undefined) => {
+    setErro(null)
+    setConflito(false)
+    setNome(origem?.nome ?? '')
+    setDescricao(origem?.descricao ?? '')
+    setMarcadas(new Set(origem?.permissoes ?? []))
+    setVersao(origem?.versao)
+  }
 
   useSincronizarAoMudar([aberto, perfil?.id], () => {
-    if (!aberto) return
-    setErro(null)
-    setNome(perfil?.nome ?? '')
-    setDescricao(perfil?.descricao ?? '')
-    setMarcadas(new Set(perfil?.permissoes ?? []))
+    if (aberto) preencher(perfil)
   })
 
   const grupos = useMemo(() => porArea(catalogo), [catalogo])
@@ -76,15 +85,33 @@ export function PerfilDialog({ aberto, onFechar, perfil, catalogo, permissoesDoU
   const { mutate, isPending } = useMutation({
     mutationFn: () => {
       const payload = { nome: nome.trim(), descricao: descricao.trim(), permissoes: [...marcadas] }
-      return perfil ? atualizarPerfil(perfil.id, payload) : criarPerfil(payload)
+      return perfil ? atualizarPerfil(perfil.id, { ...payload, versao }) : criarPerfil(payload)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['acessos'] })
       queryClient.invalidateQueries({ queryKey: CHAVE_USUARIO_LOGADO })
       onFechar()
     },
-    onError: (e: unknown) => setErro(mensagemDeErroDaApi(e, 'Não foi possível salvar o perfil. Tente novamente.')),
+    onError: (e: unknown) => {
+      // O que foi digitado fica no formulário; a lista atrás do diálogo passa a mostrar o perfil atual.
+      setConflito(ehEdicaoConcorrente(e))
+      if (ehEdicaoConcorrente(e)) queryClient.invalidateQueries({ queryKey: ['acessos'] })
+      setErro(mensagemDeErroDaApi(e, 'Não foi possível salvar o perfil. Tente novamente.'))
+    },
   })
+
+  /** Troca o formulário pelo perfil como está agora no servidor, com a versão atual. */
+  const carregarVersaoAtual = async () => {
+    if (!perfil) return
+    setRecarregando(true)
+    try {
+      preencher(await buscarPerfil(perfil.id))
+    } catch (e: unknown) {
+      setErro(mensagemDeErroDaApi(e, 'Não foi possível carregar a versão atual do perfil. Tente novamente.'))
+    } finally {
+      setRecarregando(false)
+    }
+  }
 
   const alternar = (permissao: Permissao) =>
     setMarcadas((atual) => {
@@ -116,7 +143,16 @@ export function PerfilDialog({ aberto, onFechar, perfil, catalogo, permissoesDoU
     <Dialog open={aberto} onClose={isPending ? undefined : onFechar} fullWidth maxWidth="md">
       <DialogTitle>{titulo}</DialogTitle>
       <DialogContent dividers>
-        {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
+        {erro && (
+          <Alert severity={conflito ? 'warning' : 'error'} sx={{ mb: 2 }}
+            action={conflito ? (
+              <Button color="inherit" size="small" onClick={carregarVersaoAtual} disabled={recarregando}>
+                {recarregando ? 'Carregando…' : 'Carregar versão atual'}
+              </Button>
+            ) : undefined}>
+            {erro}
+          </Alert>
+        )}
         {deSistemaAdministrador && (
           <Alert severity="info" sx={{ mb: 2 }}>
             O Administrador é um perfil de sistema: tem todas as permissões, sempre, e não pode ser alterado nem excluído.
@@ -212,7 +248,7 @@ export function PerfilDialog({ aberto, onFechar, perfil, catalogo, permissoesDoU
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onFechar} disabled={isPending}>{somenteLeitura ? 'Fechar' : 'Cancelar'}</Button>
         {!somenteLeitura && (
-          <Button variant="contained" onClick={salvar} disabled={isPending}>
+          <Button variant="contained" onClick={salvar} disabled={isPending || recarregando}>
             {isPending ? 'Salvando…' : perfil ? 'Salvar perfil' : 'Criar perfil'}
           </Button>
         )}

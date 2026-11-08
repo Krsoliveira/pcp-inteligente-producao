@@ -3,6 +3,7 @@ package com.krsoliveira.pcp.domain.material;
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.comum.PedidoDePagina;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +17,9 @@ public interface MaterialRepository {
     void salvar(Material material);
 
     Optional<Material> buscarPorId(UUID id);
+
+    /** Os materiais destes ids numa consulta só (evita uma busca por linha ao montar uma lista). */
+    List<Material> buscarPorIds(Collection<UUID> ids);
 
     Optional<Material> buscarPorCodigo(String codigo);
 

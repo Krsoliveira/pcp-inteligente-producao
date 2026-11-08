@@ -7,6 +7,7 @@ import com.krsoliveira.pcp.application.acesso.ConsultarUsuarioLogado;
 import com.krsoliveira.pcp.application.acesso.CriarPerfilAcesso;
 import com.krsoliveira.pcp.application.acesso.CriarUsuarioPorGestor;
 import com.krsoliveira.pcp.application.acesso.ExcluirPerfilAcesso;
+import com.krsoliveira.pcp.application.acesso.DesativacaoDeUsuario;
 import com.krsoliveira.pcp.application.acesso.RedefinirSenhaDoUsuario;
 import com.krsoliveira.pcp.application.acesso.TrocarMinhaSenha;
 import com.krsoliveira.pcp.domain.acesso.PerfilAcesso;
@@ -58,12 +59,13 @@ public class AcessoController {
     private final AtribuirPerfilAoUsuario atribuirPerfil;
     private final TrocarMinhaSenha trocarMinhaSenha;
     private final RedefinirSenhaDoUsuario redefinirSenha;
+    private final DesativacaoDeUsuario desativacao;
 
     public AcessoController(ConsultarAcessos consultarAcessos, ConsultarUsuarioLogado consultarUsuarioLogado,
                             CriarPerfilAcesso criarPerfil, AtualizarPerfilAcesso atualizarPerfil,
                             ExcluirPerfilAcesso excluirPerfil, CriarUsuarioPorGestor criarUsuario,
                             AtribuirPerfilAoUsuario atribuirPerfil, TrocarMinhaSenha trocarMinhaSenha,
-                            RedefinirSenhaDoUsuario redefinirSenha) {
+                            RedefinirSenhaDoUsuario redefinirSenha, DesativacaoDeUsuario desativacao) {
         this.consultarAcessos = consultarAcessos;
         this.consultarUsuarioLogado = consultarUsuarioLogado;
         this.criarPerfil = criarPerfil;
@@ -73,6 +75,7 @@ public class AcessoController {
         this.atribuirPerfil = atribuirPerfil;
         this.trocarMinhaSenha = trocarMinhaSenha;
         this.redefinirSenha = redefinirSenha;
+        this.desativacao = desativacao;
     }
 
     @GetMapping("/eu")
@@ -128,9 +131,10 @@ public class AcessoController {
     @PreAuthorize("hasAuthority('PERFIL_GERENCIAR')")
     @Operation(summary = "Altera nome, descrição e permissões de um perfil",
             description = "O perfil Administrador não pode ser alterado (422). Quem altera precisa ter todas as "
-                    + "permissões do perfil, antes e depois (403).")
+                    + "permissões do perfil, antes e depois (403). Se a versao informada não for mais a atual, "
+                    + "outra pessoa alterou o perfil e a alteração é recusada (409).")
     public PerfilAcessoResponse atualizarPerfil(@PathVariable UUID id, @Valid @RequestBody PerfilAcessoRequest request) {
-        atualizarPerfil.executar(id, request.nome(), request.descricao(), request.permissoes());
+        atualizarPerfil.executar(id, request.nome(), request.descricao(), request.permissoes(), request.versao());
         return PerfilAcessoResponse.de(consultarAcessos.buscarPerfil(id));
     }
 
@@ -169,6 +173,27 @@ public class AcessoController {
                     + "alcança quem tem perfil ao alcance do gestor (403) e nunca a própria senha (403).")
     public ResponseEntity<Void> redefinirSenha(@PathVariable UUID id, @Valid @RequestBody RedefinirSenhaRequest request) {
         redefinirSenha.executar(id, request.senhaProvisoria());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/usuarios/{id}/desativar")
+    @PreAuthorize("hasAuthority('USUARIO_GERENCIAR')")
+    @Operation(summary = "Desativa um usuário, sem excluí-lo",
+            description = "O usuário deixa de entrar e perde a sessão aberta na requisição seguinte; continua na trilha "
+                    + "de auditoria. Só alcança quem tem perfil ao alcance do gestor e nunca o próprio usuário (403). "
+                    + "Não desativa o último Administrador ativo nem quem já está desativado (422).")
+    public ResponseEntity<Void> desativarUsuario(@PathVariable UUID id) {
+        desativacao.desativar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/usuarios/{id}/reativar")
+    @PreAuthorize("hasAuthority('USUARIO_GERENCIAR')")
+    @Operation(summary = "Reativa um usuário desativado",
+            description = "Volta com o mesmo perfil e a mesma senha. Só alcança quem tem perfil ao alcance do gestor e "
+                    + "nunca o próprio usuário (403). Usuário já ativo: 422.")
+    public ResponseEntity<Void> reativarUsuario(@PathVariable UUID id) {
+        desativacao.reativar(id);
         return ResponseEntity.noContent().build();
     }
 

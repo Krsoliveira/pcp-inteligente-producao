@@ -35,13 +35,16 @@ Todo tom da paleta usado como texto tem contraste de pelo menos 4,5:1 sobre os d
 
 - menu lateral (`Layout.tsx`);
 - status (`StatusBadge.tsx`), tipo de material (`MaterialTable.tsx`) e paleta de escolha dos tipos de ordem (`TiposOrdemPage.tsx`);
+- etiqueta do lote (`EtiquetaDoLote.tsx`): preto no branco para a impressão, qualquer que seja o tema;
 - gráficos ECharts, que não leem o tema.
 
-Barra de gráfico e ponto de status não são texto, então podem usar os tons vivos (`#059669`, `#D97706`).
+Barra de gráfico e ponto de status não são texto, então podem usar os tons vivos. Eles ficam num lugar só, `TOM_VIVO` em `components/tonsDosGraficos.ts` (com `COR_DA_GRADE_DO_GRAFICO`), para o mesmo status ter a mesma cor no selo e no gráfico.
+
+Componente que recebe cor recebe um **tom do tema**, não um valor: `KpiCard` aceita `tom="sucesso" | "atencao" | "erro" | "neutro"`, só para sinalizar; sem tom, o número fica em `text.primary`. Cartão de indicador não leva ícone (Dashboard e Estoque seguem o mesmo padrão).
 
 ## Tipografia
 
-Família: `"Inter", "Roboto", "Helvetica", "Arial", sans-serif`.
+Família: `"Inter Variable", "Inter", "Roboto", "Helvetica", "Arial", sans-serif`. A Inter é servida pela própria aplicação (`@fontsource-variable/inter`, importada no `main.tsx`), sem Google Fonts.
 
 | Variante | Peso | Elemento | Uso |
 |---|---|---|---|

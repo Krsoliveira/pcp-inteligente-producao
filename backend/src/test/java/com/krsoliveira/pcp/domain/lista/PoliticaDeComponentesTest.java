@@ -25,7 +25,7 @@ class PoliticaDeComponentesTest {
 
     private static final TipoOrdem NORMAL = TipoOrdem.criar("Produção Normal", null, "#1565c0", "teste");
     private static final TipoOrdem CONVERSAO = TipoOrdem.reconstituir(UUID.randomUUID(), "Conversão", null, "#6a1b9a", true,
-            new Assinatura("sistema", java.time.Instant.now(), "sistema", java.time.Instant.now()));
+            new Assinatura("sistema", java.time.Instant.now(), "sistema", java.time.Instant.now()), 0);
 
     private static Material material(String codigo, TipoMaterial tipo) {
         return Material.reconstituir(UUID.randomUUID(), codigo, "Material " + codigo, tipo, "un", Assinatura.nova("teste"));

@@ -24,6 +24,9 @@ export interface OrdemProducao {
   atualizadaEm: string
   criadaPor: string
   atualizadaPor: string
+  /** Vêm na resposta: quem só vê listas não precisa consultar o catálogo de materiais. */
+  materialCodigo?: string | null
+  materialDescricao?: string | null
 }
 
 export interface CriarOrdemRequest {
@@ -56,12 +59,19 @@ export interface TipoOrdem {
   atualizadoEm: string
   criadoPor: string
   atualizadoPor: string
+  /** Soma 1 a cada alteração; vai de volta no PUT para recusar a edição sobre dados antigos (ADR-0034). */
+  versao: number
 }
 
 export interface CadastrarTipoOrdemRequest {
   nome: string
   descricao?: string
   cor: string
+}
+
+export interface AtualizarTipoOrdemRequest extends CadastrarTipoOrdemRequest {
+  /** Versão lida ao abrir a edição: se outra pessoa salvou antes, o servidor responde 409. */
+  versao?: number
 }
 
 // ---- Material ----
@@ -102,6 +112,9 @@ export interface ItemListaTecnica {
   materialComponenteId: string
   quantidadePlanejada: number
   unidadeDeMedida: string
+  /** Vêm na resposta: quem só vê listas não precisa consultar o catálogo de materiais. */
+  componenteCodigo?: string | null
+  componenteDescricao?: string | null
 }
 
 export interface ListaTecnica {
@@ -119,6 +132,9 @@ export interface ListaTecnica {
   atualizadaEm: string
   criadaPor: string
   atualizadaPor: string
+  /** Vêm na resposta: quem só vê listas não precisa consultar o catálogo de materiais. */
+  materialCodigo?: string | null
+  materialDescricao?: string | null
 }
 
 /** Componente nas duas versões comparadas; o lado em que ele não existe vem nulo. */
@@ -383,6 +399,8 @@ export type AcaoAuditoria =
   | 'PERFIL_ATRIBUIDO'
   | 'SENHA_ALTERADA'
   | 'SENHA_REDEFINIDA'
+  | 'USUARIO_DESATIVADO'
+  | 'USUARIO_REATIVADO'
 
 /** Mudança de valor registrada na trilha: {"de": ..., "para": ...}. */
 export interface MudancaAuditoria {
@@ -585,12 +603,16 @@ export interface PerfilAcesso {
   quantidadeDeUsuarios: number
   atualizadoEm: string
   atualizadoPor: string
+  /** Soma 1 a cada alteração; vai de volta no PUT para recusar a edição sobre dados antigos (ADR-0034). */
+  versao: number
 }
 
 export interface SalvarPerfilRequest {
   nome: string
   descricao: string
   permissoes: Permissao[]
+  /** Só na alteração: versão lida ao abrir a edição. Se outra pessoa salvou antes, o servidor responde 409. */
+  versao?: number
 }
 
 export interface UsuarioAcesso {
@@ -600,6 +622,8 @@ export interface UsuarioAcesso {
   perfilId: string
   perfilNome: string | null
   criadoEm: string
+  /** Desativado não entra; continua na lista e no histórico e pode ser reativado. */
+  ativo: boolean
 }
 
 export interface CriarUsuarioRequest {

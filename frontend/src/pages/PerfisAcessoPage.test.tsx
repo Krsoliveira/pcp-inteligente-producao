@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { atualizarPerfil, criarPerfil, excluirPerfil, listarPerfis, listarPermissoes } from '../api/acessos'
+import { atualizarPerfil, buscarPerfil, criarPerfil, excluirPerfil, listarPerfis, listarPermissoes } from '../api/acessos'
 import { erroHttp } from '../test/erros'
 import { TODAS_AS_PERMISSOES } from '../test/fabricas'
 import { renderizarTela } from '../test/renderizar'
@@ -13,6 +13,7 @@ vi.mock('../api/acessos', () => ({
   listarPermissoes: vi.fn(),
   criarPerfil: vi.fn(),
   atualizarPerfil: vi.fn(),
+  buscarPerfil: vi.fn(),
   excluirPerfil: vi.fn(),
 }))
 
@@ -27,7 +28,7 @@ const CATALOGO: PermissaoDoCatalogo[] = [
 function perfil(sobrescritas: Partial<PerfilAcesso>): PerfilAcesso {
   return {
     id: 'p-x', nome: 'Perfil', descricao: '', administrador: false, padraoDoAutocadastro: false,
-    permissoes: ['ORDEM_VISUALIZAR'], quantidadeDeUsuarios: 0, atualizadoEm: '2026-10-20T10:00:00Z', atualizadoPor: 'admin@pcp.com',
+    permissoes: ['ORDEM_VISUALIZAR'], quantidadeDeUsuarios: 0, atualizadoEm: '2026-10-20T10:00:00Z', atualizadoPor: 'admin@pcp.com', versao: 0,
     ...sobrescritas,
   }
 }
@@ -51,6 +52,7 @@ describe('PerfisAcessoPage', () => {
     vi.mocked(listarPermissoes).mockReset().mockResolvedValue(CATALOGO)
     vi.mocked(criarPerfil).mockReset()
     vi.mocked(atualizarPerfil).mockReset()
+    vi.mocked(buscarPerfil).mockReset()
     vi.mocked(excluirPerfil).mockReset()
   })
 
@@ -148,6 +150,44 @@ describe('PerfisAcessoPage', () => {
     expect([...payload.permissoes].sort()).toEqual(['ORDEM_CRIAR', 'ORDEM_VISUALIZAR'])
   })
 
+  it('envia a versão do perfil que abriu, para o servidor recusar a edição sobre dados antigos', async () => {
+    vi.mocked(listarPerfis).mockResolvedValue([...PERFIS.slice(0, 3), { ...PERFIS[3], versao: 7 }])
+    vi.mocked(atualizarPerfil).mockResolvedValue(PERFIS[3])
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar perfil Operador' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar perfil' }))
+
+    await waitFor(() => expect(atualizarPerfil).toHaveBeenCalled())
+    expect(vi.mocked(atualizarPerfil).mock.calls[0][1].versao).toBe(7)
+  })
+
+  it('outra pessoa salvou antes: avisa, mantém o que foi digitado e carrega a versão atual quando pedido', async () => {
+    vi.mocked(atualizarPerfil).mockRejectedValueOnce(erroHttp(409, {
+      detail: 'O perfil "Operador" foi alterado por outra pessoa enquanto você editava. Recarregue para ver a versão atual e refaça a alteração.', codigo: 'EDICAO_CONCORRENTE',
+    }))
+    vi.mocked(buscarPerfil).mockResolvedValue({ ...PERFIS[3], descricao: 'Mudado pela Ana', versao: 1 })
+    montar()
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar perfil Operador' }))
+    const descricao = await screen.findByLabelText('Descrição')
+    await userEvent.clear(descricao)
+    await userEvent.type(descricao, 'Do Bruno')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar perfil' }))
+
+    expect(await screen.findByText(/foi alterado por outra pessoa/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Descrição')).toHaveValue('Do Bruno')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Carregar versão atual' }))
+
+    await waitFor(() => expect(screen.getByLabelText('Descrição')).toHaveValue('Mudado pela Ana'))
+    expect(screen.queryByText(/foi alterado por outra pessoa/)).not.toBeInTheDocument()
+    vi.mocked(atualizarPerfil).mockResolvedValue(PERFIS[3])
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar perfil' }))
+    await waitFor(() => expect(atualizarPerfil).toHaveBeenCalledTimes(2))
+    expect(vi.mocked(atualizarPerfil).mock.calls[1][1].versao).toBe(1)
+  })
+
   it('mostra o motivo que o servidor deu quando recusa (nome repetido) e não fecha', async () => {
     vi.mocked(criarPerfil).mockRejectedValue(erroHttp(409, { detail: 'Já existe um perfil com o nome "Gerente".' }))
     montar()
@@ -159,6 +199,7 @@ describe('PerfisAcessoPage', () => {
 
     expect(await screen.findByText('Já existe um perfil com o nome "Gerente".')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Criar perfil' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Carregar versão atual' })).not.toBeInTheDocument()
   })
 
   it('só oferece excluir um perfil que não é de sistema e que ninguém usa; confirma antes', async () => {

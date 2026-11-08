@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import com.krsoliveira.pcp.BancoDeTesteIsolado;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,7 +8,6 @@ import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
@@ -15,9 +15,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -40,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "app.admin.senha=Senha@123",
                 "pcp.seguranca.rate-limit.login=1000"
         })
-@Testcontainers
+@BancoDeTesteIsolado
 @AutoConfigureTestRestTemplate
 @Import(RelogioDoSistemaApiTest.RelogioFixo.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -54,10 +51,6 @@ class RelogioDoSistemaApiTest {
             return Clock.fixed(Instant.parse("2040-01-15T01:00:00Z"), ZoneId.of("America/Sao_Paulo"));
         }
     }
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     @Autowired
     private TestRestTemplate rest;

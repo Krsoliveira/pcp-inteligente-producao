@@ -1,5 +1,6 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
+import com.krsoliveira.pcp.BancoDeTesteIsolado;
 import com.krsoliveira.pcp.domain.usuario.UsuarioRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,14 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "pcp.seguranca.rate-limit.login=1000",
                 "pcp.seguranca.rate-limit.trocar-senha=1000"
         })
-@Testcontainers
+@BancoDeTesteIsolado
 @AutoConfigureTestRestTemplate
 @SuppressWarnings("unchecked")
 class UltimoAdministradorConcorrenteApiTest {
@@ -50,10 +47,6 @@ class UltimoAdministradorConcorrenteApiTest {
     private static final String ACESSOS = "/api/v1/acessos";
     private static final String SENHA = "Senha@123";
     private static final String SENHA_NOVA = "Senha@123!nova";
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18-alpine");
 
     @Autowired
     private TestRestTemplate rest;

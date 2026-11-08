@@ -46,7 +46,7 @@ public class AtribuirPerfilAoUsuario {
         return execucao.executar(ctx -> {
             Usuario usuario = usuarioRepository.porId(usuarioId)
                     .orElseThrow(() -> new UsuarioNaoEncontradoException(usuarioId));
-            PerfilAcesso novo = perfilRepository.buscarPorId(novoPerfilId)
+            PerfilAcesso novo = perfilRepository.buscarPorIdParaUso(novoPerfilId)
                     .orElseThrow(() -> new PerfilNaoEncontradoException(novoPerfilId));
             PerfilAcesso atual = perfilRepository.buscarPorId(usuario.getPerfilId())
                     .orElseThrow(() -> new PerfilNaoEncontradoException(usuario.getPerfilId()));
@@ -79,7 +79,7 @@ public class AtribuirPerfilAoUsuario {
      */
     private void exigirOutroAdministrador(PerfilAcesso administrador) {
         perfilRepository.buscarPorIdParaAtualizar(administrador.getId());
-        if (usuarioRepository.contarPorPerfil(administrador.getId()) <= 1) {
+        if (usuarioRepository.contarAtivosPorPerfil(administrador.getId()) <= 1) {
             throw new RegraDeNegocioException(
                     "Este é o último usuário com o perfil Administrador; o sistema precisa de ao menos um.");
         }

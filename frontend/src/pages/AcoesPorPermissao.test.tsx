@@ -43,34 +43,34 @@ describe('botões de cadastro por permissão', () => {
     const { unmount } = renderizarTela(<OrdensPage />)
     await screen.findByText('OP-1')
     expect(screen.getByRole('button', { name: 'Nova ordem' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Atualizar status' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Atualizar status da ordem / })).toBeInTheDocument()
     unmount()
 
     renderizarTela(<OrdensPage />, { permissoes: sem('ORDEM_CRIAR', 'ORDEM_ATUALIZAR_STATUS') })
     await screen.findByText('OP-1')
     expect(screen.queryByRole('button', { name: 'Nova ordem' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Atualizar status' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Atualizar status da ordem / })).not.toBeInTheDocument()
   })
 
   it.each(['PLANEJADA', 'LIBERADA', 'CONCLUIDA', 'CANCELADA'] as const)('Ordens: ordem %s não oferece o atalho "Lançar consumo"', async (status) => {
     vi.mocked(pesquisarOrdens).mockResolvedValue(pagina([ordem({ id: 'o-1', codigo: 'OP-1', status })]))
     renderizarTela(<OrdensPage />)
     await screen.findByText('OP-1')
-    expect(screen.queryByRole('link', { name: 'Lançar consumo' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^Lançar consumo da ordem / })).not.toBeInTheDocument()
   })
 
   it('Ordens: ordem em produção oferece o atalho "Lançar consumo", que abre a tela de lançamento da ordem', async () => {
     vi.mocked(pesquisarOrdens).mockResolvedValue(pagina([ordem({ id: 'o-1', codigo: 'OP-1', status: 'EM_PRODUCAO' })]))
     renderizarTela(<OrdensPage />)
     await screen.findByText('OP-1')
-    expect(screen.getByRole('link', { name: 'Lançar consumo' })).toHaveAttribute('href', '/ordens/o-1/lancar-consumo')
+    expect(screen.getByRole('link', { name: /^Lançar consumo da ordem / })).toHaveAttribute('href', '/ordens/o-1/lancar-consumo')
   })
 
   it('Ordens: sem CONSUMO_REGISTRAR a ordem em produção não oferece o atalho "Lançar consumo"', async () => {
     vi.mocked(pesquisarOrdens).mockResolvedValue(pagina([ordem({ id: 'o-1', codigo: 'OP-1', status: 'EM_PRODUCAO' })]))
     renderizarTela(<OrdensPage />, { permissoes: sem('CONSUMO_REGISTRAR') })
     await screen.findByText('OP-1')
-    expect(screen.queryByRole('link', { name: 'Lançar consumo' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^Lançar consumo da ordem / })).not.toBeInTheDocument()
   })
 
   it('Ordens: sem ORDEM_CRIAR o estado vazio não oferece "Criar primeira ordem"', async () => {
@@ -115,12 +115,12 @@ describe('botões de cadastro por permissão', () => {
     const { unmount } = renderizarTela(<TiposOrdemPage />)
     await screen.findByText('Produção')
     expect(screen.getByRole('button', { name: 'Novo tipo' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Editar tipo Produção' })).toBeInTheDocument()
     unmount()
 
     renderizarTela(<TiposOrdemPage />, { permissoes: sem('TIPO_ORDEM_GERENCIAR') })
     await screen.findByText('Produção')
     expect(screen.queryByRole('button', { name: 'Novo tipo' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Editar tipo/ })).not.toBeInTheDocument()
   })
 })

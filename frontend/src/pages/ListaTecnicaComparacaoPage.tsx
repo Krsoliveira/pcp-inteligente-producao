@@ -3,6 +3,7 @@ import Box from '@mui/material/Box'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import Card from '@mui/material/Card'
 import Chip from '@mui/material/Chip'
+import { alpha, type Palette } from '@mui/material/styles'
 import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
 import Skeleton from '@mui/material/Skeleton'
@@ -28,11 +29,12 @@ import type { ComparacaoDeVersoes, ItemComparado } from '../types'
 
 type Situacao = 'alterado' | 'adicionado' | 'removido' | 'igual'
 
-const SITUACAO: Record<Situacao, { rotulo: string; cor: string }> = {
-  alterado: { rotulo: 'Alterado', cor: '#92400E' },
-  adicionado: { rotulo: 'Adicionado em B', cor: '#047857' },
-  removido: { rotulo: 'Removido em B', cor: '#B91C1C' },
-  igual: { rotulo: 'Igual', cor: '#64748B' },
+/** Tom escuro do tema em cada situação: o texto fica sobre fundo tingido da mesma cor (design-system.md). */
+const SITUACAO: Record<Situacao, { rotulo: string; cor: (paleta: Palette) => string }> = {
+  alterado: { rotulo: 'Alterado', cor: (p) => p.warning.dark },
+  adicionado: { rotulo: 'Adicionado em B', cor: (p) => p.success.main },
+  removido: { rotulo: 'Removido em B', cor: (p) => p.error.dark },
+  igual: { rotulo: 'Igual', cor: (p) => p.grey[700] },
 }
 
 const contagem = (n: number, singular: string, plural: string) => `${n} ${n === 1 ? singular : plural}`
@@ -166,7 +168,7 @@ export function ListaTecnicaComparacaoPage() {
                     return (
                       <TableRow key={`${situacao}-${item.materialComponenteId}`} hover>
                         <TableCell>
-                          <Chip label={rotulo} size="small" sx={{ bgcolor: `${cor}14`, color: cor, fontWeight: 600, fontSize: '0.7rem', border: 'none' }} />
+                          <Chip label={rotulo} size="small" sx={(t) => ({ bgcolor: alpha(cor(t.palette), 0.08), color: cor(t.palette), fontWeight: 600, fontSize: '0.7rem', border: 'none' })} />
                         </TableCell>
                         <TableCell>
                           <Typography

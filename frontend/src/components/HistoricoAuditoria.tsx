@@ -32,6 +32,8 @@ const ACAO_LABEL: Record<AcaoAuditoria, string> = {
   PERFIL_ATRIBUIDO: 'Perfil atribuído',
   SENHA_ALTERADA: 'Senha alterada',
   SENHA_REDEFINIDA: 'Senha redefinida',
+  USUARIO_DESATIVADO: 'Usuário desativado',
+  USUARIO_REATIVADO: 'Usuário reativado',
 }
 
 const CAMPO_LABEL: Record<string, string> = {

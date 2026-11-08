@@ -45,6 +45,10 @@ public class TipoOrdemJpaEntity {
     @Column(name = "atualizado_por", nullable = false, length = 150)
     private String atualizadoPor;
 
+    /** Conferida no caso de uso, sob SELECT ... FOR UPDATE (ADR-0034); por isso não é o @Version do JPA. */
+    @Column(nullable = false)
+    private long versao;
+
     protected TipoOrdemJpaEntity() {}
 
     public static TipoOrdemJpaEntity deDominio(TipoOrdem tipo) {
@@ -59,11 +63,12 @@ public class TipoOrdemJpaEntity {
         entity.atualizadoEm = a.alteradoEm();
         entity.criadoPor = a.criadoPor();
         entity.atualizadoPor = a.alteradoPor();
+        entity.versao = tipo.getVersao();
         return entity;
     }
 
     public TipoOrdem paraDominio() {
         return TipoOrdem.reconstituir(id, nome, descricao, cor, conversao,
-                new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm));
+                new Assinatura(criadoPor, criadoEm, atualizadoPor, atualizadoEm), versao);
     }
 }

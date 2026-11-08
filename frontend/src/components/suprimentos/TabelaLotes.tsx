@@ -10,7 +10,6 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import { LinkDaLinha } from '../consulta/LinkDaLinha'
-import { LARGURA_MINIMA_DA_DESCRICAO } from '../consulta/TabelaInterativa'
 import { StatusLoteBadge } from '../StatusBadge'
 import { diasAte, formatarCodigoMaterial, formatarData, formatarQuantidade } from '../../utils/formatacao'
 import type { Lote, Material } from '../../types'
@@ -22,12 +21,19 @@ interface TabelaLotesProps {
   materialPorId?: Map<string, Material>
 }
 
+/**
+ * Seis colunas dentro do cartão de 8/12 da nota fiscal: a 1280 px, com o espaçamento lateral padrão e a descrição em
+ * 140 px, a tabela rolava 40 px e o selo de status cortava. O código do material (11 dígitos) cabe em 100 px; a
+ * descrição quebra em mais linhas, e nada fica escondido.
+ */
+const LARGURA_MINIMA_DO_MATERIAL = 100
+
 /** Lotes clicáveis (→ detalhe do lote), com saldo, validade e status. */
 export function TabelaLotes({ lotes, coluna, materialPorId }: TabelaLotesProps) {
   const navigate = useNavigate()
   return (
     <TableContainer>
-      <Table size="small" sx={{ '& th': { whiteSpace: 'nowrap' } }}>
+      <Table size="small" sx={{ '& th': { whiteSpace: 'nowrap' }, '& th, & td': { px: 1.5 } }}>
         <TableHead>
           <TableRow>
             <TableCell>Lote</TableCell>
@@ -50,7 +56,7 @@ export function TabelaLotes({ lotes, coluna, materialPorId }: TabelaLotesProps) 
                 </TableCell>
                 <TableCell>
                   {coluna === 'material' ? (
-                    <Typography variant="body2" sx={{ overflowWrap: 'anywhere', minWidth: LARGURA_MINIMA_DA_DESCRICAO }}>
+                    <Typography variant="body2" sx={{ overflowWrap: 'anywhere', minWidth: LARGURA_MINIMA_DO_MATERIAL }}>
                       {formatarCodigoMaterial(material?.codigo)}
                       <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>
                         {material ? ` · ${material.descricao}` : ''}

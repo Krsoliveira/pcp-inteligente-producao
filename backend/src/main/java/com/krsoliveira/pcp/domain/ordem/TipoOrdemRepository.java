@@ -14,6 +14,9 @@ public interface TipoOrdemRepository {
 
     Optional<TipoOrdem> buscarPorId(UUID id);
 
+    /** Busca travando o registro até o fim da transação (SELECT ... FOR UPDATE), para editar sem corrida. */
+    Optional<TipoOrdem> buscarPorIdParaAtualizar(UUID id);
+
     List<TipoOrdem> listarTodos();
 
     boolean existePorNome(String nome);

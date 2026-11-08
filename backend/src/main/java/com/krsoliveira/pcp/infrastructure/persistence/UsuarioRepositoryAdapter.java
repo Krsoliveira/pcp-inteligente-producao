@@ -46,4 +46,14 @@ public class UsuarioRepositoryAdapter implements UsuarioRepository {
     public long contarPorPerfil(UUID perfilId) {
         return springData.countByPerfilId(perfilId);
     }
+
+    @Override
+    public long contarAtivosPorPerfil(UUID perfilId) {
+        return springData.countByPerfilIdAndAtivoTrue(perfilId);
+    }
+
+    @Override
+    public Optional<Usuario> porIdParaAtualizar(UUID id) {
+        return springData.buscarParaAtualizar(id).map(UsuarioJpaEntity::paraDominio);
+    }
 }

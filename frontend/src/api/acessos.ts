@@ -24,6 +24,11 @@ export const listarPerfis = async (): Promise<PerfilAcesso[]> => {
   return data
 }
 
+export const buscarPerfil = async (id: string): Promise<PerfilAcesso> => {
+  const { data } = await apiClient.get<PerfilAcesso>(`/v1/acessos/perfis/${id}`)
+  return data
+}
+
 export const criarPerfil = async (payload: SalvarPerfilRequest): Promise<PerfilAcesso> => {
   const { data } = await apiClient.post<PerfilAcesso>('/v1/acessos/perfis', payload)
   return data
@@ -61,4 +66,14 @@ export const trocarMinhaSenha = async (senhaAtual: string, novaSenha: string): P
 /** Um gestor define uma senha provisória nova; o usuário precisa trocá-la no próximo acesso. */
 export const redefinirSenha = async (usuarioId: string, senhaProvisoria: string): Promise<void> => {
   await apiClient.post(`/v1/acessos/usuarios/${usuarioId}/redefinir-senha`, { senhaProvisoria })
+}
+
+/** Tira o acesso sem excluir: o usuário não entra e perde a sessão aberta. */
+export const desativarUsuario = async (usuarioId: string): Promise<void> => {
+  await apiClient.post(`/v1/acessos/usuarios/${usuarioId}/desativar`)
+}
+
+/** Devolve o acesso, com o mesmo perfil e a mesma senha. */
+export const reativarUsuario = async (usuarioId: string): Promise<void> => {
+  await apiClient.post(`/v1/acessos/usuarios/${usuarioId}/reativar`)
 }

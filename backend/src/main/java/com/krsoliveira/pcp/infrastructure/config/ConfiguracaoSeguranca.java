@@ -10,9 +10,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -119,7 +119,6 @@ public class ConfiguracaoSeguranca {
                         .authenticationEntryPoint(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
-                .authenticationProvider(authenticationProvider())
                 // Limite de corpo e rate limiting ficam DEPOIS do CorsFilter: as respostas 413 e
                 // 429 também precisam dos cabeçalhos CORS, senão o navegador as descarta e o
                 // usuário vê "erro de conexão" em vez da mensagem real.
@@ -175,17 +174,24 @@ public class ConfiguracaoSeguranca {
         return source;
     }
 
+    /**
+     * Login por e-mail e senha: o usuário vem do banco e a senha confere com BCrypt. Montado aqui, num caminho só. Com o
+     * provider publicado como bean, o Spring avisava na subida que deixava de usar o UserDetailsService (dois caminhos
+     * para a mesma coisa).
+     */
     @Bean
-    public AuthenticationProvider authenticationProvider() {
+    public AuthenticationManager authenticationManager() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(usuarioDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-            throws Exception {
-        return config.getAuthenticationManager();
+        // Usuário desativado só é recusado depois de conferir a senha: com senha errada ou certa, a resposta e o tempo
+        // são os de "e-mail ou senha incorretos". Conferir antes deixaria descobrir que a conta existe.
+        provider.setPreAuthenticationChecks(usuario -> { });
+        provider.setPostAuthenticationChecks(usuario -> {
+            if (!usuario.isEnabled()) {
+                throw new DisabledException("Usuário desativado");
+            }
+        });
+        return new ProviderManager(provider);
     }
 
     @Bean

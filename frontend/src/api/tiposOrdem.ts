@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { TipoOrdem, CadastrarTipoOrdemRequest } from '../types'
+import type { TipoOrdem, CadastrarTipoOrdemRequest, AtualizarTipoOrdemRequest } from '../types'
 
 export const listarTiposOrdem = async (): Promise<TipoOrdem[]> => {
   const { data } = await apiClient.get<TipoOrdem[]>('/v1/tipos-ordem')
@@ -11,9 +11,14 @@ export const cadastrarTipoOrdem = async (payload: CadastrarTipoOrdemRequest): Pr
   return data
 }
 
+export const buscarTipoOrdem = async (id: string): Promise<TipoOrdem> => {
+  const { data } = await apiClient.get<TipoOrdem>(`/v1/tipos-ordem/${id}`)
+  return data
+}
+
 export const atualizarTipoOrdem = async (
   id: string,
-  payload: CadastrarTipoOrdemRequest,
+  payload: AtualizarTipoOrdemRequest,
 ): Promise<TipoOrdem> => {
   const { data } = await apiClient.put<TipoOrdem>(`/v1/tipos-ordem/${id}`, payload)
   return data

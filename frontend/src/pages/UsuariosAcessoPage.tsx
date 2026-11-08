@@ -16,14 +16,17 @@ import Typography from '@mui/material/Typography'
 import AddIcon from '@mui/icons-material/Add'
 import GroupsIcon from '@mui/icons-material/GroupsOutlined'
 import LockResetIcon from '@mui/icons-material/LockReset'
+import PersonOffIcon from '@mui/icons-material/PersonOffOutlined'
+import PersonIcon from '@mui/icons-material/PersonOutlined'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 import { useQuery } from '@tanstack/react-query'
 import { listarPerfis, listarUsuarios } from '../api/acessos'
-import { NovoUsuarioDialog, RedefinirSenhaDialog, TrocarPerfilDialog } from '../components/acessos/UsuarioDialogs'
+import { NovoUsuarioDialog, RedefinirSenhaDialog, SituacaoDoUsuarioDialog, TrocarPerfilDialog } from '../components/acessos/UsuarioDialogs'
 import { CelulaDeCabecalho, ResumoDaTabela, useTabelaInterativa, type Coluna } from '../components/consulta/TabelaInterativa'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { SePermitido } from '../components/SePermitido'
+import { SituacaoUsuarioBadge } from '../components/StatusBadge'
 import { usePermissoes } from '../hooks/usePermissoes'
 import type { UsuarioAcesso } from '../types'
 import { formatarDataHora } from '../utils/formatacao'
@@ -33,6 +36,7 @@ const COLUNAS: Coluna<UsuarioAcesso>[] = [
   { chave: 'nome', rotulo: 'Nome', valor: (u) => u.nome },
   { chave: 'email', rotulo: 'E-mail', valor: (u) => u.email },
   { chave: 'perfil', rotulo: 'Perfil', valor: (u) => u.perfilNome },
+  { chave: 'situacao', rotulo: 'Situação', valor: (u) => (u.ativo ? 'Ativo' : 'Desativado') },
   { chave: 'criado', rotulo: 'Criado em', valor: (u) => u.criadoEm, texto: (u) => formatarDataHora(u.criadoEm) },
 ]
 
@@ -42,6 +46,7 @@ export function UsuariosAcessoPage() {
   const [novoAberto, setNovoAberto] = useState(false)
   const [trocando, setTrocando] = useState<UsuarioAcesso | null>(null)
   const [redefinindo, setRedefinindo] = useState<UsuarioAcesso | null>(null)
+  const [mudandoSituacao, setMudandoSituacao] = useState<UsuarioAcesso | null>(null)
 
   const usuariosQuery = useQuery({ queryKey: ['acessos', 'usuarios'], queryFn: listarUsuarios })
   const perfisQuery = useQuery({ queryKey: ['acessos', 'perfis'], queryFn: listarPerfis })
@@ -89,7 +94,7 @@ export function UsuariosAcessoPage() {
                   <TableHead>
                     <TableRow>
                       {COLUNAS.map((c) => <CelulaDeCabecalho key={c.chave} chave={c.chave} rotulo={c.rotulo} controle={tabela.controle} />)}
-                      <TableCell align="center" sx={{ width: 110 }}>Ações</TableCell>
+                      <TableCell align="center" sx={{ width: 140 }}>Ações</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -98,6 +103,7 @@ export function UsuariosAcessoPage() {
                         <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{u.nome}</Typography></TableCell>
                         <TableCell><Typography variant="body2" sx={{ color: 'text.secondary' }}>{u.email}</Typography></TableCell>
                         <TableCell>{u.perfilNome ?? '—'}</TableCell>
+                        <TableCell><SituacaoUsuarioBadge ativo={u.ativo} /></TableCell>
                         <TableCell><Typography variant="body2" noWrap>{formatarDataHora(u.criadoEm)}</Typography></TableCell>
                         <TableCell align="center">
                           {podeTrocar(u) && (
@@ -110,6 +116,12 @@ export function UsuariosAcessoPage() {
                               <Tooltip title="Redefinir senha">
                                 <IconButton size="small" aria-label={`Redefinir a senha de ${u.nome}`} onClick={() => setRedefinindo(u)}>
                                   <LockResetIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title={u.ativo ? 'Desativar' : 'Reativar'}>
+                                <IconButton size="small" aria-label={u.ativo ? `Desativar o usuário ${u.nome}` : `Reativar o usuário ${u.nome}`}
+                                  onClick={() => setMudandoSituacao(u)}>
+                                  {u.ativo ? <PersonOffIcon sx={{ fontSize: 18 }} /> : <PersonIcon sx={{ fontSize: 18 }} />}
                                 </IconButton>
                               </Tooltip>
                             </>
@@ -127,6 +139,7 @@ export function UsuariosAcessoPage() {
 
       <NovoUsuarioDialog aberto={novoAberto} onFechar={() => setNovoAberto(false)} perfis={perfis} permissoesDoUsuario={permissoes} />
       <RedefinirSenhaDialog usuario={redefinindo} onFechar={() => setRedefinindo(null)} />
+      <SituacaoDoUsuarioDialog usuario={mudandoSituacao} onFechar={() => setMudandoSituacao(null)} />
       <TrocarPerfilDialog usuario={trocando} onFechar={() => setTrocando(null)} perfis={perfis} permissoesDoUsuario={permissoes} />
     </Box>
   )

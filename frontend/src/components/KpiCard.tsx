@@ -4,45 +4,48 @@ import CardActionArea from '@mui/material/CardActionArea'
 import CardContent from '@mui/material/CardContent'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
+import { useTheme, type Palette } from '@mui/material/styles'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import type { SvgIconComponent } from '@mui/icons-material'
+
+/** Tons do tema para sinalizar o número do cartão; nunca uma cor solta (design-system.md). */
+export type TomDoKpi = 'sucesso' | 'atencao' | 'erro' | 'neutro'
+
+const COR_DO_TOM: Record<TomDoKpi, (paleta: Palette) => string> = {
+  sucesso: (p) => p.success.main,
+  atencao: (p) => p.warning.main,
+  erro: (p) => p.error.main,
+  neutro: (p) => p.text.secondary,
+}
 
 interface KpiCardProps {
   titulo: string
   valor: number | string
   subtitulo?: string
-  /** Sem ícone o cartão fica só com o número; use cor apenas para sinalizar (ex.: atrasos). */
-  Icone?: SvgIconComponent
-  cor?: string
+  /** O número fica em text.primary; o tom só sinaliza (ex.: atrasos, saldo indisponível). */
+  tom?: TomDoKpi
   /** Quando informado, o cartão inteiro vira um link para a tela já filtrada. */
   link?: { para: string; rotulo: string }
 }
 
-export function KpiCard({ titulo, valor, subtitulo, Icone, cor, link }: KpiCardProps) {
-  const corDoValor = cor ?? (Icone ? '#4F46E5' : undefined)
+export function KpiCard({ titulo, valor, subtitulo, tom, link }: KpiCardProps) {
+  const { palette } = useTheme()
+  const corDoValor = tom && COR_DO_TOM[tom](palette)
 
   const conteudo = (
     <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary' }}>
-            {titulo}
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="body2" gutterBottom sx={{ color: 'text.secondary' }}>
+          {titulo}
+        </Typography>
+        <Typography variant="h4" component="p" sx={{ color: corDoValor ?? 'text.primary', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+          {valor}
+        </Typography>
+        {subtitulo && (
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', display: 'block' }}>
+            {subtitulo}
           </Typography>
-          <Typography variant="h4" component="p" sx={{ color: corDoValor ?? 'text.primary', fontWeight: 700 }}>
-            {valor}
-          </Typography>
-          {subtitulo && (
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', display: 'block' }}>
-              {subtitulo}
-            </Typography>
-          )}
-        </Box>
-        {Icone && (
-          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: `${corDoValor}18`, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <Icone sx={{ color: corDoValor, fontSize: 28 }} />
-          </Box>
         )}
       </Box>
       {link && (

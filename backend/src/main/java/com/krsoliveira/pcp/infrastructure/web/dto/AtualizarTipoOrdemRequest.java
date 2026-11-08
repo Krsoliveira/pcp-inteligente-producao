@@ -3,10 +3,17 @@ package com.krsoliveira.pcp.infrastructure.web.dto;
 import com.krsoliveira.pcp.application.ordem.AtualizarTipoOrdem;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
+/**
+ * Corpo da alteração de um tipo de ordem.
+ *
+ * @param versao opcional: a versão do tipo que a tela leu. Se não for mais a atual, a alteração é recusada com 409
+ *               (ADR-0034).
+ */
 public record AtualizarTipoOrdemRequest(
 
         @NotBlank(message = "nome é obrigatório")
@@ -18,9 +25,12 @@ public record AtualizarTipoOrdemRequest(
 
         @NotBlank(message = "cor é obrigatória")
         @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "cor deve ser um código hex válido (ex.: #1565c0)")
-        String cor) {
+        String cor,
+
+        @PositiveOrZero(message = "versão inválida")
+        Long versao) {
 
     public AtualizarTipoOrdem.Comando paraComando(UUID id) {
-        return new AtualizarTipoOrdem.Comando(id, nome, descricao, cor);
+        return new AtualizarTipoOrdem.Comando(id, nome, descricao, cor, versao);
     }
 }

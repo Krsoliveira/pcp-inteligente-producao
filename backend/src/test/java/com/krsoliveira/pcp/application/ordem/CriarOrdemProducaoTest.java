@@ -79,7 +79,7 @@ class CriarOrdemProducaoTest {
 
     private static TipoOrdem tipoConversao() {
         return TipoOrdem.reconstituir(UUID.randomUUID(), "Conversão", null, "#6a1b9a", true,
-                new Assinatura("sistema", java.time.Instant.now(), "sistema", java.time.Instant.now()));
+                new Assinatura("sistema", java.time.Instant.now(), "sistema", java.time.Instant.now()), 0);
     }
 
     /** Lista ativa de um semiacabado que consome um produto acabado (a conversão). */

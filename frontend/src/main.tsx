@@ -1,3 +1,5 @@
+// Fonte servida pela própria aplicação: o navegador não fala com terceiros e a CSP fica só em 'self'.
+import '@fontsource-variable/inter'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

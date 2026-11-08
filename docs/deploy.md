@@ -81,6 +81,11 @@ Em **Create → Database → PostgreSQL**, mantenha o nome `Postgres`. Depois:
 
 Sem `JWT_SECRET` ou `DB_PASSWORD`, o perfil `prod` não sobe, e isso é proposital. O autocadastro fica desligado (ADR-0031); não defina `AUTOCADASTRO_HABILITADO`.
 
+**`ADMIN_*` só valem na criação do administrador.** No primeiro deploy, com o banco vazio, o backend cria a conta com esses valores. Nos deploys seguintes, se o e-mail já existe, ele não mexe na conta; o log diz "e-mail já cadastrado — nenhuma alteração feita".
+
+- **Trocar a senha:** pela tela, em **Alterar minha senha**, ou por outro administrador, em **Redefinir senha**. A troca exige a senha atual, entra na trilha de auditoria e derruba as sessões antigas.
+- **Mudar a `ADMIN_SENHA` no Railway não troca a senha de ninguém.** Se a senha do administrador vazar, troque pela tela e gere um `JWT_SECRET` novo.
+
 ### frontend
 
 **Create → GitHub Repo →** o mesmo repositório. Em **Settings**:

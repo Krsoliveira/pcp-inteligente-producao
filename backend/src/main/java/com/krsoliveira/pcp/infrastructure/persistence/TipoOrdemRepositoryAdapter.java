@@ -31,6 +31,11 @@ public class TipoOrdemRepositoryAdapter implements TipoOrdemRepository {
     }
 
     @Override
+    public Optional<TipoOrdem> buscarPorIdParaAtualizar(UUID id) {
+        return springData.buscarParaAtualizar(id).map(TipoOrdemJpaEntity::paraDominio);
+    }
+
+    @Override
     public List<TipoOrdem> listarTodos() {
         return springData.findAll().stream()
                 .map(TipoOrdemJpaEntity::paraDominio)

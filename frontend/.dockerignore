@@ -3,5 +3,7 @@ dist/
 coverage/
 .env
 .env.*
+# O .env.production é versionado e não tem segredo: guarda a configuração do build de produção (ADR-0031).
+!.env.production
 *.log
 .vscode/
