@@ -27,7 +27,9 @@ public record ListaTecnicaResponse(
         String atualizadaPor,
         // Código e descrição do material produzido: quem vê listas técnicas não precisa consultar o catálogo.
         String materialCodigo,
-        String materialDescricao
+        String materialDescricao,
+        // Número legível da lista (LT-0001), igual em todas as versões.
+        String numeroLista
 ) {
     /** Os ids de material (o produzido e os componentes) que a resposta destas listas precisa nomear. */
     public static Set<UUID> materiaisCitados(Collection<ListaTecnica> listas) {
@@ -54,7 +56,8 @@ public record ListaTecnicaResponse(
                 lista.getAssinatura().criadoPor(),
                 lista.getAssinatura().alteradoPor(),
                 material == null ? null : material.getCodigo(),
-                material == null ? null : material.getDescricao()
+                material == null ? null : material.getDescricao(),
+                lista.getNumeroFormatado()
         );
     }
 }

@@ -88,4 +88,9 @@ public class ListaTecnicaRepositoryAdapter implements ListaTecnicaRepository {
     public boolean existeVersaoParaMaterial(UUID materialId, String versao) {
         return springDataRepository.existsByMaterialIdAndVersao(materialId, versao);
     }
+
+    @Override
+    public long proximoNumeroDeLista() {
+        return springDataRepository.proximoNumeroDeLista();
+    }
 }

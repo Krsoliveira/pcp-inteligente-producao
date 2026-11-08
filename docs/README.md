@@ -69,3 +69,4 @@ Regras dos ADRs deste projeto:
 | [0033](adr/0033-deploy-railway-pro-com-nginx.md) | Deploy no Railway Pro, com o Nginx do frontend na frente da API | Aceito |
 | [0034](adr/0034-bloqueio-otimista-na-edicao.md) | Bloqueio otimista na edição de perfil de acesso e tipo de ordem | Aceito |
 | [0035](adr/0035-logs-de-seguranca-e-desempenho.md) | Logs de segurança, de atividade e de desempenho | Aceito |
+| [0036](adr/0036-numero-legivel-da-lista-tecnica.md) | Número legível da lista técnica (LT-0001) | Aceito |

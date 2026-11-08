@@ -55,7 +55,7 @@ class AtivarListaTecnicaTest {
 
     private ListaTecnica criarListaEmRevisao(String versao) {
         ItemListaTecnica item = ItemListaTecnica.criar(componenteId, BigDecimal.ONE, "UN");
-        ListaTecnica lista = ListaTecnica.criarVersao(materialId, listaId, versao, List.of(item), USUARIO);
+        ListaTecnica lista = ListaTecnica.criarVersao(materialId, listaId, 1L, versao, List.of(item), USUARIO);
         listaTecnicaRepository.salvar(lista);
         return lista;
     }
@@ -64,7 +64,7 @@ class AtivarListaTecnicaTest {
         ItemListaTecnica item = ItemListaTecnica.criar(componenteId, BigDecimal.ONE, "UN");
         // Reconstrói diretamente como ATIVA (simula lista já ativada no passado)
         ListaTecnica lista = ListaTecnica.reconstituir(
-                UUID.randomUUID(), listaId, materialId, versao, StatusListaTecnica.ATIVA,
+                UUID.randomUUID(), listaId, 1L, materialId, versao, StatusListaTecnica.ATIVA,
                 List.of(item), Assinatura.nova(USUARIO));
         listaTecnicaRepository.salvar(lista);
         return lista;

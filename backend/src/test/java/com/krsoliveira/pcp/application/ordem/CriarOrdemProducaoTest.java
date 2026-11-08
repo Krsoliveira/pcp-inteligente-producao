@@ -65,7 +65,7 @@ class CriarOrdemProducaoTest {
                 listaTecnicaRepositorio, tipoRepositorio, trilha.execucao());
 
         // Pré-cadastrar lista técnica com um componente
-        ListaTecnica lista = ListaTecnica.criar(MATERIAL_ID, "v1",
+        ListaTecnica lista = ListaTecnica.criar(MATERIAL_ID, 1L, "v1",
                 List.of(ItemListaTecnica.criar(COMPONENTE_ID,
                         new BigDecimal("5.00"), "kg")), USUARIO_TESTE);
         lista.ativar(USUARIO_TESTE);
@@ -84,7 +84,7 @@ class CriarOrdemProducaoTest {
 
     /** Lista ativa de um semiacabado que consome um produto acabado (a conversão). */
     private ListaTecnica listaDeConversao() {
-        ListaTecnica lista = ListaTecnica.criar(SEMIACABADO_ID, "v1",
+        ListaTecnica lista = ListaTecnica.criar(SEMIACABADO_ID, 1L, "v1",
                 List.of(ItemListaTecnica.criar(ACABADO_COMPONENTE_ID, BigDecimal.ONE, "un")), USUARIO_TESTE);
         lista.ativar(USUARIO_TESTE);
         listaTecnicaRepositorio.salvar(lista);
@@ -186,7 +186,7 @@ class CriarOrdemProducaoTest {
     @DisplayName("aceita qualquer versão ativa do material (várias podem estar em uso)")
     void aceitaOutraVersaoAtiva() {
         ListaTecnica v2 = ListaTecnica.criarVersao(MATERIAL_ID,
-                listaTecnicaRepositorio.buscarPorId(listaTecnicaId).orElseThrow().getListaId(), "v2",
+                listaTecnicaRepositorio.buscarPorId(listaTecnicaId).orElseThrow().getListaId(), 1L, "v2",
                 List.of(ItemListaTecnica.criar(COMPONENTE_ID, BigDecimal.ONE, "kg")), USUARIO_TESTE);
         v2.ativar(USUARIO_TESTE);
         listaTecnicaRepositorio.salvar(v2);
@@ -200,7 +200,7 @@ class CriarOrdemProducaoTest {
     @Test
     @DisplayName("rejeita versão que não está ativa e não cria ordem nem consumos")
     void rejeitaVersaoQueNaoEstaAtiva() {
-        ListaTecnica emRevisao = ListaTecnica.criar(UUID.randomUUID(), "v1",
+        ListaTecnica emRevisao = ListaTecnica.criar(UUID.randomUUID(), 1L, "v1",
                 List.of(ItemListaTecnica.criar(UUID.randomUUID(), BigDecimal.ONE, "kg")), USUARIO_TESTE);
         listaTecnicaRepositorio.salvar(emRevisao);
 

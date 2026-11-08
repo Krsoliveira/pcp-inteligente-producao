@@ -40,7 +40,7 @@ public class AtivarListaTecnica {
             lista.ativar(ctx.usuario());
             listaTecnicaRepository.salvar(lista);
             ctx.registrar(TipoEntidade.LISTA_TECNICA, lista.getId(),
-                    codigoMaterial + " " + lista.getVersao(), AcaoAuditoria.ATIVADA,
+                    lista.referencia(codigoMaterial), AcaoAuditoria.ATIVADA,
                     Detalhes.com("versao", lista.getVersao()));
             return null;
         });

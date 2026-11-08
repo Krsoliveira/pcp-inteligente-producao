@@ -15,8 +15,8 @@ vi.mock('../api/materiais', () => ({ listarMateriais: vi.fn() }))
 const compararMock = vi.mocked(compararListasTecnicas)
 const ROTA = '/listas-tecnicas/comparar'
 
-const versaoA = { id: 'l-1', listaId: 'lista-1', materialId: 'm-1', versao: 'v1', quantidadeBase: 1, status: 'ATIVA' as const }
-const versaoB = { id: 'l-2', listaId: 'lista-1', materialId: 'm-1', versao: 'v2', quantidadeBase: 1, status: 'EM_REVISAO' as const }
+const versaoA = { id: 'l-1', listaId: 'lista-1', numeroLista: 'LT-0001', materialId: 'm-1', versao: 'v1', quantidadeBase: 1, status: 'ATIVA' as const }
+const versaoB = { id: 'l-2', listaId: 'lista-1', numeroLista: 'LT-0001', materialId: 'm-1', versao: 'v2', quantidadeBase: 1, status: 'EM_REVISAO' as const }
 
 const comDiferencas: ComparacaoDeVersoes = {
   versaoA,

@@ -67,6 +67,7 @@ export function listaTecnica(sobrescritas: Partial<ListaTecnica> = {}): ListaTec
   return {
     id: 'l-1',
     listaId: 'lista-1',
+    numeroLista: 'LT-0001',
     materialId: 'm-1',
     versao: 'v1',
     quantidadeBase: 1,

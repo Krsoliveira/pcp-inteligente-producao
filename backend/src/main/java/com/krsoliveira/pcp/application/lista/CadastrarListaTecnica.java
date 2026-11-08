@@ -81,15 +81,17 @@ public class CadastrarListaTecnica {
             ListaTecnica lista = listaTecnicaRepository.listarPorMaterial(comando.materialId()).stream()
                     .findFirst()
                     .map(existente -> ListaTecnica.criarVersao(comando.materialId(), existente.getListaId(),
-                            comando.versao(), base, itens, ctx.usuario()))
-                    .orElseGet(() -> ListaTecnica.criar(comando.materialId(), comando.versao(), base, itens,
+                            existente.getNumeroLista(), comando.versao(), base, itens, ctx.usuario()))
+                    .orElseGet(() -> ListaTecnica.criar(comando.materialId(),
+                            listaTecnicaRepository.proximoNumeroDeLista(), comando.versao(), base, itens,
                             ctx.usuario()));
             listaTecnicaRepository.salvar(lista);
 
             ctx.registrar(TipoEntidade.LISTA_TECNICA, lista.getId(),
-                    material.getCodigo() + " " + lista.getVersao(), AcaoAuditoria.CRIADO,
+                    lista.referencia(material.getCodigo()), AcaoAuditoria.CRIADO,
                     Detalhes.com("material", material.getCodigo())
                             .e("listaId", lista.getListaId())
+                            .e("numeroLista", lista.getNumeroFormatado())
                             .e("versao", lista.getVersao())
                             .e("status", lista.getStatus())
                             .e("componentes", itens.size())

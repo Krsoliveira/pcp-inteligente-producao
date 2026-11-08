@@ -59,7 +59,7 @@ describe('ListaTecnicaDetalhePage', () => {
     montar()
 
     expect(await screen.findByRole('heading', { name: 'Viga metálica' })).toBeInTheDocument()
-    expect(screen.getByText('103.000.001 · versão v1')).toBeInTheDocument()
+    expect(screen.getByText('LT-0001 · 103.000.001 · versão v1')).toBeInTheDocument()
     expect(await screen.findByText('Aço inox')).toBeInTheDocument()
     expect(screen.getByText('110.000.001')).toBeInTheDocument()
     expect(screen.getByText('Matéria-prima')).toBeInTheDocument()
@@ -76,7 +76,7 @@ describe('ListaTecnicaDetalhePage', () => {
     montar()
 
     expect(await screen.findByRole('heading', { name: 'Pórtico soldado' })).toBeInTheDocument()
-    expect(screen.getByText('103.000.009 · versão v1')).toBeInTheDocument()
+    expect(screen.getByText('LT-0001 · 103.000.009 · versão v1')).toBeInTheDocument()
     expect(screen.getByText('Tubo quadrado')).toBeInTheDocument()
     expect(screen.getByText('110.000.009')).toBeInTheDocument()
   })

@@ -34,7 +34,7 @@ class ProjetarConsumoMaterialTest {
     }
 
     private ListaTecnica listaComBase(String base, String quantidadeDoItem) {
-        ListaTecnica lista = ListaTecnica.criar(MATERIAL_PA_ID, "v1", new BigDecimal(base),
+        ListaTecnica lista = ListaTecnica.criar(MATERIAL_PA_ID, 1L, "v1", new BigDecimal(base),
                 List.of(ItemListaTecnica.criar(MATERIAL_MP1_ID, new BigDecimal(quantidadeDoItem), "kg")), USUARIO_TESTE);
         listaTecnicaRepository.salvar(lista);
         return lista;
@@ -117,7 +117,7 @@ class ProjetarConsumoMaterialTest {
         List<ItemListaTecnica> itens = List.of(
                 ItemListaTecnica.criar(MATERIAL_MP1_ID, new BigDecimal("2.5"), "kg"),
                 ItemListaTecnica.criar(MATERIAL_MP2_ID, new BigDecimal("0.5"), "kg"));
-        ListaTecnica lista = ListaTecnica.criar(MATERIAL_PA_ID, "v1", itens, USUARIO_TESTE);
+        ListaTecnica lista = ListaTecnica.criar(MATERIAL_PA_ID, 1L, "v1", itens, USUARIO_TESTE);
         listaTecnicaRepository.salvar(lista);
         return lista;
     }
