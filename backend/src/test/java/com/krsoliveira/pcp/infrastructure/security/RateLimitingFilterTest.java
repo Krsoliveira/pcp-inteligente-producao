@@ -1,9 +1,13 @@
 package com.krsoliveira.pcp.infrastructure.security;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import io.github.bucket4j.TimeMeter;
+import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -49,6 +53,25 @@ class RateLimitingFilterTest {
 
         assertThat(response.getStatus()).isEqualTo(429);
         assertThat(response.getContentType()).contains("application/problem+json");
+    }
+
+    @Test
+    @DisplayName("429 registra limite_excedido com método e rota, sem o IP")
+    void limiteExcedidoVaiParaOLog() throws Exception {
+        Logger log = (Logger) LoggerFactory.getLogger("pcp.seguranca");
+        ListAppender<ILoggingEvent> registros = new ListAppender<>();
+        registros.start();
+        log.addAppender(registros);
+        try {
+            for (int i = 0; i <= LIMITE_LOGIN; i++) {
+                executar(RateLimitingFilter.ROTA_LOGIN, "10.0.0.7");
+            }
+
+            assertThat(registros.list).extracting(ILoggingEvent::getFormattedMessage)
+                    .containsExactly("limite_excedido requisicao=POST " + RateLimitingFilter.ROTA_LOGIN);
+        } finally {
+            log.detachAppender(registros);
+        }
     }
 
     @Test

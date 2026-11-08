@@ -118,6 +118,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
         } else {
             long segundos = Math.max(1, Duration.ofNanos(consumo.getNanosToWaitForRefill()).toSeconds() + 1);
+            EventosDeSeguranca.limiteExcedido(request.getMethod(), request.getRequestURI());
             response.setStatus(429);
             response.setHeader("Retry-After", String.valueOf(segundos));
             response.setContentType("application/problem+json;charset=UTF-8");

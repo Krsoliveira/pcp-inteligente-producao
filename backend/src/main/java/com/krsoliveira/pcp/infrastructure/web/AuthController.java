@@ -1,6 +1,7 @@
 package com.krsoliveira.pcp.infrastructure.web;
 
 import com.krsoliveira.pcp.application.auth.RegistrarUsuario;
+import com.krsoliveira.pcp.infrastructure.security.EventosDeSeguranca;
 import com.krsoliveira.pcp.infrastructure.security.JwtService;
 import com.krsoliveira.pcp.infrastructure.security.UsuarioDetailsService;
 import com.krsoliveira.pcp.infrastructure.web.dto.LoginRequest;
@@ -11,7 +12,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -60,9 +63,17 @@ public class AuthController {
     @Operation(summary = "Autentica o usuário e devolve um token JWT Bearer",
             description = "Envie o token no cabeçalho: Authorization: Bearer {token}")
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.senha()));
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.senha()));
+        } catch (AuthenticationException e) {
+            // A resposta continua igual para quem tenta (não revela se a conta existe); o log diz o motivo real.
+            EventosDeSeguranca.loginRecusado(request.email(),
+                    e instanceof DisabledException ? "usuario_desativado" : "credenciais_invalidas");
+            throw e;
+        }
         UserDetails userDetails = usuarioDetailsService.loadUserByUsername(request.email());
+        EventosDeSeguranca.loginComSucesso(request.email());
         return new TokenResponse(jwtService.gerarToken(userDetails));
     }
 }
