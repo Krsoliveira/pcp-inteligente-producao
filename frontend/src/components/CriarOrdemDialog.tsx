@@ -5,6 +5,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
+import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Grid from '@mui/material/Grid'
@@ -45,13 +46,20 @@ const VAZIO: CriarOrdemRequest = {
   listaTecnicaId: '',
   tipoOrdemId: null,
   centroDeTrabalho: '',
-  quantidade: 1,
+  quantidade: 0, // o valor digitado fica em `quantidadeTexto`; este só completa o tipo do pedido
   inicioPlanejado: '',
   fimPlanejado: '',
 }
 
+/** Mantém só os dígitos e tira os zeros à esquerda ("080" vira "80"). */
+function apenasDigitosSemZeroAEsquerda(texto: string): string {
+  return texto.replace(/\D/g, '').replace(/^0+(?=\d)/, '')
+}
+
 export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
   const [form, setForm] = useState<CriarOrdemRequest>(VAZIO)
+  // Texto, não número: com `Number('')` o campo mostrava "0" ao ser apagado e o próximo dígito formava "080".
+  const [quantidadeTexto, setQuantidadeTexto] = useState('')
   const { tem } = usePermissoes()
   const [erro, setErro] = useState<string | null>(null)
   const queryClient = useQueryClient()
@@ -74,6 +82,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
   // Tipo Conversão (ADR-0024): só produz semiacabado; produto acabado não aparece como material da ordem.
   const tipoSelecionado = tiposOrdem.find((t) => t.id === form.tipoOrdemId)
   const conversao = tipoSelecionado?.conversao === true
+  const materialSelecionado = materiais.find((m) => m.id === form.materialId)
   const materiaisDaOrdem = conversao ? materiais.filter((m) => m.tipo === 'SEMIACABADO') : materiais
 
   const { data: listasTecnicas = [] } = useQuery({
@@ -98,6 +107,7 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ordens'] })
       setForm(VAZIO)
+      setQuantidadeTexto('')
       setErro(null)
       onFechar()
     },
@@ -108,12 +118,17 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
 
   const set = (campo: keyof CriarOrdemRequest) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setErro(null)
-    const valor = campo === 'quantidade' ? Number(e.target.value) : e.target.value || null
+    const valor = e.target.value || null
     if (campo === 'materialId') {
       setForm((prev) => ({ ...prev, materialId: e.target.value, listaTecnicaId: '' }))
     } else {
       setForm((prev) => ({ ...prev, [campo]: valor }))
     }
+  }
+
+  const alterarQuantidade = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setErro(null)
+    setQuantidadeTexto(apenasDigitosSemZeroAEsquerda(e.target.value))
   }
 
   const handleSubmit = () => {
@@ -126,11 +141,16 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
       setErro('Preencha todos os campos obrigatórios.')
       return
     }
-    mutate(form)
+    if (!quantidadeTexto || Number(quantidadeTexto) < 1) {
+      setErro('Informe a quantidade (número inteiro maior que zero).')
+      return
+    }
+    mutate({ ...form, quantidade: Number(quantidadeTexto) })
   }
 
   const handleFechar = () => {
     setForm(VAZIO)
+    setQuantidadeTexto('')
     setErro(null)
     onFechar()
   }
@@ -154,7 +174,14 @@ export function CriarOrdemDialog({ aberto, onFechar }: CriarOrdemDialogProps) {
             <TextField label="Código *" value={form.codigo} onChange={set('codigo')} fullWidth placeholder="OP-0001" slotProps={{ htmlInput: { maxLength: 30 } }} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Quantidade *" type="number" value={form.quantidade} onChange={set('quantidade')} fullWidth slotProps={{ htmlInput: { min: 1 } }} />
+            <TextField label="Quantidade *" value={quantidadeTexto} onChange={alterarQuantidade} fullWidth
+              helperText={materialSelecionado ? undefined : 'A unidade de medida vem do material escolhido.'}
+              slotProps={{
+                htmlInput: { inputMode: 'numeric', maxLength: 9 },
+                input: materialSelecionado
+                  ? { endAdornment: <InputAdornment position="end">{materialSelecionado.unidadeDeMedida}</InputAdornment> }
+                  : undefined,
+              }} />
           </Grid>
           {podeVerTipos && (
             <Grid size={12}>
