@@ -75,14 +75,34 @@ describe('EstoqueResultadosPage', () => {
     expect(await screen.findByText(/1 matéria-prima está sem saldo disponível/i)).toBeInTheDocument()
   })
 
-  it('liga "Só com saldo" e pesquisa pela URL', async () => {
+  it('ligar "Só com saldo" já aplica o filtro, sem apertar Pesquisar', async () => {
     montar()
     await screen.findByText('Aço inox')
 
     await userEvent.click(screen.getByRole('switch', { name: 'Só com saldo' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Pesquisar' }))
 
     await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(`${ROTA}?somenteComSaldo=true`))
+    await waitFor(() => expect(pesquisarMock).toHaveBeenLastCalledWith(expect.objectContaining({ somenteComSaldo: true })))
+  })
+
+  it('desligar "Só com saldo" já tira o filtro', async () => {
+    montar(`${ROTA}?somenteComSaldo=true`)
+    await screen.findByText('Aço inox')
+
+    await userEvent.click(screen.getByRole('switch', { name: 'Só com saldo' }))
+
+    await waitFor(() => expect(screen.getByTestId('rota')).not.toHaveTextContent('somenteComSaldo'))
+    await waitFor(() => expect(pesquisarMock).toHaveBeenLastCalledWith(expect.objectContaining({ somenteComSaldo: undefined })))
+  })
+
+  it('ao ligar "Só com saldo" o texto já digitado também é aplicado', async () => {
+    montar()
+    await screen.findByText('Aço inox')
+
+    await userEvent.type(screen.getByLabelText('Código ou descrição'), 'aço')
+    await userEvent.click(screen.getByRole('switch', { name: 'Só com saldo' }))
+
+    await waitFor(() => expect(screen.getByTestId('rota')).toHaveTextContent(`${ROTA}?busca=a%C3%A7o&somenteComSaldo=true`))
   })
 
   it('ordena as linhas da página pelo saldo disponível, sem consultar de novo', async () => {
