@@ -35,11 +35,14 @@ export function EstoquePage() {
 
   const verResultados = (filtros: Record<string, string | undefined> = {}) =>
     navigate({ pathname: '/estoque/resultados', search: montarBusca(filtros) })
-  const pesquisar = () => verResultados({
+  const aplicar = (comSaldo: boolean) => verResultados({
     busca: busca.trim(),
     tipo: tipo === 'TODOS' ? undefined : tipo,
-    somenteComSaldo: somenteComSaldo ? 'true' : undefined,
+    somenteComSaldo: comSaldo ? 'true' : undefined,
   })
+  const pesquisar = () => aplicar(somenteComSaldo)
+  // O interruptor aplica na hora, com o que já estiver digitado: não há o que "pesquisar" depois de ligá-lo.
+  const alternarSaldo = (comSaldo: boolean) => { setSomenteComSaldo(comSaldo); aplicar(comSaldo) }
   const limpar = () => { setBusca(''); setTipo('TODOS'); setSomenteComSaldo(false) }
 
   return (
@@ -54,7 +57,7 @@ export function EstoquePage() {
 
       <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
         <CamposFiltroEstoque busca={busca} onBusca={setBusca} tipo={tipo} onTipo={setTipo}
-          somenteComSaldo={somenteComSaldo} onSomenteComSaldo={setSomenteComSaldo} />
+          somenteComSaldo={somenteComSaldo} onSomenteComSaldo={alternarSaldo} />
       </PainelDeConsulta>
 
       <CartaoDeRecentes titulo="10 materiais com entrada mais recente" onVerTodas={() => verResultados()}>

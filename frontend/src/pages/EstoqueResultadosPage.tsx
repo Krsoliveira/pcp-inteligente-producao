@@ -45,12 +45,15 @@ export function EstoqueResultadosPage() {
   const tabela = useTabelaInterativa(posicoes, colunasDeEstoque)
   const filtrando = buscaAplicada !== '' || tipoAplicado !== undefined || saldoAplicado
 
-  const pesquisar = () => url.atualizar({
+  const aplicar = (comSaldo: boolean) => url.atualizar({
     busca: busca.trim(),
     tipo: tipo === 'TODOS' ? undefined : tipo,
-    somenteComSaldo: somenteComSaldo ? 'true' : undefined,
+    somenteComSaldo: comSaldo ? 'true' : undefined,
     pagina: undefined,
   })
+  const pesquisar = () => aplicar(somenteComSaldo)
+  // O interruptor aplica na hora, com o que já estiver digitado, como se apertasse Pesquisar.
+  const alternarSaldo = (comSaldo: boolean) => { setSomenteComSaldo(comSaldo); aplicar(comSaldo) }
   const limpar = () => {
     setBusca(''); setTipo('TODOS'); setSomenteComSaldo(false)
     url.atualizar({ busca: undefined, tipo: undefined, somenteComSaldo: undefined, pagina: undefined })
@@ -68,7 +71,7 @@ export function EstoqueResultadosPage() {
 
       <PainelDeConsulta onPesquisar={pesquisar} onLimpar={limpar}>
         <CamposFiltroEstoque busca={busca} onBusca={setBusca} tipo={tipo} onTipo={setTipo}
-          somenteComSaldo={somenteComSaldo} onSomenteComSaldo={setSomenteComSaldo} />
+          somenteComSaldo={somenteComSaldo} onSomenteComSaldo={alternarSaldo} />
       </PainelDeConsulta>
 
       {isError && <Alert severity="error" sx={{ mb: 2 }}>{mensagemDeErroAoCarregar(error, 'Não foi possível carregar o estoque.')}</Alert>}
