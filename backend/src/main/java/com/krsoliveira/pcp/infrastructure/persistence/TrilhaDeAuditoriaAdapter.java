@@ -2,6 +2,7 @@ package com.krsoliveira.pcp.infrastructure.persistence;
 
 import com.krsoliveira.pcp.domain.auditoria.EventoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.FiltroEventos;
+import com.krsoliveira.pcp.domain.auditoria.OrdemDosEventos;
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.auditoria.TrilhaDeAuditoria;
 import jakarta.persistence.criteria.Predicate;
@@ -30,9 +31,12 @@ public class TrilhaDeAuditoriaAdapter implements TrilhaDeAuditoria {
     }
 
     @Override
-    public Pagina<EventoAuditoria> consultar(FiltroEventos filtro, int pagina, int tamanho) {
-        PageRequest paginacao = PesquisaJpa.pagina(pagina, tamanho,
-                Sort.by(Sort.Order.desc("ocorridoEm"), Sort.Order.desc("id")));
+    public Pagina<EventoAuditoria> consultar(FiltroEventos filtro, OrdemDosEventos ordem, int pagina, int tamanho) {
+        // O id desempata eventos do mesmo instante, para a ordem (e a paginação sobre ela) ser sempre a mesma.
+        Sort ordenacao = ordem == OrdemDosEventos.MAIS_ANTIGOS_PRIMEIRO
+                ? Sort.by(Sort.Order.asc("ocorridoEm"), Sort.Order.asc("id"))
+                : Sort.by(Sort.Order.desc("ocorridoEm"), Sort.Order.desc("id"));
+        PageRequest paginacao = PesquisaJpa.pagina(pagina, tamanho, ordenacao);
         Page<EventoAuditoriaJpaEntity> resultado = springData.findAll(especificacao(filtro), paginacao);
         return new Pagina<>(resultado.map(EventoAuditoriaJpaEntity::paraDominio).getContent(),
                 pagina, tamanho, resultado.getTotalElements());

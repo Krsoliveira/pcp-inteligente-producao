@@ -3,6 +3,7 @@ package com.krsoliveira.pcp.application.comum;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.EventoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.FiltroEventos;
+import com.krsoliveira.pcp.domain.auditoria.OrdemDosEventos;
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.auditoria.TrilhaDeAuditoria;
 
@@ -31,7 +32,8 @@ public class TrilhaDeAuditoriaEmMemoria implements TrilhaDeAuditoria {
     }
 
     @Override
-    public Pagina<EventoAuditoria> consultar(FiltroEventos f, int pagina, int tamanho) {
+    public Pagina<EventoAuditoria> consultar(FiltroEventos f, OrdemDosEventos ordem, int pagina, int tamanho) {
+        Comparator<EventoAuditoria> cronologica = Comparator.comparing(EventoAuditoria::getOcorridoEm);
         List<EventoAuditoria> filtrados = eventos.stream()
                 .filter(e -> f.tipoEntidade() == null || e.getTipoEntidade() == f.tipoEntidade())
                 .filter(e -> f.entidadeId() == null || e.getEntidadeId().equals(f.entidadeId()))
@@ -39,7 +41,7 @@ public class TrilhaDeAuditoriaEmMemoria implements TrilhaDeAuditoria {
                 .filter(e -> f.acao() == null || e.getAcao() == f.acao())
                 .filter(e -> f.de() == null || !e.getOcorridoEm().isBefore(f.de()))
                 .filter(e -> f.ate() == null || e.getOcorridoEm().isBefore(f.ate()))
-                .sorted(Comparator.comparing(EventoAuditoria::getOcorridoEm).reversed())
+                .sorted(ordem == OrdemDosEventos.MAIS_ANTIGOS_PRIMEIRO ? cronologica : cronologica.reversed())
                 .toList();
         List<EventoAuditoria> fatia = filtrados.stream()
                 .skip((long) pagina * tamanho).limit(tamanho).toList();

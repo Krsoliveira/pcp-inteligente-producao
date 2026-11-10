@@ -3,6 +3,7 @@ package com.krsoliveira.pcp.application.auditoria;
 import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.EventoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.FiltroEventos;
+import com.krsoliveira.pcp.domain.auditoria.OrdemDosEventos;
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.auditoria.TrilhaDeAuditoria;
 
@@ -21,6 +22,10 @@ public class ConsultarTrilhaDeAuditoria {
     }
 
     public Pagina<EventoAuditoria> executar(FiltroEventos filtro, int pagina, int tamanho) {
+        return executar(filtro, OrdemDosEventos.MAIS_RECENTES_PRIMEIRO, pagina, tamanho);
+    }
+
+    public Pagina<EventoAuditoria> executar(FiltroEventos filtro, OrdemDosEventos ordem, int pagina, int tamanho) {
         if (pagina < 0) {
             throw new RegraDeNegocioException("A página deve ser zero ou maior.");
         }
@@ -31,6 +36,6 @@ public class ConsultarTrilhaDeAuditoria {
         if (filtro.de() != null && filtro.ate() != null && filtro.ate().isBefore(filtro.de())) {
             throw new RegraDeNegocioException("O fim do período não pode ser anterior ao início.");
         }
-        return trilha.consultar(filtro, pagina, tamanho);
+        return trilha.consultar(filtro, ordem, pagina, tamanho);
     }
 }
