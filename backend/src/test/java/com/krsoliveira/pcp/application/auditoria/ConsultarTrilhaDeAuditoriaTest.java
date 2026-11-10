@@ -5,6 +5,7 @@ import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.EventoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.FiltroEventos;
+import com.krsoliveira.pcp.domain.auditoria.OrdemDosEventos;
 import com.krsoliveira.pcp.domain.auditoria.Pagina;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,26 @@ class ConsultarTrilhaDeAuditoriaTest {
         assertThat(pagina.total()).isEqualTo(2);
         assertThat(pagina.itens()).extracting(EventoAuditoria::getAcao)
                 .containsExactly(AcaoAuditoria.STATUS_ALTERADO, AcaoAuditoria.ENTRADA_REGISTRADA);
+    }
+
+    @Test
+    @DisplayName("histórico de um registro do mais antigo para o mais recente, quando pedido")
+    void historicoDoRegistroEmOrdemCronologica() {
+        Pagina<EventoAuditoria> pagina = casoDeUso.executar(
+                FiltroEventos.daEntidade(TipoEntidade.LOTE, LOTE), OrdemDosEventos.MAIS_ANTIGOS_PRIMEIRO, 0, 50);
+
+        assertThat(pagina.itens()).extracting(EventoAuditoria::getAcao)
+                .containsExactly(AcaoAuditoria.ENTRADA_REGISTRADA, AcaoAuditoria.STATUS_ALTERADO);
+    }
+
+    @Test
+    @DisplayName("a página respeita a ordem pedida: a primeira página crescente é a do evento mais antigo")
+    void paginaNaOrdemPedida() {
+        Pagina<EventoAuditoria> primeira = casoDeUso.executar(
+                FiltroEventos.daEntidade(TipoEntidade.LOTE, LOTE), OrdemDosEventos.MAIS_ANTIGOS_PRIMEIRO, 0, 1);
+
+        assertThat(primeira.itens()).extracting(EventoAuditoria::getAcao)
+                .containsExactly(AcaoAuditoria.ENTRADA_REGISTRADA);
     }
 
     @Test
