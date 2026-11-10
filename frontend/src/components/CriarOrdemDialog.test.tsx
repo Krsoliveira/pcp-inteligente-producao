@@ -28,12 +28,17 @@ async function escolherMaterial() {
   await userEvent.click(await screen.findByRole('option', { name: /103\.000\.001/ }))
 }
 
-async function preencherOrdem() {
+async function preencherSemQuantidade() {
   await userEvent.type(screen.getByLabelText(/^Código/), 'OP-0001')
   await userEvent.click(screen.getByRole('combobox', { name: /^Centro de trabalho/ }))
   await userEvent.click(await screen.findByRole('option', { name: 'Montagem' }))
   await userEvent.type(screen.getByLabelText(/^Início planejado/), '2026-11-01')
   await userEvent.type(screen.getByLabelText(/^Fim planejado/), '2026-11-10')
+}
+
+async function preencherOrdem() {
+  await preencherSemQuantidade()
+  await userEvent.type(screen.getByLabelText(/^Quantidade/), '80')
 }
 
 describe('CriarOrdemDialog: versão da lista técnica', () => {
@@ -210,3 +215,64 @@ describe('CriarOrdemDialog: tipo Conversão (ADR-0024)', () => {
   })
 })
 
+describe('CriarOrdemDialog: quantidade', () => {
+  beforeEach(() => {
+    listasMock.mockReset()
+    criarMock.mockReset()
+    vi.mocked(listarMateriais).mockResolvedValue([
+      material({ id: 'm-1', codigo: '103000001', descricao: 'Viga metálica', unidadeDeMedida: 'KG' }),
+    ])
+    vi.mocked(listarTiposOrdem).mockResolvedValue([])
+    listasMock.mockResolvedValue([listaTecnica({ id: 'l-1', versao: 'v1', status: 'ATIVA' })])
+  })
+
+  it('apagar e digitar de novo não deixa zero à esquerda (080)', async () => {
+    montar()
+    const campo = await screen.findByLabelText(/^Quantidade/)
+
+    await userEvent.type(campo, '5')
+    await userEvent.clear(campo)
+    await userEvent.type(campo, '80')
+
+    expect(campo).toHaveValue('80')
+  })
+
+  it('só aceita dígitos', async () => {
+    montar()
+    const campo = await screen.findByLabelText(/^Quantidade/)
+
+    await userEvent.type(campo, 'a1.5-0')
+
+    expect(campo).toHaveValue('150')
+  })
+
+  it('mostra a unidade de medida do material escolhido ao lado da quantidade', async () => {
+    montar()
+    await escolherMaterial()
+
+    expect(await screen.findByText('KG')).toBeInTheDocument()
+  })
+
+  it('sem quantidade avisa e não cria a ordem', async () => {
+    montar()
+    await escolherMaterial()
+    await preencherSemQuantidade()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Criar ordem' }))
+
+    expect(await screen.findByText(/Informe a quantidade/)).toBeInTheDocument()
+    expect(criarMock).not.toHaveBeenCalled()
+  })
+
+  it('envia a quantidade como número', async () => {
+    criarMock.mockResolvedValue({} as Awaited<ReturnType<typeof criarOrdem>>)
+    montar()
+    await escolherMaterial()
+    await preencherOrdem()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Criar ordem' }))
+
+    await waitFor(() => expect(criarMock).toHaveBeenCalled())
+    expect(criarMock.mock.calls[0][0]).toMatchObject({ quantidade: 80 })
+  })
+})
