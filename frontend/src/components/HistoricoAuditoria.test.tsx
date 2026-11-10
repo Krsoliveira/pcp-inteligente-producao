@@ -21,6 +21,36 @@ async function montarCom(...eventos: EventoAuditoria[]) {
   return screen.findAllByRole('listitem')
 }
 
+describe('HistoricoAuditoria: ordem', () => {
+  it('pede os eventos do mais antigo ao mais recente, o fluxo do registro', async () => {
+    await montarCom(evento('CRIADO', { codigo: 'OP-1' }))
+
+    expect(consultarEventosAuditoria).toHaveBeenLastCalledWith(expect.objectContaining({ ordem: 'ANTIGOS_PRIMEIRO' }))
+  })
+
+  it('mostra os eventos na ordem em que o servidor os devolve, sem reordenar', async () => {
+    const itens = await montarCom(
+      evento('CRIADO', { codigo: 'OP-1' }),
+      evento('STATUS_ALTERADO', { status: { de: 'PLANEJADA', para: 'LIBERADA' } }),
+      evento('ORDEM_CONCLUIDA', { status: { de: 'EM_PRODUCAO', para: 'CONCLUIDA' } }),
+    )
+
+    expect(itens.map((i) => i.textContent)).toEqual([
+      expect.stringContaining('Criado'),
+      expect.stringContaining('Status alterado'),
+      expect.stringContaining('Ordem concluída'),
+    ])
+  })
+
+  it('aceita pedir o mais recente primeiro', async () => {
+    vi.mocked(consultarEventosAuditoria).mockResolvedValue(pagina([evento('CRIADO', {})], { total: 1 }))
+    renderizarTela(<HistoricoAuditoria tipoEntidade="PERFIL_ACESSO" entidadeId="p-1" ordem="RECENTES_PRIMEIRO" />)
+    await screen.findAllByRole('listitem')
+
+    expect(consultarEventosAuditoria).toHaveBeenLastCalledWith(expect.objectContaining({ ordem: 'RECENTES_PRIMEIRO' }))
+  })
+})
+
 describe('HistoricoAuditoria', () => {
   it('mostra o código do material com a mesma máscara do resto do sistema', async () => {
     await montarCom(evento('CRIADO', { material: '105000003' }))

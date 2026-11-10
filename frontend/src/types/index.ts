@@ -430,6 +430,8 @@ export interface Pagina<T> {
   totalPaginas: number
 }
 
+export type OrdemDosEventos = 'RECENTES_PRIMEIRO' | 'ANTIGOS_PRIMEIRO'
+
 export interface FiltroEventosAuditoria {
   tipoEntidade?: TipoEntidade
   entidadeId?: string
@@ -439,6 +441,8 @@ export interface FiltroEventosAuditoria {
   de?: string
   /** "YYYY-MM-DD", inclusivo. */
   ate?: string
+  /** Padrão do servidor: RECENTES_PRIMEIRO. */
+  ordem?: OrdemDosEventos
   pagina?: number
   tamanho?: number
 }

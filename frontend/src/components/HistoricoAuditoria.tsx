@@ -20,6 +20,7 @@ import {
   type AcaoAuditoria,
   type EventoAuditoria,
   type MudancaAuditoria,
+  type OrdemDosEventos,
   type StatusListaTecnica,
   type StatusLote,
   type StatusOrdem,
@@ -106,7 +107,7 @@ const posicao = (campo: string) => {
   return i < 0 ? ORDEM_CAMPOS.length : i
 }
 
-const TAMANHO_PAGINA = 20
+const TAMANHO_PAGINA = 50
 
 type Tom = 'neutro' | 'informacao' | 'atencao' | 'sucesso' | 'erro'
 
@@ -292,19 +293,21 @@ interface HistoricoAuditoriaProps {
   tipoEntidade: TipoEntidade
   entidadeId: string
   titulo?: string
+  /** Padrão: do mais antigo ao mais recente, para o histórico ler como o fluxo do registro (do "Criado" ao último evento). */
+  ordem?: OrdemDosEventos
 }
 
 /**
- * Linha do tempo da trilha de auditoria de um registro (mais recente primeiro):
+ * Linha do tempo da trilha de auditoria de um registro, do mais antigo ao mais recente por padrão:
  * o que aconteceu, quem fez, quando e o que mudou.
  */
-export function HistoricoAuditoria({ tipoEntidade, entidadeId, titulo = 'Histórico' }: HistoricoAuditoriaProps) {
+export function HistoricoAuditoria({ tipoEntidade, entidadeId, titulo = 'Histórico', ordem = 'ANTIGOS_PRIMEIRO' }: HistoricoAuditoriaProps) {
   const { tem } = usePermissoes()
   const [tamanho, setTamanho] = useState(TAMANHO_PAGINA)
 
   const { data, isLoading, isError, isFetching } = useQuery({
-    queryKey: ['auditoria', tipoEntidade, entidadeId, tamanho],
-    queryFn: () => consultarEventosAuditoria({ tipoEntidade, entidadeId, tamanho }),
+    queryKey: ['auditoria', tipoEntidade, entidadeId, ordem, tamanho],
+    queryFn: () => consultarEventosAuditoria({ tipoEntidade, entidadeId, ordem, tamanho }),
     placeholderData: keepPreviousData,
     enabled: tem('AUDITORIA_VISUALIZAR'),
   })
@@ -374,7 +377,9 @@ export function HistoricoAuditoria({ tipoEntidade, entidadeId, titulo = 'Histór
         {data && data.total > eventos.length && tamanho < 200 && (
           <Box sx={{ textAlign: 'center' }}>
             <Button size="small" disabled={isFetching} onClick={() => setTamanho((t) => Math.min(t + TAMANHO_PAGINA, 200))}>
-              {isFetching ? 'Carregando…' : `Ver mais (${data.total - eventos.length})`}
+              {isFetching ? 'Carregando…' : ordem === 'ANTIGOS_PRIMEIRO'
+                ? `Ver os ${data.total - eventos.length} eventos mais recentes`
+                : `Ver mais (${data.total - eventos.length})`}
             </Button>
           </Box>
         )}
