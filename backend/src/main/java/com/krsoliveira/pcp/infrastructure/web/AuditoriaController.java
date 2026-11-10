@@ -4,6 +4,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import com.krsoliveira.pcp.application.auditoria.ConsultarTrilhaDeAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.AcaoAuditoria;
 import com.krsoliveira.pcp.domain.auditoria.FiltroEventos;
+import com.krsoliveira.pcp.domain.auditoria.OrdemDosEventos;
 import com.krsoliveira.pcp.domain.auditoria.TipoEntidade;
 import com.krsoliveira.pcp.infrastructure.web.dto.EventoAuditoriaResponse;
 import com.krsoliveira.pcp.infrastructure.web.dto.PaginaResponse;
@@ -45,7 +46,8 @@ public class AuditoriaController {
     @Operation(summary = "Consultar eventos de auditoria",
             description = "Filtros opcionais por entidade, registro, usuário (e-mail exato, sem diferenciar "
                     + "maiúsculas), ação e período. O período é por dia, com as duas datas inclusivas. "
-                    + "Ordenado do mais recente para o mais antigo.")
+                    + "Ordenado do mais recente para o mais antigo, ou do mais antigo para o mais recente "
+                    + "com ordem=ANTIGOS_PRIMEIRO.")
     public ResponseEntity<PaginaResponse<EventoAuditoriaResponse>> consultar(
             @RequestParam(required = false) TipoEntidade tipoEntidade,
             @RequestParam(required = false) UUID entidadeId,
@@ -53,13 +55,30 @@ public class AuditoriaController {
             @RequestParam(required = false) AcaoAuditoria acao,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
+            @RequestParam(defaultValue = "RECENTES_PRIMEIRO") OrdemPedida ordem,
             @RequestParam(defaultValue = "0") int pagina,
             @RequestParam(defaultValue = "50") int tamanho) {
         FiltroEventos filtro = new FiltroEventos(tipoEntidade, entidadeId,
                 usuario == null || usuario.isBlank() ? null : usuario.trim(),
                 acao, inicioDoDia(de), inicioDoDia(ate == null ? null : ate.plusDays(1)));
         return ResponseEntity.ok(PaginaResponse.de(
-                consultarTrilha.executar(filtro, pagina, tamanho), EventoAuditoriaResponse::de));
+                consultarTrilha.executar(filtro, ordem.paraDominio(), pagina, tamanho), EventoAuditoriaResponse::de));
+    }
+
+    /** Valores aceitos em {@code ordem}; o nome do contrato público não depende do nome no domínio. */
+    public enum OrdemPedida {
+        RECENTES_PRIMEIRO(OrdemDosEventos.MAIS_RECENTES_PRIMEIRO),
+        ANTIGOS_PRIMEIRO(OrdemDosEventos.MAIS_ANTIGOS_PRIMEIRO);
+
+        private final OrdemDosEventos ordem;
+
+        OrdemPedida(OrdemDosEventos ordem) {
+            this.ordem = ordem;
+        }
+
+        OrdemDosEventos paraDominio() {
+            return ordem;
+        }
     }
 
     private Instant inicioDoDia(LocalDate data) {
