@@ -1,14 +1,14 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { cadastrarListaTecnica } from '../../api/listasTecnicas'
+import { cadastrarListaTecnica, listarListasTecnicas } from '../../api/listasTecnicas'
 import { listarMateriais, listarUnidades } from '../../api/materiais'
 import { erroHttp } from '../../test/erros'
 import { listaTecnica, material } from '../../test/fabricas'
 import { renderizarTela } from '../../test/renderizar'
 import { CriarListaTecnicaDialog } from './CriarListaTecnicaDialog'
 
-vi.mock('../../api/listasTecnicas', () => ({ cadastrarListaTecnica: vi.fn() }))
+vi.mock('../../api/listasTecnicas', () => ({ cadastrarListaTecnica: vi.fn(), listarListasTecnicas: vi.fn() }))
 vi.mock('../../api/materiais', () => ({ listarMateriais: vi.fn(), listarUnidades: vi.fn() }))
 
 const cadastrarMock = vi.mocked(cadastrarListaTecnica)
@@ -31,6 +31,7 @@ function montar(props: Partial<React.ComponentProps<typeof CriarListaTecnicaDial
 describe('CriarListaTecnicaDialog', () => {
   beforeEach(() => {
     cadastrarMock.mockReset()
+    vi.mocked(listarListasTecnicas).mockResolvedValue([])
     vi.mocked(listarUnidades).mockResolvedValue(['G', 'KG', 'UN'])
     vi.mocked(listarMateriais).mockResolvedValue([
       material({ id: 'm-1', codigo: '103000001', descricao: 'Viga metálica' }),
@@ -274,6 +275,7 @@ const ultimo = <T,>(lista: T[]): T => lista[lista.length - 1]
 describe('CriarListaTecnicaDialog: aviso da soma dos componentes (ADR-0037)', () => {
   beforeEach(() => {
     cadastrarMock.mockReset()
+    vi.mocked(listarListasTecnicas).mockResolvedValue([])
     vi.mocked(listarUnidades).mockResolvedValue(['G', 'KG', 'UN'])
     vi.mocked(listarMateriais).mockResolvedValue([
       material({ id: 'm-bolo', codigo: '103000001', descricao: 'Bolo', unidadeDeMedida: 'KG' }),
@@ -345,5 +347,85 @@ describe('CriarListaTecnicaDialog: aviso da soma dos componentes (ADR-0037)', ()
 
     await waitFor(() => expect(cadastrarMock).toHaveBeenCalled())
     expect(cadastrarMock.mock.calls[0][0].itens[0]).toMatchObject({ materialComponenteId: 'm-farinha', quantidadePlanejada: 500, unidadeDeMedida: 'G' })
+  })
+})
+
+describe('CriarListaTecnicaDialog: versão sugerida', () => {
+  const versoesDaViga = [listaTecnica({ id: 'l-1', versao: 'v1' }), listaTecnica({ id: 'l-2', versao: 'v2' })]
+
+  beforeEach(() => {
+    cadastrarMock.mockReset()
+    vi.mocked(listarUnidades).mockResolvedValue([])
+    vi.mocked(listarMateriais).mockResolvedValue([
+      material({ id: 'm-viga', codigo: '103000001', descricao: 'Viga metálica' }),
+      material({ id: 'm-chapa', codigo: '105000001', descricao: 'Chapa dobrada', tipo: 'SEMIACABADO' }),
+    ])
+    vi.mocked(listarListasTecnicas).mockImplementation(async (id) => (id === 'm-viga' ? versoesDaViga : []))
+  })
+
+  async function escolher(descricao: RegExp) {
+    await userEvent.click(await screen.findByRole('combobox', { name: /^Material \*/ }))
+    await userEvent.click(await screen.findByRole('option', { name: descricao }))
+  }
+
+  it('material que já tem v1 e v2: a versão vem preenchida com a próxima (v3) e o usuário vê qual será', async () => {
+    montar()
+
+    await escolher(/Viga/)
+
+    await waitFor(() => expect(screen.getByLabelText(/^Versão/)).toHaveValue('v3'))
+    expect(screen.getByText('Próxima versão deste material: v3.')).toBeInTheDocument()
+  })
+
+  it('material sem nenhuma versão: sugere v1', async () => {
+    montar()
+
+    await escolher(/Chapa/)
+
+    await waitFor(() => expect(screen.getByLabelText(/^Versão/)).toHaveValue('v1'))
+    expect(screen.getByText('Próxima versão deste material: v1.')).toBeInTheDocument()
+  })
+
+  it('versões com rótulo livre (sem o padrão vN) não geram sugestão: o campo fica para o usuário digitar', async () => {
+    vi.mocked(listarListasTecnicas).mockResolvedValue([listaTecnica({ id: 'l-9', versao: 'rev-a' })])
+    montar()
+
+    await escolher(/Viga/)
+
+    await waitFor(() => expect(listarListasTecnicas).toHaveBeenCalledWith('m-viga'))
+    expect(screen.getByLabelText(/^Versão/)).toHaveValue('')
+    expect(screen.queryByText(/Próxima versão deste material/)).not.toBeInTheDocument()
+  })
+
+  it('trocar de material sem ter mexido na versão recalcula a sugestão', async () => {
+    montar()
+    await escolher(/Viga/)
+    await waitFor(() => expect(screen.getByLabelText(/^Versão/)).toHaveValue('v3'))
+
+    await escolher(/Chapa/)
+
+    await waitFor(() => expect(screen.getByLabelText(/^Versão/)).toHaveValue('v1'))
+  })
+
+  it('o que o usuário digitou na versão não é sobrescrito ao trocar de material', async () => {
+    montar()
+    await escolher(/Viga/)
+    await waitFor(() => expect(screen.getByLabelText(/^Versão/)).toHaveValue('v3'))
+    await userEvent.clear(screen.getByLabelText(/^Versão/))
+    await userEvent.type(screen.getByLabelText(/^Versão/), 'v3-rev-a')
+
+    await escolher(/Chapa/)
+
+    await waitFor(() => expect(listarListasTecnicas).toHaveBeenCalledWith('m-chapa'))
+    expect(screen.getByLabelText(/^Versão/)).toHaveValue('v3-rev-a')
+  })
+
+  it('sem a permissão de ver todas as listas não consulta nem sugere (listas em revisão poderiam estar escondidas)', async () => {
+    renderizarTela(<CriarListaTecnicaDialog aberto onFechar={vi.fn()} />, { permissoes: ['LISTA_CADASTRAR', 'LISTA_VISUALIZAR_ATIVAS', 'MATERIAL_VISUALIZAR'] })
+
+    await escolher(/Viga/)
+
+    expect(listarListasTecnicas).not.toHaveBeenCalled()
+    expect(screen.getByLabelText(/^Versão/)).toHaveValue('')
   })
 })

@@ -15,7 +15,8 @@ import Typography from '@mui/material/Typography'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutlineOutlined'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { cadastrarListaTecnica } from '../../api/listasTecnicas'
+import { cadastrarListaTecnica, listarListasTecnicas } from '../../api/listasTecnicas'
+import { usePermissoes } from '../../hooks/usePermissoes'
 import { listarMateriais } from '../../api/materiais'
 import type { CadastrarListaTecnicaRequest, ListaTecnica, TipoMaterial } from '../../types'
 import { formatarCodigoMaterial } from '../../utils/formatacao'
@@ -49,8 +50,11 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
   const [versao, setVersao] = useState('')
   const [base, setBase] = useState('1')
   const [itens, setItens] = useState<ItemForm[]>([ITEM_VAZIO])
+  // Verdadeiro depois que a pessoa mexe na versão: a sugestão não sobrescreve o que ela digitou.
+  const [versaoDigitada, setVersaoDigitada] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const queryClient = useQueryClient()
+  const { tem } = usePermissoes()
 
   const { data: materiais = [] } = useQuery({ queryKey: ['materiais'], queryFn: listarMateriais, enabled: aberto })
   const produtivos = materiais.filter((m) => (m.tipo as TipoMaterial) !== 'MATERIA_PRIMA')
@@ -58,6 +62,21 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
   const donoEhSemiacabado = materiais.find((m) => m.id === materialId)?.tipo === 'SEMIACABADO'
   const donoUnidade = materiais.find((m) => m.id === materialId)?.unidadeDeMedida ?? 'un'
   const componentesPermitidos = donoEhSemiacabado ? materiais : materiais.filter((m) => m.tipo !== 'PRODUTO_ACABADO')
+
+  // Versão sugerida para um material que já tem versões: a próxima ("v3"), ou "v1" se ainda não tem nenhuma. Só com a
+  // permissão de ver todas as listas: quem só vê as ativas não enxerga as em revisão e poderia receber uma versão que já existe.
+  // Ao copiar uma versão, a sugestão vem das versões já conhecidas pela tela de origem (efeito de abertura, abaixo).
+  const { data: versoesDoMaterial } = useQuery({
+    queryKey: ['listas-tecnicas', materialId],
+    queryFn: () => listarListasTecnicas(materialId),
+    enabled: aberto && !modelo && !!materialId && tem('LISTA_VISUALIZAR_TODAS'),
+  })
+  const proximaVersao = modelo || !versoesDoMaterial ? ''
+    : versoesDoMaterial.length === 0 ? 'v1' : sugerirProximaVersao(versoesDoMaterial.map((l) => l.versao))
+  useSincronizarAoMudar([materialId, proximaVersao], () => {
+    if (modelo || !materialId || versaoDigitada) return
+    setVersao(proximaVersao)
+  })
 
   // Só um aviso (ADR-0037): quando o material e os componentes são da mesma grandeza (peso com peso), mostra se a soma
   // dos componentes difere da quantidade base. Não bloqueia nem grava nada.
@@ -73,6 +92,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
   useSincronizarAoMudar([aberto, modelo?.id], () => {
     if (!aberto) return
     setErro(null)
+    setVersaoDigitada(false)
     if (modelo) {
       setMaterialId(modelo.materialId)
       setVersao(sugerirProximaVersao(versoesExistentes))
@@ -165,7 +185,8 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
               helperText={`Os componentes valem para produzir ${base.trim() || '…'} ${donoUnidade}.`} />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField label="Versão *" value={versao} onChange={(e) => setVersao(e.target.value)} fullWidth placeholder="v1, v2-rev-a…" slotProps={{ htmlInput: { maxLength: 50 } }} />
+            <TextField label="Versão *" value={versao} onChange={(e) => { setVersaoDigitada(true); setVersao(e.target.value) }} fullWidth placeholder="v1, v2-rev-a…"
+              helperText={proximaVersao ? `Próxima versão deste material: ${proximaVersao}.` : undefined} slotProps={{ htmlInput: { maxLength: 50 } }} />
           </Grid>
         </Grid>
 
