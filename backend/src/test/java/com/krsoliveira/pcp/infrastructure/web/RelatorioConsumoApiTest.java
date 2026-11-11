@@ -124,7 +124,7 @@ class RelatorioConsumoApiTest {
                 .containsEntry("produtoDescricao", "Viga"));
 
         Map<String, Object> aco = linhaDo(linhas, codigoDoAco);
-        assertThat(aco).containsEntry("componenteDescricao", "Aço carbono").containsEntry("unidadeDeMedida", "kg");
+        assertThat(aco).containsEntry("componenteDescricao", "Aço carbono").containsEntry("unidadeDeMedida", "KG");
         assertThat(numero(aco, "quantidadePlanejada")).isEqualByComparingTo("25");
         assertThat(numero(aco, "quantidadeConsumida")).isEqualByComparingTo("26"); // 15 kg de um lote + 11 kg do outro
         assertThat(numero(aco, "desvio")).isEqualByComparingTo("1");

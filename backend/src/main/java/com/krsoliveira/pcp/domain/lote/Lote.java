@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import com.krsoliveira.pcp.domain.comum.UnidadeDeMedida;
 
 /**
  * Lote rastreável de material, com duas origens possíveis:
@@ -79,7 +80,7 @@ public class Lote {
         String numero = normalizarNumero(numeroLote);
         validarDadosComuns(materialId, quantidade, unidadeDeMedida, dataFabricacao, dataValidade);
         return new Lote(UUID.randomUUID(), numero, materialId, ordemProducaoId,
-                null, null, quantidade, quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
+                null, null, quantidade, quantidade, UnidadeDeMedida.normalizar(unidadeDeMedida), dataFabricacao, dataValidade,
                 StatusLote.DISPONIVEL, Assinatura.nova(usuario));
     }
 
@@ -102,7 +103,7 @@ public class Lote {
                     "A data de fabricação não pode ser posterior ao recebimento do material.");
         }
         return new Lote(UUID.randomUUID(), numero, materialId, null, origemCompra, notaFiscalId,
-                quantidade, quantidade, unidadeDeMedida.trim(), dataFabricacao, dataValidade,
+                quantidade, quantidade, UnidadeDeMedida.normalizar(unidadeDeMedida), dataFabricacao, dataValidade,
                 StatusLote.DISPONIVEL, Assinatura.nova(usuario));
     }
 

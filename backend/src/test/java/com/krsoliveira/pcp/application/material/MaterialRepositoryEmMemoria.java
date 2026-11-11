@@ -25,6 +25,11 @@ public class MaterialRepositoryEmMemoria implements MaterialRepository {
     private final List<Material> materiais = new ArrayList<>();
 
     @Override
+    public List<String> listarUnidadesDeMedida() {
+        return materiais.stream().map(Material::getUnidadeDeMedida).distinct().sorted().toList();
+    }
+
+    @Override
     public void salvar(Material material) {
         materiais.removeIf(m -> m.getId().equals(material.getId()));
         materiais.add(material);

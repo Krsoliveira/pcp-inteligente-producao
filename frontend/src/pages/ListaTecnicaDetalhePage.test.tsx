@@ -15,7 +15,7 @@ vi.mock('../api/listasTecnicas', () => ({
   listarListasTecnicas: vi.fn(),
   cadastrarListaTecnica: vi.fn(),
 }))
-vi.mock('../api/materiais', () => ({ listarMateriais: vi.fn() }))
+vi.mock('../api/materiais', () => ({ listarMateriais: vi.fn(), listarUnidades: vi.fn()}))
 
 const buscarMock = vi.mocked(buscarListaTecnicaPorId)
 const ativarMock = vi.mocked(ativarListaTecnica)

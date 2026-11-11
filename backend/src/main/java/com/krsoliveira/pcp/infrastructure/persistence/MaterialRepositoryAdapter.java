@@ -56,6 +56,11 @@ public class MaterialRepositoryAdapter implements MaterialRepository {
     }
 
     @Override
+    public List<String> listarUnidadesDeMedida() {
+        return springDataRepository.listarUnidadesDeMedida();
+    }
+
+    @Override
     public List<Material> listarTodos() {
         return springDataRepository.findAll().stream()
                 .map(MaterialJpaEntity::paraDominio)

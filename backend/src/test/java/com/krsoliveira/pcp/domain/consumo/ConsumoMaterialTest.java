@@ -39,7 +39,7 @@ class ConsumoMaterialTest {
             assertThat(consumo.isNaoPlanejado()).isTrue();
             assertThat(consumo.getQuantidadePlanejada()).isEqualByComparingTo("0");
             assertThat(consumo.getQuantidadeConsumida()).isNull();
-            assertThat(consumo.getUnidadeDeMedida()).isEqualTo("un");
+            assertThat(consumo.getUnidadeDeMedida()).isEqualTo("UN");
             assertThat(consumo.estaRegistrado()).isFalse();
         }
 

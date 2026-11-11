@@ -5,6 +5,7 @@ import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 
 import java.time.Instant;
 import java.util.UUID;
+import com.krsoliveira.pcp.domain.comum.UnidadeDeMedida;
 
 /**
  * Representa qualquer insumo ou produto gerenciado pelo sistema de PCP:
@@ -48,7 +49,7 @@ public class Material {
         }
         CodigoMaterial.validar(codigo, tipo);
         return new Material(UUID.randomUUID(), codigo,
-                descricao.trim(), tipo, unidadeDeMedida.trim(), Assinatura.nova(usuario));
+                descricao.trim(), tipo, UnidadeDeMedida.normalizar(unidadeDeMedida), Assinatura.nova(usuario));
     }
 
     /**

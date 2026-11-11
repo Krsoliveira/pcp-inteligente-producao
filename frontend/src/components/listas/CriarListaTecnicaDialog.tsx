@@ -22,10 +22,12 @@ import { formatarCodigoMaterial } from '../../utils/formatacao'
 import { mensagemDeErroDaApi } from '../../utils/mensagensDeErro'
 import { sugerirProximaVersao } from '../../utils/versoes'
 import { useSincronizarAoMudar } from '../../hooks/useSincronizarAoMudar'
+import { CampoUnidadeDeMedida } from '../CampoUnidadeDeMedida'
+import { diferencaDaSoma, mensagemDaSoma } from '../../utils/unidades'
 
 interface ItemForm { materialComponenteId: string; quantidadePlanejada: string; unidadeDeMedida: string }
 
-const ITEM_VAZIO: ItemForm = { materialComponenteId: '', quantidadePlanejada: '', unidadeDeMedida: 'un' }
+const ITEM_VAZIO: ItemForm = { materialComponenteId: '', quantidadePlanejada: '', unidadeDeMedida: 'UN' }
 
 interface CriarListaTecnicaDialogProps {
   aberto: boolean
@@ -57,6 +59,16 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
   const donoUnidade = materiais.find((m) => m.id === materialId)?.unidadeDeMedida ?? 'un'
   const componentesPermitidos = donoEhSemiacabado ? materiais : materiais.filter((m) => m.tipo !== 'PRODUTO_ACABADO')
 
+  // Só um aviso (ADR-0037): quando o material e os componentes são da mesma grandeza (peso com peso), mostra se a soma
+  // dos componentes difere da quantidade base. Não bloqueia nem grava nada.
+  const quantidadeBaseNumero = Number(base.trim().replace(',', '.'))
+  const diferencaDaSomaDosComponentes = materialId ? diferencaDaSoma(
+    itens.filter((i) => i.materialComponenteId && i.quantidadePlanejada)
+      .map((i) => ({ quantidade: Number(String(i.quantidadePlanejada).replace(',', '.')), unidadeDeMedida: i.unidadeDeMedida })),
+    quantidadeBaseNumero,
+    donoUnidade,
+  ) : null
+
   // Cada abertura recomeça: vazio, ou preenchido a partir do modelo.
   useSincronizarAoMudar([aberto, modelo?.id], () => {
     if (!aberto) return
@@ -83,6 +95,7 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
     onSuccess: (_resultado, payload) => {
       queryClient.invalidateQueries({ queryKey: ['listas-tecnicas-todas'] })
       queryClient.invalidateQueries({ queryKey: ['listas-tecnicas'] })
+      queryClient.invalidateQueries({ queryKey: ['unidades'] })
       onFechar()
       onCriada?.(payload.materialId, payload.versao)
     },
@@ -161,10 +174,14 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
           <Box>
             <Typography variant="subtitle2">Componentes</Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
               {donoEhSemiacabado
                 ? 'Esta lista pode consumir produto acabado (conversão); a ordem precisará ser do tipo Conversão.'
                 : 'Matéria-prima e semiacabado. Produto acabado só entra em lista de semiacabado (conversão).'}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Os componentes somados devem corresponder à quantidade base. Ex.: para 1 KG de bolo, 200 G de fermento,
+              600 G de massa e 200 G de farinha.
             </Typography>
           </Box>
           <Button size="small" startIcon={<AddCircleOutlineIcon />} onClick={addItem}>Adicionar</Button>
@@ -178,12 +195,18 @@ export function CriarListaTecnicaDialog({ aberto, onFechar, modelo, versoesExist
               ))}
             </TextField>
             <TextField label="Qtd" type="number" value={item.quantidadePlanejada} onChange={(e) => updateItem(idx, 'quantidadePlanejada', e.target.value)} sx={{ width: 90 }} slotProps={{ htmlInput: { min: 0.0001, step: 0.0001 } }} />
-            <TextField label="Un." value={item.unidadeDeMedida} onChange={(e) => updateItem(idx, 'unidadeDeMedida', e.target.value)} sx={{ width: 70 }} slotProps={{ htmlInput: { maxLength: 10 } }} />
+            <CampoUnidadeDeMedida label="Un." value={item.unidadeDeMedida} onChange={(unidade) => updateItem(idx, 'unidadeDeMedida', unidade)} largura={120} />
             <IconButton aria-label={`Remover componente ${idx + 1}`} onClick={() => removeItem(idx)} disabled={itens.length === 1} sx={{ mt: 0.5 }}>
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
           </Box>
         ))}
+
+        {diferencaDaSomaDosComponentes && (
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {mensagemDaSoma(diferencaDaSomaDosComponentes, quantidadeBaseNumero)} Confira as quantidades; você ainda pode criar a lista.
+          </Alert>
+        )}
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onFechar} disabled={isPending}>Cancelar</Button>

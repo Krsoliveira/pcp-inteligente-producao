@@ -95,7 +95,7 @@ class AdicionarItemAoConsumoApiTest {
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         Map<String, Object> corpo = resposta.getBody();
         assertThat(corpo).containsEntry("naoPlanejado", true).containsEntry("registrado", true).containsEntry("justificado", true)
-                .containsEntry("unidadeDeMedida", "kg").containsEntry("materialId", cola);
+                .containsEntry("unidadeDeMedida", "KG").containsEntry("materialId", cola);
         assertThat(numero(corpo, "quantidadePlanejada")).isEqualByComparingTo("0");
         assertThat(numero(corpo, "quantidadeConsumida")).isEqualByComparingTo("12");
         assertThat(numero(corpo, "desvio")).isEqualByComparingTo("12");

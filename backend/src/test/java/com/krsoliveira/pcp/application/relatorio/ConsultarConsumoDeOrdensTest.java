@@ -80,7 +80,7 @@ class ConsultarConsumoDeOrdensTest {
         LinhaDeConsumoDeOrdem linhaDoParafuso = relatorio.linhas().stream()
                 .filter(l -> l.componenteCodigo().equals("110000007")).findFirst().orElseThrow();
         assertThat(linhaDoParafuso.componenteDescricao()).isEqualTo("Parafuso sextavado");
-        assertThat(linhaDoParafuso.unidadeDeMedida()).isEqualTo("un");
+        assertThat(linhaDoParafuso.unidadeDeMedida()).isEqualTo("UN");
         assertThat(linhaDoParafuso.quantidadePlanejada()).isEqualByComparingTo("40");
         assertThat(linhaDoParafuso.quantidadeConsumida()).isEqualByComparingTo("42");
         assertThat(linhaDoParafuso.desvio()).isEqualByComparingTo("2");

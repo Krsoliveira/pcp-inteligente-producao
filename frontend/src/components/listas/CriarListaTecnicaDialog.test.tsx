@@ -2,14 +2,14 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { cadastrarListaTecnica } from '../../api/listasTecnicas'
-import { listarMateriais } from '../../api/materiais'
+import { listarMateriais, listarUnidades } from '../../api/materiais'
 import { erroHttp } from '../../test/erros'
 import { listaTecnica, material } from '../../test/fabricas'
 import { renderizarTela } from '../../test/renderizar'
 import { CriarListaTecnicaDialog } from './CriarListaTecnicaDialog'
 
 vi.mock('../../api/listasTecnicas', () => ({ cadastrarListaTecnica: vi.fn() }))
-vi.mock('../../api/materiais', () => ({ listarMateriais: vi.fn() }))
+vi.mock('../../api/materiais', () => ({ listarMateriais: vi.fn(), listarUnidades: vi.fn() }))
 
 const cadastrarMock = vi.mocked(cadastrarListaTecnica)
 
@@ -31,6 +31,7 @@ function montar(props: Partial<React.ComponentProps<typeof CriarListaTecnicaDial
 describe('CriarListaTecnicaDialog', () => {
   beforeEach(() => {
     cadastrarMock.mockReset()
+    vi.mocked(listarUnidades).mockResolvedValue(['G', 'KG', 'UN'])
     vi.mocked(listarMateriais).mockResolvedValue([
       material({ id: 'm-1', codigo: '103000001', descricao: 'Viga metálica' }),
       material({ id: 'm-2', codigo: '110000001', descricao: 'Aço inox', tipo: 'MATERIA_PRIMA', unidadeDeMedida: 'kg' }),
@@ -267,3 +268,82 @@ describe('CriarListaTecnicaDialog: quantidade base (ADR-0027)', () => {
   })
 })
 
+/** O último da lista: a linha de componente recém-adicionada. */
+const ultimo = <T,>(lista: T[]): T => lista[lista.length - 1]
+
+describe('CriarListaTecnicaDialog: aviso da soma dos componentes (ADR-0037)', () => {
+  beforeEach(() => {
+    cadastrarMock.mockReset()
+    vi.mocked(listarUnidades).mockResolvedValue(['G', 'KG', 'UN'])
+    vi.mocked(listarMateriais).mockResolvedValue([
+      material({ id: 'm-bolo', codigo: '103000001', descricao: 'Bolo', unidadeDeMedida: 'KG' }),
+      material({ id: 'm-farinha', codigo: '110000001', descricao: 'Farinha', tipo: 'MATERIA_PRIMA', unidadeDeMedida: 'KG' }),
+      material({ id: 'm-ovo', codigo: '110000002', descricao: 'Ovo', tipo: 'MATERIA_PRIMA', unidadeDeMedida: 'UN' }),
+    ])
+  })
+
+  async function escolherBolo() {
+    await userEvent.click(await screen.findByRole('combobox', { name: /^Material \*/ }))
+    await userEvent.click(await screen.findByRole('option', { name: /Bolo/ }))
+  }
+
+  async function componente(descricao: RegExp, quantidade: string, unidade: string) {
+    await userEvent.click(ultimo(screen.getAllByRole('combobox', { name: /Material componente/ })))
+    await userEvent.click(await screen.findByRole('option', { name: descricao }))
+    const quantidades = screen.getAllByLabelText('Qtd')
+    await userEvent.type(ultimo(quantidades), quantidade)
+    const unidades = screen.getAllByRole('combobox', { name: 'Un.' })
+    await userEvent.clear(ultimo(unidades))
+    await userEvent.type(ultimo(unidades), unidade)
+  }
+
+  it('explica que os componentes somados devem corresponder à quantidade base, com um exemplo', async () => {
+    montar()
+
+    expect(await screen.findByText(/Os componentes somados devem corresponder à quantidade base/)).toBeInTheDocument()
+  })
+
+  it('avisa, sem bloquear, quando a soma dos componentes difere da quantidade base', async () => {
+    montar()
+    await escolherBolo()
+
+    await componente(/Farinha/, '500', 'g')
+
+    expect(await screen.findByText(/A soma dos componentes \(0,5 KG\) é diferente da quantidade base \(1 KG\)/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Criar lista' })).toBeEnabled()
+  })
+
+  it('não avisa quando a soma bate com a quantidade base', async () => {
+    montar()
+    await escolherBolo()
+
+    await componente(/Farinha/, '1000', 'g')
+
+    expect(screen.queryByText(/A soma dos componentes/)).not.toBeInTheDocument()
+  })
+
+  it('não avisa quando há componente de outra grandeza (KG com UN não soma)', async () => {
+    montar()
+    await escolherBolo()
+    await componente(/Farinha/, '500', 'g')
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }))
+
+    await componente(/Ovo/, '3', 'un')
+
+    expect(screen.queryByText(/A soma dos componentes/)).not.toBeInTheDocument()
+  })
+
+  it('ainda cria a lista quando a soma difere: o aviso não bloqueia', async () => {
+    cadastrarMock.mockResolvedValue(undefined as never)
+    montar()
+    await escolherBolo()
+    await userEvent.type(screen.getByLabelText(/^Versão/), 'v1')
+    await componente(/Farinha/, '500', 'g')
+    await screen.findByText(/A soma dos componentes/)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Criar lista' }))
+
+    await waitFor(() => expect(cadastrarMock).toHaveBeenCalled())
+    expect(cadastrarMock.mock.calls[0][0].itens[0]).toMatchObject({ materialComponenteId: 'm-farinha', quantidadePlanejada: 500, unidadeDeMedida: 'G' })
+  })
+})

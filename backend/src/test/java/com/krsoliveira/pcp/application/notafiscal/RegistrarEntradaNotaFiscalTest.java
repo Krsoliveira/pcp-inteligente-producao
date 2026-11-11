@@ -80,7 +80,7 @@ class RegistrarEntradaNotaFiscalTest {
             assertThat(lote.getAssinatura().criadoPor()).isEqualTo(USUARIO_TESTE);
         });
         assertThat(resultado.lotes()).extracting(Lote::getNumeroLote).containsExactly("AB-2609/01", "T-77");
-        assertThat(resultado.lotes().get(1).getUnidadeDeMedida()).isEqualTo("l");
+        assertThat(resultado.lotes().get(1).getUnidadeDeMedida()).isEqualTo("L");
     }
 
     @Test
