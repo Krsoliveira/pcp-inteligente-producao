@@ -30,6 +30,7 @@ import { EmptyState } from '../components/EmptyState'
 import type { TipoMaterial, CadastrarMaterialRequest } from '../types'
 import { TIPO_MATERIAL_LABEL } from '../types'
 import { mensagemDeErroDaApi } from '../utils/mensagensDeErro'
+import { CampoUnidadeDeMedida } from '../components/CampoUnidadeDeMedida'
 
 /** Primeira etapa: escolher o que consultar (ou abrir um dos 10 materiais mais recentes). */
 export function MateriaisPage() {
@@ -114,6 +115,7 @@ function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['materiais-todos'] })
       queryClient.invalidateQueries({ queryKey: ['materiais'] })
+      queryClient.invalidateQueries({ queryKey: ['unidades'] })
       setForm(VAZIO); setErro(null); onFechar()
     },
     onError: (err: unknown) => {
@@ -145,7 +147,7 @@ function CriarMaterialDialog({ aberto, onFechar }: CriarMaterialDialogProps) {
             </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Unidade de medida *" value={form.unidadeDeMedida} onChange={(e) => setForm(p => ({ ...p, unidadeDeMedida: e.target.value }))} fullWidth placeholder="un, kg, m…" helperText={form.tipo === 'MATERIA_PRIMA' ? 'Matéria-prima não possui lista técnica.' : ''} slotProps={{ htmlInput: { maxLength: 10 } }} />
+            <CampoUnidadeDeMedida label="Unidade de medida *" value={form.unidadeDeMedida} onChange={(unidade) => setForm(p => ({ ...p, unidadeDeMedida: unidade }))} placeholder="UN, KG, M…" helperText={form.tipo === 'MATERIA_PRIMA' ? 'Matéria-prima não possui lista técnica.' : ''} />
           </Grid>
         </Grid>
       </DialogContent>
