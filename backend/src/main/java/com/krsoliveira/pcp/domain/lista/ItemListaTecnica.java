@@ -5,6 +5,7 @@ import com.krsoliveira.pcp.domain.RegraDeNegocioException;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import com.krsoliveira.pcp.domain.comum.UnidadeDeMedida;
 
 /**
  * Componente de uma {@link ListaTecnica}: indica qual material é necessário,
@@ -43,7 +44,7 @@ public class ItemListaTecnica {
         }
         PrecisaoDeQuantidade.exigir(quantidadePlanejada, "A quantidade do componente");
         return new ItemListaTecnica(UUID.randomUUID(), materialComponenteId,
-                quantidadePlanejada, unidadeDeMedida.trim());
+                quantidadePlanejada, UnidadeDeMedida.normalizar(unidadeDeMedida));
     }
 
     /**

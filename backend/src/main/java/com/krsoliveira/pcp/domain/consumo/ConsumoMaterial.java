@@ -7,6 +7,7 @@ import com.krsoliveira.pcp.domain.auditoria.Assinatura;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import com.krsoliveira.pcp.domain.comum.UnidadeDeMedida;
 
 /**
  * Registra o consumo real de cada componente durante a execução de uma
@@ -66,7 +67,7 @@ public class ConsumoMaterial {
             throw new RegraDeNegocioException("A unidade de medida do consumo é obrigatória.");
         }
         return new ConsumoMaterial(UUID.randomUUID(), ordemProducaoId, materialId,
-                quantidadePlanejada, null, unidadeDeMedida.trim(),
+                quantidadePlanejada, null, UnidadeDeMedida.normalizar(unidadeDeMedida),
                 null, null, null, Assinatura.nova(usuario));
     }
 
@@ -86,7 +87,7 @@ public class ConsumoMaterial {
             throw new RegraDeNegocioException("A unidade de medida do consumo é obrigatória.");
         }
         return new ConsumoMaterial(UUID.randomUUID(), ordemProducaoId, materialId,
-                BigDecimal.ZERO, null, unidadeDeMedida.trim(),
+                BigDecimal.ZERO, null, UnidadeDeMedida.normalizar(unidadeDeMedida),
                 null, null, null, Assinatura.nova(usuario));
     }
 

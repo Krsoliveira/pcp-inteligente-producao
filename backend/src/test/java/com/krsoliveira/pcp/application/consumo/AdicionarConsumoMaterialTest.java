@@ -114,7 +114,7 @@ class AdicionarConsumoMaterialTest {
         assertThat(novo.getDesvio()).isEqualByComparingTo("4");
         assertThat(novo.estaRegistrado()).isTrue();
         assertThat(novo.estaJustificado()).isTrue();
-        assertThat(novo.getUnidadeDeMedida()).isEqualTo("kg");
+        assertThat(novo.getUnidadeDeMedida()).isEqualTo("KG");
         assertThat(consumos.listarPorOrdemProducao(ordem.getId())).containsExactly(novo);
         assertThat(loteDaCola.getSaldo()).isEqualByComparingTo("16");
         assertThat(alocacoes.todas()).singleElement().satisfies(a -> assertThat(a.getConsumoMaterialId()).isEqualTo(novo.getId()));
