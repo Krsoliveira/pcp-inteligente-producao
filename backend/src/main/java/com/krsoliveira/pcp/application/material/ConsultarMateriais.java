@@ -24,6 +24,11 @@ public class ConsultarMateriais {
         this.materialRepository = materialRepository;
     }
 
+    /** As unidades de medida já cadastradas, para o cadastro oferecer como sugestão sem criar duplicidade. */
+    public List<String> listarUnidadesDeMedida() {
+        return materialRepository.listarUnidadesDeMedida();
+    }
+
     public Material buscarPorId(UUID id) {
         return materialRepository.buscarPorId(id)
                 .orElseThrow(() -> new MaterialNaoEncontradoException(id));

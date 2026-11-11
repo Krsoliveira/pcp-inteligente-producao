@@ -76,6 +76,15 @@ public class MaterialController {
     }
 
     @PreAuthorize("hasAuthority('MATERIAL_VISUALIZAR')")
+    @GetMapping("/unidades")
+    @Operation(summary = "Listar as unidades de medida já cadastradas",
+            description = "Em maiúsculas, sem repetição e em ordem alfabética (materiais e itens de lista técnica). "
+                    + "O cadastro as oferece como sugestão; a unidade nova continua permitida (ADR-0037).")
+    public ResponseEntity<List<String>> unidades() {
+        return ResponseEntity.ok(consultarMateriais.listarUnidadesDeMedida());
+    }
+
+    @PreAuthorize("hasAuthority('MATERIAL_VISUALIZAR')")
     @GetMapping("/{id}")
     @Operation(summary = "Buscar material por ID")
     public ResponseEntity<MaterialResponse> buscar(@PathVariable UUID id) {

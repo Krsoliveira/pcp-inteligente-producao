@@ -25,6 +25,9 @@ public interface MaterialRepository {
 
     List<Material> listarTodos();
 
+    /** As unidades de medida já cadastradas (em materiais e em itens de lista técnica), sem repetição e em ordem alfabética. */
+    List<String> listarUnidadesDeMedida();
+
     /** Uma página de materiais que atendem ao filtro, dos cadastrados mais recentemente para os mais antigos. */
     Pagina<Material> pesquisar(FiltroMateriais filtro, PedidoDePagina pedido);
 

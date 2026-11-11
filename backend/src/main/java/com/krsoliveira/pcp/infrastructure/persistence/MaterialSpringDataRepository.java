@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,6 +13,10 @@ public interface MaterialSpringDataRepository
         extends JpaRepository<MaterialJpaEntity, UUID>, JpaSpecificationExecutor<MaterialJpaEntity> {
 
     Optional<MaterialJpaEntity> findByCodigo(String codigo);
+
+    @Query(value = "SELECT unidade_de_medida FROM material UNION SELECT unidade_de_medida FROM item_lista_tecnica ORDER BY 1",
+            nativeQuery = true)
+    List<String> listarUnidadesDeMedida();
 
     /** pg_advisory_xact_lock: liberado automaticamente no fim da transação. */
     @Query(value = "SELECT CAST(pg_advisory_xact_lock(:chave) AS TEXT)", nativeQuery = true)
